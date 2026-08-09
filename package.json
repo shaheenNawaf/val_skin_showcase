@@ -1,0 +1,23 @@
+{
+  "name": "cardforge",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Inventory showcase cards for any game - Build. Verify. Sell.",
+  "scripts": {
+    "dev": "npx http-server -p 3000",
+    "build": "echo 'Static site - no build required'",
+    "deploy": "echo 'Deploy to Vercel/Netlify'"
+  },
+  "keywords": [
+    "showcase",
+    "inventory",
+    "gaming",
+    "valorant",
+    "cards"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
