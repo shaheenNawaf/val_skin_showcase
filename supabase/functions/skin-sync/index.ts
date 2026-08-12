@@ -6,7 +6,7 @@ function mapCategory(c: string): string | null {
   if (s.includes("smg")) return "SMGs";
   if (s.includes("shotgun")) return "Shotguns";
   if (s.includes("sniper")) return "Sniper Rifles";
-  if (s.includes("machine") || s.includes("lmg")) return "Machine Guns";
+  if (s.includes("machine") || s.includes("lmg") || s.includes("heavy")) return "Machine Guns";
   if (s.includes("melee")) return "Melees";
   if (s.includes("rifle")) return "Rifles";
   return null;

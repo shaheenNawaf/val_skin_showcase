@@ -90,7 +90,7 @@ function mapCategory(c) {
   if (c.includes('smg')) return 'SMGs';
   if (c.includes('shotgun')) return 'Shotguns';
   if (c.includes('sniper')) return 'Sniper Rifles';
-  if (c.includes('machine') || c.includes('lmg')) return 'Machine Guns';
+  if (c.includes('machine') || c.includes('lmg') || c.includes('heavy')) return 'Machine Guns';
   if (c.includes('melee')) return 'Melees';
   if (c.includes('rifle')) return 'Rifles';
   return null;
@@ -619,7 +619,7 @@ function loadListing(listing) {
 }
 
 // Real-time presence with Supabase Realtime
-function startPresence(slug, initialViews) {
+async function startPresence(slug, initialViews) {
   if (!supabase) {
     // Fallback to BroadcastChannel for local testing
     startLocalPresence(slug, initialViews);
