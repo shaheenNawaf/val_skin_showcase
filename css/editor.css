@@ -1,0 +1,60 @@
+/* ── CardForge editor-only styles: theme swatches, picker modal ── */
+
+/* theme swatches */
+.themes{display:flex;gap:7px;margin-left:6px}
+.swatch{width:26px;height:14px;background:var(--sw);border:1px solid var(--line);cursor:pointer;transform:skewX(-18deg)}
+.swatch:hover{border-color:var(--ink)}
+.swatch.active{box-shadow:0 0 0 2px var(--accent)}
+
+/* clickable card uploads get a hover cue (editor only) */
+[data-upload]{cursor:pointer}
+.avatar[data-upload]:hover,.pcard[data-upload]:hover,.charms-box[data-upload]:hover{
+  border-color:var(--accent);
+  box-shadow:inset 0 0 0 1px var(--accent);
+  filter:brightness(1.06)}
+.pcard[data-upload]:hover .hint,.charms-box[data-upload]:hover .hint{color:var(--accent)}
+
+/* rank "set" buttons */
+.pickrank{background:none;border:1px solid var(--line);color:var(--mut);font:600 9px 'Chakra Petch',sans-serif;letter-spacing:.12em;padding:2px 7px;cursor:pointer;text-transform:uppercase;margin-left:auto}
+.pickrank:hover{color:var(--accent);border-color:var(--accent)}
+
+/* ── fast-add picker modal ─────────────────────────────────────── */
+#modal{position:fixed;inset:0;background:rgba(4,8,14,.8);display:flex;align-items:center;justify-content:center;z-index:50;padding:12px}
+#modal[hidden]{display:none}
+.mpanel{width:min(1250px,100%);max-height:88vh;background:var(--card2);border:1px solid var(--line);display:flex;flex-direction:column;padding:16px;
+clip-path:polygon(0 0,calc(100% - var(--notch-lg)) 0,100% var(--notch-lg),100% 100%,var(--notch-lg) 100%,0 calc(100% - var(--notch-lg)))}
+.mhead{display:flex;gap:12px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.mhead h2{font-family:Anton,sans-serif;font-size:19px;letter-spacing:.12em;text-transform:uppercase;font-weight:400}
+.mhead h2::before{content:"";display:inline-block;width:8px;height:13px;background:var(--accent);transform:skewX(-20deg);margin-right:10px}
+.mcount{color:var(--mut);font-size:12px;letter-spacing:.1em}
+#mSearch{flex:1;min-width:180px;background:var(--bg);border:1px solid var(--line);color:var(--ink);padding:9px 12px;font:600 14px 'Chakra Petch',sans-serif}
+#mSearch:focus-visible{box-shadow:inset 0 0 0 2px var(--accent)}
+#mClose{background:none;border:none;color:var(--mut);font-size:18px;cursor:pointer;padding:4px 8px}
+#mClose:hover{color:var(--accent)}
+.mfilters{display:flex;flex-direction:column;gap:7px;margin-bottom:10px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+.chip{flex:0 0 auto;background:var(--panel);border:1px solid var(--line);color:var(--mut);padding:5px 12px;font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.08em;cursor:pointer;text-transform:uppercase;
+clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.chip:hover{color:var(--ink);border-color:var(--mut)}
+.chip.active{color:var(--ink);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--panel))}
+.chip .dot{width:8px;height:8px;margin-right:6px}
+.mgrid{overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+@media (max-width:640px){.mgrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}}
+.item{position:relative;background:var(--panel);border:1px solid var(--line);padding:10px;display:flex;flex-direction:column;gap:4px;cursor:pointer;color:var(--ink);font-family:'Chakra Petch',sans-serif;text-align:left;
+clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)))}
+.item:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--panel))}
+.item img{height:60px;object-fit:contain}
+.item b{font-size:13px}
+.item span{color:var(--mut);font-size:11px}
+.noicon{height:44px;display:flex;align-items:center;justify-content:center;color:var(--mut);font:700 18px 'Chakra Petch',sans-serif;border:1px dashed var(--line)}
+.tdot{position:absolute;top:8px;right:8px;width:9px;height:9px;transform:rotate(45deg)}
+.cnt{position:absolute;top:6px;left:6px;background:var(--accent);color:#fff;font:700 10px 'Chakra Petch',sans-serif;font-style:normal;padding:2px 6px;letter-spacing:.05em}
+.none{color:var(--mut);grid-column:1/-1;text-align:center;padding:30px}
+
+@media (prefers-reduced-motion:no-preference){
+  #modal{animation:modalIn .16s ease-out}
+  .mpanel{animation:panelIn .16s ease-out}
+  .chip,.item{transition:color .12s ease,border-color .12s ease,background-color .12s ease}
+}
+@keyframes modalIn{from{opacity:0}}
+@keyframes panelIn{from{opacity:0;transform:translateY(8px) scale(.985)}}

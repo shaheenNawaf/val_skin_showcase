@@ -2,11 +2,11 @@
   "name": "cardforge",
   "version": "1.0.0",
   "type": "module",
-  "description": "Inventory showcase cards for any game - Build. Verify. Sell.",
+  "description": "Valorant inventory showcase cards - build, export, publish, sell.",
   "scripts": {
-    "dev": "npx http-server -p 3000",
-    "build": "echo 'Static site - no build required'",
-    "deploy": "echo 'Deploy to Vercel/Netlify'"
+    "dev": "npx http-server -p 3000 -c-1",
+    "build": "node scripts/copy-static.mjs",
+    "lint": "eslint ."
   },
   "keywords": [
     "showcase",
@@ -18,6 +18,8 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "http-server": "^14.1.1"
+    "eslint": "^9.0.0",
+    "http-server": "^14.1.1",
+    "playwright-core": "^1.63.0"
   }
 }

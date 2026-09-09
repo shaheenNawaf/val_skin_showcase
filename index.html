@@ -3,175 +3,51 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Showcase Card Builder</title>
+<title>CardForge — Showcase Card Builder</title>
+<meta name="description" content="Build a Valorant inventory showcase card: add your skins, ranks and stats, then export a PNG or publish a shareable listing link.">
+<meta property="og:title" content="CardForge — Showcase Card Builder">
+<meta property="og:description" content="Build a Valorant inventory showcase card and share it as a listing link.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0F1923">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1923'/%3E%3Cpath d='M10 24 24 10v6l-8 8z' fill='%23FF4655'/%3E%3Cpath d='M8 20l6-6v4l-4 4z' fill='%23FF4655' opacity='.6'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<style>
-:root,[data-theme=protocol]{--bg:#0F1923;--card1:#1F2731;--card2:#16202B;--frame:#0B121B;--panel:#1F2731;--box:#2A3540;--line:#2E3A46;--ink:#ECE8E1;--mut:#768390;--accent:#FF4655;--gold:#F2C14E;--red:#FF4655}
-[data-theme=holo]{--bg:#04101A;--card1:#0A1E30;--card2:#061523;--frame:#02090F;--panel:#0A1E30;--box:#0F2C44;--line:#164059;--ink:#DFF6FF;--mut:#6E8CA0;--accent:#46F6FF;--gold:#F2C14E;--red:#FF4655}
-[data-theme=reaver]{--bg:#0D0A14;--card1:#180F2A;--card2:#120B1F;--frame:#080512;--panel:#180F2A;--box:#241740;--line:#37255C;--ink:#EFE9FF;--mut:#8D82A8;--accent:#B44BFF;--gold:#59E3B8;--red:#FF4655}
-[data-theme=oni]{--bg:#120B0B;--card1:#201114;--card2:#180D10;--frame:#0B0607;--panel:#201114;--box:#31191E;--line:#4A2A2C;--ink:#F5E9DC;--mut:#9A8578;--accent:#FF5540;--gold:#E8B14E;--red:#FF5540}
-[data-theme=arctic]{--bg:#DAD5CB;--card1:#F7F4EE;--card2:#ECE8E1;--frame:#B8B2A6;--panel:#F2EEE6;--box:#E0DBD1;--line:#C4BEB2;--ink:#0F1923;--mut:#5A6470;--accent:#FF4655;--gold:#8A6D1C;--red:#FF4655}
-*{box-sizing:border-box;margin:0;padding:0;border-radius:0}
-::selection{background:var(--accent);color:#fff}
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--line)}
-::-webkit-scrollbar-thumb:hover{background:var(--accent)}
-body{font-family:'Chakra Petch',system-ui,sans-serif;color:var(--ink);overflow:hidden;
-background:radial-gradient(1100px 500px at 75% -10%,color-mix(in srgb,var(--accent) 7%,transparent),transparent 60%),
-repeating-linear-gradient(115deg,transparent 0 34px,rgba(255,255,255,.015) 34px 35px),var(--bg)}
-#topbar{position:fixed;top:0;left:0;right:0;height:52px;display:flex;justify-content:space-between;align-items:center;padding:0 16px;background:linear-gradient(180deg,var(--card1),var(--card2));border-bottom:1px solid var(--line);z-index:20;gap:10px}
-#topbar::after{content:"";position:absolute;left:16px;bottom:-2px;height:2px;width:140px;background:var(--accent);transform:skewX(-35deg)}
-.tb-left,.tb-right{display:flex;align-items:center;gap:10px}
-.logo{font-family:Anton;font-size:16px;letter-spacing:.25em;color:var(--ink)}
-.logo::before{content:"";display:inline-block;width:9px;height:15px;background:var(--accent);transform:skewX(-20deg);margin-right:9px;vertical-align:-2px}
-.themes{display:flex;gap:7px;margin-left:6px}
-.swatch{width:26px;height:14px;background:var(--sw);border:1px solid var(--line);cursor:pointer;transform:skewX(-18deg)}
-.swatch.active{box-shadow:0 0 0 2px var(--accent)}
-#topbar button{background:transparent;border:1px solid var(--line);color:var(--ink);padding:8px 16px;font:600 11px 'Chakra Petch';letter-spacing:.16em;text-transform:uppercase;cursor:pointer;transition:.15s;
-clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
-#topbar button:hover{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
-#topbar button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-#topbar button.primary:hover{color:#fff;filter:brightness(1.12)}
-#status{color:var(--mut);font-size:12px;letter-spacing:.06em;max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#status::before{content:"// ";color:var(--accent)}
-#viewBadge{border:1px solid var(--accent);color:var(--accent);padding:6px 14px;font:600 12px 'Chakra Petch';letter-spacing:.1em;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
-#stage{position:fixed;inset:52px 0 0 0;display:flex;align-items:center;justify-content:center;overflow:hidden}
-#card{width:1920px;height:1080px;flex:none;position:relative;overflow:hidden;padding:24px 34px 28px;background:linear-gradient(180deg,var(--card1),var(--card2));border:1px solid var(--line);transform-origin:center center;
-clip-path:polygon(0 0,calc(100% - 30px) 0,100% 30px,100% 100%,30px 100%,0 calc(100% - 30px))}
-#card::before{content:"";position:absolute;top:8px;left:8px;width:20px;height:20px;border-top:2px solid var(--accent);border-left:2px solid var(--accent)}
-#card::after{content:"";position:absolute;bottom:8px;right:8px;width:20px;height:20px;border-bottom:2px solid var(--accent);border-right:2px solid var(--accent)}
-body.exporting{overflow:visible}
-body.exporting #topbar{display:none}
-body.exporting #stage{position:absolute;inset:0 auto auto 0;overflow:visible}
-body.exporting #card{transform:none!important}
-[contenteditable]{outline:none;border-bottom:1px dashed transparent}
-[contenteditable]:hover{border-bottom-color:var(--accent);cursor:text}
-.chead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line);position:relative}
-.chead::after{content:"";position:absolute;left:0;bottom:-1px;width:130px;height:1px;background:var(--accent)}
-.code{font-family:Anton;font-size:44px;letter-spacing:.2em}
-.curs{display:flex;gap:26px;align-items:center}
-.cur{display:flex;gap:9px;align-items:center;font-size:19px;font-weight:600}
-.ico{width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font:700 12px 'Chakra Petch';font-style:normal;border:1px solid var(--mut);color:var(--mut);clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
-.lvl{letter-spacing:.3em;color:var(--mut);font-weight:600;font-size:16px}
-.lvl b{color:var(--ink);letter-spacing:.2em;margin-left:6px}
-.grid{display:grid;gap:10px;height:768px;grid-template-columns:250px 300px 1fr 340px 380px;grid-template-rows:repeat(6,1fr);
-grid-template-areas:
-"side smg  rifles sniper mg"
-"side smg  rifles sniper mg"
-"side smg  rifles sniper mg"
-"side shot rifles sniper buddies"
-"side shot rifles melee melee"
-"side shot rifles melee melee"}
-.panel{overflow:hidden;display:flex;flex-direction:column}
-.panel h3{text-align:center;letter-spacing:.4em;font-size:13px;color:var(--mut);font-weight:600;margin:0 0 6px;text-transform:uppercase}
-.panel h3::before{content:"";display:inline-block;width:7px;height:10px;background:var(--accent);transform:skewX(-20deg);margin-right:9px}
-.slots{display:flex;flex-direction:column;height:100%;gap:6px;flex:1;min-height:0;overflow:hidden}
-.panel[data-cat="Melees"] .slots{flex-direction:row}
-.panel[data-cat="Melees"] .skin,.panel[data-cat="Melees"] .slotbox.empty{width:auto;min-width:0}
-.skin{position:relative;flex:1 1 0;min-height:0;width:100%;overflow:hidden;border:1px solid var(--line);
-background:radial-gradient(120% 100% at 50% 0%,rgba(255,255,255,.10),transparent 60%),linear-gradient(180deg,color-mix(in srgb,var(--box) 86%,#fff 14%),var(--box));
-box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
-clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}
-.skin img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:2px 8px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.55))}
-.rm{position:absolute;top:3px;right:3px;width:18px;height:18px;background:var(--red);color:#fff;border:none;font:700 11px/1 'Chakra Petch';cursor:pointer;display:none;clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px);z-index:2}
-.skin:hover .rm{display:block}
-.slotbox{position:relative;border:1px solid var(--line);overflow:hidden;
-background:radial-gradient(120% 100% at 50% 0%,rgba(255,255,255,.07),transparent 60%),var(--box)}
-.slotbox.empty{flex:1 1 0;min-height:0;border-style:dashed;background:rgba(255,255,255,.02)}
-.add{margin-top:6px;width:100%;background:rgba(255,255,255,.02);border:1px solid var(--line);color:var(--mut);padding:6px;font:600 12px 'Chakra Petch';letter-spacing:.2em;cursor:pointer;text-transform:uppercase;transition:.15s;
-clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
-.add:hover{color:var(--accent);border-color:var(--accent)}
-.charms-box{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;cursor:pointer;padding:6px;flex:1}
-.charms-box img{width:100%;height:52px;object-fit:contain}
-.hint{color:var(--mut);font-size:10px;letter-spacing:.25em;grid-column:1/-1;align-self:center;text-align:center;text-transform:uppercase}
-.fgrid{display:grid;gap:12px;grid-template-columns:1.15fr 1fr 1.6fr .8fr 1.3fr;height:180px;margin-top:12px}
-.boxf{background:var(--panel);border:1px solid var(--line);padding:14px 16px;overflow:hidden;
-clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}
-.seller{display:flex;gap:14px;align-items:center}
-.avatar{width:64px;height:64px;object-fit:cover;cursor:pointer;border:1px solid var(--line);clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
-.tag{font-family:Anton;font-size:26px;letter-spacing:.08em}
-.link{color:var(--mut);font-size:12px;word-break:break-all}
-.stats{display:flex;justify-content:space-between;align-items:center}
-.stat{text-align:center;position:relative}
-.stat label{display:block;color:var(--mut);font-size:12px;letter-spacing:.2em}
-.stat.limited label{color:var(--gold)}
-.stat b{font-family:Anton;font-size:28px;letter-spacing:.08em;font-weight:400}
-.auto{position:absolute;right:-18px;bottom:2px;background:none;border:none;color:var(--mut);font:600 9px 'Chakra Petch';cursor:pointer;letter-spacing:.1em}
-.auto:hover{color:var(--accent)}
-.rankrow{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:15px}
-.rankrow label{color:var(--mut);letter-spacing:.14em;font-size:12px}
-.rankbadge{width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
-.rankbadge:not([src]){display:none}
-.pickrank{background:none;border:1px solid var(--line);color:var(--mut);font:600 9px 'Chakra Petch';letter-spacing:.12em;padding:2px 7px;cursor:pointer;text-transform:uppercase;margin-left:auto}
-.pickrank:hover{color:var(--accent);border-color:var(--accent)}
-.note{color:var(--mut);font-size:13px}
-.pcard{background-size:cover;background-position:center;display:flex;align-items:flex-end;justify-content:center;cursor:pointer}
-.viewmode .add,.viewmode .rm,.viewmode .auto,.viewmode .hint,.viewmode .themes,.viewmode .pickrank{display:none}
-.viewmode [data-upload]{cursor:default}
-/* ── fast-add picker ── */
-#modal{position:fixed;inset:0;background:rgba(4,8,14,.8);display:flex;align-items:center;justify-content:center;z-index:50}
-#modal[hidden]{display:none}
-.mpanel{width:min(1250px,94vw);max-height:88vh;background:var(--card2);border:1px solid var(--line);display:flex;flex-direction:column;padding:16px;
-clip-path:polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,20px 100%,0 calc(100% - 20px))}
-.mhead{display:flex;gap:12px;align-items:center;margin-bottom:10px}
-.mhead h2{font-family:Anton;font-size:19px;letter-spacing:.12em;text-transform:uppercase;font-weight:400}
-.mhead h2::before{content:"";display:inline-block;width:8px;height:13px;background:var(--accent);transform:skewX(-20deg);margin-right:10px}
-.mcount{color:var(--mut);font-size:12px;letter-spacing:.1em}
-#mSearch{flex:1;background:var(--bg);border:1px solid var(--line);color:var(--ink);padding:9px 12px;font:600 14px 'Chakra Petch'}
-#mSearch:focus{outline:none;border-color:var(--accent)}
-.mfilters{display:flex;flex-direction:column;gap:7px;margin-bottom:10px}
-.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
-.chip{flex:0 0 auto;background:var(--panel);border:1px solid var(--line);color:var(--mut);padding:5px 12px;font:600 11px 'Chakra Petch';letter-spacing:.08em;cursor:pointer;text-transform:uppercase;transition:.12s;
-clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
-.chip:hover{color:var(--ink);border-color:var(--mut)}
-.chip.active{color:var(--ink);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--panel))}
-.chip .dot{display:inline-block;width:8px;height:8px;transform:rotate(45deg);margin-right:6px}
-.mgrid{overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
-.item{position:relative;background:var(--panel);border:1px solid var(--line);padding:10px;display:flex;flex-direction:column;gap:4px;cursor:pointer;color:var(--ink);font-family:'Chakra Petch';text-align:left;transition:.12s;
-clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px))}
-.item:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--panel))}
-.item img{height:60px;object-fit:contain}
-.item b{font-size:13px}.item span{color:var(--mut);font-size:11px}
-.tdot{position:absolute;top:8px;right:8px;width:9px;height:9px;transform:rotate(45deg)}
-.cnt{position:absolute;top:6px;left:6px;background:var(--accent);color:#fff;font:700 10px 'Chakra Petch';font-style:normal;padding:2px 6px;letter-spacing:.05em}
-.none{color:var(--mut);grid-column:1/-1;text-align:center;padding:30px}
-</style>
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/editor.css">
+<script src="js/vendor/html2canvas.min.js" defer></script>
+<script src="js/config.js"></script>
+<script type="module" src="js/editor.js"></script>
 </head>
 <body>
 <div id="topbar">
   <div class="tb-left">
     <span class="logo">CARD FORGE</span>
-    <div class="themes">
-      <button class="swatch active" data-theme="protocol" style="--sw:#1F2731" title="Protocol"></button>
-      <button class="swatch" data-theme="holo"    style="--sw:#0A1E30" title="Holo"></button>
-      <button class="swatch" data-theme="reaver"  style="--sw:#180F2A" title="Reaver"></button>
-      <button class="swatch" data-theme="oni"     style="--sw:#31191E" title="Oni"></button>
-      <button class="swatch" data-theme="arctic"  style="--sw:#ECE8E1" title="Arctic"></button>
+    <div class="themes" role="group" aria-label="Card theme">
+      <button class="swatch active" data-theme="protocol" style="--sw:#1F2731" title="Protocol" aria-label="Protocol theme" aria-pressed="true"></button>
+      <button class="swatch" data-theme="holo"    style="--sw:#0A1E30" title="Holo"    aria-label="Holo theme" aria-pressed="false"></button>
+      <button class="swatch" data-theme="reaver"  style="--sw:#180F2A" title="Reaver"  aria-label="Reaver theme" aria-pressed="false"></button>
+      <button class="swatch" data-theme="oni"     style="--sw:#31191E" title="Oni"     aria-label="Oni theme" aria-pressed="false"></button>
+      <button class="swatch" data-theme="arctic"  style="--sw:#ECE8E1" title="Arctic"  aria-label="Arctic theme" aria-pressed="false"></button>
     </div>
   </div>
   <div class="tb-right">
-    <span id="viewBadge" hidden></span>
-    <button id="contactBtn" hidden>Contact seller</button>
-    <button id="copyLinkBtn" hidden>Copy link</button>
-    <button id="editBtn" hidden>← Editor</button>
     <button id="exportBtn" class="primary">Export PNG</button>
     <button id="saveBtn">Save</button>
     <button id="loadBtn">Load</button>
-    <button id="publishBtn" class="primary">Publish listing</button>
-    <span id="status">Loading skin database…</span>
+    <button id="publishBtn" class="accent">Publish listing</button>
+    <span id="status" role="status" aria-live="polite">Loading skin database…</span>
   </div>
 </div>
 
-<div id="stage"><div id="card">
+<div id="stage"><div id="sizer"><div id="card">
   <header class="chead">
-    <div class="code" contenteditable spellcheck="false">K486</div>
+    <div class="code" data-key="code" contenteditable spellcheck="false">K486</div>
     <div class="curs">
-      <span class="cur"><i class="ico">V</i><b contenteditable>420</b></span>
-      <span class="cur"><i class="ico">R</i><b contenteditable>140</b></span>
-      <span class="cur"><i class="ico">K</i><b contenteditable>6422</b></span>
-      <span class="lvl">LEVEL <b contenteditable>376</b></span>
+      <span class="cur"><i class="ico">V</i><b data-key="vp" contenteditable>420</b></span>
+      <span class="cur"><i class="ico">R</i><b data-key="rp" contenteditable>140</b></span>
+      <span class="cur"><i class="ico">K</i><b data-key="kc" contenteditable>6422</b></span>
+      <span class="lvl">LEVEL <b data-key="level" contenteditable>376</b></span>
     </div>
   </header>
   <main class="grid">
@@ -189,271 +65,54 @@ clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100%
   </main>
   <footer class="fgrid">
     <div class="boxf seller">
-      <img class="avatar" data-upload="avatar" alt=""
+      <img class="avatar" data-upload="avatar" alt="Seller avatar"
         src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>">
       <div>
-        <div class="tag" contenteditable>FS/FT+ADD</div>
-        <div class="link" contenteditable>https://www.facebook.com/Your.Page.Here</div>
+        <div class="tag" data-key="tag" contenteditable>FS/FT+ADD</div>
+        <div class="link" data-key="link" contenteditable>https://www.facebook.com/Your.Page.Here</div>
       </div>
     </div>
     <div class="boxf stats">
-      <div class="stat"><label>PREMS</label><b contenteditable>42</b><button class="auto" data-auto="prems" title="Auto-count Premium/Ultra/Exclusive">auto</button></div>
-      <div class="stat limited"><label>LIMITED</label><b contenteditable>02</b></div>
-      <div class="stat"><label>SEMIS</label><b contenteditable>00</b></div>
-      <div class="stat"><label>B-PASS</label><b contenteditable>10</b></div>
+      <div class="stat"><label>PREMS</label><b data-key="prems" contenteditable>42</b><button class="auto" data-auto="prems" title="Auto-count Premium/Ultra/Exclusive skins">auto</button></div>
+      <div class="stat limited"><label>LIMITED</label><b data-key="limited" contenteditable>02</b></div>
+      <div class="stat"><label>SEMIS</label><b data-key="semis" contenteditable>00</b></div>
+      <div class="stat"><label>B-PASS</label><b data-key="bpass" contenteditable>10</b></div>
     </div>
     <div class="boxf ranks">
-      <div class="rankrow"><label>CURRENT RANK:</label><img class="rankbadge" alt=""><b contenteditable>DIAMOND 2</b><button class="pickrank" data-rankpick="crank">set</button></div>
-      <div class="rankrow"><label>PEAK RANK:</label><img class="rankbadge" alt=""><b contenteditable>IMMORTAL 3</b><button class="pickrank" data-rankpick="prank">set</button></div>
-      <div class="note" contenteditable>WITH WTR AND RECEIPTS • CHANGE NAME READY</div>
-      <div class="note" contenteditable>3RD OWNER • NO OTHER ISSUES</div>
+      <div class="rankrow" data-rank="crank"><label>CURRENT RANK:</label><img class="rankbadge" alt=""><b data-key="crank" contenteditable>DIAMOND 2</b><button class="pickrank" data-rankpick="crank">set</button></div>
+      <div class="rankrow" data-rank="prank"><label>PEAK RANK:</label><img class="rankbadge" alt=""><b data-key="prank" contenteditable>IMMORTAL 3</b><button class="pickrank" data-rankpick="prank">set</button></div>
+      <div class="note" data-key="note1" contenteditable>WITH WTR AND RECEIPTS • CHANGE NAME READY</div>
+      <div class="note" data-key="note2" contenteditable>3RD OWNER • NO OTHER ISSUES</div>
     </div>
-    <div class="boxf" style="background:none;border:none"></div>
-    <div class="boxf pcard" data-upload="pcard"><span class="hint">PLAYER CARD — click to upload</span></div>
+    <div class="boxf legend" aria-label="Content tier legend">
+      <h4>Tier legend</h4>
+      <div class="leg"><i class="dot t-select"></i>Select</div>
+      <div class="leg"><i class="dot t-deluxe"></i>Deluxe</div>
+      <div class="leg"><i class="dot t-premium"></i>Premium</div>
+      <div class="leg"><i class="dot t-ultra"></i>Ultra</div>
+      <div class="leg"><i class="dot t-exclusive"></i>Exclusive</div>
+    </div>
+    <div class="boxf pcard" data-upload="pcard"><span class="hint">Player card — click to upload</span></div>
   </footer>
-</div></div>
+</div></div></div>
 
-<div id="modal" hidden>
+<div id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
   <div class="mpanel">
     <div class="mhead">
       <h2 id="mTitle">Add skin</h2>
       <span id="mCount" class="mcount"></span>
-      <input id="mSearch" placeholder="Search skins…  ( / to focus · Enter adds top result · Esc closes )">
-      <button id="mClose" style="background:none;border:none;color:var(--mut);font-size:18px;cursor:pointer">✕</button>
+      <input id="mSearch" type="text" placeholder="Search skins…  ( / to focus · Enter adds top result · Esc closes )" aria-label="Search skins">
+      <button id="mClose" aria-label="Close picker">✕</button>
     </div>
     <div id="mFilters" class="mfilters">
-      <div id="mWeapons" class="chips"></div>
-      <div id="mTiers" class="chips"></div>
+      <div id="mWeapons" class="chips" role="group" aria-label="Filter by weapon"></div>
+      <div id="mTiers" class="chips" role="group" aria-label="Filter by content tier"></div>
     </div>
     <div id="mGrid" class="mgrid"></div>
   </div>
 </div>
 <input type="file" id="fileInput" accept="image/*" hidden>
 
-<script>
-const DESIGN_W=1920,DESIGN_H=1080,KEY='vcard-builder-v1';
-const CATS=['Sidearms','SMGs','Shotguns','Rifles','Sniper Rifles','Machine Guns','Melees'];
-const TIER_COLORS={Select:'#9ba8b9',Deluxe:'#4aa8ff',Premium:'#b44bf0',Ultra:'#ff5d7b',Exclusive:'#ffc45e'};
-const TIER_COLORS_LC=Object.fromEntries(Object.entries(TIER_COLORS).map(([k,v])=>[k.toLowerCase(),v]));
-const tierColor=t=>TIER_COLORS_LC[(t||'').toLowerCase()]||'#888';
-const state={picks:Object.fromEntries(CATS.map(c=>[c,[]]))};
-let DB={},TIERS=[],RANKS=[],list=[],currentCat=null,pending=null,viewmode=false,pickerMode='skin',rankRow=null,filterWeapon='',filterTier='';
-const $=id=>document.getElementById(id);
-const card=$('card'),modal=$('modal'),mGrid=$('mGrid'),mSearch=$('mSearch'),fileInput=$('fileInput');
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const status=m=>$('status').textContent=m;
-
-function fit(){
-  const s=Math.min((innerWidth-16)/DESIGN_W,(innerHeight-52-16)/DESIGN_H);
-  card.style.transform=`scale(${Math.min(s,1)})`;
-}
-addEventListener('resize',fit);
-
-document.querySelectorAll('.swatch').forEach(b=>b.onclick=()=>{
-  applyTheme(b.dataset.theme);
-  localStorage.setItem('vc-theme',b.dataset.theme);
-});
-function applyTheme(t){
-  if(!document.querySelector(`.swatch[data-theme="${t}"]`))t='protocol';
-  document.documentElement.dataset.theme=t;
-  document.querySelectorAll('.swatch').forEach(x=>x.classList.toggle('active',x.dataset.theme===t));
-}
-applyTheme(localStorage.getItem('vc-theme')||'protocol');
-
-function renderPanel(cat){
-  const el=document.querySelector(`.panel[data-cat="${cat}"]`);
-  const picks=state.picks[cat];
-  const cells=picks.length
-    ? picks.map(s=>`<span class="skin"><img src="${s.img}" title="${esc(s.weapon)} — ${esc(s.name)}">
-        <button class="rm" data-remove="${cat}" data-id="${s.id}">×</button></span>`).join('')
-    : '<div class="slotbox empty"></div>';
-  el.innerHTML=`<h3>${cat}</h3><div class="slots">${cells}</div>
-    <button class="add" data-add="${cat}">+ Add (${picks.length})</button>`;
-}
-const renderAll=()=>CATS.forEach(renderPanel);
-
-function mapCategory(c){c=(c||'').toLowerCase();
-  if(c.includes('sidearm'))return'Sidearms';if(c.includes('smg'))return'SMGs';
-  if(c.includes('shotgun'))return'Shotguns';if(c.includes('sniper'))return'Sniper Rifles';
-  if(c.includes('machine')||c.includes('lmg')||c.includes('heavy'))return'Machine Guns';
-  if(c.includes('melee'))return'Melees';if(c.includes('rifle'))return'Rifles';return null;}
-async function init(){
-  renderAll();fit();
-  try{
-    const[wR,tR,cR]=await Promise.all([
-      fetch('https://valorant-api.com/v1/weapons?language=en-US'),
-      fetch('https://valorant-api.com/v1/contenttiers?language=en-US'),
-      fetch('https://valorant-api.com/v1/competitivetiers?language=en-US')
-    ]);
-    const wJ=await wR.json(),tJ=await tR.json(),cJ=await cR.json();
-    const tiers=Object.fromEntries((tJ.data||[]).map(t=>[t.uuid,t.displayName]));
-    (wJ.data||[]).forEach(w=>{const cat=mapCategory(w.category);if(!cat)return;
-      (w.skins||[]).forEach(s=>{if(s.displayName==='Standard')return;
-        const icon=s.displayIcon||(s.chromas&&s.chromas[0]&&s.chromas[0].displayIcon);if(!icon)return;
-        (DB[cat]=DB[cat]||[]).push({id:s.uuid,weapon:w.displayName,name:s.displayName,icon,img:icon,tier:tiers[s.contentTierUuid]||''});});});
-    Object.values(DB).forEach(a=>a.sort((x,y)=>(x.weapon+x.name).localeCompare(y.weapon+y.name)));
-    /* tier chips are built from the data itself, so names always match the API */
-    const TIER_ORDER=['select','deluxe','premium','ultra','exclusive'];
-    const tierSet=new Set();
-    Object.values(DB).forEach(a=>a.forEach(s=>{if(s.tier)tierSet.add(s.tier);}));
-    TIERS=[...tierSet].sort((a,b)=>{
-      const ia=TIER_ORDER.indexOf(a.toLowerCase()),ib=TIER_ORDER.indexOf(b.toLowerCase());
-      return (ia<0?99:ia)-(ib<0?99:ib);});
-    const set=(cJ.data||[]).slice(-1)[0];
-    RANKS=[{name:'UNRANKED',icon:null,color:'#555',order:-1},
-      ...(set?.tiers||[]).filter(t=>t.tierName).map(t=>({
-        name:(t.tierName+' '+(t.divisionName||'')).trim(),
-        icon:t.displayIcon||t.largeIcon,color:t.color||'#888',
-        order:(t.tier||0)*10+(t.division||0)})).sort((a,b)=>a.order-b.order)];
-    status(`Ready — ${Object.values(DB).flat().length} skins, ${TIERS.length} tiers, ${RANKS.length-1} ranks.`);
-  }catch(e){status('Skin DB failed to load: '+e.message);}
-}
-
-/* ── fast-add picker ── */
-function openPicker(cat){pickerMode='skin';currentCat=cat;filterWeapon='';filterTier='';
-  $('mTitle').textContent='Add '+cat;
-  $('mFilters').style.display='';
-  const wCounts={},tCounts={};
-  (DB[cat]||[]).forEach(s=>{wCounts[s.weapon]=(wCounts[s.weapon]||0)+1;if(s.tier)tCounts[s.tier]=(tCounts[s.tier]||0)+1;});
-  const w=Object.keys(wCounts).sort();
-  $('mWeapons').innerHTML='<button class="chip active" data-w="">All</button>'+w.map(x=>`<button class="chip" data-w="${esc(x)}">${esc(x)} (${wCounts[x]})</button>`).join('');
-  $('mTiers').style.display=TIERS.length?'':'none';
-  $('mTiers').innerHTML='<button class="chip active" data-t="">Any tier</button>'+TIERS.filter(t=>tCounts[t]).map(t=>`<button class="chip" data-t="${esc(t)}"><i class="dot" style="background:${tierColor(t)}"></i>${esc(t)} (${tCounts[t]})</button>`).join('');
-  mSearch.value='';renderGrid();modal.hidden=false;setTimeout(()=>mSearch.focus(),60);}
-function openRankPicker(btn){pickerMode='rank';rankRow=btn.closest('.rankrow');
-  $('mTitle').textContent='Select rank';$('mFilters').style.display='none';
-  mSearch.value='';renderGrid();modal.hidden=false;setTimeout(()=>mSearch.focus(),60);}
-function paintChips(){
-  document.querySelectorAll('#mWeapons .chip').forEach(c=>c.classList.toggle('active',(c.dataset.w||'')===filterWeapon));
-  document.querySelectorAll('#mTiers .chip').forEach(c=>c.classList.toggle('active',(c.dataset.t||'')===filterTier));
-}
-$('mWeapons').onclick=e=>{const c=e.target.closest('.chip');if(!c)return;filterWeapon=c.dataset.w||'';paintChips();renderGrid();};
-$('mTiers').onclick=e=>{const c=e.target.closest('.chip');if(!c)return;filterTier=c.dataset.t||'';paintChips();renderGrid();};
-function renderGrid(){const q=mSearch.value.toLowerCase();
-  if(pickerMode==='rank'){
-    list=RANKS.filter(r=>!q||r.name.toLowerCase().includes(q));
-    $('mCount').textContent=list.length+' results';
-    mGrid.innerHTML=list.map((r,i)=>`<button class="item" data-i="${i}"><img loading="lazy" src="${r.icon||''}" style="height:44px"><b>${esc(r.name)}</b><span>competitive tier</span>${r.icon?`<i class="tdot" style="background:${r.color}"></i>`:''}</button>`).join('')||'<p class="none">No matches.</p>';
-    return;}
-  const counts={};(state.picks[currentCat]||[]).forEach(p=>counts[p.id]=(counts[p.id]||0)+1);
-  list=(DB[currentCat]||[]).filter(s=>
-    (!filterWeapon||s.weapon===filterWeapon)&&
-    (!filterTier||(s.tier||'').toLowerCase()===filterTier.toLowerCase())&&
-    (!q||(s.name+' '+s.weapon).toLowerCase().includes(q)));
-  $('mCount').textContent=list.length+' results';
-  mGrid.innerHTML=list.map((s,i)=>`<button class="item" data-i="${i}">${counts[s.id]?`<i class="cnt">×${counts[s.id]}</i>`:''}<img loading="lazy" src="${s.icon}"><b>${esc(s.name)}</b><span>${esc(s.weapon)}${s.tier?' • '+esc(s.tier):''}</span>${s.tier?`<i class="tdot" style="background:${tierColor(s.tier)}"></i>`:''}</button>`).join('')||'<p class="none">No matches.</p>';}
-mGrid.onclick=e=>{const b=e.target.closest('.item');if(!b)return;
-  if(pickerMode==='rank'){applyRank(list[+b.dataset.i]);return;}
-  addSkin(currentCat,list[+b.dataset.i]);renderGrid();};
-mSearch.oninput=renderGrid;
-mSearch.addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&list.length){
-    if(pickerMode==='rank')applyRank(list[0]);
-    else{addSkin(currentCat,list[0]);renderGrid();}
-  }});
-document.addEventListener('keydown',e=>{
-  if(modal.hidden)return;
-  if(e.key==='Escape'){modal.hidden=true;return;}
-  if(e.key==='/'&&document.activeElement!==mSearch){e.preventDefault();mSearch.focus();}
-});
-$('mClose').onclick=()=>modal.hidden=true;
-modal.addEventListener('click',e=>{if(e.target===modal)modal.hidden=true;});
-function applyRank(r){
-  const badge=rankRow.querySelector('.rankbadge'),txt=rankRow.querySelector('b');
-  txt.textContent=r.name;
-  if(!r.icon){badge.removeAttribute('src');modal.hidden=true;return;}
-  toDataUrl(r.icon).then(d=>badge.src=d&&d.startsWith('data:')?d:r.icon);
-  modal.hidden=true;
-}
-function addSkin(cat,s){state.picks[cat].push({...s});renderPanel(cat);
-  toDataUrl(s.icon).then(d=>{if(d&&d.startsWith('data:')){state.picks[cat].forEach(p=>{if(p.id===s.id)p.img=d;});renderPanel(cat);}});}
-function toDataUrl(u){return fetch(u).then(r=>r.blob()).then(b=>new Promise(res=>{const f=new FileReader();f.onload=()=>res(f.result);f.readAsDataURL(b);})).catch(()=>u);}
-
-card.addEventListener('click',e=>{
-  if(viewmode)return;
-  const auto=e.target.closest('[data-auto]');
-  if(auto){const n=Object.values(state.picks).flat().filter(p=>['premium','ultra','exclusive'].includes((p.tier||'').toLowerCase())).length;
-    card.querySelector('.stats .stat b').textContent=String(n).padStart(2,'0');return;}
-  const ch=e.target.closest('.charms-box img');if(ch){ch.remove();return;}
-  const rm=e.target.closest('.rm');if(rm){const a=state.picks[rm.dataset.remove],i=a.findIndex(p=>p.id===rm.dataset.id);if(i>-1){a.splice(i,1);renderPanel(rm.dataset.remove);}return;}
-  const rp=e.target.closest('[data-rankpick]');if(rp){openRankPicker(rp);return;}
-  const add=e.target.closest('.add');if(add){openPicker(add.dataset.add);return;}
-  const up=e.target.closest('[data-upload]');if(up){pending=up;fileInput.click();return;}
-});
-fileInput.onchange=e=>{const f=e.target.files[0];if(!f||!pending)return;
-  resizeToDataUrl(f,1600).then(url=>{const t=pending;
-    if(t.dataset.upload==='avatar')t.src=url;
-    else if(t.dataset.upload==='pcard'){t.style.backgroundImage=`url(${url})`;t.querySelector('.hint')?.remove();}
-    else{t.querySelector('.hint')?.remove();const img=document.createElement('img');img.src=url;t.appendChild(img);}
-    pending=null;fileInput.value='';});};
-function resizeToDataUrl(file,max){return new Promise((res,rej)=>{const fr=new FileReader();
-  fr.onload=()=>{const img=new Image();img.onload=()=>{const sc=Math.min(1,max/Math.max(img.width,img.height));
-    const c=document.createElement('canvas');c.width=img.width*sc;c.height=img.height*sc;
-    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-    res(file.type==='image/png'?c.toDataURL('image/png'):c.toDataURL('image/jpeg',.85));};
-  img.onerror=rej;img.src=fr.result;};fr.onerror=rej;fr.readAsDataURL(file);});}
-
-$('exportBtn').onclick=async()=>{status('Rendering 1080p PNG…');
-  document.body.classList.add('exporting');
-  await new Promise(r=>requestAnimationFrame(r));
-  try{
-    const canvas=await html2canvas(card,{scale:2,useCORS:true});
-    const a=document.createElement('a');a.download='showcase-card-1080p.png';a.href=canvas.toDataURL('image/png');a.click();
-    status('Exported 3840×2160 (1080p canvas @2×).');
-  }finally{document.body.classList.remove('exporting');fit();}};
-
-$('saveBtn').onclick=()=>{try{localStorage.setItem(KEY,JSON.stringify({picks:state.picks,html:card.innerHTML,theme:document.documentElement.dataset.theme}));status('Draft saved.');}catch(e){status('Save failed (quota).');}};
-$('loadBtn').onclick=()=>{const raw=localStorage.getItem(KEY);if(!raw){status('Nothing saved.');return;}
-  const d=JSON.parse(raw);state.picks=d.picks||state.picks;card.innerHTML=d.html;applyTheme(d.theme||'protocol');status('Draft loaded.');};
-
-$('publishBtn').onclick=()=>{
-  let id=localStorage.getItem('vc-draft-id');if(!id){id=Math.random().toString(36).slice(2,8);localStorage.setItem('vc-draft-id',id);}
-  const all=JSON.parse(localStorage.getItem('vlistings')||'{}');
-  all[id]={id,theme:document.documentElement.dataset.theme,html:card.innerHTML,picks:state.picks,at:Date.now()};
-  try{localStorage.setItem('vlistings',JSON.stringify(all));}catch(e){status('Too large to publish — remove some uploads.');return;}
-  const url=location.href.split('#')[0]+'#l='+id;
-  copyText(url);status('Published! Link copied — open it in new tabs to see the live viewer counter.');
-};
-function copyText(t){if(navigator.clipboard&&location.protocol!=='file:')navigator.clipboard.writeText(t).catch(()=>prompt('Copy this link:',t));else prompt('Copy this link:',t);}
-$('copyLinkBtn').onclick=()=>copyText(location.href);
-
-function enterViewer(id){
-  const all=JSON.parse(localStorage.getItem('vlistings')||'{}');const L=all[id];
-  if(!L){status('Listing not found on this device. Publish first (or open on the same machine).');return false;}
-  viewmode=true;document.body.classList.add('viewmode');
-  applyTheme(L.theme||'protocol');card.innerHTML=L.html;
-  card.querySelectorAll('[contenteditable]').forEach(el=>el.removeAttribute('contenteditable'));
-  ['saveBtn','loadBtn','publishBtn'].forEach(i=>$(i).hidden=true);
-  ['copyLinkBtn','editBtn','viewBadge'].forEach(i=>$(i).hidden=false);
-  const link=card.querySelector('.link')?.textContent.trim();
-  if(link&&/^https?:\/\//.test(link)){$('contactBtn').hidden=false;$('contactBtn').onclick=()=>window.open(link,'_blank');}
-  const vk='vc-views-'+id;localStorage.setItem(vk,String((+localStorage.getItem(vk)||0)+1));
-  startPresence(id,+localStorage.getItem(vk));
-  return true;
-}
-$('editBtn').onclick=()=>{location.href=location.href.split('#')[0];location.reload();};
-
-function startPresence(id,views){
-  const sid=Math.random().toString(36).slice(2);
-  const bc=new BroadcastChannel('vc-'+id);
-  const peers=new Map();peers.set(sid,Date.now());
-  const prune=()=>{const n=Date.now();for(const[k,v]of peers)if(k!==sid&&n-v>8000)peers.delete(k);};
-  const badge=()=>{$('viewBadge').textContent=`👁 ${peers.size} viewing now • ${views} total views`;};
-  bc.onmessage=e=>{const{t,s}=e.data;if(s===sid)return;
-    if(t==='hello'){peers.set(s,Date.now());bc.postMessage({t:'here',s:sid});}
-    else if(t==='here'||t==='ping')peers.set(s,Date.now());
-    else if(t==='bye')peers.delete(s);
-    prune();badge();};
-  bc.postMessage({t:'hello',s:sid});
-  setInterval(()=>{bc.postMessage({t:'ping',s:sid});prune();badge();},2500);
-  addEventListener('beforeunload',()=>bc.postMessage({t:'bye',s:sid}));
-  badge();
-}
-
-const m=location.hash.match(/#l=(.+)/);
-if(m&&enterViewer(m[1])){fit();}else{init();}
-if(m)fit();
-</script>
-<div id="disclaimer" style="position:fixed;bottom:8px;left:0;right:0;text-align:center;color:var(--mut);font-size:9px;letter-spacing:.02em;padding:8px;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);z-index:30">CardForge is not affiliated with, endorsed by, or associated with Riot Games or any game publisher. All game names, skin names and imagery are trademarks/property of their respective owners.</div>
+<div id="disclaimer">CardForge is not affiliated with, endorsed by, or associated with Riot Games or any game publisher. All game names, skin names and imagery are trademarks/property of their respective owners.</div>
 </body>
 </html>

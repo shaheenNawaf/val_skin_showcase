@@ -1,0 +1,9 @@
+/* ── CardForge viewer-only styles ──────────────────────────────── */
+
+#viewBadge{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--accent);color:var(--accent);padding:6px 14px;font:600 12px 'Chakra Petch',sans-serif;letter-spacing:.1em;
+clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+#viewBadge[hidden]{display:none}
+#viewBadge svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;flex:none}
+
+/* the viewer card is never editable */
+[contenteditable]{border-bottom:none}

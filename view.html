@@ -3,98 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CardForge - Listing Viewer</title>
+<title>CardForge — Listing Viewer</title>
+<meta name="description" content="View a Valorant inventory showcase listing published with CardForge.">
+<meta property="og:title" content="CardForge — Listing">
+<meta property="og:description" content="Valorant inventory showcase listing published with CardForge.">
+<meta property="og:type" content="website">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0F1923">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1923'/%3E%3Cpath d='M10 24 24 10v6l-8 8z' fill='%23FF4655'/%3E%3Cpath d='M8 20l6-6v4l-4 4z' fill='%23FF4655' opacity='.6'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<style>
-:root,[data-theme=protocol]{--bg:#0F1923;--card1:#1F2731;--card2:#16202B;--frame:#0B121B;--panel:#1F2731;--box:#2A3540;--line:#2E3A46;--ink:#ECE8E1;--mut:#768390;--accent:#FF4655;--gold:#F2C14E;--red:#FF4655}
-[data-theme=holo]{--bg:#04101A;--card1:#0A1E30;--card2:#061523;--frame:#02090F;--panel:#0A1E30;--box:#0F2C44;--line:#164059;--ink:#DFF6FF;--mut:#6E8CA0;--accent:#46F6FF;--gold:#F2C14E;--red:#FF4655}
-[data-theme=reaver]{--bg:#0D0A14;--card1:#180F2A;--card2:#120B1F;--frame:#080512;--panel:#180F2A;--box:#241740;--line:#37255C;--ink:#EFE9FF;--mut:#8D82A8;--accent:#B44BFF;--gold:#59E3B8;--red:#FF4655}
-[data-theme=oni]{--bg:#120B0B;--card1:#201114;--card2:#180D10;--frame:#0B0607;--panel:#201114;--box:#31191E;--line:#4A2A2C;--ink:#F5E9DC;--mut:#9A8578;--accent:#FF5540;--gold:#E8B14E;--red:#FF5540}
-[data-theme=arctic]{--bg:#DAD5CB;--card1:#F7F4EE;--card2:#ECE8E1;--frame:#B8B2A6;--panel:#F2EEE6;--box:#E0DBD1;--line:#C4BEB2;--ink:#0F1923;--mut:#5A6470;--accent:#FF4655;--gold:#8A6D1C;--red:#FF4655}
-*{box-sizing:border-box;margin:0;padding:0;border-radius:0}
-::selection{background:var(--accent);color:#fff}
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--line)}
-::-webkit-scrollbar-thumb:hover{background:var(--accent)}
-body{font-family:'Chakra Petch',system-ui,sans-serif;color:var(--ink);overflow:hidden;
-background:radial-gradient(1100px 500px at 75% -10%,color-mix(in srgb,var(--accent) 7%,transparent),transparent 60%),
-repeating-linear-gradient(115deg,transparent 0 34px,rgba(255,255,255,.015) 34px 35px),var(--bg)}
-#topbar{position:fixed;top:0;left:0;right:0;height:52px;display:flex;justify-content:space-between;align-items:center;padding:0 16px;background:linear-gradient(180deg,var(--card1),var(--card2));border-bottom:1px solid var(--line);z-index:20;gap:10px}
-#topbar::after{content:"";position:absolute;left:16px;bottom:-2px;height:2px;width:140px;background:var(--accent);transform:skewX(-35deg)}
-.tb-left,.tb-right{display:flex;align-items:center;gap:10px}
-.logo{font-family:Anton;font-size:16px;letter-spacing:.25em;color:var(--ink)}
-.logo::before{content:"";display:inline-block;width:9px;height:15px;background:var(--accent);transform:skewX(-20deg);margin-right:9px;vertical-align:-2px}
-#topbar button{background:transparent;border:1px solid var(--line);color:var(--ink);padding:8px 16px;font:600 11px 'Chakra Petch';letter-spacing:.16em;text-transform:uppercase;cursor:pointer;transition:.15s;
-clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
-#topbar button:hover{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
-#topbar button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-#topbar button.primary:hover{color:#fff;filter:brightness(1.12)}
-#status{color:var(--mut);font-size:12px;letter-spacing:.06em;max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#status::before{content:"// ";color:var(--accent)}
-#viewBadge{border:1px solid var(--accent);color:var(--accent);padding:6px 14px;font:600 12px 'Chakra Petch';letter-spacing:.1em;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
-#stage{position:fixed;inset:52px 0 0 0;display:flex;align-items:center;justify-content:center;overflow:hidden}
-#card{width:1920px;height:1080px;flex:none;position:relative;overflow:hidden;padding:24px 34px 28px;background:linear-gradient(180deg,var(--card1),var(--card2));border:1px solid var(--line);transform-origin:center center;
-clip-path:polygon(0 0,calc(100% - 30px) 0,100% 30px,100% 100%,30px 100%,0 calc(100% - 30px))}
-#card::before{content:"";position:absolute;top:8px;left:8px;width:20px;height:20px;border-top:2px solid var(--accent);border-left:2px solid var(--accent)}
-#card::after{content:"";position:absolute;bottom:8px;right:8px;width:20px;height:20px;border-bottom:2px solid var(--accent);border-right:2px solid var(--accent)}
-body.exporting{overflow:visible}
-body.exporting #topbar{display:none}
-body.exporting #stage{position:absolute;inset:0 auto auto 0;overflow:visible}
-body.exporting #card{transform:none!important}
-[contenteditable]{outline:none;border-bottom:1px dashed transparent}
-.chead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line);position:relative}
-.chead::after{content:"";position:absolute;left:0;bottom:-1px;width:130px;height:1px;background:var(--accent)}
-.code{font-family:Anton;font-size:44px;letter-spacing:.2em}
-.curs{display:flex;gap:26px;align-items:center}
-.cur{display:flex;gap:9px;align-items:center;font-size:19px;font-weight:600}
-.ico{width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font:700 12px 'Chakra Petch';font-style:normal;border:1px solid var(--mut);color:var(--mut);clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
-.lvl{letter-spacing:.3em;color:var(--mut);font-weight:600;font-size:16px}
-.lvl b{color:var(--ink);letter-spacing:.2em;margin-left:6px}
-.grid{display:grid;gap:10px;height:768px;grid-template-columns:250px 300px 1fr 340px 380px;grid-template-rows:repeat(6,1fr);
-grid-template-areas:
-"side smg  rifles sniper mg"
-"side smg  rifles sniper mg"
-"side smg  rifles sniper mg"
-"side shot rifles sniper buddies"
-"side shot rifles melee melee"
-"side shot rifles melee melee"}
-.panel{overflow:hidden;display:flex;flex-direction:column}
-.panel h3{text-align:center;letter-spacing:.4em;font-size:13px;color:var(--mut);font-weight:600;margin:0 0 6px;text-transform:uppercase}
-.panel h3::before{content:"";display:inline-block;width:7px;height:10px;background:var(--accent);transform:skewX(-20deg);margin-right:9px}
-.slots{display:flex;flex-direction:column;height:100%;gap:6px;flex:1;min-height:0;overflow:hidden}
-.panel[data-cat="Melees"] .slots{flex-direction:row}
-.panel[data-cat="Melees"] .skin,.panel[data-cat="Melees"] .slotbox.empty{width:auto;min-width:0}
-.skin{position:relative;flex:1 1 0;min-height:0;width:100%;overflow:hidden;border:1px solid var(--line);
-background:radial-gradient(120% 100% at 50% 0%,rgba(255,255,255,.10),transparent 60%),linear-gradient(180deg,color-mix(in srgb,var(--box) 86%,#fff 14%),var(--box));
-box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
-clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}
-.skin img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:2px 8px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.55))}
-.slotbox{position:relative;border:1px solid var(--line);overflow:hidden;
-background:radial-gradient(120% 100% at 50% 0%,rgba(255,255,255,.07),transparent 60%),var(--box)}
-.charms-box{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:6px;flex:1}
-.charms-box img{width:100%;height:52px;object-fit:contain}
-.fgrid{display:grid;gap:12px;grid-template-columns:1.15fr 1fr 1.6fr .8fr 1.3fr;height:180px;margin-top:12px}
-.boxf{background:var(--panel);border:1px solid var(--line);padding:14px 16px;overflow:hidden;
-clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}
-.seller{display:flex;gap:14px;align-items:center}
-.avatar{width:64px;height:64px;object-fit:cover;border:1px solid var(--line);clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
-.tag{font-family:Anton;font-size:26px;letter-spacing:.08em}
-.link{color:var(--mut);font-size:12px;word-break:break-all}
-.stats{display:flex;justify-content:space-between;align-items:center}
-.stat{text-align:center;position:relative}
-.stat label{display:block;color:var(--mut);font-size:12px;letter-spacing:.2em}
-.stat.limited label{color:var(--gold)}
-.stat b{font-family:Anton;font-size:28px;letter-spacing:.08em;font-weight:400}
-.rankrow{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:15px}
-.rankrow label{color:var(--mut);letter-spacing:.14em;font-size:12px}
-.rankbadge{width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
-.note{color:var(--mut);font-size:13px}
-.pcard{background-size:cover;background-position:center;display:flex;align-items:flex-end;justify-content:center}
-.viewmode .add,.viewmode .rm,.viewmode .auto,.viewmode .hint,.viewmode .themes,.viewmode .pickrank{display:none}
-#exportBtn{display:none}
-</style>
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/viewer.css">
+<script src="js/config.js"></script>
+<script type="module" src="js/viewer.js"></script>
 </head>
 <body>
 <div id="topbar">
@@ -102,22 +25,25 @@ clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(1
     <span class="logo">CARD FORGE</span>
   </div>
   <div class="tb-right">
-    <span id="viewBadge">👁 Loading...</span>
-    <button id="contactBtn">Contact seller</button>
+    <span id="viewBadge" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/></svg>
+      <span id="viewText"></span>
+    </span>
+    <button id="contactBtn" hidden>Contact seller</button>
     <button id="copyLinkBtn">Copy link</button>
     <button id="editBtn" hidden>← Editor</button>
-    <span id="status">Loading listing…</span>
+    <span id="status" role="status" aria-live="polite">Loading listing…</span>
   </div>
 </div>
 
-<div id="stage"><div id="card">
+<div id="stage"><div id="sizer"><div id="card">
   <header class="chead">
-    <div class="code" id="codeDisplay">K486</div>
+    <div class="code" data-key="code">K486</div>
     <div class="curs">
-      <span class="cur"><i class="ico">V</i><b id="valorantPoints">420</b></span>
-      <span class="cur"><i class="ico">R</i><b id="riotPoints">140</b></span>
-      <span class="cur"><i class="ico">K</i><b id="kingdomCredits">6422</b></span>
-      <span class="lvl">LEVEL <b id="accountLevel">376</b></span>
+      <span class="cur"><i class="ico">V</i><b data-key="vp">420</b></span>
+      <span class="cur"><i class="ico">R</i><b data-key="rp">140</b></span>
+      <span class="cur"><i class="ico">K</i><b data-key="kc">6422</b></span>
+      <span class="lvl">LEVEL <b data-key="level">376</b></span>
     </div>
   </header>
   <main class="grid">
@@ -130,291 +56,42 @@ clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(1
     <section class="panel" data-cat="Melees"        style="grid-area:melee"></section>
     <section class="panel" style="grid-area:buddies">
       <h3>Buddies</h3>
-      <div class="slotbox charms-box" id="buddiesBox"></div>
+      <div class="slotbox charms-box"><span class="hint">No buddies added</span></div>
     </section>
   </main>
   <footer class="fgrid">
     <div class="boxf seller">
-      <img class="avatar" id="avatarImg" alt="">
+      <img class="avatar" alt="Seller avatar"
+        src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>">
       <div>
-        <div class="tag" id="sellerTag">FS/FT+ADD</div>
-        <div class="link" id="contactLink">https://www.facebook.com/Your.Page.Here</div>
+        <div class="tag" data-key="tag">FS/FT+ADD</div>
+        <div class="link" data-key="link">https://www.facebook.com/Your.Page.Here</div>
       </div>
     </div>
     <div class="boxf stats">
-      <div class="stat"><label>PREMS</label><b id="premsCount">42</b></div>
-      <div class="stat limited"><label>LIMITED</label><b id="limitedCount">02</b></div>
-      <div class="stat"><label>SEMIS</label><b id="semisCount">00</b></div>
-      <div class="stat"><label>B-PASS</label><b id="bpassCount">10</b></div>
+      <div class="stat"><label>PREMS</label><b data-key="prems">42</b></div>
+      <div class="stat limited"><label>LIMITED</label><b data-key="limited">02</b></div>
+      <div class="stat"><label>SEMIS</label><b data-key="semis">00</b></div>
+      <div class="stat"><label>B-PASS</label><b data-key="bpass">10</b></div>
     </div>
     <div class="boxf ranks">
-      <div class="rankrow"><label>CURRENT RANK:</label><img class="rankbadge" id="currentRankBadge" alt=""><b id="currentRankText">DIAMOND 2</b></div>
-      <div class="rankrow"><label>PEAK RANK:</label><img class="rankbadge" id="peakRankBadge" alt=""><b id="peakRankText">IMMORTAL 3</b></div>
-      <div class="note" id="note1">WITH WTR AND RECEIPTS • CHANGE NAME READY</div>
-      <div class="note" id="note2">3RD OWNER • NO OTHER ISSUES</div>
+      <div class="rankrow" data-rank="crank"><label>CURRENT RANK:</label><img class="rankbadge" alt=""><b data-key="crank">DIAMOND 2</b></div>
+      <div class="rankrow" data-rank="prank"><label>PEAK RANK:</label><img class="rankbadge" alt=""><b data-key="prank">IMMORTAL 3</b></div>
+      <div class="note" data-key="note1">WITH WTR AND RECEIPTS • CHANGE NAME READY</div>
+      <div class="note" data-key="note2">3RD OWNER • NO OTHER ISSUES</div>
     </div>
-    <div class="boxf" style="background:none;border:none"></div>
-    <div class="boxf pcard" id="playerCardBox"><span class="hint">PLAYER CARD</span></div>
+    <div class="boxf legend" aria-label="Content tier legend">
+      <h4>Tier legend</h4>
+      <div class="leg"><i class="dot t-select"></i>Select</div>
+      <div class="leg"><i class="dot t-deluxe"></i>Deluxe</div>
+      <div class="leg"><i class="dot t-premium"></i>Premium</div>
+      <div class="leg"><i class="dot t-ultra"></i>Ultra</div>
+      <div class="leg"><i class="dot t-exclusive"></i>Exclusive</div>
+    </div>
+    <div class="boxf pcard"><span class="hint">Player card</span></div>
   </footer>
-</div></div>
+</div></div></div>
 
-<script type="module">
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const CONFIG = {
-  SUPABASE_URL: '',
-  SUPABASE_ANON_KEY: ''
-};
-
-const CATS = ['Sidearms', 'SMGs', 'Shotguns', 'Rifles', 'Sniper Rifles', 'Machine Guns', 'Melees'];
-let supabase = null;
-let currentListing = null;
-
-const $ = (id) => document.getElementById(id);
-
-function fit() {
-  const s = Math.min((innerWidth - 16) / 1920, (innerHeight - 52 - 16) / 1080);
-  $('card').style.transform = `scale(${Math.min(s, 1)})`;
-}
-addEventListener('resize', fit);
-
-// Initialize Supabase
-function initSupabase() {
-  if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY) {
-    supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-    return true;
-  }
-  return false;
-}
-
-// Load listing from URL parameter
-async function loadListing() {
-  const params = new URLSearchParams(window.location.search);
-  const slug = params.get('slug');
-  
-  if (!slug) {
-    $('status').textContent = 'No listing specified';
-    return;
-  }
-  
-  // Try Supabase first
-  if (supabase) {
-    try {
-      const { data, error } = await supabase.from('listing_public').select('*').eq('slug', slug).single();
-      if (error) throw error;
-      
-      currentListing = data;
-      renderListing(data);
-      startPresence(slug, data.views || 0);
-      $('status').textContent = 'Listing loaded';
-      return;
-    } catch (e) {
-      console.log('Supabase load failed:', e.message);
-    }
-  }
-  
-  // Fallback to localStorage for local testing
-  const all = JSON.parse(localStorage.getItem('vlistings') || '{}');
-  const listing = all[slug];
-  if (listing) {
-    currentListing = listing;
-    renderFromLocalStorage(listing);
-    startLocalPresence(slug, 0);
-    $('status').textContent = 'Listing loaded (local)';
-  } else {
-    $('status').textContent = 'Listing not found';
-  }
-}
-
-function renderListing(listing) {
-  document.documentElement.dataset.theme = listing.theme || 'protocol';
-  
-  const payload = listing.payload || {};
-  const texts = payload.texts || {};
-  const picks = payload.picks || {};
-  const assets = payload.assets || {};
-  
-  // Render text fields
-  if (texts) {
-    const textMap = Object.entries(texts);
-    if (textMap.length >= 1) $('codeDisplay').textContent = texts[textMap[0][0]] || 'K486';
-    // Map other text fields based on your structure
-  }
-  
-  // Render picks (skins)
-  CATS.forEach(cat => {
-    const panel = document.querySelector(`.panel[data-cat="${cat}"]`);
-    const skins = picks[cat] || [];
-    if (skins.length > 0) {
-      panel.innerHTML = `<h3>${cat}</h3><div class="slots">` +
-        skins.map(s => `<span class="skin"><img src="${s.img || s.icon}" title="${s.weapon} — ${s.name}"></span>`).join('') +
-        `</div>`;
-    } else {
-      panel.innerHTML = `<h3>${cat}</h3><div class="slotbox empty"></div>`;
-    }
-  });
-  
-  // Render assets
-  if (assets.avatar) $('avatarImg').src = assets.avatar;
-  if (assets.pcard) {
-    $('playerCardBox').style.backgroundImage = `url(${assets.pcard})`;
-    $('playerCardBox').querySelector('.hint')?.remove();
-  }
-  if (assets.buddies && assets.buddies.length > 0) {
-    const box = $('buddiesBox');
-    box.innerHTML = assets.buddies.map(url => `<img src="${url}">`).join('');
-  }
-  
-  fit();
-}
-
-function renderFromLocalStorage(listing) {
-  document.documentElement.dataset.theme = listing.theme || 'protocol';
-  
-  // For localStorage listings, we stored HTML directly
-  if (listing.html) {
-    // Extract key data from stored HTML
-    const temp = document.createElement('div');
-    temp.innerHTML = listing.html;
-    
-    const code = temp.querySelector('.code');
-    if (code) $('codeDisplay').textContent = code.textContent;
-    
-    const tags = temp.querySelectorAll('.tag, .link');
-    if (tags.length >= 1) $('sellerTag').textContent = tags[0].textContent;
-    if (tags.length >= 2) $('contactLink').textContent = tags[1].textContent;
-    
-    const avatar = temp.querySelector('.avatar');
-    if (avatar) $('avatarImg').src = avatar.src;
-    
-    const pcard = temp.querySelector('.pcard');
-    if (pcard && pcard.style.backgroundImage) {
-      $('playerCardBox').style.backgroundImage = pcard.style.backgroundImage;
-      $('playerCardBox').querySelector('.hint')?.remove();
-    }
-    
-    const notes = temp.querySelectorAll('.note');
-    if (notes.length >= 1) $('note1').textContent = notes[0].textContent;
-    if (notes.length >= 2) $('note2').textContent = notes[1].textContent;
-    
-    const ranks = temp.querySelectorAll('.rankrow b');
-    if (ranks.length >= 1) $('currentRankText').textContent = ranks[0].textContent;
-    if (ranks.length >= 2) $('peakRankText').textContent = ranks[1].textContent;
-    
-    const stats = temp.querySelectorAll('.stat b');
-    if (stats.length >= 1) $('premsCount').textContent = stats[0].textContent;
-    if (stats.length >= 2) $('limitedCount').textContent = stats[1].textContent;
-    if (stats.length >= 3) $('semisCount').textContent = stats[2].textContent;
-    if (stats.length >= 4) $('bpassCount').textContent = stats[3].textContent;
-  }
-  
-  fit();
-}
-
-// Real-time presence
-function startPresence(slug, initialViews) {
-  const sessionId = Math.random().toString(36).slice(2);
-  
-  const channel = supabase.channel(`listing:${slug}`)
-    .on('presence', { event: 'sync' }, () => {
-      const state = channel.presenceState();
-      const count = Object.keys(state).length;
-      updateBadge(count, initialViews);
-    })
-    .subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        await channel.track({ sessionId, online_at: Date.now() });
-      }
-    });
-  
-  // Bump views
-  try {
-    await supabase.rpc('bump_views', { p_slug: slug });
-  } catch (e) {
-    console.error('Failed to bump views:', e);
-  }
-  
-  updateBadge(1, initialViews + 1);
-}
-
-function startLocalPresence(slug, initialViews) {
-  const bc = new BroadcastChannel('vc-' + slug);
-  const peers = new Map();
-  const sid = Math.random().toString(36).slice(2);
-  peers.set(sid, Date.now());
-  
-  const prune = () => {
-    const n = Date.now();
-    for (const [k, v] of peers) {
-      if (k !== sid && n - v > 8000) peers.delete(k);
-    }
-  };
-  
-  const badge = () => {
-    $('viewBadge').textContent = `👁 ${peers.size} viewing now • ${initialViews} total views`;
-  };
-  
-  bc.onmessage = e => {
-    const { t, s } = e.data;
-    if (s === sid) return;
-    if (t === 'hello') {
-      peers.set(s, Date.now());
-      bc.postMessage({ t: 'here', s: sid });
-    } else if (t === 'here' || t === 'ping') {
-      peers.set(s, Date.now());
-    } else if (t === 'bye') {
-      peers.delete(s);
-    }
-    prune();
-    badge();
-  };
-  
-  bc.postMessage({ t: 'hello', s: sid });
-  setInterval(() => {
-    bc.postMessage({ t: 'ping', s: sid });
-    prune();
-    badge();
-  }, 2500);
-  
-  addEventListener('beforeunload', () => bc.postMessage({ t: 'bye', s: sid }));
-  badge();
-}
-
-function updateBadge(nowViewing, totalViews) {
-  $('viewBadge').textContent = `👁 ${nowViewing} viewing now • ${totalViews} total views`;
-}
-
-// Button handlers
-$('contactBtn').onclick = () => {
-  const link = $('contactLink').textContent.trim();
-  if (link && /^https?:\/\//.test(link)) {
-    window.open(link, '_blank');
-  }
-};
-
-$('copyLinkBtn').onclick = () => {
-  const url = window.location.href;
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(url);
-  } else {
-    prompt('Copy this link:', url);
-  }
-};
-
-// Check for edit mode
-const params = new URLSearchParams(window.location.search);
-if (params.get('edit') === 'true') {
-  $('editBtn').hidden = false;
-  const slug = params.get('slug');
-  $('editBtn').onclick = () => {
-    window.location.href = `/index.html?edit=${slug}`;
-  };
-}
-
-// Initialize
-const hasSupabase = initSupabase();
-loadListing();
-</script>
-<div id="disclaimer" style="position:fixed;bottom:8px;left:0;right:0;text-align:center;color:var(--mut);font-size:9px;letter-spacing:.02em;padding:8px;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);z-index:30">CardForge is not affiliated with, endorsed by, or associated with Riot Games or any game publisher. All game names, skin names and imagery are trademarks/property of their respective owners.</div>
+<div id="disclaimer">CardForge is not affiliated with, endorsed by, or associated with Riot Games or any game publisher. All game names, skin names and imagery are trademarks/property of their respective owners.</div>
 </body>
 </html>

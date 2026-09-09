@@ -1,0 +1,167 @@
+/* ── CardForge shared styles: tokens, themes, card, topbar ─────────
+   Single source of truth for both pages (editor + viewer).          */
+
+:root{
+  --notch:8px;            /* standard chamfer for controls/cards   */
+  --notch-lg:16px;        /* large chamfer for panels/modal        */
+  --tbh:52px;             /* live topbar height, kept fresh by JS  */
+  --tier-select:#9ba8b9;--tier-deluxe:#4aa8ff;--tier-premium:#b44bf0;
+  --tier-ultra:#ff5d7b;--tier-exclusive:#ffc45e;
+}
+:root,[data-theme=protocol]{--bg:#0F1923;--card1:#1F2731;--card2:#16202B;--frame:#0B121B;--panel:#1F2731;--box:#2A3540;--box-hi:#48515B;--line:#2E3A46;--ink:#ECE8E1;--mut:#8A99A9;--accent:#FF4655;--gold:#F2C14E;--red:#FF4655;
+--sheen:rgba(255,255,255,.09);--sheen-soft:rgba(255,255,255,.06);--tint:rgba(255,255,255,.02);--raise:rgba(255,255,255,.05);--stripe:rgba(255,255,255,.015);--veil:rgba(4,8,14,.72)}
+[data-theme=holo]{--bg:#04101A;--card1:#0A1E30;--card2:#061523;--frame:#02090F;--panel:#0A1E30;--box:#0F2C44;--box-hi:#314A5E;--line:#164059;--ink:#DFF6FF;--mut:#7E9CB2;--accent:#46F6FF;--gold:#F2C14E;--red:#FF4655}
+[data-theme=reaver]{--bg:#0D0A14;--card1:#180F2A;--card2:#120B1F;--frame:#080512;--panel:#180F2A;--box:#241740;--box-hi:#43375B;--line:#37255C;--ink:#EFE9FF;--mut:#9D92BA;--accent:#B44BFF;--gold:#59E3B8;--red:#FF4655}
+[data-theme=oni]{--bg:#120B0B;--card1:#201114;--card2:#180D10;--frame:#0B0607;--panel:#201114;--box:#31191E;--box-hi:#4E393D;--line:#4A2A2C;--ink:#F5E9DC;--mut:#AF9889;--accent:#FF5540;--gold:#E8B14E;--red:#FF5540}
+[data-theme=arctic]{--bg:#DAD5CB;--card1:#F7F4EE;--card2:#ECE8E1;--frame:#B8B2A6;--panel:#F2EEE6;--box:#E0DBD1;--box-hi:#E4E0D7;--line:#C4BEB2;--ink:#0F1923;--mut:#525D6B;--accent:#E03E4C;--gold:#8A6D1C;--red:#E03E4C;
+--sheen:rgba(15,25,35,.05);--sheen-soft:rgba(15,25,35,.035);--tint:rgba(15,25,35,.02);--raise:rgba(15,25,35,.04);--stripe:rgba(15,25,35,.02);--veil:rgba(184,178,166,.72)}
+
+*{box-sizing:border-box;margin:0;padding:0;border-radius:0}
+::selection{background:var(--accent);color:#fff}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line)}
+::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+
+/* keyboard focus ring drawn inside the box so clip-path can't cut it */
+:focus{outline:none}
+:focus-visible{box-shadow:inset 0 0 0 2px var(--accent)!important}
+
+body{font-family:'Chakra Petch',system-ui,sans-serif;color:var(--ink);
+background:
+radial-gradient(1100px 500px at 75% -10%,color-mix(in srgb,var(--accent) 7%,transparent),transparent 60%),
+repeating-linear-gradient(115deg,transparent 0 34px,var(--stripe) 34px 35px),
+var(--bg)}
+
+/* ── topbar ────────────────────────────────────────────────────── */
+#topbar{position:fixed;top:0;left:0;right:0;min-height:52px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;row-gap:6px;padding:6px 14px;background:linear-gradient(180deg,var(--card1),var(--card2));border-bottom:1px solid var(--line);z-index:20;gap:10px}
+#topbar::after{content:"";position:absolute;left:16px;bottom:-2px;height:2px;width:140px;background:var(--accent);transform:skewX(-35deg)}
+.tb-left,.tb-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:6px}
+.logo{font-family:Anton,sans-serif;font-size:16px;letter-spacing:.25em;color:var(--ink)}
+.logo::before{content:"";display:inline-block;width:9px;height:15px;background:var(--accent);transform:skewX(-20deg);margin-right:9px;vertical-align:-2px}
+#topbar button{background:transparent;border:1px solid var(--line);color:var(--ink);padding:8px 16px;font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;
+clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+#topbar button:hover{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+#topbar button:disabled{opacity:.5;cursor:default}
+#topbar button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+#topbar button.primary:hover{color:#fff;filter:brightness(1.12)}
+#topbar button.accent{border-color:var(--accent);color:var(--accent)}
+#topbar button.accent:hover{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+#status{color:var(--mut);font-size:12px;letter-spacing:.06em;max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#status::before{content:"// ";color:var(--accent)}
+
+/* ── stage + card ──────────────────────────────────────────────── */
+#stage{position:fixed;inset:var(--tbh) 0 0 0;display:flex;overflow:auto}
+#stage.pan #sizer{margin:14px auto 24px}
+#sizer{margin:auto;position:relative;flex:none}
+#card{width:1920px;height:1080px;position:absolute;top:0;left:0;transform-origin:top left;overflow:hidden;padding:24px 34px 28px;background:linear-gradient(180deg,var(--card1),var(--card2));border:1px solid var(--line);
+clip-path:polygon(0 0,calc(100% - 30px) 0,100% 30px,100% 100%,30px 100%,0 calc(100% - 30px))}
+#card::before{content:"";position:absolute;top:8px;left:8px;width:20px;height:20px;border-top:2px solid var(--accent);border-left:2px solid var(--accent)}
+#card::after{content:"";position:absolute;bottom:8px;right:8px;width:20px;height:20px;border-bottom:2px solid var(--accent);border-right:2px solid var(--accent)}
+
+body.exporting{overflow:visible}
+body.exporting #topbar,body.exporting #disclaimer{display:none}
+body.exporting #stage{position:static;overflow:visible;display:block}
+body.exporting #sizer{width:auto!important;height:auto!important;margin:0}
+body.exporting #card{position:relative;transform:none!important}
+
+[contenteditable]{outline:none;border-bottom:1px dashed transparent}
+[contenteditable]:hover{border-bottom-color:var(--accent);cursor:text}
+
+/* ── card header ───────────────────────────────────────────────── */
+.chead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line);position:relative}
+.chead::after{content:"";position:absolute;left:0;bottom:-1px;width:130px;height:1px;background:var(--accent)}
+.code{font-family:Anton,sans-serif;font-size:44px;letter-spacing:.2em}
+.curs{display:flex;gap:26px;align-items:center}
+.cur{display:flex;gap:9px;align-items:center;font-size:19px;font-weight:600}
+.ico{width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font:700 12px 'Chakra Petch',sans-serif;font-style:normal;border:1px solid var(--mut);color:var(--mut)}
+.lvl{letter-spacing:.3em;color:var(--mut);font-weight:600;font-size:16px}
+.lvl b{color:var(--ink);letter-spacing:.2em;margin-left:6px}
+
+/* ── skin grid ─────────────────────────────────────────────────── */
+.grid{display:grid;gap:10px;height:768px;grid-template-columns:250px 300px 1fr 340px 380px;grid-template-rows:repeat(6,1fr);
+grid-template-areas:
+"side smg  rifles sniper mg"
+"side smg  rifles sniper mg"
+"side smg  rifles sniper mg"
+"side shot rifles sniper buddies"
+"side shot rifles melee melee"
+"side shot rifles melee melee"}
+.panel{overflow:hidden;display:flex;flex-direction:column}
+.panel h3{text-align:center;letter-spacing:.4em;font-size:13px;color:var(--mut);font-weight:600;margin:0 0 6px;text-transform:uppercase}
+.panel h3::before{content:"";display:inline-block;width:7px;height:10px;background:var(--accent);transform:skewX(-20deg);margin-right:9px}
+.slots{display:flex;flex-direction:column;height:100%;gap:6px;flex:1;min-height:0;overflow:hidden}
+.panel[data-cat="Melees"] .slots{flex-direction:row}
+.panel[data-cat="Melees"] .skin,.panel[data-cat="Melees"] .slotbox.empty{width:auto;min-width:0}
+.skin{position:relative;flex:1 1 0;min-height:0;width:100%;overflow:hidden;border:1px solid var(--line);
+background:
+radial-gradient(120% 100% at 50% 0%,var(--sheen),transparent 60%),
+linear-gradient(180deg,var(--box-hi),var(--box));
+box-shadow:inset 0 0 0 1px var(--raise);
+clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)))}
+.skin img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:2px 8px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.55))}
+.rm{position:absolute;top:3px;right:3px;width:18px;height:18px;background:var(--red);color:#fff;border:none;font:700 11px/1 'Chakra Petch',sans-serif;cursor:pointer;display:none;z-index:2}
+.skin:hover .rm{display:block}
+.slotbox{position:relative;border:1px solid var(--line);overflow:hidden;
+background:radial-gradient(120% 100% at 50% 0%,var(--sheen-soft),transparent 60%),var(--box)}
+.slotbox.empty{flex:1 1 0;min-height:0;border-style:dashed;background:var(--tint);display:flex;align-items:center;justify-content:center}
+.add{margin-top:6px;width:100%;background:var(--tint);border:1px solid var(--line);color:var(--mut);padding:6px;font:600 12px 'Chakra Petch',sans-serif;letter-spacing:.2em;cursor:pointer;text-transform:uppercase;
+clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.add:hover{color:var(--accent);border-color:var(--accent)}
+.charms-box{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;align-content:start;padding:6px;flex:1;min-height:0;overflow:hidden}
+.charms-box img{width:100%;height:52px;object-fit:contain}
+.hint{color:var(--mut);font-size:10px;letter-spacing:.25em;text-align:center;text-transform:uppercase;grid-column:1/-1;align-self:center}
+
+/* ── footer ────────────────────────────────────────────────────── */
+.fgrid{display:grid;gap:12px;grid-template-columns:1.15fr 1fr 1.6fr .8fr 1.3fr;height:180px;margin-top:12px}
+.boxf{background:var(--panel);border:1px solid var(--line);padding:14px 16px;overflow:hidden;
+clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)))}
+.seller{display:flex;gap:14px;align-items:center}
+.avatar{width:64px;height:64px;object-fit:cover;border:1px solid var(--line);clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.tag{font-family:Anton,sans-serif;font-size:26px;letter-spacing:.08em}
+.link{color:var(--mut);font-size:12px;word-break:break-all}
+.stats{display:flex;justify-content:space-between;align-items:center}
+.stat{text-align:center;position:relative}
+.stat label{display:block;color:var(--mut);font-size:12px;letter-spacing:.2em}
+.stat.limited label{color:var(--gold)}
+.stat b{font-family:Anton,sans-serif;font-size:28px;letter-spacing:.08em;font-weight:400}
+.auto{position:absolute;right:-18px;bottom:2px;background:none;border:none;color:var(--mut);font:600 9px 'Chakra Petch',sans-serif;cursor:pointer;letter-spacing:.1em}
+.auto:hover{color:var(--accent)}
+.rankrow{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:15px}
+.rankrow label{color:var(--mut);letter-spacing:.14em;font-size:12px;flex:none}
+.rankbadge{width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));flex:none}
+.rankbadge:not([src]){display:none}
+.note{color:var(--mut);font-size:13px}
+.pcard{background-size:cover;background-position:center;display:flex;align-items:flex-end;justify-content:center}
+
+/* tier legend (footer slot formerly left blank) */
+.legend{display:flex;flex-direction:column;justify-content:center;gap:7px}
+.legend h4{font-size:11px;letter-spacing:.3em;color:var(--mut);font-weight:600;text-transform:uppercase;margin-bottom:2px}
+.legend h4::before{content:"";display:inline-block;width:6px;height:9px;background:var(--accent);transform:skewX(-20deg);margin-right:8px}
+.leg{display:flex;align-items:center;gap:9px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+.dot{display:inline-block;width:9px;height:9px;flex:none;background:var(--mut);transform:rotate(45deg)}
+.dot.t-select{background:var(--tier-select)}
+.dot.t-deluxe{background:var(--tier-deluxe)}
+.dot.t-premium{background:var(--tier-premium)}
+.dot.t-ultra{background:var(--tier-ultra)}
+.dot.t-exclusive{background:var(--tier-exclusive)}
+
+/* ── disclaimer ────────────────────────────────────────────────── */
+#disclaimer{position:fixed;bottom:8px;left:0;right:0;text-align:center;color:var(--mut);font-size:10px;letter-spacing:.02em;padding:8px;background:var(--veil);backdrop-filter:blur(4px);z-index:30}
+
+/* ── small screens ─────────────────────────────────────────────── */
+@media (max-width:760px){
+  #status{display:none}
+  #topbar button{padding:7px 10px;font-size:10px}
+  .logo{font-size:14px}
+}
+
+/* ── motion (skipped entirely for reduced-motion users) ────────── */
+@media (prefers-reduced-motion:no-preference){
+  body,#topbar,#card,.panel,.boxf,.slotbox,.skin,.avatar,.pcard{
+    transition:background-color .25s ease,color .25s ease,border-color .25s ease,filter .15s ease}
+  .skin.added{animation:skinIn .18s ease-out}
+  .skin.removing{animation:skinOut .16s ease-in forwards}
+}
+@keyframes skinIn{from{opacity:0;transform:scale(.9)}}
+@keyframes skinOut{to{opacity:0;transform:scale(.9)}}
