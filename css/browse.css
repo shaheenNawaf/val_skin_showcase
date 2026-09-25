@@ -1,0 +1,13 @@
+/* ── CardForge browse page ─────────────────────────────────────── */
+#bwrap{max-width:1200px;margin:0 auto;padding:calc(var(--tbh) + 28px) 20px 40px}
+#bwrap h1{font-family:Anton,sans-serif;font-size:34px;letter-spacing:.06em;color:var(--ink);margin:0 0 22px}
+#bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+.bcard{display:flex;flex-direction:column;gap:10px;background:var(--panel);border:1px solid var(--line);padding:18px 18px 14px;text-decoration:none;color:var(--ink);clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg));transition:border-color .15s}
+.bcard:hover{border-color:var(--accent)}
+.bcard h2{font:600 17px 'Chakra Petch',sans-serif;letter-spacing:.04em;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bmeta{font:500 12px 'Chakra Petch',sans-serif;letter-spacing:.08em;color:var(--mut);text-transform:uppercase}
+.bfoot{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:10px;border-top:1px solid var(--line)}
+.bfoot span{font:500 11px 'Chakra Petch',sans-serif;color:var(--mut)}
+.bfoot b{font:700 11px 'Chakra Petch',sans-serif;letter-spacing:.14em;color:var(--accent);text-transform:uppercase}
+.bempty{grid-column:1/-1;font:500 14px 'Chakra Petch',sans-serif;color:var(--mut);padding:30px 0;text-align:center}
+.bempty a{color:var(--accent)}

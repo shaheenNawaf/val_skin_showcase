@@ -306,6 +306,7 @@ CF.$('iRun').addEventListener('click', async () => {
 
 function applyImport(j) {
   if (j.level != null) state.texts.level = String(j.level);
+  if (j.name) state.texts.vlogin = j.tag ? j.name + '#' + j.tag : j.name;
   if (j.vp != null) state.texts.vp = String(j.vp);
   if (j.rp != null) state.texts.rp = String(j.rp);
   if (j.rankTier) {
@@ -441,7 +442,7 @@ CF.$('postBtn').addEventListener('click', () => {
     : '(unpublished — publish to get a share link)';
   const counts = CF.CATS.map(c => `${c}: ${(state.picks[c] || []).length}`).join(' · ');
   const txt = [
-    `${t.code || ''} • ${t.tag || ''}`,
+    `${t.code || ''} • ${t.vlogin || ''} • ${t.tag || ''}`,
     `LEVEL ${t.level || '?'} • ${t.crank || 'UNRANKED'} (peak ${t.prank || 'UNRANKED'})`,
     `PREMIUM ${t.prems || '00'} | LIMITED ${t.limited || '00'} | SEMI PREM ${t.semis || '00'} | BATTLEPASS ${t.bpass || '00'}`,
     `${t.wtr || ''} | ${t.receipts || ''} | ${t.owner || ''}`,

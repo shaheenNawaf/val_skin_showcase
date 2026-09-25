@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="protocol">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardForge — Browse listings</title>
+<meta name="description" content="Browse all available Valorant account listings published with CardForge.">
+<meta property="og:title" content="CardForge — Browse listings">
+<meta property="og:description" content="Browse all available Valorant account listings published with CardForge.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0B0F14">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1923'/%3E%3Cpath d='M10 24 24 10v6l-8 8z' fill='%23FF4655'/%3E%3Cpath d='M8 20l6-6v4l-4 4z' fill='%23FF4655' opacity='.6'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/browse.css">
+<script src="js/vendor/supabase.js" defer></script>
+<script src="js/config.js"></script>
+<script type="module" src="js/browse.js"></script>
+</head>
+<body>
+<div id="topbar">
+  <div class="tb-left">
+    <span class="logo">CARD FORGE</span>
+  </div>
+  <div class="tb-right">
+    <a class="tb-link" href="index.html">Build a card</a>
+    <span id="status" role="status" aria-live="polite">Loading listings…</span>
+  </div>
+</div>
+<main id="bwrap">
+  <h1>Available listings</h1>
+  <div id="bgrid" aria-live="polite"></div>
+</main>
+
+<div id="disclaimer">CardForge is not affiliated with, endorsed by, or associated with Riot Games or any game publisher. All game names, skin names and imagery are trademarks/property of their respective owners.</div>
+</body>
+</html>

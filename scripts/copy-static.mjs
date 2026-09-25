@@ -1,6 +1,6 @@
 import { cpSync, mkdirSync, rmSync } from 'node:fs';
 
-const FILES = ['index.html', 'view.html'];
+const FILES = ['index.html', 'view.html', 'browse.html'];
 const DIRS = ['css', 'js'];
 
 rmSync('dist', { recursive: true, force: true });
