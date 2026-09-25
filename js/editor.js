@@ -276,6 +276,16 @@ CF.$('importBtn').addEventListener('click', () => {
 CF.$('iClose').addEventListener('click', () => { importModal.hidden = true; });
 importModal.addEventListener('click', e => { if (e.target === importModal) importModal.hidden = true; });
 
+function extractToken(v) {
+  v = (v || '').trim();
+  if (v.includes('access_token=')) {
+    v = v.replace(/\s+/g, '');
+    const m = v.match(/access_token=([^&]+)/);
+    if (m) { try { return decodeURIComponent(m[1]); } catch { return m[1]; } }
+  }
+  return v;
+}
+
 CF.$('iRun').addEventListener('click', async () => {
   const btn = CF.$('iRun');
   btn.disabled = true;
@@ -285,7 +295,7 @@ CF.$('iRun').addEventListener('click', async () => {
       method: 'POST',
       headers: { apikey: CONFIG.SUPABASE_ANON_KEY, 'content-type': 'application/json' },
       body: JSON.stringify({
-        accessToken: CF.$('iToken').value.trim(),
+        accessToken: extractToken(CF.$('iToken').value),
         entitlements: CF.$('iEnt').value.trim(),
         region: CF.$('iRegion').value
       })

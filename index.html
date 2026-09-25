@@ -158,7 +158,7 @@
       <h2 id="iTitle">Import account — Riot token</h2>
       <button id="iClose" aria-label="Close import">✕</button>
     </div>
-    <p class="inote">Paste a Riot access token (plus an entitlements token to also pull wallet + owned skins/buddies/cards). CardForge pulls level, rank, balances, equipped player card and buddies, and unlocks an “Owned” filter in the skin picker. Tokens expire in ~1h, are sent only to the riot-import edge function over HTTPS, and are never stored or published.</p>
+    <p class="inote">Paste a Riot access token — or the whole opt_in redirect URL, the token is extracted automatically — plus an entitlements token to also pull wallet + owned skins/buddies/cards. CardForge pulls level, rank, balances, equipped player card and buddies, and unlocks an “Owned” filter in the skin picker. Tokens expire in ~1h, are sent only to the riot-import edge function over HTTPS, and are never stored or published.</p>
     <label class="ilabel" for="iRegion">Region</label>
     <select id="iRegion" class="iselect" aria-label="Account region">
       <option value="na">NA</option>
@@ -169,7 +169,7 @@
       <option value="latam">LATAM</option>
     </select>
     <label class="ilabel" for="iToken">Access token</label>
-    <textarea id="iToken" class="itoken" rows="3" placeholder="Riot access token (Bearer)"></textarea>
+    <textarea id="iToken" class="itoken" rows="3" placeholder="Riot access token (Bearer) — or paste the whole opt_in URL"></textarea>
     <label class="ilabel" for="iEnt">Entitlements token (optional — unlocks owned items + wallet)</label>
     <input id="iEnt" class="itoken" type="text" placeholder="entitlements JWT">
     <div class="irow">
