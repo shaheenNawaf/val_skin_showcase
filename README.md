@@ -17,7 +17,10 @@ No framework, no build step — plain HTML/CSS/JS served statically.
 ```
 index.html              Card editor page
 view.html               Listing viewer page (?slug=<id>)
-css/                    shared.css (tokens/themes/card), editor.css, viewer.css
+browse.html             Public listings index (available listings)
+terms.html              Terms of Service
+privacy.html            Privacy Policy
+css/                    shared.css (tokens/themes/card), editor.css, viewer.css, browse.css, legal.css
 js/config.js            Supabase URL + anon key (safe to commit; RLS-protected)
 js/shared.js            Shared helpers (themes, catalog, scaling, export, presence)
 js/editor.js            Editor logic

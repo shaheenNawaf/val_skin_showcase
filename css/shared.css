@@ -170,6 +170,7 @@ clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,va
 
 /* ── disclaimer ────────────────────────────────────────────────── */
 #disclaimer{position:fixed;bottom:8px;left:0;right:0;text-align:center;color:var(--c-mut);font-size:10px;letter-spacing:.02em;padding:8px;background:var(--c-veil);backdrop-filter:blur(4px);z-index:30}
+#disclaimer a{color:inherit;text-decoration:underline}
 
 /* ── card frame + watermark strip ──────────────────────────────── */
 /* the stage stays dark and quiet; a soft ambient shadow lifts the card off it */
