@@ -47,12 +47,12 @@ function renderListing(listing) {
   });
 
   const picks = payload.picks || {};
-  CF.CATS.forEach(cat => {
-    const panel = card.querySelector(`.panel[data-cat="${cat}"]`);
+  CF.ALL_CATS.forEach(cat => {
+    const slots = card.querySelector(`.panel[data-cat="${cat}"] .slots`);
     const skins = picks[cat] || [];
-    panel.innerHTML = `<h3>${cat}</h3><div class="slots">${
-      skins.length ? skins.map(skinCell).join('') : '<div class="slotbox empty"></div>'
-    }</div>`;
+    slots.innerHTML = skins.length
+      ? skins.map(skinCell).join('')
+      : '<div class="slotbox empty"></div>';
   });
 
   const assets = payload.assets || {};
@@ -97,6 +97,10 @@ const slug = new URLSearchParams(location.search).get('slug');
 if (!slug) {
   CF.status('No listing specified — open a published share link.');
 } else {
+  const wmSlug = card.querySelector('[data-wm="slug"]');
+  if (wmSlug) wmSlug.textContent = 'Listing ' + slug;
+  const wmStamp = card.querySelector('[data-wm="stamp"]');
+  if (wmStamp) wmStamp.textContent = new Date().toISOString().slice(0, 10);
   CF.status('Loading listing…');
   let listing = null;
 

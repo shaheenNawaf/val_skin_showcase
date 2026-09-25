@@ -9,13 +9,14 @@
 <meta property="og:description" content="Valorant inventory showcase listing published with CardForge.">
 <meta property="og:type" content="website">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#0F1923">
+<meta name="theme-color" content="#0B0F14">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1923'/%3E%3Cpath d='M10 24 24 10v6l-8 8z' fill='%23FF4655'/%3E%3Cpath d='M8 20l6-6v4l-4 4z' fill='%23FF4655' opacity='.6'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/shared.css">
 <link rel="stylesheet" href="css/viewer.css">
+<script src="js/vendor/supabase.js" defer></script>
 <script src="js/config.js"></script>
 <script type="module" src="js/viewer.js"></script>
 </head>
@@ -37,59 +38,86 @@
 </div>
 
 <div id="stage"><div id="sizer"><div id="card">
-  <header class="chead">
-    <div class="code" data-key="code">K486</div>
-    <div class="curs">
-      <span class="cur"><i class="ico">V</i><b data-key="vp">420</b></span>
-      <span class="cur"><i class="ico">R</i><b data-key="rp">140</b></span>
-      <span class="cur"><i class="ico">K</i><b data-key="kc">6422</b></span>
-      <span class="lvl">LEVEL <b data-key="level">376</b></span>
-    </div>
-  </header>
-  <main class="grid">
-    <section class="panel" data-cat="Sidearms"     style="grid-area:side"></section>
-    <section class="panel" data-cat="SMGs"          style="grid-area:smg"></section>
-    <section class="panel" data-cat="Shotguns"      style="grid-area:shot"></section>
-    <section class="panel" data-cat="Rifles"        style="grid-area:rifles"></section>
-    <section class="panel" data-cat="Sniper Rifles" style="grid-area:sniper"></section>
-    <section class="panel" data-cat="Machine Guns"  style="grid-area:mg"></section>
-    <section class="panel" data-cat="Melees"        style="grid-area:melee"></section>
-    <section class="panel" style="grid-area:buddies">
-      <h3>Buddies</h3>
-      <div class="slotbox charms-box"><span class="hint">No buddies added</span></div>
+  <div class="grid">
+    <section class="panel" data-cat="Sidearms" style="grid-area:side">
+      <h3>Sidearms</h3>
+      <div class="slots"></div>
     </section>
-  </main>
-  <footer class="fgrid">
-    <div class="boxf seller">
-      <img class="avatar" alt="Seller avatar"
-        src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>">
-      <div>
-        <div class="tag" data-key="tag">FS/FT+ADD</div>
-        <div class="link" data-key="link">https://www.facebook.com/Your.Page.Here</div>
-      </div>
+    <section class="panel" data-cat="SMGs" style="grid-area:smg">
+      <h3>SMGs</h3>
+      <div class="slots"></div>
+    </section>
+    <section class="panel" data-cat="Shotguns" style="grid-area:shot">
+      <h3>Shotguns</h3>
+      <div class="slots"></div>
+    </section>
+    <section class="panel" data-cat="Rifles" style="grid-area:rifles">
+      <h3>Rifles</h3>
+      <div class="slots"></div>
+    </section>
+    <section class="panel" data-cat="Sniper Rifles" style="grid-area:sniper">
+      <h3>Sniper Rifles</h3>
+      <div class="slots"></div>
+    </section>
+    <section class="panel" data-cat="Machine Guns" style="grid-area:mg">
+      <h3>Machine Guns</h3>
+      <div class="slots"></div>
+    </section>
+    <section class="panel" data-cat="Melees" style="grid-area:melee">
+      <h3>Melees</h3>
+      <div class="slots"></div>
+    </section>
+    <section class="panel" data-cat="Battlepass" style="grid-area:bpass">
+      <h3>Battlepass</h3>
+      <div class="slots"></div>
+    </section>
+    <section class="panel flexcol" data-cat="Flex" style="grid-area:flex">
+      <h3>Buddies &amp; Flex</h3>
+      <div class="slotbox charms-box"><span class="hint">No buddies added</span></div>
+      <div class="slots"></div>
+    </section>
+
+    <div class="boxf codebox">
+      <div class="code" data-key="code">K486</div>
+      <svg class="vmark" viewBox="0 0 32 32" aria-hidden="true"><path d="M7 6h6l3 8 3-8h6l-9 20h-6z"/></svg>
     </div>
     <div class="boxf stats">
-      <div class="stat"><label>PREMS</label><b data-key="prems">42</b></div>
-      <div class="stat limited"><label>LIMITED</label><b data-key="limited">02</b></div>
-      <div class="stat"><label>SEMIS</label><b data-key="semis">00</b></div>
-      <div class="stat"><label>B-PASS</label><b data-key="bpass">10</b></div>
+      <div class="counts">
+        <div class="stat"><label>PREMIUM</label><b data-key="prems">42</b></div>
+        <div class="stat limited"><label>LIMITED</label><b data-key="limited">02</b></div>
+        <div class="stat"><label>SEMI PREM</label><b data-key="semis">00</b></div>
+        <div class="stat"><label>BATTLEPASS</label><b data-key="bpass">10</b></div>
+      </div>
+      <div class="inforow"><span data-key="wtr">WTR: YES</span><span data-key="receipts">RECEIPTS: YES</span><span data-key="owner">0TH OWNER</span></div>
+      <div class="inforow"><span data-key="cname">CHANGE NAME</span><span class="warn" data-key="cstatus">NOT READY</span><span data-key="date">2/6/2026</span></div>
+      <div class="inforow"><span data-key="premier">PREMIER</span><span class="warn" data-key="vlink">UNLINKED</span><span data-key="price">PRICE OFFER</span></div>
     </div>
-    <div class="boxf ranks">
-      <div class="rankrow" data-rank="crank"><label>CURRENT RANK:</label><img class="rankbadge" alt=""><b data-key="crank">DIAMOND 2</b></div>
-      <div class="rankrow" data-rank="prank"><label>PEAK RANK:</label><img class="rankbadge" alt=""><b data-key="prank">IMMORTAL 3</b></div>
-      <div class="note" data-key="note1">WITH WTR AND RECEIPTS • CHANGE NAME READY</div>
-      <div class="note" data-key="note2">3RD OWNER • NO OTHER ISSUES</div>
+    <div class="boxf rankbox">
+      <div class="rankcols">
+        <div class="rankrow" data-rank="crank"><label>CURRENT</label><img class="rankbadge" alt=""><b data-key="crank">DIAMOND 2</b></div>
+        <div class="rankrow" data-rank="prank"><label>PEAK</label><img class="rankbadge" alt=""><b data-key="prank">IMMORTAL 3</b></div>
+      </div>
+      <div class="currow">
+        <span class="lvl">LEVEL <b data-key="level">376</b></span>
+        <span class="cur"><i class="ico">V</i><b data-key="vp">420</b></span>
+        <span class="cur"><i class="ico">R</i><b data-key="rp">140</b></span>
+        <span class="cur"><i class="ico">K</i><b data-key="kc">6422</b></span>
+      </div>
     </div>
-    <div class="boxf legend" aria-label="Content tier legend">
-      <h4>Tier legend</h4>
-      <div class="leg"><i class="dot t-select"></i>Select</div>
-      <div class="leg"><i class="dot t-deluxe"></i>Deluxe</div>
-      <div class="leg"><i class="dot t-premium"></i>Premium</div>
-      <div class="leg"><i class="dot t-ultra"></i>Ultra</div>
-      <div class="leg"><i class="dot t-exclusive"></i>Exclusive</div>
+    <div class="boxf pcardbox">
+      <div class="pcard"><span class="hint">Player card</span></div>
+      <div class="pclabel">Player card</div>
+      <div class="seller">
+        <img class="avatar" alt="Seller avatar"
+          src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>">
+        <div>
+          <div class="tag" data-key="tag">FS/FT+ADD</div>
+          <div class="link" data-key="link">https://www.facebook.com/Your.Page.Here</div>
+        </div>
+      </div>
     </div>
-    <div class="boxf pcard"><span class="hint">Player card</span></div>
-  </footer>
+  </div>
+  <div class="wstrip"><span>Card Forge</span><span data-wm="slug">Listing</span><span data-wm="stamp"></span></div>
 </div></div></div>
 
 <div id="disclaimer">CardForge is not affiliated with, endorsed by, or associated with Riot Games or any game publisher. All game names, skin names and imagery are trademarks/property of their respective owners.</div>

@@ -27,3 +27,9 @@ Thumbs.db
 
 # ZCode session artifacts (review screenshots etc.)
 .zcode/
+
+# Orchestrator run state (contains local credentials)
+.orchestrator/
+
+# Supabase CLI local link state
+supabase/.temp/

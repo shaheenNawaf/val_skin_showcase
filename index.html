@@ -8,7 +8,7 @@
 <meta property="og:title" content="CardForge — Showcase Card Builder">
 <meta property="og:description" content="Build a Valorant inventory showcase card and share it as a listing link.">
 <meta property="og:type" content="website">
-<meta name="theme-color" content="#0F1923">
+<meta name="theme-color" content="#0B0F14">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1923'/%3E%3Cpath d='M10 24 24 10v6l-8 8z' fill='%23FF4655'/%3E%3Cpath d='M8 20l6-6v4l-4 4z' fill='%23FF4655' opacity='.6'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="css/shared.css">
 <link rel="stylesheet" href="css/editor.css">
 <script src="js/vendor/html2canvas.min.js" defer></script>
+<script src="js/vendor/supabase.js" defer></script>
 <script src="js/config.js"></script>
 <script type="module" src="js/editor.js"></script>
 </head>
@@ -32,68 +33,106 @@
     </div>
   </div>
   <div class="tb-right">
+    <button id="importBtn">Import account</button>
     <button id="exportBtn" class="primary">Export PNG</button>
     <button id="saveBtn">Save</button>
     <button id="loadBtn">Load</button>
+    <button id="postBtn">Copy post text</button>
     <button id="publishBtn" class="accent">Publish listing</button>
     <span id="status" role="status" aria-live="polite">Loading skin database…</span>
   </div>
 </div>
 
 <div id="stage"><div id="sizer"><div id="card">
-  <header class="chead">
-    <div class="code" data-key="code" contenteditable spellcheck="false">K486</div>
-    <div class="curs">
-      <span class="cur"><i class="ico">V</i><b data-key="vp" contenteditable>420</b></span>
-      <span class="cur"><i class="ico">R</i><b data-key="rp" contenteditable>140</b></span>
-      <span class="cur"><i class="ico">K</i><b data-key="kc" contenteditable>6422</b></span>
-      <span class="lvl">LEVEL <b data-key="level" contenteditable>376</b></span>
-    </div>
-  </header>
-  <main class="grid">
-    <section class="panel" data-cat="Sidearms"     style="grid-area:side"></section>
-    <section class="panel" data-cat="SMGs"          style="grid-area:smg"></section>
-    <section class="panel" data-cat="Shotguns"      style="grid-area:shot"></section>
-    <section class="panel" data-cat="Rifles"        style="grid-area:rifles"></section>
-    <section class="panel" data-cat="Sniper Rifles" style="grid-area:sniper"></section>
-    <section class="panel" data-cat="Machine Guns"  style="grid-area:mg"></section>
-    <section class="panel" data-cat="Melees"        style="grid-area:melee"></section>
-    <section class="panel" style="grid-area:buddies">
-      <h3>Buddies</h3>
-      <div class="slotbox charms-box" data-upload="charms"><span class="hint">+ add buddy images</span></div>
+  <div class="grid">
+    <section class="panel" data-cat="Sidearms" style="grid-area:side">
+      <h3>Sidearms</h3>
+      <div class="slots"></div>
+      <button class="add" data-add="Sidearms">+ Add (0)</button>
     </section>
-  </main>
-  <footer class="fgrid">
-    <div class="boxf seller">
-      <img class="avatar" data-upload="avatar" alt="Seller avatar"
-        src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>">
-      <div>
-        <div class="tag" data-key="tag" contenteditable>FS/FT+ADD</div>
-        <div class="link" data-key="link" contenteditable>https://www.facebook.com/Your.Page.Here</div>
-      </div>
+    <section class="panel" data-cat="SMGs" style="grid-area:smg">
+      <h3>SMGs</h3>
+      <div class="slots"></div>
+      <button class="add" data-add="SMGs">+ Add (0)</button>
+    </section>
+    <section class="panel" data-cat="Shotguns" style="grid-area:shot">
+      <h3>Shotguns</h3>
+      <div class="slots"></div>
+      <button class="add" data-add="Shotguns">+ Add (0)</button>
+    </section>
+    <section class="panel" data-cat="Rifles" style="grid-area:rifles">
+      <h3>Rifles</h3>
+      <div class="slots"></div>
+      <button class="add" data-add="Rifles">+ Add (0)</button>
+    </section>
+    <section class="panel" data-cat="Sniper Rifles" style="grid-area:sniper">
+      <h3>Sniper Rifles</h3>
+      <div class="slots"></div>
+      <button class="add" data-add="Sniper Rifles">+ Add (0)</button>
+    </section>
+    <section class="panel" data-cat="Machine Guns" style="grid-area:mg">
+      <h3>Machine Guns</h3>
+      <div class="slots"></div>
+      <button class="add" data-add="Machine Guns">+ Add (0)</button>
+    </section>
+    <section class="panel" data-cat="Melees" style="grid-area:melee">
+      <h3>Melees</h3>
+      <div class="slots"></div>
+      <button class="add" data-add="Melees">+ Add (0)</button>
+    </section>
+    <section class="panel" data-cat="Battlepass" style="grid-area:bpass">
+      <h3>Battlepass</h3>
+      <div class="slots"></div>
+      <button class="add" data-add="Battlepass">+ Add (0)</button>
+    </section>
+    <section class="panel flexcol" data-cat="Flex" style="grid-area:flex">
+      <h3>Buddies &amp; Flex</h3>
+      <div class="slotbox charms-box" data-upload="charms"><span class="hint">+ add buddies</span></div>
+      <div class="slots"></div>
+      <button class="add" data-add="Flex">+ Add (0)</button>
+    </section>
+
+    <div class="boxf codebox">
+      <div class="code" data-key="code" contenteditable spellcheck="false">K486</div>
+      <svg class="vmark" viewBox="0 0 32 32" aria-hidden="true"><path d="M7 6h6l3 8 3-8h6l-9 20h-6z"/></svg>
     </div>
     <div class="boxf stats">
-      <div class="stat"><label>PREMS</label><b data-key="prems" contenteditable>42</b><button class="auto" data-auto="prems" title="Auto-count Premium/Ultra/Exclusive skins">auto</button></div>
-      <div class="stat limited"><label>LIMITED</label><b data-key="limited" contenteditable>02</b></div>
-      <div class="stat"><label>SEMIS</label><b data-key="semis" contenteditable>00</b></div>
-      <div class="stat"><label>B-PASS</label><b data-key="bpass" contenteditable>10</b></div>
+      <div class="counts">
+        <div class="stat"><label>PREMIUM</label><b data-key="prems" contenteditable>42</b><button class="auto" data-auto="prems" title="Auto-count Premium/Ultra/Exclusive skins">auto</button></div>
+        <div class="stat limited"><label>LIMITED</label><b data-key="limited" contenteditable>02</b></div>
+        <div class="stat"><label>SEMI PREM</label><b data-key="semis" contenteditable>00</b></div>
+        <div class="stat"><label>BATTLEPASS</label><b data-key="bpass" contenteditable>10</b></div>
+      </div>
+      <div class="inforow"><span data-key="wtr" contenteditable>WTR: YES</span><span data-key="receipts" contenteditable>RECEIPTS: YES</span><span data-key="owner" contenteditable>0TH OWNER</span></div>
+      <div class="inforow"><span data-key="cname" contenteditable>CHANGE NAME</span><span class="warn" data-key="cstatus" contenteditable>NOT READY</span><span data-key="date" contenteditable>2/6/2026</span></div>
+      <div class="inforow"><span data-key="premier" contenteditable>PREMIER</span><span class="warn" data-key="vlink" contenteditable>UNLINKED</span><span data-key="price" contenteditable>PRICE OFFER</span></div>
     </div>
-    <div class="boxf ranks">
-      <div class="rankrow" data-rank="crank"><label>CURRENT RANK:</label><img class="rankbadge" alt=""><b data-key="crank" contenteditable>DIAMOND 2</b><button class="pickrank" data-rankpick="crank">set</button></div>
-      <div class="rankrow" data-rank="prank"><label>PEAK RANK:</label><img class="rankbadge" alt=""><b data-key="prank" contenteditable>IMMORTAL 3</b><button class="pickrank" data-rankpick="prank">set</button></div>
-      <div class="note" data-key="note1" contenteditable>WITH WTR AND RECEIPTS • CHANGE NAME READY</div>
-      <div class="note" data-key="note2" contenteditable>3RD OWNER • NO OTHER ISSUES</div>
+    <div class="boxf rankbox">
+      <div class="rankcols">
+        <div class="rankrow" data-rank="crank"><label>CURRENT</label><img class="rankbadge" alt=""><b data-key="crank" contenteditable>DIAMOND 2</b><button class="pickrank" data-rankpick="crank">set</button></div>
+        <div class="rankrow" data-rank="prank"><label>PEAK</label><img class="rankbadge" alt=""><b data-key="prank" contenteditable>IMMORTAL 3</b><button class="pickrank" data-rankpick="prank">set</button></div>
+      </div>
+      <div class="currow">
+        <span class="lvl">LEVEL <b data-key="level" contenteditable>376</b></span>
+        <span class="cur"><i class="ico">V</i><b data-key="vp" contenteditable>420</b></span>
+        <span class="cur"><i class="ico">R</i><b data-key="rp" contenteditable>140</b></span>
+        <span class="cur"><i class="ico">K</i><b data-key="kc" contenteditable>6422</b></span>
+      </div>
     </div>
-    <div class="boxf legend" aria-label="Content tier legend">
-      <h4>Tier legend</h4>
-      <div class="leg"><i class="dot t-select"></i>Select</div>
-      <div class="leg"><i class="dot t-deluxe"></i>Deluxe</div>
-      <div class="leg"><i class="dot t-premium"></i>Premium</div>
-      <div class="leg"><i class="dot t-ultra"></i>Ultra</div>
-      <div class="leg"><i class="dot t-exclusive"></i>Exclusive</div>
+    <div class="boxf pcardbox">
+      <div class="pcard" data-upload="pcard"><span class="hint">Player card — click to upload</span></div>
+      <div class="pclabel">Player card</div>
+      <div class="seller">
+        <img class="avatar" data-upload="avatar" alt="Seller avatar"
+          src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>">
+        <div>
+          <div class="tag" data-key="tag" contenteditable>FS/FT+ADD</div>
+          <div class="link" data-key="link" contenteditable>https://www.facebook.com/Your.Page.Here</div>
+        </div>
+      </div>
     </div>
-    <div class="boxf pcard" data-upload="pcard"><span class="hint">Player card — click to upload</span></div>
-  </footer>
+  </div>
+  <div class="wstrip"><span>Card Forge</span><span data-wm="slug">Draft — not published</span><span data-wm="stamp"></span></div>
 </div></div></div>
 
 <div id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
@@ -102,6 +141,7 @@
       <h2 id="mTitle">Add skin</h2>
       <span id="mCount" class="mcount"></span>
       <input id="mSearch" type="text" placeholder="Search skins…  ( / to focus · Enter adds top result · Esc closes )" aria-label="Search skins">
+      <button id="mAddOwned" class="chip" hidden>Add all owned</button>
       <button id="mClose" aria-label="Close picker">✕</button>
     </div>
     <div id="mFilters" class="mfilters">
@@ -109,6 +149,32 @@
       <div id="mTiers" class="chips" role="group" aria-label="Filter by content tier"></div>
     </div>
     <div id="mGrid" class="mgrid"></div>
+  </div>
+</div>
+<div id="importModal" hidden role="dialog" aria-modal="true" aria-labelledby="iTitle">
+  <div class="mpanel ipanel">
+    <div class="mhead">
+      <h2 id="iTitle">Import account — Riot token</h2>
+      <button id="iClose" aria-label="Close import">✕</button>
+    </div>
+    <p class="inote">Paste a Riot access token (plus an entitlements token to also pull wallet + owned skins/buddies/cards). CardForge pulls level, rank, balances, equipped player card and buddies, and unlocks an “Owned” filter in the skin picker. Tokens expire in ~1h, are sent only to the riot-import edge function over HTTPS, and are never stored or published.</p>
+    <label class="ilabel" for="iRegion">Region</label>
+    <select id="iRegion" class="iselect" aria-label="Account region">
+      <option value="na">NA</option>
+      <option value="eu">EU</option>
+      <option value="ap">AP</option>
+      <option value="kr">KR</option>
+      <option value="br">BR</option>
+      <option value="latam">LATAM</option>
+    </select>
+    <label class="ilabel" for="iToken">Access token</label>
+    <textarea id="iToken" class="itoken" rows="3" placeholder="Riot access token (Bearer)"></textarea>
+    <label class="ilabel" for="iEnt">Entitlements token (optional — unlocks owned items + wallet)</label>
+    <input id="iEnt" class="itoken" type="text" placeholder="entitlements JWT">
+    <div class="irow">
+      <button id="iRun" class="primary">Import</button>
+      <a class="ihelp" href="https://valapidocs.techchrism.me/endpoint/entitlements-token" target="_blank" rel="noopener">How do I get tokens?</a>
+    </div>
   </div>
 </div>
 <input type="file" id="fileInput" accept="image/*" hidden>

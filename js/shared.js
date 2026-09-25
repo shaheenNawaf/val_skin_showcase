@@ -3,6 +3,9 @@
 export const DESIGN_W = 1920;
 export const DESIGN_H = 1080;
 export const CATS = ['Sidearms', 'SMGs', 'Shotguns', 'Rifles', 'Sniper Rifles', 'Machine Guns', 'Melees'];
+// free-slot groups: not tied to a weapon category, picker offers the whole catalog
+export const FREE_CATS = ['Flex', 'Battlepass'];
+export const ALL_CATS = [...CATS, ...FREE_CATS];
 const TIER_ORDER = ['select', 'deluxe', 'premium', 'ultra', 'exclusive'];
 
 export const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -23,6 +26,14 @@ export function mapCategory(c) {
   if (c.includes('melee')) return 'Melees';
   if (c.includes('rifle')) return 'Rifles';
   return null;
+}
+
+// Riot's flat competitive-tier numbers (TierAfterUpdate / CompetitiveTier) map
+// onto the competitivetiers groups as group*3 + division - 1 (Iron 1 = 3 …
+// Radiant = 27). A ±2 probe keeps older/newer offsets resolving correctly.
+export function rankByFlat(n, RANKS) {
+  const byFlat = new Map(RANKS.map(r => [r.flat, r]));
+  return byFlat.get(n) || byFlat.get(n + 2) || byFlat.get(n - 2) || RANKS[0];
 }
 
 // ── status + persistence ──────────────────────────────────────────
@@ -116,10 +127,12 @@ async function fetchJSON(url) {
 }
 
 export async function loadCatalog() {
-  const [wJ, tJ, cJ] = await Promise.all([
+  const [wJ, tJ, cJ, bJ, pJ] = await Promise.all([
     fetchJSON('https://valorant-api.com/v1/weapons?language=en-US'),
     fetchJSON('https://valorant-api.com/v1/contenttiers?language=en-US'),
-    fetchJSON('https://valorant-api.com/v1/competitivetiers?language=en-US')
+    fetchJSON('https://valorant-api.com/v1/competitivetiers?language=en-US'),
+    fetchJSON('https://valorant-api.com/v1/buddies?language=en-US'),
+    fetchJSON('https://valorant-api.com/v1/playercards?language=en-US')
   ]);
   const tiers = Object.fromEntries((tJ.data || []).map(t => [t.uuid, t.displayName]));
   const DB = {};
@@ -145,7 +158,7 @@ export async function loadCatalog() {
   const set = (cJ.data || []).slice(-1)[0];
   const seenRanks = new Set(['UNRANKED']); // the icon-less literal below wins
   const RANKS = [
-    { name: 'UNRANKED', icon: null, order: -1 },
+    { name: 'UNRANKED', icon: null, order: -1, flat: 0 },
     // tierName is already the full display name ("IRON 1"); divisionName is
     // just the tier group ("IRON"). "Unused" entries are placeholder data.
     ...(set?.tiers || [])
@@ -154,12 +167,30 @@ export async function loadCatalog() {
         name: t.tierName,
         icon: t.displayIcon || t.largeIcon,
         color: t.color || '#888',
-        order: (t.tier || 0) * 10 + (t.division || 0)
+        order: (t.tier || 0) * 10 + (t.division || 0),
+        flat: (t.tier || 0) ? (t.tier || 0) * 3 + (t.division || 1) - 1 : 0
       }))
       .filter(t => (seenRanks.has(t.name) ? false : seenRanks.add(t.name)))
       .sort((a, b) => a.order - b.order)
   ];
-  return { DB, TIERS, RANKS };
+
+  // gun buddies + player cards, keyed by every uuid Riot may hand back
+  // (level-0 ids from entitlements, level ids from equipped loadouts)
+  const BUDDIES = {};
+  (bJ.data || []).forEach(b => {
+    const icon = b.displayIcon || (b.levels && b.levels[0] && b.levels[0].displayIcon);
+    if (!icon) return;
+    BUDDIES[b.uuid] = icon;
+    (b.levels || []).forEach(l => { BUDDIES[l.uuid] = l.displayIcon || icon; });
+  });
+  const CARDS = {};
+  (pJ.data || []).forEach(c => {
+    const wide = c.wideArt || c.displayIcon;
+    if (!wide) return;
+    CARDS[c.uuid] = { wide, icon: c.displayIcon || wide };
+  });
+
+  return { DB, TIERS, RANKS, BUDDIES, CARDS };
 }
 
 // ── images ────────────────────────────────────────────────────────

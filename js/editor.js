@@ -14,6 +14,7 @@ const LEGACY_DRAFT_KEY = 'vcard-builder-v1'; // old innerHTML-based drafts
 
 const card = CF.$('card');
 const modal = CF.$('modal');
+const importModal = CF.$('importModal');
 const mGrid = CF.$('mGrid');
 const mSearch = CF.$('mSearch');
 const fileInput = CF.$('fileInput');
@@ -22,13 +23,14 @@ const state = {
   theme: 'protocol',
   texts: {},
   ranks: { crank: null, prank: null },
-  picks: Object.fromEntries(CF.CATS.map(c => [c, []])),
-  assets: { avatar: null, pcard: null, buddies: [] }
+  picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, []])),
+  assets: { avatar: null, pcard: null, buddies: [] },
+  owned: {}
 };
 
-let DB = {}, TIERS = [], RANKS = [];
-let list = [], currentCat = null, pickerMode = 'skin', rankRow = null, rankKey = null;
-let filterWeapon = '', filterTier = '';
+let DB = {}, TIERS = [], RANKS = [], BUDDIES = {}, CARDS = {};
+let list = [], currentPool = [], currentCat = null, pickerMode = 'skin', rankRow = null, rankKey = null;
+let filterWeapon = '', filterTier = '', filterOwned = false;
 let pendingUpload = null, editSlug = null, lastFocus = null, exporting = false;
 
 // Old #l=<id> viewer links move to the unified viewer page.
@@ -47,17 +49,18 @@ function skinCell(s) {
 function renderPanel(cat, { animateLast = false } = {}) {
   const el = document.querySelector(`.panel[data-cat="${cat}"]`);
   const picks = state.picks[cat];
-  const cells = picks.length
+  const slots = el.querySelector('.slots');
+  slots.innerHTML = picks.length
     ? picks.map(skinCell).join('')
     : '<div class="slotbox empty"><span class="hint">+ add</span></div>';
-  el.innerHTML = `<h3>${cat}</h3><div class="slots">${cells}</div>
-    <button class="add" data-add="${cat}">+ Add (${picks.length})</button>`;
+  const add = el.querySelector('.add');
+  if (add) add.textContent = `+ Add (${picks.length})`;
   if (animateLast) {
-    const skins = el.querySelectorAll('.skin');
+    const skins = slots.querySelectorAll('.skin');
     skins[skins.length - 1]?.classList.add('added');
   }
 }
-const renderAll = (opts) => CF.CATS.forEach(c => renderPanel(c, opts));
+const renderAll = (opts) => CF.ALL_CATS.forEach(c => renderPanel(c, opts));
 
 function hydrateTexts() {
   card.querySelectorAll('[data-key]').forEach(el => {
@@ -129,16 +132,27 @@ function openPicker(cat) {
   currentCat = cat;
   filterWeapon = '';
   filterTier = '';
+  filterOwned = false;
   CF.$('mTitle').textContent = 'Add ' + cat;
   CF.$('mFilters').style.display = '';
+  currentPool = CF.FREE_CATS.includes(cat)
+    ? Object.values(DB).flat().sort((x, y) => (x.weapon + x.name).localeCompare(y.weapon + y.name))
+    : (DB[cat] || []);
   const wCounts = {}, tCounts = {};
-  (DB[cat] || []).forEach(s => {
+  currentPool.forEach(s => {
     wCounts[s.weapon] = (wCounts[s.weapon] || 0) + 1;
     if (s.tier) tCounts[s.tier] = (tCounts[s.tier] || 0) + 1;
   });
   const w = Object.keys(wCounts).sort();
-  CF.$('mWeapons').innerHTML = '<button class="chip active" data-w="">All</button>' +
+  const ownedN = (state.owned[cat] || []).length;
+  CF.$('mWeapons').innerHTML = (ownedN
+    ? `<button class="chip" data-owned="1">Owned (${ownedN})</button>`
+    : '') +
+    '<button class="chip active" data-w="">All</button>' +
     w.map(x => `<button class="chip" data-w="${CF.esc(x)}">${CF.esc(x)} (${wCounts[x]})</button>`).join('');
+  const addOwned = CF.$('mAddOwned');
+  addOwned.hidden = !ownedN;
+  addOwned.textContent = `Add all owned (${ownedN})`;
   CF.$('mTiers').style.display = TIERS.length ? '' : 'none';
   CF.$('mTiers').innerHTML = '<button class="chip active" data-t="">Any tier</button>' +
     TIERS.filter(t => tCounts[t]).map(t =>
@@ -160,7 +174,10 @@ function openRankPicker(btn) {
 }
 
 function paintChips() {
-  document.querySelectorAll('#mWeapons .chip').forEach(c => c.classList.toggle('active', (c.dataset.w || '') === filterWeapon));
+  document.querySelectorAll('#mWeapons .chip').forEach(c => {
+    if (c.dataset.owned !== undefined) c.classList.toggle('active', filterOwned);
+    else c.classList.toggle('active', !filterOwned && (c.dataset.w || '') === filterWeapon);
+  });
   document.querySelectorAll('#mTiers .chip').forEach(c => c.classList.toggle('active', (c.dataset.t || '') === filterTier));
 }
 
@@ -178,10 +195,14 @@ function renderGrid() {
   }
   const counts = {};
   (state.picks[currentCat] || []).forEach(p => counts[p.id] = (counts[p.id] || 0) + 1);
-  list = (DB[currentCat] || []).filter(s =>
+  list = currentPool.filter(s =>
     (!filterWeapon || s.weapon === filterWeapon) &&
     (!filterTier || (s.tier || '').toLowerCase() === filterTier.toLowerCase()) &&
     (!q || (s.name + ' ' + s.weapon).toLowerCase().includes(q)));
+  if (filterOwned && (state.owned[currentCat] || []).length) {
+    const os = new Set(state.owned[currentCat]);
+    list = list.filter(s => os.has(s.id));
+  }
   CF.$('mCount').textContent = list.length + ' results';
   mGrid.innerHTML = list.map((s, i) =>
     `<button class="item" data-i="${i}"${counts[s.id] ? ' aria-label="' + CF.esc(s.name) + ', already on card ' + counts[s.id] + '×"' : ''}>${counts[s.id] ? `<i class="cnt">×${counts[s.id]}</i>` : ''}<img loading="lazy" src="${CF.esc(s.icon)}" alt=""><b>${CF.esc(s.name)}</b><span>${CF.esc(s.weapon)}${s.tier ? ' • ' + CF.esc(s.tier) : ''}</span>${s.tier ? `<i class="dot tdot ${CF.tierClass(s.tier)}"></i>` : ''}</button>`
@@ -206,11 +227,26 @@ function applyRank(r) {
 // ── modal events ──────────────────────────────────────────────────
 CF.$('mWeapons').addEventListener('click', e => {
   const c = e.target.closest('.chip'); if (!c) return;
+  if (c.dataset.owned !== undefined) { filterOwned = !filterOwned; paintChips(); renderGrid(); return; }
   filterWeapon = c.dataset.w || ''; paintChips(); renderGrid();
 });
 CF.$('mTiers').addEventListener('click', e => {
   const c = e.target.closest('.chip'); if (!c) return;
   filterTier = c.dataset.t || ''; paintChips(); renderGrid();
+});
+CF.$('mAddOwned').addEventListener('click', () => {
+  const ids = state.owned[currentCat] || [];
+  if (!ids.length) return;
+  const idSet = new Set(ids);
+  const have = new Set(state.picks[currentCat].map(p => p.id));
+  (DB[currentCat] || []).forEach(s => {
+    if (idSet.has(s.id) && !have.has(s.id)) {
+      state.picks[currentCat].push({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon });
+      have.add(s.id);
+    }
+  });
+  renderPanel(currentCat);
+  renderGrid();
 });
 mGrid.addEventListener('click', e => {
   const b = e.target.closest('.item'); if (!b) return;
@@ -228,7 +264,75 @@ mSearch.addEventListener('keydown', e => {
 CF.$('mClose').addEventListener('click', closeModal);
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 
+// ── riot token import (Explorant-style account pull) ────────────
+CF.$('importBtn').addEventListener('click', () => {
+  if (!supabase) {
+    CF.status('Token import needs Supabase configured — see SETUP.md (riot-import).');
+    return;
+  }
+  importModal.hidden = false;
+  CF.$('iToken').focus();
+});
+CF.$('iClose').addEventListener('click', () => { importModal.hidden = true; });
+importModal.addEventListener('click', e => { if (e.target === importModal) importModal.hidden = true; });
+
+CF.$('iRun').addEventListener('click', async () => {
+  const btn = CF.$('iRun');
+  btn.disabled = true;
+  CF.status('Importing account…');
+  try {
+    const r = await fetch(CONFIG.SUPABASE_URL + '/functions/v1/riot-import', {
+      method: 'POST',
+      headers: { apikey: CONFIG.SUPABASE_ANON_KEY, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        accessToken: CF.$('iToken').value.trim(),
+        entitlements: CF.$('iEnt').value.trim(),
+        region: CF.$('iRegion').value
+      })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.ok) throw new Error(j.error || ('HTTP ' + r.status));
+    applyImport(j);
+    importModal.hidden = true;
+    CF.$('iToken').value = '';
+    CF.$('iEnt').value = '';
+    CF.status(`Imported ${j.name || 'account'}#${j.tag || ''} — level ${j.level ?? '?'}${j.errors && j.errors.length ? ' · partial: ' + j.errors.join(', ') : ''}.`);
+  } catch (e) {
+    CF.status('Import failed: ' + (e.message || e));
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+function applyImport(j) {
+  if (j.level != null) state.texts.level = String(j.level);
+  if (j.vp != null) state.texts.vp = String(j.vp);
+  if (j.rp != null) state.texts.rp = String(j.rp);
+  if (j.rankTier) {
+    const r = CF.rankByFlat(j.rankTier, RANKS);
+    if (r && r.name !== 'UNRANKED') { state.texts.crank = r.name; state.ranks.crank = r.icon || null; }
+  }
+  if (j.peakTier) {
+    const r = CF.rankByFlat(j.peakTier, RANKS);
+    if (r && r.name !== 'UNRANKED') { state.texts.prank = r.name; state.ranks.prank = r.icon || null; }
+  }
+  if (j.playerCard && CARDS[j.playerCard]) state.assets.pcard = CARDS[j.playerCard].wide;
+  const charmIcons = (j.charms || []).map(id => BUDDIES[id]).filter(Boolean);
+  if (charmIcons.length) state.assets.buddies = charmIcons.slice(0, 12);
+  if (j.skins) {
+    state.owned = {};
+    const set = new Set(j.skins);
+    CF.CATS.forEach(c => {
+      const ids = (DB[c] || []).filter(s => set.has(s.id)).map(s => s.id);
+      if (ids.length) state.owned[c] = ids;
+    });
+  }
+  renderFromState();
+  updateWm();
+}
+
 document.addEventListener('keydown', e => {
+  if (!importModal.hidden && e.key === 'Escape') { importModal.hidden = true; return; }
   if (modal.hidden) return;
   if (e.key === 'Escape') { closeModal(); return; }
   if (e.key === '/' && document.activeElement !== mSearch) { e.preventDefault(); mSearch.focus(); }
@@ -327,6 +431,38 @@ CF.$('exportBtn').addEventListener('click', async () => {
   }
 });
 
+// ── sale-post text (the text half of the template workflow) ─────
+CF.$('postBtn').addEventListener('click', () => {
+  captureTexts();
+  const t = state.texts;
+  const slug = editSlug || localStorage.getItem('vc-draft-id');
+  const link = slug
+    ? new URL('view.html?slug=' + encodeURIComponent(slug), location.href).href
+    : '(unpublished — publish to get a share link)';
+  const counts = CF.CATS.map(c => `${c}: ${(state.picks[c] || []).length}`).join(' · ');
+  const txt = [
+    `${t.code || ''} • ${t.tag || ''}`,
+    `LEVEL ${t.level || '?'} • ${t.crank || 'UNRANKED'} (peak ${t.prank || 'UNRANKED'})`,
+    `PREMIUM ${t.prems || '00'} | LIMITED ${t.limited || '00'} | SEMI PREM ${t.semis || '00'} | BATTLEPASS ${t.bpass || '00'}`,
+    `${t.wtr || ''} | ${t.receipts || ''} | ${t.owner || ''}`,
+    `${t.cname || ''} | ${t.cstatus || ''} | ${t.date || ''}`,
+    `${t.premier || ''} | ${t.vlink || ''} | ${t.price || ''}`,
+    counts,
+    `Link: ${link}`,
+    `Contact: ${t.link || ''}`
+  ].join('\n');
+  CF.copyText(txt);
+  CF.status('Sale-post text copied to clipboard.');
+});
+
+function updateWm() {
+  const slugEl = card.querySelector('[data-wm="slug"]');
+  const stampEl = card.querySelector('[data-wm="stamp"]');
+  const slug = editSlug || localStorage.getItem('vc-draft-id');
+  if (slugEl) slugEl.textContent = slug ? 'Listing ' + slug : 'Draft — not published';
+  if (stampEl) stampEl.textContent = new Date().toISOString().slice(0, 10);
+}
+
 // ── drafts ────────────────────────────────────────────────────────
 CF.$('saveBtn').addEventListener('click', () => {
   captureTexts();
@@ -346,8 +482,9 @@ CF.$('loadBtn').addEventListener('click', () => {
       theme: draft.theme || 'protocol',
       texts: draft.texts || {},
       ranks: draft.ranks || { crank: null, prank: null },
-      picks: Object.fromEntries(CF.CATS.map(c => [c, draft.picks?.[c] || []])),
-      assets: Object.assign({ avatar: null, pcard: null, buddies: [] }, draft.assets)
+      picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, draft.picks?.[c] || []])),
+      assets: Object.assign({ avatar: null, pcard: null, buddies: [] }, draft.assets),
+      owned: draft.owned || {}
     });
     renderFromState();
     CF.status('Draft loaded.');
@@ -356,7 +493,7 @@ CF.$('loadBtn').addEventListener('click', () => {
   // one-time migration from the old innerHTML-based draft
   const legacy = CF.readJSON(LEGACY_DRAFT_KEY, null);
   if (legacy?.picks) {
-    state.picks = Object.fromEntries(CF.CATS.map(c =>
+    state.picks = Object.fromEntries(CF.ALL_CATS.map(c =>
       [c, (legacy.picks[c] || []).map(s => ({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon || s.img }))]));
     if (legacy.theme) state.theme = legacy.theme;
     renderFromState();
@@ -375,7 +512,8 @@ function buildPayload() {
     texts: state.texts,
     ranks: state.ranks,
     picks: state.picks,
-    assets: state.assets
+    assets: state.assets,
+    owned: state.owned
   };
 }
 
@@ -425,6 +563,7 @@ async function publishListing() {
       localStorage.setItem('vc-draft-id', slug);
     }
     editSlug = slug;
+    updateWm();
     btn.textContent = supabase ? 'Update listing' : 'Republish';
     const url = new URL('view.html?slug=' + encodeURIComponent(slug), location.href).href;
     CF.copyText(url);
@@ -465,10 +604,12 @@ async function initEditMode() {
     theme: listing.theme || p.theme || 'protocol',
     texts: p.texts || {},
     ranks: p.ranks || { crank: null, prank: null },
-    picks: Object.fromEntries(CF.CATS.map(c => [c, p.picks?.[c] || []])),
-    assets: Object.assign({ avatar: null, pcard: null, buddies: [] }, p.assets)
+    picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, p.picks?.[c] || []])),
+    assets: Object.assign({ avatar: null, pcard: null, buddies: [] }, p.assets),
+    owned: p.owned || {}
   });
   renderFromState();
+  updateWm();
   CF.$('publishBtn').textContent = supabase ? 'Update listing' : 'Republish';
   CF.status(`Editing listing ${slug} — publish to update it.`);
 }
@@ -487,11 +628,13 @@ if (bootDraft) {
     theme: bootDraft.theme || 'protocol',
     texts: bootDraft.texts || {},
     ranks: bootDraft.ranks || { crank: null, prank: null },
-    picks: Object.fromEntries(CF.CATS.map(c => [c, bootDraft.picks?.[c] || []])),
-    assets: Object.assign({ avatar: null, pcard: null, buddies: [] }, bootDraft.assets)
+    picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, bootDraft.picks?.[c] || []])),
+    assets: Object.assign({ avatar: null, pcard: null, buddies: [] }, bootDraft.assets),
+    owned: bootDraft.owned || {}
   });
   renderFromState();
 }
+updateWm();
 
 function bootStatus() {
   CF.status(editSlug
@@ -504,6 +647,7 @@ initEditMode().finally(async () => {
   try {
     const catalog = await CF.loadCatalog();
     DB = catalog.DB; TIERS = catalog.TIERS; RANKS = catalog.RANKS;
+    BUDDIES = catalog.BUDDIES; CARDS = catalog.CARDS;
   } catch (e) {
     CF.status('Skin database failed to load: ' + (e.message || e));
     return;

@@ -18,6 +18,18 @@ const skin = {
   id: reaver.uuid, weapon: 'Vandal', name: 'Reaver Vandal', tier: 'Premium',
   icon: reaver.displayIcon || reaver.chromas[0].displayIcon
 };
+const op = weapons.find(w => w.displayName === 'Operator');
+const opSkin = op.skins.find(s => s.displayName !== 'Standard' && (s.displayIcon || s.chromas?.[0]?.displayIcon));
+const flexSkin = {
+  id: opSkin.uuid, weapon: 'Operator', name: opSkin.displayName, tier: 'Exclusive',
+  icon: opSkin.displayIcon || opSkin.chromas[0].displayIcon
+};
+const meleeW = weapons.find(w => (w.category || '').toLowerCase().includes('melee'));
+const meleeSkin = meleeW.skins.find(s => s.displayIcon || s.chromas?.[0]?.displayIcon);
+const bpSkin = {
+  id: meleeSkin.uuid, weapon: meleeW.displayName, name: meleeSkin.displayName, tier: 'Deluxe',
+  icon: meleeSkin.displayIcon || meleeSkin.chromas[0].displayIcon
+};
 const payload = {
   theme: 'reaver',
   texts: {
@@ -25,10 +37,12 @@ const payload = {
     tag: 'FS/FT+ADD', link: 'https://www.facebook.com/Your.Page.Here',
     prems: '42', limited: '02', semis: '00', bpass: '10',
     crank: 'DIAMOND 2', prank: 'IMMORTAL 3',
-    note1: 'WITH WTR AND RECEIPTS • CHANGE NAME READY', note2: '3RD OWNER • NO OTHER ISSUES'
+    wtr: 'WTR: YES', receipts: 'RECEIPTS: YES', owner: '0TH OWNER',
+    cname: 'CHANGE NAME', cstatus: 'NOT READY', date: '2/6/2026',
+    premier: 'PREMIER', vlink: 'UNLINKED', price: 'PRICE OFFER'
   },
   ranks: { crank: null, prank: imm3.displayIcon || imm3.largeIcon },
-  picks: { Rifles: [skin] },
+  picks: { Rifles: [skin], Flex: [flexSkin], Battlepass: [bpSkin] },
   assets: { avatar: null, pcard: null, buddies: [] }
 };
 const SEED = `
@@ -66,6 +80,13 @@ await shoot('editor-modal', '/index.html', {
 });
 // desktop viewer with the seeded listing
 await shoot('viewer-desktop', '/view.html?slug=demo2026');
+// riot token import modal (opened directly — needs no Supabase to render)
+await shoot('editor-import', '/index.html', {
+  before: async (page) => {
+    await page.evaluate(() => { document.getElementById('importModal').hidden = false; });
+    await page.waitForTimeout(300);
+  }
+});
 // mobile editor + viewer (real 390px viewport)
 await shoot('editor-mobile', '/index.html', { width: 390, height: 844 });
 await shoot('viewer-mobile', '/view.html?slug=demo2026', { width: 390, height: 844 });
