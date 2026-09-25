@@ -11,6 +11,7 @@ if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase) {
 const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>";
 
 const card = CF.$('card');
+const mcard = CF.$('mcard');
 let totalViews = 0;
 
 function updateBadge(nowViewing) {
@@ -78,6 +79,130 @@ function renderListing(listing) {
   }
 }
 
+// ── mobile-native layout (<=700px): same payload, readable single column ──
+const MOBILE_SKELETON = `
+<section class="mhead"><div class="mcode" data-m="code">K486</div><div class="mvlogin" data-m="vlogin">RIOT ID</div></section>
+<section class="mbox mranks">
+  <div class="mrank"><label>CURRENT</label><img class="mrankbadge" data-mrank="crank" alt=""><b data-m="crank">DIAMOND 2</b></div>
+  <div class="mrank"><label>PEAK</label><img class="mrankbadge" data-mrank="prank" alt=""><b data-m="prank">IMMORTAL 3</b></div>
+  <div class="mcurrow">
+    <span class="mlvl">LEVEL <b data-m="level">376</b></span>
+    <span class="mcur"><i class="mico">V</i><b data-m="vp">420</b></span>
+    <span class="mcur"><i class="mico">R</i><b data-m="rp">140</b></span>
+    <span class="mcur"><i class="mico">K</i><b data-m="kc">6422</b></span>
+  </div>
+</section>
+<section class="mbox mstats">
+  <div class="mcounts">
+    <div class="mstat"><label>PREMIUM</label><b data-m="prems">42</b></div>
+    <div class="mstat mlimited"><label>LIMITED</label><b data-m="limited">02</b></div>
+    <div class="mstat"><label>SEMI PREM</label><b data-m="semis">00</b></div>
+    <div class="mstat"><label>BATTLEPASS</label><b data-m="bpass">10</b></div>
+  </div>
+  <div class="minforow"><span data-m="wtr">WTR: YES</span><span data-m="receipts">RECEIPTS: YES</span><span data-m="owner">0TH OWNER</span></div>
+  <div class="minforow"><span data-m="cname">CHANGE NAME</span><span class="mwarn" data-m="cstatus">NOT READY</span><span data-m="date">2/6/2026</span></div>
+  <div class="minforow"><span data-m="premier">PREMIER</span><span class="mwarn" data-m="vlink">UNLINKED</span><span data-m="price">PRICE OFFER</span></div>
+</section>
+<section class="mskins"></section>
+<section class="mbox mseller">
+  <img class="mpcard" alt="Player card" hidden>
+  <div class="msellerrow">
+    <img class="mavatar" alt="Seller avatar">
+    <div class="msellertext">
+      <div class="mtag" data-m="tag">FS/FT+ADD</div>
+      <a class="mlink" data-m="link" rel="noopener">https://www.facebook.com/Your.Page.Here</a>
+    </div>
+  </div>
+</section>
+<div class="mstrip"><span>Card Forge</span><span data-mwm="slug">Listing</span><span data-mwm="stamp"></span></div>`;
+
+function renderMobile(listing) {
+  if (!mcard) return;
+  const payload = listing.payload || {};
+  const texts = payload.texts || {};
+  mcard.innerHTML = MOBILE_SKELETON;
+
+  mcard.querySelectorAll('[data-m]').forEach(el => {
+    const v = texts[el.dataset.m];
+    if (v != null && v !== '') el.textContent = v;
+  });
+
+  const ranks = payload.ranks || {};
+  ['crank', 'prank'].forEach(key => {
+    const badge = mcard.querySelector(`.mrankbadge[data-mrank="${key}"]`);
+    if (ranks[key]) badge.src = ranks[key];
+    else badge.removeAttribute('src');
+  });
+
+  const picks = payload.picks || {};
+  const wrap = mcard.querySelector('.mskins');
+  let any = false;
+  CF.ALL_CATS.forEach(cat => {
+    const skins = picks[cat] || [];
+    if (!skins.length) return;
+    any = true;
+    const sec = document.createElement('div');
+    sec.className = 'mcat';
+    const h = document.createElement('h3');
+    h.textContent = cat;
+    const g = document.createElement('div');
+    g.className = 'mgrid';
+    skins.forEach(s => {
+      const cell = document.createElement('figure');
+      cell.className = 'mskin';
+      const img = document.createElement('img');
+      img.src = s.icon || s.img || '';
+      img.alt = `${s.weapon || ''} — ${s.name || ''}`;
+      img.loading = 'lazy';
+      const cap = document.createElement('figcaption');
+      cap.textContent = [s.weapon, s.name].filter(Boolean).join(' — ');
+      cell.append(img, cap);
+      g.append(cell);
+    });
+    sec.append(h, g);
+    wrap.append(sec);
+  });
+  if (!any) {
+    const e = document.createElement('div');
+    e.className = 'mempty';
+    e.textContent = 'No skins in this listing.';
+    wrap.append(e);
+  }
+
+  const assets = payload.assets || {};
+  mcard.querySelector('.mavatar').src = assets.avatar || AVATAR_PLACEHOLDER;
+  if (assets.pcard) {
+    const pc = mcard.querySelector('.mpcard');
+    pc.src = assets.pcard;
+    pc.hidden = false;
+  }
+  if (assets.buddies?.length) {
+    const sec = document.createElement('section');
+    sec.className = 'mbuddies';
+    const h = document.createElement('h3');
+    h.textContent = 'Buddies';
+    const g = document.createElement('div');
+    g.className = 'mbuddygrid';
+    assets.buddies.forEach(url => {
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = 'Gun buddy';
+      img.loading = 'lazy';
+      g.append(img);
+    });
+    sec.append(h, g);
+    mcard.querySelector('.mseller').before(sec);
+  }
+  const linkEl = mcard.querySelector('.mlink');
+  const link = (texts.link || '').trim();
+  if (/^https?:\/\//.test(link)) linkEl.href = link;
+
+  const wmSlug = mcard.querySelector('[data-mwm="slug"]');
+  if (wmSlug && slug) wmSlug.textContent = 'Listing ' + slug;
+  const wmStamp = mcard.querySelector('[data-mwm="stamp"]');
+  if (wmStamp) wmStamp.textContent = new Date().toISOString().slice(0, 10);
+}
+
 // ── presence ──────────────────────────────────────────────────────
 function startSupabasePresence(slug) {
   const channel = supabase.channel('listing:' + slug)
@@ -95,7 +220,7 @@ fit();
 
 const slug = new URLSearchParams(location.search).get('slug');
 if (!slug) {
-  CF.status('No listing specified — open a published share link.');
+  CF.status('No listing specified — open a published share link.', 'err');
 } else {
   const wmSlug = card.querySelector('[data-wm="slug"]');
   if (wmSlug) wmSlug.textContent = 'Listing ' + slug;
@@ -121,11 +246,12 @@ if (!slug) {
   }
 
   if (!listing) {
-    CF.status('Listing not found.');
+    CF.status('Listing not found.', 'err');
   } else {
     renderListing(listing);
+    renderMobile(listing);
     totalViews = Number(listing.views) || 0;
-    CF.status('Listing loaded.');
+    CF.status('Listing loaded.', 'ok');
 
     const link = (listing.payload?.texts?.link || '').trim();
     const contactBtn = CF.$('contactBtn');

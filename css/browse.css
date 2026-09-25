@@ -8,6 +8,13 @@
 .bmeta{font:500 12px 'Chakra Petch',sans-serif;letter-spacing:.08em;color:var(--mut);text-transform:uppercase}
 .bfoot{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:10px;border-top:1px solid var(--line)}
 .bfoot span{font:500 11px 'Chakra Petch',sans-serif;color:var(--mut)}
-.bfoot b{font:700 11px 'Chakra Petch',sans-serif;letter-spacing:.14em;color:var(--accent);text-transform:uppercase}
+.bfoot b{font:700 12px 'Chakra Petch',sans-serif;letter-spacing:.14em;color:#FF7A85;text-transform:uppercase}
 .bempty{grid-column:1/-1;font:500 14px 'Chakra Petch',sans-serif;color:var(--mut);padding:30px 0;text-align:center}
 .bempty a{color:var(--accent)}
+.bcta{margin-top:26px;padding:20px 22px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
+.bcta span{font:500 13px 'Chakra Petch',sans-serif;letter-spacing:.1em;color:var(--mut);text-transform:uppercase}
+.bcta a{font:600 14px 'Chakra Petch',sans-serif;letter-spacing:.06em;color:var(--ink);text-decoration:none;padding:10px 18px;background:#D62839;
+clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.bcta a:hover{filter:brightness(1.12)}
+.bcta a b{color:#fff}

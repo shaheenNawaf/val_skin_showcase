@@ -37,7 +37,17 @@ export function rankByFlat(n, RANKS) {
 }
 
 // ── status + persistence ──────────────────────────────────────────
-export const status = (m) => { const el = $('status'); if (el) el.textContent = m; };
+// kind: 'info' (default) | 'ok' | 'err' — err persists, others auto-dim
+let statusTimer = null;
+export function status(m, kind = 'info') {
+  const el = $('status');
+  if (!el) return;
+  el.textContent = m;
+  el.dataset.kind = kind;
+  el.classList.remove('dim');
+  clearTimeout(statusTimer);
+  if (kind !== 'err') statusTimer = setTimeout(() => el.classList.add('dim'), 6000);
+}
 
 export function readJSON(key, fallback) {
   try {

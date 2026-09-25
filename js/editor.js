@@ -267,7 +267,7 @@ modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 // ── riot token import (Explorant-style account pull) ────────────
 CF.$('importBtn').addEventListener('click', () => {
   if (!supabase) {
-    CF.status('Token import needs Supabase configured — see SETUP.md (riot-import).');
+    CF.status('Token import needs Supabase configured — see SETUP.md (riot-import).', 'err');
     return;
   }
   importModal.hidden = false;
@@ -306,9 +306,9 @@ CF.$('iRun').addEventListener('click', async () => {
     importModal.hidden = true;
     CF.$('iToken').value = '';
     CF.$('iEnt').value = '';
-    CF.status(`Imported ${j.name || 'account'}#${j.tag || ''} — level ${j.level ?? '?'}${j.errors && j.errors.length ? ' · partial: ' + j.errors.join(', ') : ''}.`);
+    CF.status(`Imported ${j.name || 'account'}#${j.tag || ''} — level ${j.level ?? '?'}${j.errors && j.errors.length ? ' · partial: ' + j.errors.join(', ') : ''}.`, 'ok');
   } catch (e) {
-    CF.status('Import failed: ' + (e.message || e));
+    CF.status('Import failed: ' + (e.message || e), 'err');
   } finally {
     btn.disabled = false;
   }
@@ -418,7 +418,7 @@ fileInput.addEventListener('change', async e => {
       state.assets.buddies.push(url);
     }
   } catch {
-    CF.status('Could not read that image.');
+    CF.status('Could not read that image.', 'err');
   }
   pendingUpload = null;
   fileInput.value = '';
@@ -432,9 +432,9 @@ CF.$('exportBtn').addEventListener('click', async () => {
   CF.status('Rendering 3840×2160 PNG…');
   try {
     await CF.exportCard(card);
-    CF.status('PNG exported (3840×2160).');
+    CF.status('PNG exported (3840×2160).', 'ok');
   } catch (e) {
-    CF.status('Export failed: ' + (e.message || e));
+    CF.status('Export failed: ' + (e.message || e), 'err');
   } finally {
     exporting = false;
     CF.$('exportBtn').disabled = false;
@@ -463,7 +463,7 @@ CF.$('postBtn').addEventListener('click', () => {
     `Contact: ${t.link || ''}`
   ].join('\n');
   CF.copyText(txt);
-  CF.status('Sale-post text copied to clipboard.');
+  CF.status('Sale-post text copied to clipboard.', 'ok');
 });
 
 function updateWm() {
@@ -480,9 +480,9 @@ CF.$('saveBtn').addEventListener('click', () => {
   state.theme = document.documentElement.dataset.theme;
   try {
     CF.writeJSON(DRAFT_KEY, state);
-    CF.status('Draft saved.');
+    CF.status('Draft saved.', 'ok');
   } catch {
-    CF.status('Save failed (storage quota).');
+    CF.status('Save failed (storage quota).', 'err');
   }
 });
 
@@ -498,7 +498,7 @@ CF.$('loadBtn').addEventListener('click', () => {
       owned: draft.owned || {}
     });
     renderFromState();
-    CF.status('Draft loaded.');
+    CF.status('Draft loaded.', 'ok');
     return;
   }
   // one-time migration from the old innerHTML-based draft
@@ -508,7 +508,7 @@ CF.$('loadBtn').addEventListener('click', () => {
       [c, (legacy.picks[c] || []).map(s => ({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon || s.img }))]));
     if (legacy.theme) state.theme = legacy.theme;
     renderFromState();
-    CF.status('Old draft migrated — text fields were reset to defaults.');
+    CF.status('Old draft migrated — text fields were reset to defaults.', 'ok');
     return;
   }
   CF.status('Nothing saved yet.');
@@ -565,7 +565,7 @@ async function publishListing() {
       try {
         CF.writeJSON('vlistings', all);
       } catch {
-        CF.status('Browser storage is full — remove some uploads and retry.');
+        CF.status('Browser storage is full — remove some uploads and retry.', 'err');
         return;
       }
       // token is unused server-side in this mode; it just marks this browser
@@ -580,9 +580,9 @@ async function publishListing() {
     CF.copyText(url);
     CF.status(supabase
       ? 'Published! Share link copied.'
-      : 'Published for this browser. Link copied — add Supabase keys in js/config.js for public links.');
+      : 'Published for this browser. Link copied — add Supabase keys in js/config.js for public links.', 'ok');
   } catch (e) {
-    CF.status('Publish failed: ' + (e.message || e));
+    CF.status('Publish failed: ' + (e.message || e), 'err');
   } finally {
     btn.disabled = false;
   }
@@ -606,7 +606,7 @@ async function initEditMode() {
   if (!slug) return;
   const listing = await loadListingForEdit(slug);
   if (!listing) {
-    CF.status(`Listing "${slug}" not found on this device.`);
+    CF.status(`Listing "${slug}" not found on this device.`, 'err');
     return;
   }
   editSlug = slug;
@@ -622,7 +622,7 @@ async function initEditMode() {
   renderFromState();
   updateWm();
   CF.$('publishBtn').textContent = supabase ? 'Update listing' : 'Republish';
-  CF.status(`Editing listing ${slug} — publish to update it.`);
+  CF.status(`Editing listing ${slug} — publish to update it.`, 'ok');
 }
 
 // ── boot ──────────────────────────────────────────────────────────
@@ -651,7 +651,7 @@ function bootStatus() {
   CF.status(editSlug
     ? `Editing listing ${editSlug} — publish to update it.`
     : `Ready — ${Object.values(DB).flat().length} skins, ${TIERS.length} tiers, ${RANKS.length - 1} ranks.` +
-      (bootDraft ? ' Draft restored.' : ''));
+      (bootDraft ? ' Draft restored.' : ''), editSlug ? 'ok' : 'info');
 }
 
 initEditMode().finally(async () => {
@@ -660,7 +660,7 @@ initEditMode().finally(async () => {
     DB = catalog.DB; TIERS = catalog.TIERS; RANKS = catalog.RANKS;
     BUDDIES = catalog.BUDDIES; CARDS = catalog.CARDS;
   } catch (e) {
-    CF.status('Skin database failed to load: ' + (e.message || e));
+    CF.status('Skin database failed to load: ' + (e.message || e), 'err');
     return;
   }
   bootStatus();

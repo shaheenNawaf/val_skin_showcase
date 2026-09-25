@@ -15,7 +15,7 @@
 .pcard[data-upload]:hover .hint,.charms-box[data-upload]:hover .hint{color:var(--accent)}
 
 /* rank "set" buttons */
-.pickrank{background:none;border:1px solid var(--line);color:var(--mut);font:600 9px 'Chakra Petch',sans-serif;letter-spacing:.12em;padding:2px 7px;cursor:pointer;text-transform:uppercase;margin-left:auto}
+.pickrank{background:none;border:1px solid var(--line);color:var(--mut);font:700 11px 'Chakra Petch',sans-serif;letter-spacing:.12em;padding:2px 7px;cursor:pointer;text-transform:uppercase;margin-left:auto}
 .pickrank:hover{color:var(--accent);border-color:var(--accent)}
 .rankrow .pickrank{margin-left:0}
 
@@ -46,10 +46,10 @@ clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,va
 .item:hover{border-color:var(--c-accent);background:color-mix(in srgb,var(--c-accent) 6%,var(--c-surface))}
 .item img{height:60px;object-fit:contain}
 .item b{font-size:13px}
-.item span{color:var(--c-mut);font-size:11px}
+.item span{color:var(--c-mut);font-size:12px}
 .noicon{height:44px;display:flex;align-items:center;justify-content:center;color:var(--c-mut);font:700 18px 'Chakra Petch',sans-serif;border:1px dashed var(--c-line)}
 .tdot{position:absolute;top:8px;right:8px;width:9px;height:9px;transform:rotate(45deg)}
-.cnt{position:absolute;top:6px;left:6px;background:var(--c-accent);color:#fff;font:700 10px 'Chakra Petch',sans-serif;font-style:normal;padding:2px 6px;letter-spacing:.05em}
+.cnt{position:absolute;top:6px;left:6px;background:var(--c-accent-btn);color:#fff;font:700 10px 'Chakra Petch',sans-serif;font-style:normal;padding:2px 6px;letter-spacing:.05em}
 .none{color:var(--c-mut);grid-column:1/-1;text-align:center;padding:30px}
 
 @media (prefers-reduced-motion:no-preference){
@@ -62,14 +62,14 @@ clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,va
 
 /* ── riot token import modal ───────────────────────────────────── */
 .ipanel{width:min(560px,100%);max-height:88vh;overflow:auto;padding:18px}
-.inote{color:var(--c-mut);font-size:12px;line-height:1.55;margin:4px 0 10px}
-.ilabel{display:block;color:var(--c-mut);font-size:10px;letter-spacing:.2em;text-transform:uppercase;margin:10px 0 4px}
+.inote{color:var(--c-mut);font-size:13px;line-height:1.6;margin:4px 0 10px}
+.ilabel{display:block;color:var(--c-mut);font-size:11px;letter-spacing:.2em;text-transform:uppercase;margin:10px 0 4px}
 .iselect,.itoken{width:100%;background:var(--c-bg);border:1px solid var(--c-line);color:var(--c-ink);padding:8px 10px;font:600 12px 'Chakra Petch',sans-serif}
 .iselect:focus-visible,.itoken:focus-visible{box-shadow:inset 0 0 0 2px var(--c-accent)}
 .itoken{font-family:ui-monospace,Consolas,monospace;font-size:11px;resize:vertical}
 .irow{display:flex;align-items:center;gap:16px;margin-top:16px}
-.irow .primary{background:var(--c-accent);border:1px solid var(--c-accent);color:#fff;padding:9px 20px;font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;
+.irow .primary{background:var(--c-accent-btn);border:1px solid var(--c-accent-btn);color:#fff;padding:9px 20px;font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;
 clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 .irow .primary:disabled{opacity:.5;cursor:default}
-.ihelp{color:var(--c-mut);font-size:11px;letter-spacing:.06em}
+.ihelp{color:var(--c-mut);font-size:12px;letter-spacing:.06em}
 .ihelp:hover{color:var(--c-accent)}

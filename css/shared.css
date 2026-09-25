@@ -15,16 +15,17 @@
   --c-line:#222C37;       /* chrome hairlines                      */
   --c-line-soft:#1A222C;  /* quieter hairlines                     */
   --c-ink:#D9DCE0;        /* chrome text (dimmer than card ink)    */
-  --c-mut:#77828E;        /* chrome secondary text                 */
+  --c-mut:#8A95A1;        /* chrome secondary text                 */
   --c-accent:#FF4655;     /* reserved: one primary action + active */
+  --c-accent-btn:#D62839;   /* darker fill so white 11px text passes AA (4.97:1) */
   --c-veil:rgba(6,9,13,.78);
 }
-:root,[data-theme=protocol]{--bg:#0F1923;--card1:#1F2731;--card2:#16202B;--frame:#0B121B;--panel:#1F2731;--box:#2A3540;--box-hi:#48515B;--line:#2E3A46;--ink:#ECE8E1;--mut:#8A99A9;--accent:#FF4655;--gold:#F2C14E;--red:#FF4655;
+:root,[data-theme=protocol]{--bg:#0F1923;--card1:#1F2731;--card2:#16202B;--frame:#0B121B;--panel:#1F2731;--box:#2A3540;--box-hi:#48515B;--line:#2E3A46;--ink:#ECE8E1;--mut:#8A99A9;--accent:#FF4655;--gold:#F2C14E;--red:#FF4655;--warn:#FF7A85;
 --sheen:rgba(255,255,255,.09);--sheen-soft:rgba(255,255,255,.06);--tint:rgba(255,255,255,.02);--raise:rgba(255,255,255,.05);--stripe:rgba(255,255,255,.015);--veil:rgba(4,8,14,.72)}
 [data-theme=holo]{--bg:#04101A;--card1:#0A1E30;--card2:#061523;--frame:#02090F;--panel:#0A1E30;--box:#0F2C44;--box-hi:#314A5E;--line:#164059;--ink:#DFF6FF;--mut:#7E9CB2;--accent:#46F6FF;--gold:#F2C14E;--red:#FF4655}
 [data-theme=reaver]{--bg:#0D0A14;--card1:#180F2A;--card2:#120B1F;--frame:#080512;--panel:#180F2A;--box:#241740;--box-hi:#43375B;--line:#37255C;--ink:#EFE9FF;--mut:#9D92BA;--accent:#B44BFF;--gold:#59E3B8;--red:#FF4655}
 [data-theme=oni]{--bg:#120B0B;--card1:#201114;--card2:#180D10;--frame:#0B0607;--panel:#201114;--box:#31191E;--box-hi:#4E393D;--line:#4A2A2C;--ink:#F5E9DC;--mut:#AF9889;--accent:#FF5540;--gold:#E8B14E;--red:#FF5540}
-[data-theme=arctic]{--bg:#DAD5CB;--card1:#F7F4EE;--card2:#ECE8E1;--frame:#B8B2A6;--panel:#F2EEE6;--box:#E0DBD1;--box-hi:#E4E0D7;--line:#C4BEB2;--ink:#0F1923;--mut:#525D6B;--accent:#E03E4C;--gold:#8A6D1C;--red:#E03E4C;
+[data-theme=arctic]{--bg:#DAD5CB;--card1:#F7F4EE;--card2:#ECE8E1;--frame:#B8B2A6;--panel:#F2EEE6;--box:#E0DBD1;--box-hi:#E4E0D7;--line:#8E8676;--ink:#0F1923;--mut:#525D6B;--accent:#C22E3C;--gold:#6E5614;--red:#C22E3C;
 --sheen:rgba(15,25,35,.05);--sheen-soft:rgba(15,25,35,.035);--tint:rgba(15,25,35,.02);--raise:rgba(15,25,35,.04);--stripe:rgba(15,25,35,.02);--veil:rgba(184,178,166,.72)}
 
 *{box-sizing:border-box;margin:0;padding:0;border-radius:0}
@@ -37,6 +38,7 @@
 /* keyboard focus ring drawn inside the box so clip-path can't cut it */
 :focus{outline:none}
 :focus-visible{box-shadow:inset 0 0 0 2px var(--c-accent)!important}
+[data-theme=arctic] :focus-visible{box-shadow:inset 0 0 0 2px var(--red)!important}
 
 html{background:var(--c-bg)}
 body{font-family:'Chakra Petch',system-ui,sans-serif;color:var(--c-ink)}
@@ -50,14 +52,24 @@ body{font-family:'Chakra Petch',system-ui,sans-serif;color:var(--c-ink)}
 clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 #topbar button:hover{border-color:var(--c-mut);color:var(--c-ink);background:color-mix(in srgb,#fff 4%,transparent)}
 #topbar button:disabled{opacity:.5;cursor:default}
-#topbar button.primary{background:var(--c-accent);border-color:var(--c-accent);color:#fff}
+#topbar button.primary{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
 #topbar button.primary:hover{color:#fff;filter:brightness(1.12)}
 #topbar button.accent{border-color:var(--c-line-soft);color:var(--c-mut)}
 #topbar button.accent:hover{border-color:var(--c-accent);color:var(--c-accent);background:transparent}
 #topbar a.tb-link{background:transparent;border:1px solid var(--c-line-soft);color:var(--c-mut);padding:8px 16px;font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;text-decoration:none;display:inline-block}
 #topbar a.tb-link:hover{border-color:var(--c-mut);color:var(--c-ink);background:color-mix(in srgb,#fff 4%,transparent)}
-#status{color:var(--c-mut);font-size:12px;letter-spacing:.06em;max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#status::before{content:"// ";color:var(--c-mut);opacity:.6}
+#status{position:fixed;left:50%;transform:translateX(-50%);bottom:46px;z-index:40;
+max-width:min(560px,calc(100vw - 24px));white-space:normal;overflow:visible;text-overflow:clip;
+background:var(--c-surface2);border:1px solid var(--c-line);border-left:3px solid var(--c-mut);
+color:var(--c-ink);font-size:12.5px;letter-spacing:.04em;line-height:1.45;padding:9px 14px;
+clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+@media (prefers-reduced-motion:no-preference){#status{transition:opacity .4s ease}}
+#status::before{content:"// ";color:var(--c-mut)}
+#status[data-kind=ok]{border-left-color:#3DD68C}
+#status[data-kind=ok]::before{content:"✓ ";color:#3DD68C}
+#status[data-kind=err]{border-left-color:#FF6B77}
+#status[data-kind=err]::before{content:"✕ ";color:#FF6B77}
+#status.dim{opacity:.5}
 
 /* ── stage + card ──────────────────────────────────────────────── */
 /* vignette lives on the stage: every top-level element is fixed, so the
@@ -77,15 +89,19 @@ body.exporting #stage{position:static;overflow:visible;display:block}
 body.exporting #sizer{width:auto!important;height:auto!important;margin:0}
 body.exporting #card{position:relative;transform:none!important}
 
-[contenteditable]{outline:none;border-bottom:1px dashed transparent}
+/* editor-only chrome must never reach the exported PNG */
+body.exporting .auto,body.exporting .pickrank,body.exporting .add{display:none}
+body.exporting .hint{visibility:hidden}
+
+[contenteditable]{outline:none;border-bottom:1px dashed color-mix(in srgb,var(--accent) 30%,transparent)}
 [contenteditable]:hover{border-bottom-color:var(--accent);cursor:text}
 
 /* ── card identity + currency bits (live in footer boxes) ───────── */
 .code{font-family:Anton,sans-serif;font-size:52px;letter-spacing:.18em;line-height:1}
-.vlogin{font:600 15px 'Chakra Petch',sans-serif;letter-spacing:.14em;color:var(--mut);max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vlogin{font:600 16px 'Chakra Petch',sans-serif;letter-spacing:.14em;color:var(--mut);max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cur{display:flex;gap:7px;align-items:center;font-size:16px;font-weight:600}
 .ico{width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font:700 11px 'Chakra Petch',sans-serif;font-style:normal;border:1px solid var(--mut);color:var(--mut)}
-.lvl{letter-spacing:.22em;color:var(--mut);font-weight:600;font-size:13px;white-space:nowrap}
+.lvl{letter-spacing:.22em;color:var(--mut);font-weight:600;font-size:14px;white-space:nowrap}
 .lvl b{color:var(--ink);letter-spacing:.14em;margin-left:5px}
 
 /* ── skin grid ─────────────────────────────────────────────────── */
@@ -99,7 +115,7 @@ grid-template-areas:
 "side shot rifles melee melee  melee"
 "code stats stats  rank  pcard pcard"}
 .panel{overflow:hidden;display:flex;flex-direction:column}
-.panel h3{text-align:center;letter-spacing:.4em;font-size:13px;color:var(--mut);font-weight:600;margin:0 0 6px;text-transform:uppercase}
+.panel h3{text-align:center;letter-spacing:.4em;font-size:14px;color:var(--mut);font-weight:600;margin:0 0 6px;text-transform:uppercase}
 .panel h3::before{content:"";display:inline-block;width:7px;height:10px;background:var(--accent);transform:skewX(-20deg);margin-right:9px}
 .slots{display:flex;flex-direction:column;height:100%;gap:6px;flex:1;min-height:0;overflow:hidden}
 .panel[data-cat="Melees"] .slots{flex-direction:row}
@@ -113,18 +129,19 @@ clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,va
 .skin img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:2px 8px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.55))}
 .rm{position:absolute;top:3px;right:3px;width:18px;height:18px;background:var(--red);color:#fff;border:none;font:700 11px/1 'Chakra Petch',sans-serif;cursor:pointer;display:none;z-index:2}
 .skin:hover .rm{display:block}
+@media (hover:none){.skin .rm{display:block}}
 .slotbox{position:relative;border:1px solid var(--line);overflow:hidden;
 background:radial-gradient(120% 100% at 50% 0%,var(--sheen-soft),transparent 60%),var(--box)}
 .slotbox.empty{flex:1 1 0;min-height:0;border-style:dashed;background:var(--tint);display:flex;align-items:center;justify-content:center}
-.add{margin-top:6px;width:100%;background:var(--tint);border:1px solid var(--line);color:var(--mut);padding:6px;font:600 12px 'Chakra Petch',sans-serif;letter-spacing:.2em;cursor:pointer;text-transform:uppercase;
+.add{margin-top:6px;width:100%;background:var(--tint);border:1px solid var(--line);color:var(--mut);padding:6px;font:700 13px 'Chakra Petch',sans-serif;letter-spacing:.2em;cursor:pointer;text-transform:uppercase;
 clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 .add:hover{color:var(--accent);border-color:var(--accent)}
 .charms-box{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;align-content:start;padding:6px;flex:1;min-height:0;overflow:hidden}
 .charms-box img{width:100%;height:52px;object-fit:contain}
-.hint{color:var(--mut);font-size:10px;letter-spacing:.25em;text-align:center;text-transform:uppercase;grid-column:1/-1;align-self:center}
+.hint{color:var(--mut);font-size:12px;font-weight:600;letter-spacing:.25em;text-align:center;text-transform:uppercase;grid-column:1/-1;align-self:center}
 
 /* buddies & flex strip (right edge, template-style) */
-.flexcol h3{font-size:10px;letter-spacing:.18em;margin-bottom:4px}
+.flexcol h3{font-size:11px;letter-spacing:.18em;margin-bottom:4px}
 .flexcol .charms-box{grid-template-columns:repeat(2,1fr)}
 .flexcol .charms-box img{height:40px}
 .flexcol .add{padding:4px;font-size:10px;letter-spacing:.1em}
@@ -136,29 +153,29 @@ clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,va
 .stats{grid-area:stats;display:flex;flex-direction:column;justify-content:space-between}
 .counts{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:6px}
 .stat{text-align:center;position:relative}
-.stat label{display:block;color:var(--mut);font-size:11px;letter-spacing:.16em}
+.stat label{display:block;color:var(--mut);font-size:12px;letter-spacing:.16em}
 .stat.limited label{color:var(--gold)}
 .stat b{font-family:Anton,sans-serif;font-size:26px;letter-spacing:.08em;font-weight:400}
-.auto{position:absolute;right:-16px;bottom:2px;background:none;border:none;color:var(--mut);font:600 9px 'Chakra Petch',sans-serif;cursor:pointer;letter-spacing:.1em}
+.auto{position:absolute;right:-16px;bottom:2px;background:none;border:none;color:var(--mut);font:600 12px 'Chakra Petch',sans-serif;cursor:pointer;letter-spacing:.1em}
 .auto:hover{color:var(--accent)}
-.inforow{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding:6px 2px;font-size:14px;letter-spacing:.05em}
+.inforow{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding:6px 2px;font-size:15px;letter-spacing:.05em}
 .inforow span+span{border-left:1px solid var(--line);padding-left:10px}
-.inforow .warn{color:var(--red)}
+.inforow .warn{color:var(--warn,var(--red))}
 .rankbox{grid-area:rank;display:flex;flex-direction:column;justify-content:space-between}
 .rankcols{display:flex;gap:10px}
-.rankrow{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;font-size:13px}
-.rankrow label{color:var(--mut);letter-spacing:.2em;font-size:11px}
+.rankrow{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;font-size:14px}
+.rankrow label{color:var(--mut);letter-spacing:.2em;font-size:12px}
 .rankrow b{letter-spacing:.06em;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rankbadge{width:52px;height:52px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));flex:none}
 .rankbadge:not([src]){display:none}
 .currow{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;align-items:center;border-top:1px solid var(--line);padding-top:8px}
 .pcardbox{grid-area:pcard;display:flex;flex-direction:column;gap:6px}
 .pcard{flex:1;min-height:0;background-size:cover;background-position:center;display:flex;align-items:flex-end;justify-content:center;border:1px solid var(--line)}
-.pclabel{text-align:center;color:var(--mut);font-size:10px;letter-spacing:.3em;text-transform:uppercase}
+.pclabel{text-align:center;color:var(--mut);font-size:11px;letter-spacing:.3em;text-transform:uppercase}
 .seller{display:flex;gap:10px;align-items:center}
 .avatar{width:44px;height:44px;object-fit:cover;border:1px solid var(--line);clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 .tag{font-family:Anton,sans-serif;font-size:17px;letter-spacing:.06em}
-.link{color:var(--mut);font-size:11px;word-break:break-all}
+.link{color:var(--mut);font-size:12px;word-break:break-all}
 
 /* tier dots (picker chips) */
 .dot{display:inline-block;width:9px;height:9px;flex:none;background:var(--mut);transform:rotate(45deg)}
@@ -169,8 +186,8 @@ clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,va
 .dot.t-exclusive{background:var(--tier-exclusive)}
 
 /* ── disclaimer ────────────────────────────────────────────────── */
-#disclaimer{position:fixed;bottom:8px;left:0;right:0;text-align:center;color:var(--c-mut);font-size:10px;letter-spacing:.02em;padding:8px;background:var(--c-veil);backdrop-filter:blur(4px);z-index:30}
-#disclaimer a{color:inherit;text-decoration:underline}
+#disclaimer{position:fixed;bottom:8px;left:0;right:0;text-align:center;color:var(--c-mut);font-size:11px;letter-spacing:.02em;padding:8px;background:var(--c-veil);backdrop-filter:blur(4px);z-index:30}
+#disclaimer a{color:var(--c-ink);text-decoration:underline;padding:2px 6px}
 
 /* ── card frame + watermark strip ──────────────────────────────── */
 /* the stage stays dark and quiet; a soft ambient shadow lifts the card off it */
@@ -178,13 +195,17 @@ clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,va
 box-shadow:0 24px 70px -18px rgba(0,0,0,.6),0 6px 22px rgba(0,0,0,.35)}
 #sizer::before,#sizer::after{content:none}
 .wstrip{position:absolute;left:34px;right:34px;bottom:8px;display:flex;justify-content:space-between;gap:14px;
-color:var(--mut);font-size:9px;letter-spacing:.28em;text-transform:uppercase;pointer-events:none}
+color:var(--mut);font-size:11px;letter-spacing:.28em;text-transform:uppercase;pointer-events:none}
 
 /* ── small screens ─────────────────────────────────────────────── */
 @media (max-width:760px){
-  #status{display:none}
-  #topbar button{padding:7px 10px;font-size:10px}
+  #topbar{row-gap:3px;padding:5px 10px}
+  .tb-left,.tb-right{width:100%}
+  .tb-right{justify-content:flex-start;row-gap:4px;gap:6px}
+  #topbar button,#topbar a.tb-link{flex:none;padding:5px 8px;font-size:10px}
   .logo{font-size:14px}
+  #status{bottom:54px;font-size:12px;max-width:calc(100vw - 16px)}
+  #disclaimer{font-size:12px}
 }
 
 /* ── motion (skipped entirely for reduced-motion users) ────────── */

@@ -5,7 +5,15 @@ if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase) {
   supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 }
 const $ = id => document.getElementById(id);
-const status = m => { const el = $('status'); if (el) el.textContent = m; };
+const status = (m, kind = 'info') => {
+  const el = $('status');
+  if (!el) return;
+  el.textContent = m;
+  el.dataset.kind = kind;
+  el.classList.remove('dim');
+  clearTimeout(status._t);
+  if (kind !== 'err') status._t = setTimeout(() => el.classList.add('dim'), 6000);
+};
 
 function cardEl(r) {
   const a = document.createElement('a');
@@ -30,7 +38,7 @@ function cardEl(r) {
 (async () => {
   const grid = $('bgrid');
   if (!supabase) {
-    status('Browse needs Supabase configured — see SETUP.md.');
+    status('Browse needs Supabase configured — see SETUP.md.', 'err');
     return;
   }
   try {
@@ -48,9 +56,9 @@ function cardEl(r) {
       grid.append(empty);
       return;
     }
-    status(data.length + (data.length === 1 ? ' listing' : ' listings') + ' available.');
+    status(data.length + (data.length === 1 ? ' listing' : ' listings') + ' available.', 'ok');
     data.forEach(r => grid.append(cardEl(r)));
   } catch (e) {
-    status('Could not load listings: ' + (e.message || e));
+    status('Could not load listings: ' + (e.message || e), 'err');
   }
 })();
