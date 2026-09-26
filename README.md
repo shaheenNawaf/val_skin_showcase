@@ -2,7 +2,7 @@
 
 Valorant inventory showcase cards for skin sellers: compose a 1920×1080 trade card of your skins, ranks and stats, export it as a 4K PNG, or publish it as a shareable listing link with a live viewer counter.
 
-No framework, no build step — plain HTML/CSS/JS served statically.
+No framework — plain HTML/CSS/JS, staged into `dist/` by a tiny build script and served statically.
 
 ## Features
 
@@ -46,6 +46,29 @@ npm run build      # stage into dist/ (what Netlify deploys)
 Netlify: build command `node scripts/copy-static.mjs`, publish directory `dist/` (see `netlify.toml`).
 
 For public share links, fill in `SUPABASE_URL` / `SUPABASE_ANON_KEY` in `js/config.js` and run the Supabase setup in [SETUP.md](SETUP.md). Without them the app still works fully — listing links just open only in the browser that published them.
+
+### Staging (branch deploys)
+
+Production (`cardforge.shaheen.works`) deploys from the **`main`** branch. Every other branch you push gets its own automatic **staging URL** — no per-branch setup.
+
+One-time enable in the Netlify dashboard:
+
+1. **Site configuration → Build & deploy → Continuous deployment → Branch deployments** → *Enable branch deploys* → choose **All branches** (or add specific branches).
+2. Confirm the **Production branch** is `main` (**Site configuration → General → Production branch**).
+
+Then pushing a branch `foo` deploys it to `https://foo--<site-name>.netlify.app` (Netlify prints the exact URL in the deploy log and lists it under *Deploys*). Merging `foo` → `main` updates production. Recommended flow: work on a feature branch (auto-staging — test it), then merge to `main` to release.
+
+### Version stamp
+
+Every built page carries a small stamp — bottom-right on desktop, top-right on mobile — injected at build time by `scripts/copy-static.mjs`:
+
+```
+v1.0.0 · e02ca52 · 2026-09-26 · main
+```
+
+= `package.json` version · git short SHA · build date (UTC) · branch. On non-production deploys a colored badge precedes it: **STAGING** (orange, branch deploy), **PREVIEW** (blue, PR deploy preview), **LOCAL** (grey, `npm run build` on your machine). Production shows no badge. The stamp lives only in `dist/` (source files stay clean, so it never dirties git) and is hidden during PNG export.
+
+To bump the released version, edit `"version"` in `package.json`. To preview the stamp locally: `npm run build && npx http-server dist`.
 
 ## Notes & limitations
 
