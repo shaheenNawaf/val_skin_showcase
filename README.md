@@ -60,7 +60,7 @@ Then pushing a branch `foo` deploys it to `https://foo--<site-name>.netlify.app`
 
 ### Version stamp
 
-Every built page carries a small stamp — bottom-right on desktop, top-right on mobile — injected at build time by `scripts/copy-static.mjs`:
+Every built page carries a small stamp — in the footer bar on desktop, floating just above it on mobile — injected at build time by `scripts/copy-static.mjs`:
 
 ```
 v1.0.0 · e02ca52 · 2026-09-26 · main

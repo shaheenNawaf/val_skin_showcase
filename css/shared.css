@@ -219,7 +219,7 @@ color:var(--mut);font-size:11px;letter-spacing:.28em;text-transform:uppercase;po
 @keyframes skinOut{to{opacity:0;transform:scale(.9)}}
 
 /* ── build stamp (injected into dist/ at build time by scripts/copy-static.mjs) ── */
-#buildstamp{position:fixed;right:14px;bottom:14px;z-index:31;display:flex;align-items:center;gap:7px;pointer-events:none}
+#buildstamp{display:inline-flex;align-items:center;gap:7px;vertical-align:middle;margin-left:12px}
 #buildstamp .bs-env{display:none;align-items:center;padding:2px 7px;font:700 9px 'Chakra Petch',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#0B0F14;
 clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px)}
 #buildstamp:not([data-env=production]) .bs-env{display:inline-flex}
@@ -228,4 +228,4 @@ clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100
 #buildstamp[data-env=local] .bs-env{background:#8A95A1}
 #buildstamp .bs-ver{font:500 10px 'Chakra Petch',sans-serif;letter-spacing:.02em;color:var(--c-mut);background:var(--c-veil);backdrop-filter:blur(4px);padding:3px 8px;border:1px solid var(--c-line);
 clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px)}
-@media (max-width:760px){#buildstamp{bottom:auto;top:calc(var(--tbh) + 6px);right:8px;flex-direction:column;align-items:flex-end;gap:4px}}
+@media (max-width:760px){#buildstamp{position:absolute;bottom:calc(100% + 8px);right:8px;margin-left:0;flex-direction:column;align-items:flex-end;gap:4px;pointer-events:none}}

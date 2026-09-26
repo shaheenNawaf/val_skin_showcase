@@ -33,7 +33,10 @@ rmSync('dist', { recursive: true, force: true });
 mkdirSync('dist', { recursive: true });
 for (const d of DIRS) cpSync(d, `dist/${d}`, { recursive: true });
 for (const f of FILES) {
-  const html = readFileSync(f, 'utf8').replace('</body>', `${stamp}\n</body>`);
+  const src = readFileSync(f, 'utf8');
+  // stamp lives inside the footer disclaimer bar so it never overlaps content
+  const inBar = src.replace(/(<div id="disclaimer">[\s\S]*?)(<\/div>)/, (m, open, close) => `${open}${stamp}${close}`);
+  const html = inBar !== src ? inBar : src.replace('</body>', `${stamp}\n</body>`);
   writeFileSync(`dist/${f}`, html);
 }
 
