@@ -53,8 +53,8 @@ Production (`cardforge.shaheen.works`) deploys from the **`main`** branch. Every
 
 One-time enable in the Netlify dashboard:
 
-1. **Site configuration → Build & deploy → Continuous deployment → Branch deployments** → *Enable branch deploys* → choose **All branches** (or add specific branches).
-2. Confirm the **Production branch** is `main` (**Site configuration → General → Production branch**).
+1. **Project configuration → Developer settings → Continuous deployment → Branches and deploy contexts** → *Configure* → next to **Branch deploys** choose **All** (or *Let me add individual branches* for specific ones — wildcards like `features/*` work) → **Save**.
+2. Confirm the production branch is `main` in that same **Branches and deploy contexts** section.
 
 Then pushing a branch `foo` deploys it to `https://foo--<site-name>.netlify.app` (Netlify prints the exact URL in the deploy log and lists it under *Deploys*). Merging `foo` → `main` updates production. Recommended flow: work on a feature branch (auto-staging — test it), then merge to `main` to release.
 
