@@ -15,7 +15,7 @@ const mcard = CF.$('mcard');
 let totalViews = 0;
 const SPV_LIST = [];
 let spv = null, spvFocus = null;
-let spvAnim = false, spvMuted = true;
+let spvMuted = false;
 
 function updateBadge(nowViewing) {
   const badge = CF.$('viewBadge');
@@ -244,24 +244,16 @@ function paintSpv() {
   const c = chromas[spv.k];
   const ld = levels[spv.lv - 1] || {};
   const cv = spv.k > 0 && c && c.video;
-  const muted = spvMuted ? ' muted' : '';
   const muteBtn = `<button class="spv-mute" type="button" data-spv-mute aria-pressed="${spvMuted}" aria-label="${spvMuted ? 'Unmute preview' : 'Mute preview'}">${spvMuted ? '🔇' : '🔊'}</button>`;
 
   let levelHtml;
-  if (failed) {
-    levelHtml = `<img src="${CF.esc(fallbackIcon)}" alt=""><span class="spv-cap">Preview unavailable — showing card art.</span>`;
-  } else if (cv) {
-    levelHtml = `<video src="${CF.esc(cv)}"${muted} loop autoplay playsinline></video><span class="spv-cap">${CF.esc(`${c.label} showcase · L${spv.lv}`)}</span>${muteBtn}`;
-  } else if (spv.k > 0) {
-    if (spvAnim && ld.video) {
-      levelHtml = `<video src="${CF.esc(ld.video)}"${muted} loop autoplay playsinline></video><span class="spv-cap">${CF.esc(`Level ${spv.lv} animation · default colorway footage`)}</span>${muteBtn}<button class="spv-anim" type="button" data-spv-anim>■ colorway render</button>`;
-    } else {
-      levelHtml = `<img src="${CF.esc(c.full || c.icon || fallbackIcon)}" alt=""><span class="spv-cap">${CF.esc(`${c.label} · L${spv.lv} — colorway render (no showcase footage)`)}</span>${ld.video ? '<button class="spv-anim" type="button" data-spv-anim>▶ level animation</button>' : ''}`;
-    }
+  if (cv) {
+    levelHtml = `<video src="${CF.esc(cv)}" loop autoplay playsinline></video><span class="spv-cap">${CF.esc(`${c.label} showcase · L${spv.lv}`)}</span>${muteBtn}`;
+  } else if (ld.video) {
+    const cap = spv.k > 0 ? `Level ${spv.lv} animation · default colorway footage` : `Level ${spv.lv} animation`;
+    levelHtml = `<video src="${CF.esc(ld.video)}" loop autoplay playsinline></video><span class="spv-cap">${CF.esc(cap)}</span>${muteBtn}`;
   } else {
-    levelHtml = ld.video
-      ? `<video src="${CF.esc(ld.video)}"${muted} loop autoplay playsinline></video><span class="spv-cap">${CF.esc(`Level ${spv.lv} animation`)}</span>${muteBtn}`
-      : `<img src="${CF.esc(fallbackIcon)}" alt=""><span class="spv-cap">${CF.esc(`Level ${spv.lv} animation`)}</span>`;
+    levelHtml = '<p class="spv-note">No preview footage for this skin.</p>';
   }
   CF.$('spvLevel').innerHTML = levelHtml;
 
@@ -270,7 +262,7 @@ function paintSpv() {
     : (c
       ? `<img src="${CF.esc(c.full || c.icon || fallbackIcon)}" alt="${CF.esc(c.label || '')}"><span class="spv-cap">${CF.esc(c.label || 'Standard')}</span>`
       : `<img src="${CF.esc(fallbackIcon)}" alt=""><span class="spv-cap">Standard</span>`);
-  const vv = CF.$('spvLevel').querySelector('video'); if (vv && !spvMuted) vv.play().catch(() => {});
+  const vv = CF.$('spvLevel').querySelector('video'); if (vv) vv.play().then(() => {}).catch(() => { vv.muted = true; spvMuted = true; const mb = CF.$('spvLevel').querySelector('[data-spv-mute]'); if (mb) { mb.textContent = '🔇'; mb.setAttribute('aria-pressed', 'false'); mb.setAttribute('aria-label', 'Unmute preview'); } });
 }
 
 function openSpv(cell) {
@@ -278,7 +270,6 @@ function openSpv(cell) {
   const overlay = CF.$('skinPrev');
   if (!pick || !overlay) return;
   spvFocus = cell;
-  spvAnim = false;
   spv = { skin: pick, chromas: [], levels: [], lv: pick.level || 1, k: 0 };
   CF.$('spvTitle').textContent = pick.name || 'Skin';
   CF.$('spvSub').textContent = [pick.weapon, pick.tier, pick.variant ? pick.variant.name : 'Standard'].filter(Boolean).join(' · ');
@@ -350,8 +341,6 @@ CF.$('spvLevel')?.addEventListener('click', e => {
     mute.setAttribute('aria-label', spvMuted ? 'Unmute preview' : 'Mute preview');
     return;
   }
-  const anim = e.target.closest('[data-spv-anim]');
-  if (anim && spv) { spvAnim = !spvAnim; paintSpv(); }
 });
 
 // ── presence ──────────────────────────────────────────────────────
