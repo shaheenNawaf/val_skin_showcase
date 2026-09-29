@@ -148,7 +148,7 @@
       <button id="mUpload" class="chip" hidden>Upload image…</button>
       <button id="mClose" aria-label="Close picker">✕</button>
     </div>
-    <div class="mbody">
+    <div class="mbody" id="mBody">
       <div id="mLadder" role="group" aria-label="Tier ladder: click for only that tier, click again for that tier and above, third click clears">
         <b class="lhead">Tier ladder</b>
         <span class="lhint">click = only · 2nd = &amp; above · 3rd = clear</span>
@@ -165,12 +165,18 @@
           <div id="mTiers" class="chips" role="group" aria-label="Filter by content tier"></div>
         </div>
         <div id="mVariant" class="mvariant" hidden>
+          <div class="vsplit">
+            <div class="vcol">
+              <div class="vrow"><label>LEVEL</label><div id="vLevels" class="chips"></div></div>
+            </div>
+            <div class="vcol">
+              <div class="vrow"><label>VARIANT</label><div id="vChromas" class="vchromas"></div></div>
+            </div>
+          </div>
           <div class="vprev" id="vPrev" hidden>
             <div class="vp-box"><label>Level preview</label><div class="vp-media" id="vpLevel"></div></div>
             <div class="vp-box"><label>Colorway</label><div class="vp-media" id="vpChroma"></div></div>
           </div>
-          <div class="vrow"><label>LEVEL</label><div id="vLevels" class="chips"></div></div>
-          <div class="vrow"><label>VARIANT</label><div id="vChromas" class="vchromas"></div></div>
           <div class="vrow vactions">
             <button id="vRemove" class="chip">Remove from card</button>
             <button id="vDone" class="chip active">Done</button>
