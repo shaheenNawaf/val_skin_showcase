@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="protocol">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardForge — Marketplace (Prototype D · Quick view)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --notch:8px;--notch-lg:16px;
+  --c-bg:#0B0F14;--c-surface:#10161D;--c-surface2:#151C24;
+  --c-line:#222C37;--c-line-soft:#1A222C;--c-ink:#D9DCE0;--c-mut:#8A95A1;
+  --c-accent:#FF4655;--c-accent-btn:#D62839;--c-veil:rgba(6,9,13,.78);
+  --tier-select:#9ba8b9;--tier-deluxe:#4aa8ff;--tier-premium:#b44bf0;--tier-ultra:#ff5d7b;--tier-exclusive:#ffc45e;
+  --font-ui:'Inter',system-ui,sans-serif;--font-display:'Manrope','Inter',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;border-radius:0}
+html{background:var(--c-bg)}
+body{font-family:var(--font-ui);color:var(--c-ink)}
+:focus{outline:none}
+:focus-visible{box-shadow:inset 0 0 0 2px var(--c-accent)!important}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* topbar */
+#topbar{position:fixed;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 14px;background:var(--c-surface);border-bottom:1px solid var(--c-line);z-index:20}
+.tb-left{display:flex;align-items:center}
+.tb-right{display:flex;align-items:center;gap:8px}
+.logo{font-family:var(--font-display);font-weight:800;font-size:15px;letter-spacing:.18em;color:var(--c-ink)}
+.logo::before{content:"";display:inline-block;width:9px;height:15px;background:var(--c-accent);transform:skewX(-20deg);margin-right:9px;vertical-align:-2px}
+a.tb-link{border:1px solid var(--c-line-soft);color:var(--c-mut);padding:8px 16px;font-weight:600;font-size:11px;letter-spacing:.16em;text-transform:uppercase;text-decoration:none}
+a.tb-link:hover{border-color:var(--c-mut);color:var(--c-ink)}
+.proto-chip{background:var(--c-accent-btn);color:#fff;font-weight:700;font-size:10px;letter-spacing:.14em;padding:4px 10px;text-transform:uppercase;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+
+/* layout */
+#qwrap{max-width:1100px;margin:0 auto;padding:calc(52px + 24px) 20px 76px}
+.qv-back{display:inline-block;margin-bottom:14px;font-weight:600;font-size:12px;color:var(--c-mut);text-decoration:none}
+.qv-back:hover{color:var(--c-accent)}
+.qv-cols{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;align-items:start}
+
+/* preview */
+.qv-preview{position:relative;background:var(--c-surface);border:1px solid var(--c-line);overflow:hidden;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
+.qvp-canvas{position:relative;aspect-ratio:16/9;background:radial-gradient(420px 260px at 30% 20%, color-mix(in srgb, var(--th-accent) 16%, transparent), transparent 70%),repeating-linear-gradient(115deg, transparent 0 26px, rgba(255,255,255,.014) 26px 28px),linear-gradient(160deg, var(--th-bg), var(--th-panel))}
+.qvp-canvas::before,.qvp-canvas::after{content:"";position:absolute;width:20px;height:20px;border:2px solid var(--th-accent);z-index:2;pointer-events:none}
+.qvp-canvas::before{top:10px;left:10px;border-right:0;border-bottom:0}
+.qvp-canvas::after{bottom:10px;right:10px;border-left:0;border-top:0}
+.qvp-ribbon{position:absolute;top:0;left:0;font-weight:700;font-size:9px;letter-spacing:.18em;color:var(--th-ink);background:rgba(0,0,0,.35);padding:4px 9px;z-index:3}
+.qvp-code{position:absolute;top:16px;right:20px;font-family:var(--font-display);font-weight:800;font-size:24px;letter-spacing:.12em;color:var(--th-ink);opacity:.9;z-index:3}
+.qvp-skins{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:12px;padding:0 30px;z-index:2}
+.qvp-skins img{flex:0 1 auto;min-width:0;max-width:100%;height:88px;width:auto;object-fit:contain;filter:drop-shadow(0 10px 16px rgba(0,0,0,.5))}
+.qvp-strip{position:absolute;left:20px;bottom:14px;font-weight:600;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--th-mut);z-index:3}
+.qvp-ranks{position:absolute;right:20px;bottom:12px;display:flex;gap:16px;z-index:3}
+.qvp-rank{display:flex;flex-direction:column;align-items:center;gap:3px}
+.qvp-rank img{height:30px;width:auto;object-fit:contain}
+.qvp-rank span{font-weight:700;font-size:9px;letter-spacing:.08em;color:var(--th-ink);text-align:center}
+
+/* arctic preview overrides */
+.qv-preview[data-theme-tile="arctic"]::after{content:"";position:absolute;left:0;right:0;bottom:0;height:38%;background:linear-gradient(transparent, rgba(240,238,232,.9));pointer-events:none;z-index:1}
+[data-theme-tile="arctic"] .qvp-ribbon{background:rgba(240,238,232,.9);color:#10161D}
+[data-theme-tile="arctic"] .qvp-code{color:#10161D}
+[data-theme-tile="arctic"] .qvp-strip{color:#10161D}
+[data-theme-tile="arctic"] .qvp-rank span{color:#10161D}
+
+/* info */
+.qv-info{background:var(--c-surface);border:1px solid var(--c-line);clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg));padding:24px 26px;display:flex;flex-direction:column;gap:14px}
+.qv-themechip{align-self:flex-start;font-weight:700;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--th-accent);border:1px solid currentColor;padding:4px 9px}
+.qv-info h1{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:var(--font-display);font-weight:800;font-size:28px;letter-spacing:-.01em;line-height:1.15;color:var(--c-ink)}
+.qv-codechip{font-family:var(--font-display);font-weight:800;font-size:11px;letter-spacing:.1em;color:var(--c-mut);border:1px solid var(--c-line);padding:2px 7px}
+.qv-seller{display:flex;align-items:center;gap:10px}
+.qv-seller img.av{width:44px;height:44px;object-fit:cover;flex:none;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.qv-seller b{display:block;font-weight:600;font-size:15px;color:var(--c-ink)}
+.qv-seller span{font-weight:600;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--c-mut)}
+.qv-ranks{display:flex;gap:22px;flex-wrap:wrap}
+.qv-rankblock{display:flex;align-items:center;gap:9px}
+.qv-rankblock img{height:26px;width:auto;object-fit:contain;flex:none}
+.qv-ranklabel{display:block;font-weight:600;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--c-mut)}
+.qv-rankname{display:block;font-weight:700;font-size:12px;color:var(--c-ink)}
+.qv-priceblock{display:flex;flex-direction:column}
+.qv-price{font-family:var(--font-display);font-weight:800;font-size:38px;line-height:1.1;font-variant-numeric:tabular-nums;color:var(--c-ink)}
+.qv-offer{font-family:var(--font-display);font-weight:800;font-size:24px;line-height:1.2;color:#FF7A85}
+.qv-pricesub{display:block;margin-top:2px;font-weight:500;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--c-mut)}
+.qv-flags{display:flex;flex-wrap:wrap;gap:7px}
+.qv-flag{font-weight:600;font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--c-line);color:var(--c-mut);padding:4px 9px;clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px)}
+.qv-flag.yes{color:#3DD68C;border-color:rgba(61,214,140,.4)}
+.qv-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.qv-cell{background:var(--c-surface2);border:1px solid var(--c-line-soft);padding:9px 11px;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.qv-cell b{display:block;font-family:var(--font-display);font-weight:800;font-size:17px;font-variant-numeric:tabular-nums;color:var(--c-ink)}
+.qv-cell label{font-weight:600;font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--c-mut)}
+.qv-ctastack{margin-top:auto;display:flex;flex-direction:column;gap:10px}
+.qv-cta{background:var(--c-accent-btn);color:#fff;font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:14px;text-align:center;text-decoration:none;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.qv-ghost{background:transparent;border:1px solid var(--c-line);color:var(--c-ink);font-family:inherit;font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:13px;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.qv-ghost:hover{border-color:var(--c-accent);color:var(--c-accent)}
+
+/* more */
+.qv-more{margin-top:26px}
+.qm-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.qm-head h2{font-family:var(--font-display);font-weight:800;font-size:18px;color:var(--c-ink)}
+.qm-all{font-weight:700;font-size:12px;color:#FF7A85;text-decoration:none}
+.qm-all:hover{text-decoration:underline}
+.qm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:14px}
+.qm-tile{position:relative;display:block;height:150px;overflow:hidden;text-decoration:none;border:1px solid var(--c-line);clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg));background:radial-gradient(240px 140px at 50% 0%, color-mix(in srgb, var(--th-accent) 12%, transparent), transparent 70%),linear-gradient(165deg, var(--th-bg), var(--th-panel))}
+.qm-skins{position:absolute;left:0;right:0;top:8px;height:48px;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 16px}
+.qm-skins img{flex:0 1 auto;min-width:0;max-width:100%;height:100%;width:auto;object-fit:contain;filter:drop-shadow(0 8px 12px rgba(0,0,0,.5))}
+.qm-info{position:absolute;left:0;right:0;bottom:0;padding:10px 12px;background:linear-gradient(transparent, rgba(4,7,11,.85))}
+.qm-info b{display:block;font-weight:600;font-size:12.5px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qm-row{display:flex;align-items:center;gap:8px;margin-top:4px}
+.qm-price{font-family:var(--font-display);font-weight:800;font-size:14px;font-variant-numeric:tabular-nums;color:#fff}
+.qm-offer{font-weight:700;font-size:9px;letter-spacing:.1em;text-transform:uppercase;background:var(--c-accent-btn);color:#fff;padding:2px 6px;clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px)}
+.qm-meta{margin-left:auto;font-weight:600;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.62);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[data-theme-tile="arctic"] .qm-info{background:linear-gradient(transparent, rgba(240,238,232,.9))}
+[data-theme-tile="arctic"] .qm-info b{color:#10161D}
+[data-theme-tile="arctic"] .qm-price{color:#10161D}
+[data-theme-tile="arctic"] .qm-meta{color:rgba(15,25,35,.65)}
+
+/* not found */
+.nf{max-width:520px;margin:70px auto;text-align:center;background:var(--c-surface);border:1px solid var(--c-line);padding:48px 32px;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
+.nf h1{font-family:var(--font-display);font-weight:800;font-size:26px;color:var(--c-ink)}
+.nf p{margin-top:10px;font-size:13px;color:var(--c-mut)}
+.nf-back{display:inline-block;margin-top:22px;background:var(--c-accent-btn);color:#fff;font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:13px 20px;text-decoration:none;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+
+/* image failure */
+[data-imgfail] img{visibility:hidden}
+[data-imgfail]{background:linear-gradient(135deg,var(--c-surface2),var(--c-line))}
+
+/* toast */
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:56px;z-index:40;max-width:min(560px,calc(100vw - 24px));background:var(--c-surface2);border:1px solid var(--c-line);border-left:3px solid var(--c-accent);color:var(--c-ink);font-size:12.5px;padding:9px 14px;opacity:0;pointer-events:none;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+#toast::before{content:"// ";color:var(--c-mut)}
+#toast.show{opacity:1}
+
+/* disclaimer */
+#disclaimer{position:fixed;left:0;right:0;bottom:0;background:var(--c-veil);backdrop-filter:blur(4px);color:var(--c-mut);font-size:11px;text-align:center;padding:8px;z-index:30}
+#disclaimer a{color:var(--c-ink);text-decoration:underline;padding:2px 6px}
+
+/* motion */
+@media (prefers-reduced-motion:no-preference){
+  #toast{transition:opacity .25s ease}
+  .qm-tile{transition:border-color .18s ease-out,transform .18s ease-out}
+  .qm-tile:hover{border-color:var(--th-accent);transform:translateY(-2px)}
+  .qv-cta{transition:filter .15s ease}
+  .qv-cta:hover{filter:brightness(1.12)}
+  .nf-back{transition:filter .15s ease}
+  .nf-back:hover{filter:brightness(1.12)}
+}
+
+/* responsive */
+@media (max-width:1023px){
+  .qv-cols{grid-template-columns:1fr}
+  .qvp-skins img{height:64px}
+  .qv-info{padding:20px}
+  .qv-price{font-size:32px}
+  .qm-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+}
+@media (max-width:479px){
+  #topbar{height:auto;min-height:52px;flex-wrap:wrap;row-gap:6px}
+  .tb-right{flex-wrap:wrap}
+  #qwrap{padding:calc(52px + 60px) 14px 84px}
+  .qv-stats{grid-template-columns:repeat(2,1fr)}
+  .qvp-skins img{height:56px}
+  .qv-info h1{font-size:24px}
+}
+
+/* scrollbars */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--c-line)}
+::-webkit-scrollbar-thumb:hover{background:var(--c-accent)}
+html{scrollbar-width:thin;scrollbar-color:var(--c-line) transparent}
+</style>
+</head>
+<body>
+<!-- Prototype D · Quick view -->
+<div id="topbar">
+  <div class="tb-left">
+    <span class="logo">CARD FORGE</span>
+  </div>
+  <div class="tb-right">
+    <a class="tb-link" href="index.html">All prototypes</a>
+    <a class="tb-link" href="../index.html">Build a card</a>
+    <span class="proto-chip">PROTOTYPE D · QUICK VIEW</span>
+  </div>
+</div>
+<main id="qwrap">
+  <a class="qv-back" href="marketplace.html">← All listings</a>
+  <div class="qv-cols" id="qvCols">
+    <div class="qv-preview" id="qvPreview" data-imgwrap></div>
+    <div class="qv-info" id="qvInfo"></div>
+  </div>
+  <section class="qv-more" id="qvMore"></section>
+</main>
+<div id="toast" role="status"></div>
+<div id="disclaimer">CardForge is not affiliated with, endorsed by, or associated with Riot Games or any game publisher. All game names, skin names and imagery are trademarks/property of their respective owners. Prototype with mock data — not live listings. <a href="../terms.html">Terms</a> · <a href="../privacy.html">Privacy</a></div>
+<script src="mock-data.js"></script>
+<script>
+(function(){
+  'use strict';
+  var M = window.CF_MOCK;
+  if (!M) return;
+
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  }
+  function agoText(d){ return d === 0 ? 'today' : d === 1 ? '1d ago' : d + 'd ago'; }
+  function themeVars(el, key){
+    var t = M.themes[key] || M.themes.protocol;
+    el.style.setProperty('--th-bg', t.bg);
+    el.style.setProperty('--th-panel', t.panel);
+    el.style.setProperty('--th-accent', t.accent);
+    el.style.setProperty('--th-ink', t.ink);
+    el.style.setProperty('--th-mut', t.mut);
+  }
+
+  var IMGERR = "this.closest('[data-imgwrap]')?.setAttribute('data-imgfail','1')";
+  function skinImg(key){
+    var s = M.skins[key] || { name:'', icon:'' };
+    return '<img src="' + esc(s.icon) + '" alt="' + esc(s.name) + '" loading="lazy" onerror="' + IMGERR + '">';
+  }
+  function rankIcon(key){
+    var r = M.ranks[key] || { name:'', icon:'' };
+    return '<img src="' + esc(r.icon) + '" alt="' + esc(r.name) + '" loading="lazy" onerror="' + IMGERR + '">';
+  }
+  function rankName(key){ return (M.ranks[key] || { name:'—' }).name; }
+
+  var slug = new URLSearchParams(location.search).get('slug');
+  var listing = null;
+  for (var i = 0; i < M.listings.length; i++){
+    if (M.listings[i].slug === slug){ listing = M.listings[i]; break; }
+  }
+
+  var qwrap = document.getElementById('qwrap');
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 2500);
+  }
+
+  if (!listing){
+    qwrap.innerHTML = '<div class="nf">' +
+      '<h1>Listing not found</h1>' +
+      '<p>It may have been sold, or the link is wrong.</p>' +
+      '<a class="nf-back" href="marketplace.html">← Back to all listings</a>' +
+    '</div>';
+    scrollTo(0,0);
+    return;
+  }
+
+  function previewHTML(l){
+    var skins = l.topSkins.slice(0, 6).map(skinImg).join('');
+    var th = M.themes[l.theme] || M.themes.protocol;
+    return '<div class="qvp-canvas">' +
+      '<span class="qvp-ribbon">' + esc(th.label) + '</span>' +
+      '<span class="qvp-code">' + esc(l.code) + '</span>' +
+      '<div class="qvp-skins">' + skins + '</div>' +
+      '<span class="qvp-strip">PREM ' + esc(l.stats.premium) + ' · LIM ' + esc(l.stats.limited) + ' · ANIM ' + esc(l.stats.animated) + ' · LV ' + esc(l.stats.level) + '</span>' +
+      '<div class="qvp-ranks">' +
+        '<div class="qvp-rank">' + rankIcon(l.rankNow) + '<span>' + esc(rankName(l.rankNow)) + '</span></div>' +
+        '<div class="qvp-rank">' + rankIcon(l.rankPeak) + '<span>' + esc(rankName(l.rankPeak)) + '</span></div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function infoHTML(l){
+    var th = M.themes[l.theme] || M.themes.protocol;
+    var ranks =
+      '<div class="qv-rankblock">' + rankIcon(l.rankNow) +
+        '<div><span class="qv-ranklabel">CURRENT</span><span class="qv-rankname">' + esc(rankName(l.rankNow)) + '</span></div>' +
+      '</div>' +
+      '<div class="qv-rankblock">' + rankIcon(l.rankPeak) +
+        '<div><span class="qv-ranklabel">PEAK</span><span class="qv-rankname">' + esc(rankName(l.rankPeak)) + '</span></div>' +
+      '</div>';
+    var price = l.price != null
+      ? '<b class="qv-price">$' + esc(l.price) + '</b><span class="qv-pricesub">one-time · full access</span>'
+      : '<b class="qv-offer">Make an offer</b><span class="qv-pricesub">seller accepts trades</span>';
+    var flags =
+      '<span class="qv-flag ' + (l.flags.wtr ? 'yes' : '') + '">WTR: ' + (l.flags.wtr ? 'YES' : 'NO') + '</span>' +
+      '<span class="qv-flag ' + (l.flags.receipts ? 'yes' : '') + '">RECEIPTS: ' + (l.flags.receipts ? 'YES' : 'NO') + '</span>' +
+      '<span class="qv-flag">VP ' + esc(l.stats.vp) + '</span>' +
+      '<span class="qv-flag">RP ' + esc(l.stats.rp) + '</span>';
+    var cells = [
+      [l.stats.skins,'SKINS'],[l.stats.premium,'PREMIUM'],[l.stats.limited,'LIMITED'],
+      [l.stats.animated,'ANIMATED'],[l.stats.level,'LEVEL'],[l.stats.battlepass,'BATTLEPASS']
+    ].map(function(c){
+      return '<div class="qv-cell"><b>' + esc(c[0]) + '</b><label>' + c[1] + '</label></div>';
+    }).join('');
+
+    return '<span class="qv-themechip">' + esc(th.label) + '</span>' +
+      '<h1>' + esc(l.title) + ' <span class="qv-codechip">' + esc(l.code) + '</span></h1>' +
+      '<div class="qv-seller" data-imgwrap>' +
+        '<img class="av" src="' + esc(M.avatars[l.seller.avatar]) + '" alt="' + esc(l.seller.name) + '" loading="lazy" onerror="' + IMGERR + '">' +
+        '<div><b>' + esc(l.seller.name) + '</b><span>' + esc(l.flags.owner) + ' OWNER · UPDATED ' + esc(agoText(l.daysAgo).toUpperCase()) + ' · ' + esc(l.views) + ' VIEWS</span></div>' +
+      '</div>' +
+      '<div class="qv-ranks">' + ranks + '</div>' +
+      '<div class="qv-priceblock">' + price + '</div>' +
+      '<div class="qv-flags">' + flags + '</div>' +
+      '<div class="qv-stats">' + cells + '</div>' +
+      '<div class="qv-ctastack">' +
+        '<a class="qv-cta" href="../view.html?slug=' + esc(l.slug) + '">Open full listing →</a>' +
+        '<button id="contactBtn" type="button" class="qv-ghost">Contact seller</button>' +
+      '</div>';
+  }
+
+  function moreHTML(l){
+    var others = M.listings.filter(function(x){ return x.slug !== l.slug; })
+      .sort(function(a, b){ return b.views - a.views; })
+      .slice(0, 4);
+    var tiles = others.map(function(x){
+      var arctic = x.theme === 'arctic' ? ' data-theme-tile="arctic"' : '';
+      var skins = x.topSkins.slice(0, 2).map(skinImg).join('');
+      var price = x.price != null
+        ? '<span class="qm-price">$' + esc(x.price) + '</span>'
+        : '<span class="qm-offer">OFFER</span>';
+      return '<a class="qm-tile" href="quickview.html?slug=' + esc(x.slug) + '" data-theme="' + esc(x.theme) + '" data-imgwrap' + arctic + '>' +
+        '<div class="qm-skins">' + skins + '</div>' +
+        '<div class="qm-info">' +
+          '<b>' + esc(x.title) + '</b>' +
+          '<div class="qm-row">' + price +
+            '<span class="qm-meta">' + esc(x.stats.skins) + ' skins · ' + esc(x.views) + ' views</span>' +
+          '</div>' +
+        '</div>' +
+      '</a>';
+    }).join('');
+    return '<div class="qm-head">' +
+        '<h2>More from the market</h2>' +
+        '<a class="qm-all" href="marketplace.html">View all ' + esc(M.listings.length) + ' listings →</a>' +
+      '</div>' +
+      '<div class="qm-grid">' + tiles + '</div>';
+  }
+
+  var prev = document.getElementById('qvPreview');
+  var info = document.getElementById('qvInfo');
+  var more = document.getElementById('qvMore');
+
+  prev.innerHTML = previewHTML(listing);
+  info.innerHTML = infoHTML(listing);
+  more.innerHTML = moreHTML(listing);
+
+  themeVars(prev, listing.theme);
+  themeVars(info, listing.theme);
+  if (listing.theme === 'arctic') prev.setAttribute('data-theme-tile', 'arctic');
+  more.querySelectorAll('.qm-tile').forEach(function(t){
+    themeVars(t, t.getAttribute('data-theme'));
+  });
+
+  var cta = info.querySelector('.qv-cta');
+  cta.addEventListener('click', function(e){
+    e.preventDefault();
+    toast('PROTOTYPE — would open ' + cta.getAttribute('href').replace('../', ''));
+  });
+  document.getElementById('contactBtn').addEventListener('click', function(){
+    toast('PROTOTYPE — contact flow not wired');
+  });
+
+  scrollTo(0,0);
+})();
+</script>
+</body>
+</html>

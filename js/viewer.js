@@ -13,6 +13,8 @@ const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.or
 const card = CF.$('card');
 const mcard = CF.$('mcard');
 let totalViews = 0;
+const SPV_LIST = [];
+let spv = null, spvFocus = null;
 
 function updateBadge(nowViewing) {
   const badge = CF.$('viewBadge');
@@ -20,10 +22,11 @@ function updateBadge(nowViewing) {
   badge.hidden = false;
 }
 
-function skinCell(s) {
-  const label = `${s.weapon || ''} — ${s.name || ''}`;
+function skinCell(s, spi) {
+  const label = `${s.weapon || ''} — ${s.name || ''}${s.level >= 2 ? ` · LV${s.level}` : ''}${s.variant ? ` · ${s.variant.name}` : ''}`;
   const src = s.icon || s.img || '';
-  return `<span class="skin"><img src="${CF.esc(src)}" alt="${CF.esc(label)}" title="${CF.esc(label)}"></span>`;
+  const attrs = s.id ? ` class="skin spv-open" data-spi="${spi}" title="Inspect skin"` : ' class="skin"';
+  return `<span${attrs}><img src="${CF.esc(src)}" alt="${CF.esc(label)}" title="${CF.esc(label)}">${s.level >= 2 ? `<i class="lv">LV${s.level}</i>` : ''}</span>`;
 }
 
 function renderListing(listing) {
@@ -52,7 +55,11 @@ function renderListing(listing) {
     const slots = card.querySelector(`.panel[data-cat="${cat}"] .slots`);
     const skins = picks[cat] || [];
     slots.innerHTML = skins.length
-      ? skins.map(skinCell).join('')
+      ? skins.map(s => {
+          if (!s.id) return skinCell(s);
+          SPV_LIST.push(s);
+          return skinCell(s, SPV_LIST.length - 1);
+        }).join('')
       : '<div class="slotbox empty"></div>';
   });
 
@@ -98,6 +105,7 @@ const MOBILE_SKELETON = `
     <div class="mstat mlimited"><label>LIMITED</label><b data-m="limited">02</b></div>
     <div class="mstat"><label>SEMI PREM</label><b data-m="semis">00</b></div>
     <div class="mstat"><label>BATTLEPASS</label><b data-m="bpass">10</b></div>
+    <div class="mstat"><label>ANIMATED</label><b data-m="anims">00</b></div>
   </div>
   <div class="minforow"><span data-m="wtr">WTR: YES</span><span data-m="receipts">RECEIPTS: YES</span><span data-m="owner">0TH OWNER</span></div>
   <div class="minforow"><span data-m="cname">CHANGE NAME</span><span class="mwarn" data-m="cstatus">NOT READY</span><span data-m="date">2/6/2026</span></div>
@@ -149,13 +157,22 @@ function renderMobile(listing) {
     g.className = 'mgrid';
     skins.forEach(s => {
       const cell = document.createElement('figure');
-      cell.className = 'mskin';
+      if (s.id) {
+        SPV_LIST.push(s);
+        cell.className = 'mskin spv-open';
+        cell.dataset.spi = String(SPV_LIST.length - 1);
+        cell.title = 'Inspect skin';
+        cell.setAttribute('role', 'button');
+        cell.tabIndex = 0;
+      } else {
+        cell.className = 'mskin';
+      }
       const img = document.createElement('img');
       img.src = s.icon || s.img || '';
       img.alt = `${s.weapon || ''} — ${s.name || ''}`;
       img.loading = 'lazy';
       const cap = document.createElement('figcaption');
-      cap.textContent = [s.weapon, s.name].filter(Boolean).join(' — ');
+      cap.textContent = [s.weapon, s.name].filter(Boolean).join(' — ') + (s.level >= 2 ? ` · L${s.level}` : '');
       cell.append(img, cap);
       g.append(cell);
     });
@@ -203,6 +220,111 @@ function renderMobile(listing) {
   if (wmStamp) wmStamp.textContent = new Date().toISOString().slice(0, 10);
 }
 
+// ── skin inspect overlay (preview-only; never mutates picks/listing) ──
+function paintSpv() {
+  if (!spv) return;
+  const pick = spv.skin;
+  const chromas = spv.chromas || [];
+  const levels = spv.levels || [];
+  const failed = !chromas.length && !levels.length;
+  const fallbackIcon = pick.icon || pick.img || '';
+
+  if (failed) {
+    CF.$('spvLevels').innerHTML = '<button class="spv-chip" type="button" disabled>Level —</button>';
+    CF.$('spvChromas').innerHTML = '<button class="spv-swatch" type="button" disabled>Variant —</button>';
+  } else {
+    CF.$('spvLevels').innerHTML = levels.length > 1
+      ? levels.map((l, i) => `<button class="spv-chip${spv.lv === i + 1 ? ' active' : ''}" type="button" data-lv="${i + 1}">L${i + 1}</button>`).join('')
+      : '<span class="spv-cap">Base skin</span>';
+    CF.$('spvChromas').innerHTML = chromas.map((c, i) =>
+      `<button class="spv-swatch${spv.k === i ? ' active' : ''}" type="button" data-ch="${i}" title="${CF.esc(c.label)}"><img loading="lazy" src="${CF.esc(c.sw || c.icon)}" alt=""><b>${CF.esc(c.label)}</b></button>`).join('');
+  }
+
+  const c = chromas[spv.k];
+  const ld = levels[spv.lv - 1] || {};
+  const cv = spv.k > 0 && c && c.video;
+  const videoSrc = cv || ld.video || '';
+  const cap = cv ? `${c.label} showcase · L${spv.lv}` : `Level ${spv.lv} animation`;
+
+  CF.$('spvLevel').innerHTML = failed
+    ? `<img src="${CF.esc(fallbackIcon)}" alt=""><span class="spv-cap">Preview unavailable — showing card art.</span>`
+    : (videoSrc
+      ? `<video src="${CF.esc(videoSrc)}" muted loop autoplay playsinline></video><span class="spv-cap">${CF.esc(cap)}</span>`
+      : `<img src="${CF.esc(fallbackIcon)}" alt=""><span class="spv-cap">${CF.esc(cap)}</span>`);
+
+  CF.$('spvChroma').innerHTML = failed
+    ? `<img src="${CF.esc(fallbackIcon)}" alt=""><span class="spv-cap">Preview unavailable — showing card art.</span>`
+    : (c
+      ? `<img src="${CF.esc(c.full || c.icon || fallbackIcon)}" alt="${CF.esc(c.label || '')}"><span class="spv-cap">${CF.esc(c.label || 'Standard')}</span>`
+      : `<img src="${CF.esc(fallbackIcon)}" alt=""><span class="spv-cap">Standard</span>`);
+}
+
+function openSpv(cell) {
+  const pick = SPV_LIST[+cell.dataset.spi];
+  const overlay = CF.$('skinPrev');
+  if (!pick || !overlay) return;
+  spvFocus = cell;
+  spv = { skin: pick, chromas: [], levels: [], lv: pick.level || 1, k: 0 };
+  CF.$('spvTitle').textContent = pick.name || 'Skin';
+  CF.$('spvSub').textContent = [pick.weapon, pick.tier, pick.variant ? pick.variant.name : 'Standard'].filter(Boolean).join(' · ');
+  CF.$('spvLevels').innerHTML = '';
+  CF.$('spvChromas').innerHTML = '';
+  CF.$('spvLevel').innerHTML = '<div class="spv-shimmer"></div>';
+  CF.$('spvChroma').innerHTML = '<div class="spv-shimmer"></div>';
+  overlay.hidden = false;
+  document.body.classList.add('spv-lock');
+  overlay.querySelector('.spv-close')?.focus();
+  fetch('https://valorant-api.com/v1/weapons/skins/' + encodeURIComponent(pick.id))
+    .then(r => (r.ok ? r.json() : null))
+    .then(j => {
+      const d = j && j.data;
+      if (!d) throw new Error('no data');
+      spv.chromas = (d.chromas || []).map(c => {
+        const label = String(c.displayName || '').replace(/\r?\n/g, ' ').trim();
+        const m = label.match(/Level\s+(\d+)/);
+        return { label, icon: c.displayIcon || '', full: c.fullRender || '', video: c.streamedVideo || '', sw: c.swatch || '', unlock: m ? +m[1] : null };
+      });
+      spv.levels = (d.levels || []).map((l, i) => ({ level: i + 1, video: l.streamedVideo || '' }));
+      spv.k = pick.variant ? spv.chromas.findIndex(c => c.icon === pick.variant.icon) : 0;
+      spv.lv = pick.level || 1;
+      paintSpv();
+    })
+    .catch(() => {
+      if (!spv) return;
+      spv.chromas = [];
+      spv.levels = [];
+      paintSpv();
+    });
+}
+
+function closeSpv() {
+  const overlay = CF.$('skinPrev');
+  if (!overlay) return;
+  overlay.hidden = true;
+  document.body.classList.remove('spv-lock');
+  const cell = spvFocus;
+  spv = null;
+  spvFocus = null;
+  if (cell && cell.isConnected) cell.focus();
+}
+
+document.addEventListener('click', e => {
+  const open = e.target.closest('.spv-open');
+  if (open) { openSpv(open); return; }
+  const overlay = CF.$('skinPrev');
+  if (!overlay || overlay.hidden) return;
+  if (e.target === overlay || e.target.closest('.spv-close')) { closeSpv(); return; }
+  const lvBtn = e.target.closest('[data-lv]');
+  if (lvBtn && spv) { spv.lv = +lvBtn.dataset.lv; paintSpv(); return; }
+  const chBtn = e.target.closest('[data-ch]');
+  if (chBtn && spv) { spv.k = +chBtn.dataset.ch; paintSpv(); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && spv) { closeSpv(); return; }
+  const open = e.target.closest ? e.target.closest('.spv-open') : null;
+  if ((e.key === 'Enter' || e.key === ' ') && open) { e.preventDefault(); openSpv(open); }
+});
+
 // ── presence ──────────────────────────────────────────────────────
 function startSupabasePresence(slug) {
   const channel = supabase.channel('listing:' + slug)
@@ -217,6 +339,7 @@ function startSupabasePresence(slug) {
 // ── boot ──────────────────────────────────────────────────────────
 const fit = CF.makeFitter({ card, sizer: CF.$('sizer'), topbar: CF.$('topbar'), stage: CF.$('stage') });
 fit();
+CF.initDisclaimerCollapse();
 
 const slug = new URLSearchParams(location.search).get('slug');
 if (!slug) {

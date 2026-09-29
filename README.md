@@ -6,7 +6,7 @@ No framework — plain HTML/CSS/JS, staged into `dist/` by a tiny build script a
 
 ## Features
 
-- **Card editor** (`index.html`): per-category skin picker (data from the community API [valorant-api.com](https://valorant-api.com)), current/peak rank picker, avatar / gun buddies / player card uploads (resized client-side), editable texts, 5 themes, auto-count of premium-tier skins.
+- **Card editor** (`index.html`): per-category skin picker (data from the community API [valorant-api.com](https://valorant-api.com)) with per-skin level (L1–L5) and color-variant badges — level 2+ marks animated skins, current/peak rank picker, avatar / gun buddies / player card uploads (resized client-side), editable texts, 5 themes, auto-count of premium-tier and animated skins.
 - **PNG export** at 3840×2160 via html2canvas.
 - **Drafts**: save/load the full structured card to localStorage (old `vcard-builder-v1` drafts migrate automatically).
 - **Publishing** (`view.html`): publishes the card as a listing; share links work cross-device when Supabase is configured, per-browser otherwise. Viewers see a live "viewing now" counter (Supabase Realtime, or BroadcastChannel locally), a total-views counter and a contact-seller button. Republish/update works via a locally-stored edit token.

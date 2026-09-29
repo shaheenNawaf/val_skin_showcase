@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="protocol">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardForge — Marketplace redesign prototypes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --notch:8px;--notch-lg:16px;
+  --c-bg:#0B0F14;--c-surface:#10161D;--c-surface2:#151C24;
+  --c-line:#222C37;--c-line-soft:#1A222C;--c-ink:#D9DCE0;--c-mut:#8A95A1;
+  --c-accent:#FF4655;--c-accent-btn:#D62839;--c-veil:rgba(6,9,13,.78);
+  --tier-select:#9ba8b9;--tier-deluxe:#4aa8ff;--tier-premium:#b44bf0;--tier-ultra:#ff5d7b;--tier-exclusive:#ffc45e;
+}
+*{box-sizing:border-box;margin:0;padding:0;border-radius:0}
+html{background:var(--c-bg)}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--c-ink)}
+:focus{outline:none}
+:focus-visible{box-shadow:inset 0 0 0 2px var(--c-accent)!important}
+
+/* topbar */
+#topbar{position:fixed;top:0;left:0;right:0;min-height:52px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px;padding:6px 14px;background:var(--c-surface);border-bottom:1px solid var(--c-line);z-index:20}
+.tb-left,.tb-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:6px}
+.logo{font-family:'Manrope',sans-serif;font-weight:800;font-size:16px;letter-spacing:.25em;color:var(--c-ink)}
+.logo::before{content:"";display:inline-block;width:9px;height:15px;background:var(--c-accent);transform:skewX(-20deg);margin-right:9px;vertical-align:-2px}
+a.tb-link{background:transparent;border:1px solid var(--c-line-soft);color:var(--c-mut);padding:8px 16px;font:600 11px 'Inter',system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;text-decoration:none;display:inline-block}
+a.tb-link:hover{border-color:var(--c-mut);color:var(--c-ink);background:color-mix(in srgb,#fff 4%,transparent)}
+
+/* disclaimer */
+#disclaimer{position:fixed;bottom:8px;left:0;right:0;text-align:center;color:var(--c-mut);font-size:11px;letter-spacing:.02em;padding:8px;background:var(--c-veil);backdrop-filter:blur(4px);z-index:30}
+#disclaimer a{color:var(--c-ink);text-decoration:underline;padding:2px 6px}
+
+/* layout */
+main{padding:calc(52px + 24px) 20px 76px}
+#lwrap{max-width:1160px;margin:0 auto}
+
+/* header */
+.lhead{max-width:760px}
+.leyebrow{display:block;font-weight:700;font-size:11px;letter-spacing:.34em;color:var(--c-mut);text-transform:uppercase}
+.lhead h1{font-family:'Manrope',sans-serif;font-weight:800;font-size:clamp(40px,7vw,72px);letter-spacing:.03em;line-height:.98;margin:12px 0 16px}
+.lsub{font-size:15px;line-height:1.6;color:var(--c-mut);max-width:640px}
+.lfixes{list-style:none;display:grid;grid-template-columns:1fr;margin-top:18px}
+.lfixes li{font-size:13px;color:var(--c-ink);padding:6px 0}
+.lfixes li::before{content:"▸ ";color:var(--c-accent)}
+
+/* direction cards */
+.lcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-top:38px}
+.dcard{background:var(--c-surface);border:1px solid var(--c-line);display:flex;flex-direction:column;gap:12px;padding:26px 24px;
+clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
+.dhead{display:flex;align-items:center;gap:14px}
+.dletter{font-family:'Manrope',sans-serif;font-weight:800;font-size:44px;line-height:1;color:transparent;-webkit-text-stroke:1px var(--c-accent)}
+.dmeta h2{font-family:'Manrope',sans-serif;font-size:22px;font-weight:800;letter-spacing:.08em}
+.dtag{display:block;font-weight:600;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut)}
+.ddesc{font-size:13px;line-height:1.6;color:var(--c-mut)}
+.dpros{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px}
+.dpros dt{font-weight:700;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--c-mut)}
+.dpros dd{font-size:12px;color:var(--c-ink)}
+.dpros dd.fit::before{content:"＋ ";color:#3DD68C}
+.dpros dd.trade::before{content:"－ ";color:var(--c-mut)}
+.dcta{display:block;background:var(--c-accent-btn);color:#fff;font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:13px;text-align:center;text-decoration:none;
+clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.dinsp{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--c-mut)}
+
+/* comparison table */
+.ltable{margin-top:44px}
+.lsec{font-family:'Manrope',sans-serif;font-size:20px;font-weight:800;letter-spacing:.1em;border-bottom:1px solid var(--c-line);padding-bottom:10px;margin-bottom:0}
+.tscroll{margin-top:18px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{font-weight:700;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--c-mut);text-align:left;padding:12px 14px;border-bottom:1px solid var(--c-line)}
+tbody td{padding:11px 14px;border-bottom:1px solid var(--c-line-soft);color:var(--c-ink)}
+tbody td:first-child{font-weight:600;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--c-mut)}
+
+/* recommendation */
+.lrec{margin-top:40px;background:var(--c-surface2);border:1px solid var(--c-line);border-left:3px solid var(--c-accent);padding:24px 26px;
+clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
+.lsec2{font-family:'Manrope',sans-serif;font-size:16px;font-weight:800;letter-spacing:.12em;margin-bottom:10px}
+.lrec p{font-size:14px;line-height:1.7;color:var(--c-ink);max-width:820px}
+
+/* next steps */
+.lnext{margin-top:40px}
+.nsteps{padding-left:20px;margin-top:14px}
+.nsteps li{font-size:13px;line-height:1.7;color:var(--c-mut);padding:5px 0}
+.nsteps li::marker{color:var(--c-accent)}
+
+/* footer note */
+.lfoot{font-size:11px;color:var(--c-mut);margin-top:34px;border-top:1px solid var(--c-line-soft);padding-top:14px}
+
+/* combined draft banner */
+.lcomb{display:flex;align-items:center;gap:18px;margin-top:34px;padding:20px 24px;background:var(--c-surface2);border:1px solid var(--c-line);border-left:3px solid var(--c-accent);text-decoration:none;color:inherit;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
+.lcomb-badge{flex:none;font:800 11px 'Manrope',sans-serif;letter-spacing:.18em;color:#fff;background:var(--c-accent-btn);padding:6px 12px;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.lcomb-text{flex:1;font:400 13px/1.55 'Inter',system-ui,sans-serif;color:var(--c-mut)}
+.lcomb-cta{flex:none;font:700 12px 'Inter',system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#FF7A85}
+.lcomb:hover .lcomb-cta{text-decoration:underline}
+
+@media (min-width:768px){
+  .lfixes{grid-template-columns:1fr 1fr}
+}
+@media (max-width:760px){
+  #topbar{row-gap:3px;padding:5px 10px}
+  .tb-left,.tb-right{width:100%}
+  .tb-right{justify-content:flex-start;row-gap:4px;gap:6px}
+  a.tb-link{padding:5px 8px;font-size:10px}
+  .logo{font-size:14px}
+  #disclaimer{font-size:12px}
+  main{padding:96px 20px 76px}
+}
+@media (max-width:767px){
+  .tscroll{display:block;overflow-x:auto}
+  table{min-width:640px}
+  .lcomb{flex-wrap:wrap}
+  .lcomb-cta{width:100%}
+}
+@media (prefers-reduced-motion:no-preference){
+  .dcard{transition:border-color .25s ease}
+  .dcard:hover{border-color:var(--c-accent)}
+  .dcta{transition:filter .15s ease}
+  .dcta:hover{filter:brightness(1.12)}
+  .lcomb:hover{border-color:var(--c-accent)}
+}
+
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--c-line)}
+::-webkit-scrollbar-thumb:hover{background:var(--c-accent)}
+html{scrollbar-width:thin;scrollbar-color:var(--c-line) transparent}
+
+.lpick{border-left-color:var(--tier-premium,#b44bf0)}
+.lpick-badge{background:#7a2ea8}
+.lpick-links{display:flex;gap:22px;margin:10px 2px 0}
+.lpick-links a{font:700 12px 'Inter',system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#FF7A85;text-decoration:none}
+.lpick-links a:hover{text-decoration:underline}
+@media (max-width:767px){.lpick-links{flex-direction:column;gap:8px}}
+</style>
+</head>
+<body>
+<!-- Prototype hub -->
+<div id="topbar">
+  <div class="tb-left">
+    <span class="logo">CARD FORGE</span>
+  </div>
+  <div class="tb-right">
+    <a class="tb-link" href="../browse.html">Live browse page</a>
+    <a class="tb-link" href="../index.html">Build a card</a>
+  </div>
+</div>
+<main>
+<div id="lwrap">
+
+  <header class="lhead">
+    <span class="leyebrow">CARDFORGE · MARKETPLACE REDESIGN</span>
+    <h1>Three directions,<br>one identity.</h1>
+    <p class="lsub">The live browse page is text-only: no inventory imagery, no search, no filters — and with one listing it reads as abandoned. Every prototype below keeps CardForge's identity (Manrope + Inter, notched panels, #FF4655) and fixes the fundamentals:</p>
+    <ul class="lfixes">
+      <li>Visual inventory previews — real skin art, rank badges, theme colors on every card</li>
+      <li>Working search, theme filters and sorting on all views</li>
+      <li>Prices and "make offer" states surfaced (columns already exist in the DB)</li>
+      <li>Trust flags: WTR, receipts, owner history, view counts</li>
+      <li>Sparse-market handling — the page looks intentional with 1 listing or 100</li>
+      <li>Proper empty states with a reset action</li>
+      <li>Loading skeletons instead of blank space</li>
+      <li>Mobile-first responsive layouts + keyboard/a11y basics</li>
+    </ul>
+  </header>
+
+  <a class="lcomb" href="marketplace.html">
+    <span class="lcomb-badge">COMBINED DRAFT</span>
+    <span class="lcomb-text">A's layout + B's featured hero &amp; cards + C's quick view as a modal rendering the full 1080p card — rebuilt in the new Manrope/Inter type system, with the Market Pulse as a full-width strip.</span>
+    <span class="lcomb-cta">Open the combined marketplace →</span>
+  </a>
+
+  <a class="lcomb lpick" href="picker-a.html">
+    <span class="lcomb-badge lpick-badge">PICKER LAB</span>
+    <span class="lcomb-text">Three redesigns of the add-skins picker with tier-first navigation — the current picker's tiers are an exact-match chip row buried under an alphabetical weapon list.</span>
+    <span class="lcomb-cta">Open A · Tier Ladder →</span>
+  </a>
+  <div class="lpick-links"><a href="picker-b.html">Open B · Grouped Shelves →</a><a href="picker-c.html">Open C · Command search →</a></div>
+
+  <section class="lcards">
+    <article class="dcard">
+      <div class="dhead">
+        <span class="dletter">A</span>
+        <div class="dmeta">
+          <h2>ARMORY</h2>
+          <span class="dtag">The pro trading floor</span>
+        </div>
+      </div>
+      <p class="ddesc">Faceted sidebar (theme, min rank, price band, requirements), grid + list density toggle, sort toolbar. Built for a buyer who knows what they want — and for a catalog of 100+ listings.</p>
+      <dl class="dpros">
+        <dt>GOOD FIT</dt><dt>TRADE-OFF</dt>
+        <dd class="fit">Scales to hundreds of listings; fastest path from intent to click</dd><dd class="trade">Utilitarian — least emotional pull</dd>
+        <dd class="fit">List view = power-user density</dd><dd class="trade">Sidebar needs real facet data (rank/price columns) in the RPC</dd>
+      </dl>
+      <a class="dcta" href="armory.html">Open prototype A →</a>
+      <span class="dinsp">Inspired by: Steam Market · Buff163 · DMarket · CSFloat</span>
+    </article>
+
+    <article class="dcard">
+      <div class="dhead">
+        <span class="dletter">B</span>
+        <div class="dmeta">
+          <h2>GALLERY</h2>
+          <span class="dtag">The premium showroom</span>
+        </div>
+      </div>
+      <p class="ddesc">A cinematic featured slot renders the star listing as a mini showcase card; the grid gives every listing theme-colored glow, overlapping skin art and tier accents. Built to make inventory feel valuable at first glance.</p>
+      <dl class="dpros">
+        <dt>GOOD FIT</dt><dt>TRADE-OFF</dt>
+        <dd class="fit">Strongest first impression; sells the card format itself</dd><dd class="trade">Lowest density — more scrolling at scale</dd>
+        <dd class="fit">Featured slot gives top listings exposure</dd><dd class="trade">Hero rendering costs the most layout work</dd>
+      </dl>
+      <a class="dcta" href="gallery.html">Open prototype B →</a>
+      <span class="dinsp">Inspired by: Skinport · Riot store cinematics · gallery showrooms</span>
+    </article>
+
+    <article class="dcard">
+      <div class="dhead">
+        <span class="dletter">C</span>
+        <div class="dmeta">
+          <h2>BENTO</h2>
+          <span class="dtag">The playful discovery grid</span>
+        </div>
+      </div>
+      <p class="ddesc">A mixed bento grid where market pulse, rank spread and a sell-CTA tile sit between listings. The page never looks empty — utility tiles fill the gaps while the catalog grows.</p>
+      <dl class="dpros">
+        <dt>GOOD FIT</dt><dt>TRADE-OFF</dt>
+        <dd class="fit">Best sparse-market trick — always looks alive</dd><dd class="trade">Most custom components to maintain</dd>
+        <dd class="fit">Quick-view modal reduces click-away</dd><dd class="trade">Bento balance breaks if tile rules change</dd>
+      </dl>
+      <a class="dcta" href="bento.html">Open prototype C →</a>
+      <span class="dinsp">Inspired by: Modern bento grids · CS.Money · G2A/Eneba energy</span>
+    </article>
+  </section>
+
+  <section class="ltable">
+    <h2 class="lsec">Side by side</h2>
+    <div class="tscroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col"></th>
+            <th scope="col">A · ARMORY</th>
+            <th scope="col">B · GALLERY</th>
+            <th scope="col">C · BENTO</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Information density</td><td>High</td><td>Medium</td><td>Medium-high</td></tr>
+          <tr><td>Emotional pull</td><td>Low</td><td>High</td><td>Medium-high</td></tr>
+          <tr><td>Works with 1 listing</td><td>OK (list view stays tidy)</td><td>Good (hero carries it)</td><td>Best (utility tiles fill)</td></tr>
+          <tr><td>Works with 100+</td><td>Best</td><td>OK (scroll-heavy)</td><td>Good</td></tr>
+          <tr><td>Mobile pattern</td><td>Drawer filters + stacked rows</td><td>Stacked hero + 1-col cards</td><td>1-col tile stream</td></tr>
+          <tr><td>Quick-view</td><td>No (direct navigation)</td><td>No (direct navigation)</td><td>Yes (modal)</td></tr>
+          <tr><td>Integration effort</td><td>M — needs extended RPC</td><td>M — hero renderer + RPC</td><td>L — modal + chart tiles + RPC</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="lrec">
+    <h2 class="lsec2">Recommendation</h2>
+    <p>Start with B (Gallery). The marketplace's real bottleneck today is not scale — it is desire: one listing, zero imagery, no reason to click. Gallery turns each card into the product it already is, and its featured slot keeps working when the catalog is tiny. Steal two things from the others on the way: C's utility tiles for sparse stretches, and A's list view + facet sidebar once the catalog passes ~30 listings.</p>
+  </section>
+
+  <section class="lnext">
+    <h2 class="lsec">What production integration needs</h2>
+    <ol class="nsteps">
+      <li>Extend the browse_listings RPC (supabase/migrations) to return price, currency, rank keys, top skin icons, seller name/avatar and flags — all already inside listings.payload.</li>
+      <li>Pick a direction (or mix) — prototypes are pure static files, nothing in the live app was touched.</li>
+      <li>Port the chosen layout into browse.html + css/browse.css + js/browse.js, keeping the Supabase fetch and the localStorage-only fallback.</li>
+      <li>Optional later: generate a real card thumbnail (scaled PNG) at publish time for pixel-perfect previews instead of re-rendered minis.</li>
+    </ol>
+  </section>
+
+  <p class="lfoot">Prototypes load 14 mock listings with real community-API artwork. Seller names, prices and stats are fictional.</p>
+
+</div>
+</main>
+
+<div id="disclaimer">CardForge is not affiliated with, endorsed by, or associated with Riot Games or any game publisher. All game names, skin names and imagery are trademarks/property of their respective owners. Prototype pages use mock data — not live listings. <a href="../terms.html">Terms</a> · <a href="../privacy.html">Privacy</a></div>
+</body>
+</html>

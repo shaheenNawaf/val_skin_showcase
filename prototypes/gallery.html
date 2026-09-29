@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="protocol">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardForge — Marketplace (Prototype B · Gallery)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --notch:8px;--notch-lg:16px;--tbh:52px;
+  --c-bg:#0B0F14;--c-surface:#10161D;--c-surface2:#151C24;--c-line:#222C37;--c-line-soft:#1A222C;
+  --c-ink:#D9DCE0;--c-mut:#8A95A1;--c-accent:#FF4655;--c-accent-btn:#D62839;--c-veil:rgba(6,9,13,.78);
+  --tier-select:#9ba8b9;--tier-deluxe:#4aa8ff;--tier-premium:#b44bf0;--tier-ultra:#ff5d7b;--tier-exclusive:#ffc45e;
+}
+*{box-sizing:border-box;margin:0;padding:0;border-radius:0}
+html{background:var(--c-bg)}
+body{font-family:'Chakra Petch',system-ui,sans-serif;color:var(--c-ink)}
+:focus{outline:none}
+:focus-visible{box-shadow:inset 0 0 0 2px var(--c-accent)!important}
+[hidden]{display:none!important}
+::selection{background:var(--c-accent);color:#fff}
+
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+.proto-chip,#toast,.gchip,#sort,.gc-offer,.gf-cta,.gf-seller img,.gf-theme,.gempty button,.gempty a{
+  clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.gc-chips span,.gc-seller img{clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px)}
+.gfeat,.gcard,.cta-tile,.sk,.gempty{
+  clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
+
+#topbar{position:fixed;top:0;left:0;right:0;min-height:var(--tbh);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px;padding:6px 14px;background:var(--c-surface);border-bottom:1px solid var(--c-line);z-index:20}
+.tb-left,.tb-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:6px}
+.logo{font-family:Anton,sans-serif;font-size:16px;letter-spacing:.25em;color:var(--c-ink)}
+.logo::before{content:"";display:inline-block;width:9px;height:15px;background:var(--c-accent);transform:skewX(-20deg);margin-right:9px;vertical-align:-2px}
+.tb-link{border:1px solid var(--c-line-soft);color:var(--c-mut);padding:8px 16px;font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.16em;text-transform:uppercase;text-decoration:none}
+.tb-link:hover{border-color:var(--c-mut);color:var(--c-ink)}
+.proto-chip{background:var(--c-accent-btn);color:#fff;font:700 10px 'Chakra Petch',sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:4px 10px;display:inline-flex;align-items:center}
+
+#disclaimer{position:fixed;left:0;right:0;bottom:0;background:var(--c-veil);backdrop-filter:blur(4px);color:var(--c-mut);font-size:11px;text-align:center;padding:8px;z-index:30}
+#disclaimer a{color:var(--c-ink);text-decoration:underline;padding:2px 6px}
+
+main{padding:calc(var(--tbh) + 24px) 20px 76px}
+#gwrap{max-width:1240px;margin:0 auto}
+
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:56px;max-width:min(560px,calc(100vw - 24px));background:var(--c-surface2);border:1px solid var(--c-line);border-left:3px solid var(--c-accent);color:var(--c-ink);font-size:12.5px;letter-spacing:.04em;line-height:1.45;padding:9px 14px;z-index:40;opacity:0;pointer-events:none}
+#toast.show{opacity:1}
+#toast::before{content:"// ";color:var(--c-mut)}
+
+.ghead{margin:0 0 6px}
+.geyebrow{display:block;font:700 11px 'Chakra Petch',sans-serif;letter-spacing:.34em;color:var(--c-mut);text-transform:uppercase}
+.ghead h1{font-family:Anton,sans-serif;font-weight:400;font-size:clamp(38px,6vw,64px);letter-spacing:.04em;color:var(--c-ink);line-height:.98;margin:10px 0 12px}
+.gsub{font-size:15px;color:var(--c-mut);max-width:560px}
+
+#gstats{display:flex;flex-wrap:wrap;gap:26px;margin-top:20px}
+#gstats .gs{display:flex;flex-direction:column}
+#gstats .gs b{font-family:Anton,sans-serif;font-weight:400;font-size:22px;letter-spacing:.06em;color:var(--c-ink)}
+#gstats .gs label{font:600 9px 'Chakra Petch',sans-serif;letter-spacing:.24em;color:var(--c-mut);text-transform:uppercase}
+#gstats .gs:nth-child(n+2){border-left:1px solid var(--c-line-soft);padding-left:26px}
+
+#feature{margin:28px 0 0}
+.gfeat{display:grid;grid-template-columns:1.4fr 1fr;background:var(--c-surface);border:1px solid var(--c-line);overflow:hidden;text-decoration:none;color:inherit}
+.gf-preview{position:relative;min-width:0;aspect-ratio:16/9;overflow:hidden;
+  background:linear-gradient(160deg,var(--th-bg),var(--th-panel));
+  background:
+    radial-gradient(420px 240px at 30% 20%,color-mix(in srgb,var(--th-accent) 16%,transparent),transparent 70%),
+    linear-gradient(160deg,var(--th-bg),var(--th-panel))}
+.gf-preview::before,.gf-preview::after{content:"";position:absolute;width:22px;height:22px;border-style:solid;border-width:0;border-color:var(--th-accent)}
+.gf-preview::before{top:10px;left:10px;border-top-width:2px;border-left-width:2px}
+.gf-preview::after{bottom:10px;right:10px;border-bottom-width:2px;border-right-width:2px}
+.gf-ribbon{position:absolute;top:0;left:0;background:var(--c-accent);color:#fff;font:700 10px 'Chakra Petch',sans-serif;letter-spacing:.18em;text-transform:uppercase;padding:6px 12px;clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%)}
+.gf-code{position:absolute;top:16px;left:50%;transform:translateX(-50%);font-family:Anton,sans-serif;font-weight:400;font-size:26px;letter-spacing:.18em;color:var(--th-ink);opacity:.9}
+.gf-skins{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:14px;padding:0 26px}
+.gf-skins img{height:76px;width:auto;min-width:0;flex:0 1 auto;max-width:100%;object-fit:contain;filter:drop-shadow(0 10px 16px rgba(0,0,0,.5))}
+.gf-strip{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:8px;white-space:nowrap;font:600 10px 'Chakra Petch',sans-serif;letter-spacing:.22em;color:var(--th-mut);text-transform:uppercase}
+.gf-strip span+span::before{content:"· "}
+.gf-ranks{position:absolute;bottom:12px;right:16px;display:flex;flex-direction:column;align-items:flex-end;gap:4px;color:var(--th-ink)}
+.gf-ranks .gfr{display:flex;align-items:center;gap:6px}
+.gf-ranks img{width:30px;height:30px;object-fit:contain}
+.gf-ranks b{font:600 10px 'Chakra Petch',sans-serif;letter-spacing:.08em}
+
+.gf-info{display:flex;flex-direction:column;gap:14px;min-width:0;padding:30px 30px 26px}
+.gf-theme{align-self:flex-start;font:700 10px 'Chakra Petch',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--th-accent);border:1px solid currentColor;padding:4px 9px}
+.gf-info h2{font-family:Anton,sans-serif;font-weight:400;font-size:30px;letter-spacing:.03em;color:var(--c-ink);line-height:1}
+.gf-seller{display:flex;align-items:center;gap:10px;min-width:0}
+.gf-seller img{width:40px;height:40px;flex:none;object-fit:cover}
+.gf-seller b{display:block;font:600 13px 'Chakra Petch',sans-serif;color:var(--c-ink)}
+.gf-seller span{display:block;font:500 10px 'Chakra Petch',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--c-mut)}
+.gf-rankrow{display:flex;align-items:center;gap:6px;font:700 11px 'Chakra Petch',sans-serif;letter-spacing:.1em}
+.gf-rankrow img{width:22px;height:22px;object-fit:contain}
+.gf-rankrow i{font-style:normal;color:var(--c-mut)}
+.gf-rankrow .m{color:var(--c-mut)}
+.gf-price b{display:block;font-family:Anton,sans-serif;font-weight:400;font-size:40px;letter-spacing:.02em;color:var(--c-ink)}
+.gf-price b.offer{color:#FF7A85}
+.gf-price span{display:block;font:500 11px 'Chakra Petch',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--c-mut)}
+.gf-meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font:500 11px 'Chakra Petch',sans-serif;letter-spacing:.08em;color:var(--c-mut);text-transform:uppercase}
+
+.gf-cta{display:block;margin-top:auto;background:var(--c-accent-btn);color:#fff;font:700 12px 'Chakra Petch',sans-serif;letter-spacing:.14em;text-transform:uppercase;text-align:center;padding:14px}
+.gf-cta:hover{filter:brightness(1.12)}
+
+.gcontrols{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:34px 0 18px;border-top:1px solid var(--c-line-soft);border-bottom:1px solid var(--c-line-soft);padding:14px 0}
+.gc-search{display:flex}
+#q{background:transparent;border:none;border-bottom:1px solid var(--c-line);color:var(--c-ink);font:500 14px 'Chakra Petch',sans-serif;padding:8px 2px;width:240px}
+#q:focus{border-bottom-color:var(--c-accent)}
+#q::placeholder{color:var(--c-mut)}
+.gc-themes{display:flex;flex-wrap:wrap;gap:8px}
+.gchip{border:1px solid var(--c-line);background:transparent;color:var(--c-mut);font:700 10px 'Chakra Petch',sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:8px 12px;display:flex;gap:7px;align-items:center;cursor:pointer}
+.gchip:hover{border-color:var(--c-mut);color:var(--c-ink)}
+.gchip[aria-pressed=true]{color:var(--c-ink);border-color:var(--c-mut);background:var(--c-surface2)}
+.gchip .sw{width:9px;height:9px;flex:none;display:inline-block;transform:rotate(45deg)}
+.sw-protocol{background:#FF4655}
+.sw-holo{background:#46F6FF}
+.sw-reaver{background:#B44BFF}
+.sw-oni{background:#FF5540}
+.sw-arctic{background:#C22E3C}
+#sort{background:var(--c-surface2);border:1px solid var(--c-line);color:var(--c-ink);font:600 12px 'Chakra Petch',sans-serif;padding:9px 12px}
+#count{margin-left:auto;font:500 11px 'Chakra Petch',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--c-mut)}
+
+.ggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+.gcard{background:var(--c-surface);border:1px solid var(--c-line);display:flex;flex-direction:column;text-decoration:none;color:inherit}
+.gc-preview{position:relative;aspect-ratio:16/10;overflow:hidden;border-top:2px solid var(--tier-select);
+  background:linear-gradient(165deg,var(--th-bg),var(--th-panel));
+  background:
+    radial-gradient(300px 180px at 50% 0%,color-mix(in srgb,var(--th-accent) 12%,transparent),transparent 70%),
+    repeating-linear-gradient(115deg,transparent 0 22px,rgba(255,255,255,.015) 22px 24px),
+    linear-gradient(165deg,var(--th-bg),var(--th-panel))}
+.tt-select{border-top-color:var(--tier-select)}
+.tt-deluxe{border-top-color:var(--tier-deluxe)}
+.tt-premium{border-top-color:var(--tier-premium)}
+.tt-ultra{border-top-color:var(--tier-ultra)}
+.tt-exclusive{border-top-color:var(--tier-exclusive)}
+.gc-badges{position:absolute;top:10px;right:10px;display:flex;gap:6px}
+.b-new{background:var(--c-accent);color:#fff;font:700 9px 'Chakra Petch',sans-serif;letter-spacing:.12em;text-transform:uppercase;padding:3px 7px}
+.b-hot{background:#E8A33D;color:#0B0F14;font:700 9px 'Chakra Petch',sans-serif;letter-spacing:.12em;text-transform:uppercase;padding:3px 7px}
+.gc-theme{position:absolute;top:10px;left:10px;font:700 9px 'Chakra Petch',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--th-ink);background:rgba(0,0,0,.35);padding:3px 7px}
+.gc-skins{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:0;padding:0 14px}
+.gc-skins img{height:64px;width:auto;min-width:0;flex:0 1 auto;max-width:100%;object-fit:contain;margin-inline:-8px;filter:drop-shadow(0 8px 12px rgba(0,0,0,.5))}
+.gc-code{position:absolute;bottom:10px;left:12px;font-family:Anton,sans-serif;font-weight:400;font-size:15px;letter-spacing:.16em;color:var(--th-ink);opacity:.85}
+.gc-more{position:absolute;bottom:10px;right:12px;font:700 10px 'Chakra Petch',sans-serif;color:var(--c-mut)}
+.gc-body{padding:14px 16px 12px}
+.gc-body h2{font:600 16px 'Chakra Petch',sans-serif;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gc-ranks{display:flex;align-items:center;gap:6px;margin-top:6px;font:700 10px 'Chakra Petch',sans-serif;letter-spacing:.08em;color:var(--c-ink)}
+.gc-ranks img{width:18px;height:18px;object-fit:contain}
+.gc-ranks i{font-style:normal;color:var(--c-line)}
+.gc-ranks .pk{color:var(--c-mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gc-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.gc-chips span{background:var(--c-surface2);border:1px solid var(--c-line-soft);color:var(--c-mut);font:600 10px 'Chakra Petch',sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:3px 7px}
+.gc-seller{display:flex;align-items:center;gap:7px;margin-top:10px;font:500 11px 'Chakra Petch',sans-serif;color:var(--c-mut);min-width:0}
+.gc-seller img{width:16px;height:16px;flex:none;object-fit:cover}
+.gc-seller span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gc-foot{margin-top:auto;border-top:1px solid var(--c-line);padding:12px 16px;display:flex;align-items:center;gap:10px}
+.gc-price{font-family:Anton,sans-serif;font-weight:400;font-size:19px;letter-spacing:.02em;color:var(--c-ink)}
+.gc-offer{background:var(--c-accent-btn);color:#fff;font:700 10px 'Chakra Petch',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:4px 8px}
+.gc-meta{font:500 10px 'Chakra Petch',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--c-mut);white-space:nowrap}
+.gc-go{margin-left:auto;font:700 11px 'Chakra Petch',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#FF7A85;white-space:nowrap}
+
+.cta-tile{border:1px dashed var(--c-line);background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:30px;min-height:220px;text-decoration:none;text-align:center}
+.cta-tile b{font-family:Anton,sans-serif;font-weight:400;font-size:18px;letter-spacing:.06em;color:var(--c-ink)}
+.cta-tile>span{font-size:12px;color:var(--c-mut);max-width:240px}
+.cta-tile .ct-link{font:700 11px 'Chakra Petch',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#FF7A85}
+
+.gempty{border:1px solid var(--c-line);background:var(--c-surface);padding:56px 24px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+.gempty b{font-family:Anton,sans-serif;font-weight:400;font-size:22px;letter-spacing:.06em;color:var(--c-ink)}
+.gempty>span{color:var(--c-mut);font-size:13px}
+.ge-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;margin-top:6px}
+.gempty button{background:var(--c-accent-btn);border:1px solid var(--c-accent-btn);color:#fff;font:700 11px 'Chakra Petch',sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:11px 18px;cursor:pointer}
+.gempty button:hover{filter:brightness(1.12)}
+.gempty a{border:1px solid var(--c-line);color:var(--c-ink);text-decoration:none;font:700 11px 'Chakra Petch',sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:11px 18px}
+.gempty a:hover{border-color:var(--c-mut)}
+
+.sk{background:var(--c-surface);border:1px solid var(--c-line);height:360px}
+.sk-feat{height:auto;aspect-ratio:16/9}
+
+[data-imgfail] img{visibility:hidden}
+[data-imgfail]{background:linear-gradient(135deg,var(--c-surface2),var(--c-line))}
+
+@media (max-width:1023px){
+  .ggrid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+}
+@media (max-width:899px){
+  .gfeat{grid-template-columns:1fr}
+  .gf-code{font-size:22px}
+  .gf-skins img{height:60px}
+  .gf-info{padding:20px}
+}
+@media (max-width:767px){
+  :root{--tbh:96px}
+  #topbar{padding:5px 10px;row-gap:4px}
+  .tb-right{gap:6px;row-gap:4px}
+  .tb-link{padding:5px 8px;font-size:10px}
+  .proto-chip{padding:4px 8px;font-size:9px;letter-spacing:.1em}
+  .logo{font-size:14px}
+  .ghead h1{font-size:clamp(30px,9vw,44px)}
+  #gstats{gap:14px}
+  #gstats .gs:nth-child(n+2){padding-left:14px}
+  .gcontrols{gap:10px}
+  .gc-search{width:100%}
+  #q{width:100%}
+  .gc-themes{width:100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .gc-themes::-webkit-scrollbar{display:none}
+  .ggrid{grid-template-columns:1fr}
+  .gc-skins img{height:54px}
+  .gf-price b{font-size:32px}
+  .gf-strip{font-size:8px;letter-spacing:.1em;gap:6px}
+  .gf-ranks img{width:24px;height:24px}
+  .gf-ranks b{font-size:9px}
+  #toast{bottom:64px}
+}
+@media (prefers-reduced-motion:no-preference){
+  #toast{transition:opacity .25s ease}
+  .gfeat,.gf-skins img{transition:border-color .2s ease,transform .2s ease}
+  .gfeat:hover{border-color:var(--th-accent)}
+  .gfeat:hover .gf-skins img{transform:translateY(-4px)}
+  .gf-skins img:nth-child(1){transition-delay:0s}
+  .gf-skins img:nth-child(2){transition-delay:.04s}
+  .gf-skins img:nth-child(3){transition-delay:.08s}
+  .gf-skins img:nth-child(4){transition-delay:.12s}
+  .gf-skins img:nth-child(5){transition-delay:.16s}
+  .gcard{transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;animation:rise .45s ease both;animation-delay:calc(var(--i)*45ms)}
+  .gcard:hover{transform:translateY(-3px);border-color:var(--th-accent);box-shadow:0 14px 44px -14px var(--th-accent);box-shadow:0 14px 44px -14px color-mix(in srgb,var(--th-accent) 40%,transparent)}
+  .gc-skins img{transition:margin-inline .2s ease,transform .2s ease}
+  .gcard:hover .gc-skins img{margin-inline:0;transform:scale(1.03)}
+  .cta-tile{transition:border-color .2s ease}
+  .cta-tile:hover{border-color:var(--c-accent)}
+  .sk{background:linear-gradient(90deg,#151C24 25%,#1C2530 50%,#151C24 75%);background-size:200% 100%;animation:sh 1.4s infinite}
+}
+@keyframes sh{to{background-position:-200% 0}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--c-line)}
+::-webkit-scrollbar-thumb:hover{background:var(--c-accent)}
+html{scrollbar-width:thin;scrollbar-color:var(--c-line) transparent}
+</style>
+</head>
+<body>
+<!-- Prototype B · Gallery -->
+<div id="topbar">
+  <div class="tb-left">
+    <span class="logo">CARD FORGE</span>
+  </div>
+  <div class="tb-right">
+    <a class="tb-link" href="index.html">All prototypes</a>
+    <a class="tb-link" href="../index.html">Build a card</a>
+    <span class="proto-chip">PROTOTYPE B · GALLERY</span>
+  </div>
+</div>
+<main id="gwrap">
+  <header class="ghead">
+    <span class="geyebrow">CARDFORGE MARKET</span>
+    <h1>The Showcase Floor</h1>
+    <p class="gsub">Every account, presented like the inventory it deserves.</p>
+    <div class="gstats" id="gstats"></div>
+  </header>
+  <section id="feature"></section>
+  <div class="gcontrols">
+    <div class="gc-search">
+      <label class="sr" for="q">Search listings</label>
+      <input id="q" type="search" placeholder="Search title, code, seller…">
+    </div>
+    <div class="gc-themes" id="themeChips" role="group" aria-label="Filter by theme">
+      <button class="gchip" type="button" data-theme-key="protocol" aria-pressed="false"><i class="sw sw-protocol"></i>PROTOCOL</button>
+      <button class="gchip" type="button" data-theme-key="holo" aria-pressed="false"><i class="sw sw-holo"></i>HOLO</button>
+      <button class="gchip" type="button" data-theme-key="reaver" aria-pressed="false"><i class="sw sw-reaver"></i>REAVER</button>
+      <button class="gchip" type="button" data-theme-key="oni" aria-pressed="false"><i class="sw sw-oni"></i>ONI</button>
+      <button class="gchip" type="button" data-theme-key="arctic" aria-pressed="false"><i class="sw sw-arctic"></i>ARCTIC</button>
+    </div>
+    <div class="gc-sort">
+      <label class="sr" for="sort">Sort listings</label>
+      <select id="sort">
+        <option value="new" selected>Newest</option>
+        <option value="views">Most viewed</option>
+        <option value="skins">Most skins</option>
+        <option value="price-asc">Price: low to high</option>
+        <option value="price-desc">Price: high to low</option>
+      </select>
+    </div>
+    <span id="count" aria-live="polite"></span>
+  </div>
+  <div id="grid" class="ggrid" aria-live="polite"></div>
+  <div id="empty" class="gempty" hidden>
+    <b>NOTHING MATCHES — YET.</b>
+    <span>Loosen the filters, or be the first to list.</span>
+    <div class="ge-actions"><button id="clearBtn" type="button">Clear filters</button><a href="../index.html">Build your card →</a></div>
+  </div>
+</main>
+<div id="toast" role="status"></div>
+<div id="disclaimer">CardForge is not affiliated with, endorsed by, or associated with Riot Games or any game publisher. All game names, skin names and imagery are trademarks/property of their respective owners. Prototype with mock data — not live listings. <a href="../terms.html">Terms</a> · <a href="../privacy.html">Privacy</a></div>
+<script src="mock-data.js"></script>
+<script>
+(function(){
+  var M=window.CF_MOCK;
+  var themes=M.themes,ranks=M.ranks,skins=M.skins,avatars=M.avatars;
+  var TIER_ORDER=['select','deluxe','premium','ultra','exclusive'];
+  var state={q:'',themes:new Set(),sort:'new'};
+  var bySlug={};
+  M.listings.forEach(function(l){bySlug[l.slug]=l;});
+
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function agoText(d){return d===0?'today':d===1?'1d ago':d+'d ago';}
+  function imgTag(u,a){return '<img src="'+u+'" alt="'+esc(a)+'" loading="lazy" onerror="this.closest(\'[data-imgwrap]\')?.setAttribute(\'data-imgfail\',\'1\')">';}
+  function topTier(l){
+    var best=0,key='select';
+    l.topSkins.forEach(function(k){var s=skins[k];if(!s)return;var i=TIER_ORDER.indexOf(s.tier);if(i>best){best=i;key=s.tier;}});
+    return key;
+  }
+  function priceCmp(a,b,dir){
+    var A=a.price,B=b.price;
+    if(A==null&&B==null)return 0;
+    if(A==null)return 1;
+    if(B==null)return -1;
+    return dir*(A-B);
+  }
+  function cmp(a,b){
+    switch(state.sort){
+      case 'views':return b.views-a.views;
+      case 'skins':return b.stats.skins-a.stats.skins;
+      case 'price-asc':return priceCmp(a,b,1);
+      case 'price-desc':return priceCmp(a,b,-1);
+      default:return a.daysAgo-b.daysAgo;
+    }
+  }
+  function matches(l){
+    if(state.themes.size&&!state.themes.has(l.theme))return false;
+    var q=state.q.trim().toLowerCase();
+    if(q){
+      var hay=(l.title+' '+l.code+' '+l.seller.name).toLowerCase();
+      if(hay.indexOf(q)===-1)return false;
+    }
+    return true;
+  }
+  function setVars(el,key){
+    var t=themes[key]||themes.protocol;
+    el.style.setProperty('--th-bg',t.bg);
+    el.style.setProperty('--th-panel',t.panel);
+    el.style.setProperty('--th-accent',t.accent);
+    el.style.setProperty('--th-ink',t.ink);
+    el.style.setProperty('--th-mut',t.mut);
+  }
+  function featHTML(l){
+    var t=themes[l.theme]||themes.protocol;
+    var rn=ranks[l.rankNow],rp=ranks[l.rankPeak],av=avatars[l.seller.avatar],s=l.stats;
+    var sk=l.topSkins.slice(0,5).map(function(k){var x=skins[k];return x?imgTag(x.icon,x.name):'';}).join('');
+    var price=l.price!=null?('<b>$'+l.price+'</b><span>one-time · full access</span>'):('<b class="offer">MAKE AN OFFER</b><span>seller accepts trades</span>');
+    var flags=l.flags.owner+' OWNER · '+(l.flags.wtr?'WTR':'NO-WTR')+' · '+(l.flags.receipts?'RECEIPTS':'NO RECEIPTS');
+    return '<a class="gfeat" href="../view.html?slug='+l.slug+'" data-slug="'+l.slug+'">'
+      +'<div class="gf-preview" data-imgwrap>'
+      +'<span class="gf-ribbon">FEATURED</span>'
+      +'<span class="gf-code">'+esc(l.code)+'</span>'
+      +'<div class="gf-skins">'+sk+'</div>'
+      +'<div class="gf-strip"><span>PREM '+s.premium+'</span><span>LIM '+s.limited+'</span><span>ANIM '+s.animated+'</span><span>LV '+s.level+'</span></div>'
+      +'<div class="gf-ranks"><span class="gfr">'+imgTag(rn.icon,rn.name)+'<b>'+esc(rn.name)+'</b></span><span class="gfr">'+imgTag(rp.icon,rp.name)+'<b>PEAK '+esc(rp.name)+'</b></span></div>'
+      +'</div>'
+      +'<div class="gf-info">'
+      +'<span class="gf-theme">'+esc(t.label)+'</span>'
+      +'<h2>'+esc(l.title)+'</h2>'
+      +'<div class="gf-seller">'+imgTag(av,l.seller.name)+'<div><b>'+esc(l.seller.name)+'</b><span>'+esc(flags)+'</span></div></div>'
+      +'<div class="gf-rankrow">'+imgTag(rn.icon,rn.name)+'<span>'+esc(rn.name)+'</span><i>·</i><span class="m">PEAK '+esc(rp.name)+'</span></div>'
+      +'<div class="gf-price">'+price+'</div>'
+      +'<div class="gf-meta">'+l.views+' VIEWS · UPDATED '+agoText(l.daysAgo).toUpperCase()+'</div>'
+      +'<span class="gf-cta">View full card →</span>'
+      +'</div></a>';
+  }
+  function cardHTML(l,i){
+    var t=themes[l.theme]||themes.protocol;
+    var rn=ranks[l.rankNow],rp=ranks[l.rankPeak],av=avatars[l.seller.avatar];
+    var badges=(l.daysAgo<=3?'<span class="b-new">NEW</span>':'')+(l.views>=500?'<span class="b-hot">HOT</span>':'');
+    var sk=l.topSkins.slice(0,3).map(function(k){var s=skins[k];return s?imgTag(s.icon,s.name):'';}).join('');
+    var more=l.topSkins.length>3?'<span class="gc-more">+'+(l.topSkins.length-3)+'</span>':'';
+    var chips='<span>'+l.stats.skins+' SKINS</span><span>'+l.stats.premium+' PREMIUM</span>'
+      +(l.stats.animated>0?'<span>'+l.stats.animated+' ANIMATED</span>':'')
+      +'<span>'+esc(l.flags.owner)+' OWNER</span>';
+    var price=l.price!=null?'<b class="gc-price">$'+l.price+'</b>':'<span class="gc-offer">MAKE OFFER</span>';
+    return '<a class="gcard" href="../view.html?slug='+l.slug+'" data-slug="'+l.slug+'" data-i="'+i+'">'
+      +'<div class="gc-preview tt-'+topTier(l)+'" data-imgwrap>'
+      +'<span class="gc-badges">'+badges+'</span>'
+      +'<span class="gc-theme">'+esc(t.label)+'</span>'
+      +'<div class="gc-skins">'+sk+'</div>'
+      +'<span class="gc-code">'+esc(l.code)+'</span>'+more
+      +'</div>'
+      +'<div class="gc-body">'
+      +'<h2>'+esc(l.title)+'</h2>'
+      +'<div class="gc-ranks">'+imgTag(rn.icon,rn.name)+'<span>'+esc(rn.name)+'</span><i>·</i><span class="pk">PEAK '+esc(rp.name)+'</span></div>'
+      +'<div class="gc-chips">'+chips+'</div>'
+      +'<div class="gc-seller">'+imgTag(av,l.seller.name)+'<span>'+esc(l.seller.name)+'</span></div>'
+      +'</div>'
+      +'<div class="gc-foot">'+price
+      +'<span class="gc-meta">'+l.views+' views · '+agoText(l.daysAgo)+'</span>'
+      +'<span class="gc-go">VIEW CARD →</span>'
+      +'</div></a>';
+  }
+  function ctaHTML(){
+    return '<a class="cta-tile" href="../index.html">'
+      +'<b>YOUR CARD COULD HANG HERE</b>'
+      +'<span>Publish a showcase card and it appears on this floor instantly.</span>'
+      +'<span class="ct-link">Build your card →</span>'
+      +'</a>';
+  }
+  function renderStats(){
+    var views=0,totalSkins=0;
+    M.listings.forEach(function(l){views+=l.views;totalSkins+=l.stats.skins;});
+    document.getElementById('gstats').innerHTML=
+      '<div class="gs"><b>'+M.listings.length+'</b><label>LISTINGS</label></div>'
+      +'<div class="gs"><b>'+views+'</b><label>TOTAL VIEWS</label></div>'
+      +'<div class="gs"><b>'+totalSkins+'</b><label>SKINS TRACKED</label></div>';
+  }
+  function render(){
+    var feat=null,rest=[];
+    M.listings.forEach(function(l){if(l.featured)feat=l;else rest.push(l);});
+    var fRest=rest.filter(matches).sort(cmp);
+    var featVis=!!(feat&&matches(feat));
+    var total=fRest.length+(featVis?1:0);
+    var grid=document.getElementById('grid');
+    var empty=document.getElementById('empty');
+    var feature=document.getElementById('feature');
+    var count=document.getElementById('count');
+
+    if(total===0){
+      feature.hidden=true;feature.innerHTML='';
+      grid.hidden=true;grid.innerHTML='';
+      empty.hidden=false;
+      count.textContent='0 listings';
+      return;
+    }
+    empty.hidden=true;grid.hidden=false;
+    count.textContent=total+(total===1?' listing':' listings');
+
+    if(featVis){
+      feature.hidden=false;
+      feature.innerHTML=featHTML(feat);
+      setVars(feature.querySelector('.gfeat'),feat.theme);
+    }else{
+      feature.hidden=true;feature.innerHTML='';
+    }
+
+    grid.innerHTML=fRest.map(cardHTML).join('')+(total<12?ctaHTML():'');
+    Array.prototype.forEach.call(grid.querySelectorAll('.gcard'),function(el,i){
+      setVars(el,bySlug[el.dataset.slug].theme);
+      el.style.setProperty('--i',i);
+    });
+  }
+  function skeleton(){
+    document.getElementById('feature').innerHTML='<div class="sk sk-feat" aria-hidden="true"></div>';
+    var g=document.getElementById('grid');
+    var out='';
+    for(var i=0;i<6;i++)out+='<div class="sk" aria-hidden="true"></div>';
+    g.innerHTML=out;
+  }
+
+  var toastEl=document.getElementById('toast'),toastTimer;
+  function toast(msg){
+    toastEl.textContent=msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){toastEl.classList.remove('show');},2500);
+  }
+
+  document.addEventListener('click',function(e){
+    var a=e.target.closest('.gcard,.gfeat,.cta-tile');
+    if(!a)return;
+    e.preventDefault();
+    if(a.classList.contains('cta-tile'))toast('PROTOTYPE — would open the card editor');
+    else toast('PROTOTYPE — would open view.html?slug='+a.dataset.slug);
+  });
+
+  var q=document.getElementById('q'),sort=document.getElementById('sort');
+  q.addEventListener('input',function(){state.q=q.value;render();});
+  sort.addEventListener('change',function(){state.sort=sort.value;render();});
+  document.getElementById('themeChips').addEventListener('click',function(e){
+    var b=e.target.closest('.gchip');
+    if(!b)return;
+    var k=b.dataset.themeKey;
+    if(state.themes.has(k)){state.themes.delete(k);b.setAttribute('aria-pressed','false');}
+    else{state.themes.add(k);b.setAttribute('aria-pressed','true');}
+    render();
+  });
+  document.getElementById('clearBtn').addEventListener('click',function(){
+    state.q='';state.themes.clear();state.sort='new';
+    q.value='';sort.value='new';
+    Array.prototype.forEach.call(document.querySelectorAll('.gchip'),function(b){b.setAttribute('aria-pressed','false');});
+    render();
+  });
+
+  renderStats();
+  skeleton();
+  setTimeout(render,400);
+})();
+</script>
+</body>
+</html>
