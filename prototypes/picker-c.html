@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="protocol">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardForge — Picker Lab C · Command Search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--font-ui:'Inter',system-ui,sans-serif;--font-display:'Manrope','Inter',sans-serif;--notch:8px;--notch-lg:16px;--c-bg:#0B0F14;--c-surface:#10161D;--c-surface2:#151C24;--c-line:#222C37;--c-line-soft:#1A222C;--c-ink:#D9DCE0;--c-mut:#8A95A1;--c-accent:#FF4655;--c-accent-btn:#D62839;--t-select:#9ba8b9;--t-deluxe:#4aa8ff;--t-premium:#b44bf0;--t-ultra:#ff5d7b;--t-exclusive:#ffc45e}
+*{box-sizing:border-box;margin:0;padding:0;border-radius:0}
+body{font-family:var(--font-ui);background:var(--c-bg);color:var(--c-ink)}
+:focus-visible{box-shadow:inset 0 0 0 2px var(--c-accent)!important}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--c-line)}
+::-webkit-scrollbar-thumb:hover{background:var(--c-accent)}
+html{scrollbar-width:thin;scrollbar-color:var(--c-line) transparent}
+
+#topbar{position:fixed;top:0;left:0;right:0;min-height:52px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px;padding:6px 14px;background:var(--c-surface);border-bottom:1px solid var(--c-line);z-index:40}
+.tb-left,.tb-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;row-gap:6px}
+.logo{font-family:var(--font-display);font-weight:800;font-size:15px;letter-spacing:.18em;color:var(--c-ink)}
+.logo::before{content:"";display:inline-block;width:9px;height:15px;background:var(--c-accent);transform:skewX(-20deg);margin-right:9px;vertical-align:-2px}
+a.tb-link{background:transparent;border:1px solid var(--c-line);color:var(--c-mut);padding:8px 14px;font:600 11px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;text-decoration:none;display:inline-block;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+a.tb-link:hover{border-color:var(--c-mut);color:var(--c-ink)}
+a.sib{width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--c-line);color:var(--c-mut);text-decoration:none;font:700 11px var(--font-ui);clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+a.sib:hover{border-color:var(--c-mut);color:var(--c-ink)}
+a.sib.cur{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
+.proto-chip{background:var(--c-accent-btn);color:#fff;font:700 10px var(--font-ui);letter-spacing:.14em;padding:4px 10px;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+
+main{padding:76px 20px 120px;max-width:1200px;margin:0 auto}
+
+.t-select{--tc:var(--t-select)}.t-deluxe{--tc:var(--t-deluxe)}.t-premium{--tc:var(--t-premium)}.t-ultra{--tc:var(--t-ultra)}.t-exclusive{--tc:var(--t-exclusive)}
+
+.cats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.cat{font:700 11px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;padding:9px 14px;border:1px solid var(--c-line);color:var(--c-mut);background:transparent;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.cat:hover{border-color:var(--c-mut);color:var(--c-ink)}
+.cat.on{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
+
+#q{width:100%;background:var(--c-surface2);border:1px solid var(--c-line);color:var(--c-ink);font:500 16px var(--font-ui);padding:16px 18px;outline:none;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
+#q::placeholder{color:var(--c-mut)}
+#q:focus{border-color:var(--c-accent)}
+.chint{display:block;margin-top:6px;font:600 9.5px var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--c-mut)}
+
+.presets{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
+.preset{font:700 10px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--c-line);color:var(--c-mut);background:transparent;padding:8px 12px;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.preset:hover{border-color:var(--c-mut);color:var(--c-ink)}
+.preset.on{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
+#ctx{margin-left:auto;font:600 11px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--c-mut)}
+
+.qp{margin-top:16px}
+.qp-label{font:700 10px var(--font-ui);letter-spacing:.2em;text-transform:uppercase;color:var(--c-mut);margin-bottom:10px}
+.qp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+
+.tile{position:relative;background:var(--c-surface);border:1px solid var(--c-line);border-top:2px solid var(--tc,var(--c-line));padding:10px;display:flex;flex-direction:column;gap:6px;text-align:left;cursor:pointer;color:var(--c-ink);clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
+.tile .ic{height:72px;display:flex;align-items:center;justify-content:center}
+.tile .ic img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.55))}
+.tile .tn{font:600 12.5px var(--font-ui);color:var(--c-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .ts{font:600 9.5px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--c-mut)}
+.tile .cnt{position:absolute;top:6px;right:6px;background:var(--c-accent-btn);color:#fff;font:700 10px var(--font-ui);padding:2px 6px}
+
+.res{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.rrow{position:relative;width:100%;display:flex;align-items:center;gap:12px;background:var(--c-surface);border:1px solid var(--c-line);border-left:4px solid var(--tc,var(--c-line));padding:8px 12px;text-align:left;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.rrow:hover{background:var(--c-surface2)}
+.rrow img{width:40px;height:40px;object-fit:contain;flex:none;filter:drop-shadow(0 4px 8px rgba(0,0,0,.55))}
+.rmain{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1;text-align:left}
+.rmain b{font:600 13px var(--font-ui);color:var(--c-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rmain span{font:600 9.5px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--c-mut)}
+.rtier{font:700 9px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--tc);border:1px solid currentColor;padding:3px 8px;flex:none;clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px)}
+.cnt2{background:var(--c-accent-btn);color:#fff;font:700 10px var(--font-ui);padding:2px 6px;flex:none}
+.rkey{font:600 11px var(--font-ui);color:var(--c-mut);opacity:0;flex:none}
+.rrow.sel{background:var(--c-surface2);border-color:var(--c-accent)}
+.rrow.sel .rkey{opacity:1}
+
+.pempty{padding:48px 16px;text-align:center;color:var(--c-mut);font:500 13px var(--font-ui)}
+.pclear{display:inline-block;margin-top:16px;background:transparent;border:1px solid var(--c-line);color:var(--c-mut);font:700 10px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;padding:8px 12px;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.pclear:hover{border-color:var(--c-mut);color:var(--c-ink)}
+
+.tray{position:fixed;bottom:0;left:0;right:0;z-index:30;background:var(--c-surface);border-top:1px solid var(--c-line);padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tray-label{font-family:var(--font-display);font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--c-ink)}
+.tray-chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pick{display:flex;align-items:center;gap:6px;border:1px solid var(--c-line);padding:4px 6px;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.pick img{width:22px;height:22px;object-fit:contain}
+.pick .pn{font:500 11px var(--font-ui);color:var(--c-ink)}
+.pick .lv{background:transparent;border:1px solid var(--c-line);color:var(--c-mut);font:700 10px var(--font-ui);padding:2px 6px;cursor:pointer}
+.pick .lv.hi{border-color:var(--c-accent);color:var(--c-ink)}
+.pick .rmv{background:transparent;border:0;color:var(--c-mut);font:700 12px var(--font-ui);cursor:pointer;padding:0 2px}
+.pick .rmv:hover{color:var(--c-accent)}
+.tnone{font:500 11px var(--font-ui);color:var(--c-mut)}
+
+.disc{margin:40px 0 90px;font-size:11px;color:var(--c-mut);text-align:center}
+
+@media (prefers-reduced-motion:no-preference){
+  .cat,.preset{transition:background .18s ease,border-color .18s ease,color .18s ease}
+  .rrow{transition:background .18s ease,border-color .18s ease}
+  .tile{transition:transform .18s ease,border-color .18s ease}
+  .tile:hover{transform:translateY(-2px);border-color:var(--tc,var(--c-line))}
+}
+</style>
+</head>
+<body>
+<!-- Picker Lab C -->
+<div id="topbar">
+  <div class="tb-left">
+    <span class="logo">CARD FORGE</span>
+  </div>
+  <div class="tb-right">
+    <a class="tb-link" href="index.html">Hub</a>
+    <a class="sib" href="picker-a.html">A</a>
+    <a class="sib" href="picker-b.html">B</a>
+    <a class="sib cur" href="picker-c.html">C</a>
+    <span class="proto-chip">PICKER LAB · C</span>
+  </div>
+</div>
+<main>
+  <div class="cats" id="cats"></div>
+  <input id="q" type="text" autofocus autocomplete="off" spellcheck="false" placeholder='Search: "ultra vandal" · "premium+ sheriff" · "odin"  —  ↑↓ navigate · Enter adds · Esc clears'>
+  <span class="chint">tokens: tier (+ = &amp; above) · weapon · category · free text — ↑↓ + Enter to add</span>
+  <div class="presets" id="presets">
+    <button type="button" class="preset" data-tok="premium+">PREMIUM+</button>
+    <button type="button" class="preset" data-tok="ultra+">ULTRA+</button>
+    <button type="button" class="preset" data-tok="exclusive">EXCLUSIVE</button>
+    <button type="button" class="preset" id="top6">TOP 6</button>
+    <span id="ctx"></span>
+  </div>
+  <div class="qp" id="qp"></div>
+  <div class="res" id="res"></div>
+  <p class="disc">CardForge is not affiliated with, endorsed by, or associated with Riot Games or any game publisher. All game names, skin names and imagery are trademarks/property of their respective owners. Picker lab prototype — mock catalog.</p>
+</main>
+<div class="tray" id="tray">
+  <b class="tray-label">ON CARD — <span id="trayCat"></span> (<span id="trayN"></span>)</b>
+  <span class="tray-chips" id="trayChips"></span>
+</div>
+<script src="mock-data.js"></script>
+<script>
+var TIER_ORDER=['select','deluxe','premium','ultra','exclusive'];
+var TIER_NAME={select:'SELECT',deluxe:'DELUXE',premium:'PREMIUM',ultra:'ULTRA',exclusive:'EXCLUSIVE'};
+var CAT_ABBR={Rifles:'RIFLES',Sidearms:'SIDEARMS',SMGs:'SMGS','Sniper Rifles':'SNIPERS','Machine Guns':'MGS',Melees:'MELEES'};
+var CATS=Object.keys(CAT_ABBR);
+var CAT_ALIAS={rifles:'Rifles',sidearms:'Sidearms',smg:'SMGs',snipers:'Sniper Rifles',mgs:'Machine Guns',melees:'Melees'};
+var CAT_OF_WORD={Vandal:'Rifles',Phantom:'Rifles',Bulldog:'Rifles',Sheriff:'Sidearms',Ghost:'Sidearms',Frenzy:'Sidearms',Spectre:'SMGs',Stinger:'SMGs',Operator:'Sniper Rifles',Odin:'Machine Guns',Ares:'Machine Guns',Axe:'Melees',Knife:'Melees',Dagger:'Melees',Catrina:'Melees'};
+var WEAPON_LOWER={};
+Object.keys(CAT_OF_WORD).forEach(function(w){WEAPON_LOWER[w.toLowerCase()]=w;});
+
+function catOf(name){var w=name.trim().split(/\s+/).pop();return CAT_OF_WORD[w]||'Rifles';}
+function weaponOf(name){return name.trim().split(/\s+/).pop();}
+function tierRank(s){return TIER_ORDER.indexOf(s.tier);}
+
+var catalog=Object.entries(CF_MOCK.skins).map(function(e){var key=e[0],s=e[1];return {key:key,name:s.name,tier:s.tier,icon:s.icon,cat:catOf(s.name),weapon:weaponOf(s.name)};});
+
+var state={cat:'Rifles',q:'',top6:false,sel:0,effCat:'Rifles'};
+var picks={};
+CATS.forEach(function(c){picks[c]=[];});
+
+function esc(v){return String(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function countOf(cat,key){return (picks[cat]||[]).filter(function(x){return x.key===key;}).length;}
+function topSix(){return catalog.slice().sort(function(a,b){return tierRank(b)-tierRank(a)||a.name.localeCompare(b.name);}).slice(0,6);}
+
+function parseTokens(q){
+  var toks=q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  var tier=null,tierMode='exact',cat=null,weaponCat=null,names=[];
+  toks.forEach(function(t){
+    var m=/^(select|deluxe|premium|ultra|exclusive)(\+)?$/i.exec(t);
+    if(m){tier=m[1].toLowerCase();tierMode=m[2]?'min':'exact';return;}
+    var cm=CAT_ALIAS[t];
+    if(cm){cat=cm;return;}
+    var wm=WEAPON_LOWER[t];
+    if(wm){weaponCat=CAT_OF_WORD[wm];names.push(t);return;}
+    names.push(t);
+  });
+  return {tier:tier,tierMode:tierMode,cat:cat,weaponCat:weaponCat,names:names};
+}
+
+var qEl=document.getElementById('q');
+var catsEl=document.getElementById('cats');
+var presetsEl=document.getElementById('presets');
+var ctxEl=document.getElementById('ctx');
+var qpEl=document.getElementById('qp');
+var resEl=document.getElementById('res');
+
+function applySel(){
+  var rows=Array.prototype.slice.call(resEl.querySelectorAll('.rrow'));
+  if(!rows.length){state.sel=0;return;}
+  if(state.sel<0||state.sel>=rows.length)state.sel=0;
+  rows.forEach(function(r,i){r.classList.toggle('sel',i===state.sel);});
+}
+
+function tile(s,cat){
+  var b=document.createElement('button');
+  b.type='button';
+  b.className='tile t-'+s.tier;
+  b.innerHTML='<span class="ic"><img alt="" loading="lazy" src="'+esc(s.icon)+'"></span>'
+    +'<span class="tn">'+esc(s.name)+'</span>'
+    +'<span class="ts">'+esc(s.weapon+' • '+TIER_NAME[s.tier])+'</span>';
+  var n=countOf(cat,s.key);
+  if(n) b.insertAdjacentHTML('beforeend','<span class="cnt">×'+n+'</span>');
+  b.addEventListener('click',function(){addPick(s.key);});
+  return b;
+}
+
+function row(s,cat){
+  var b=document.createElement('button');
+  b.type='button';
+  b.className='rrow t-'+s.tier;
+  b.dataset.key=s.key;
+  b.innerHTML='<img alt="" loading="lazy" src="'+esc(s.icon)+'">'
+    +'<span class="rmain"><b>'+esc(s.name)+'</b><span>'+esc(s.weapon+' • '+TIER_NAME[s.tier])+'</span></span>'
+    +'<span class="rtier">'+esc(TIER_NAME[s.tier])+'</span>';
+  var n=countOf(cat,s.key);
+  if(n) b.insertAdjacentHTML('beforeend','<span class="cnt2">×'+n+'</span>');
+  b.insertAdjacentHTML('beforeend','<span class="rkey">↵</span>');
+  b.addEventListener('click',function(){addPick(s.key);});
+  return b;
+}
+
+function addPick(key){picks[state.effCat].push({key:key,level:1});render();}
+
+function renderTray(){
+  var cat=state.effCat||state.cat;
+  var arr=picks[cat];
+  document.getElementById('trayCat').textContent=CAT_ABBR[cat];
+  document.getElementById('trayN').textContent=arr.length;
+  var box=document.getElementById('trayChips');
+  box.innerHTML='';
+  if(!arr.length){
+    var e=document.createElement('span');
+    e.className='tnone';
+    e.textContent='No picks yet — press Enter on a result.';
+    box.appendChild(e);
+    return;
+  }
+  arr.forEach(function(pk,i){
+    var s=null;
+    for(var j=0;j<catalog.length;j++){if(catalog[j].key===pk.key){s=catalog[j];break;}}
+    if(!s)return;
+    var chip=document.createElement('span');
+    chip.className='pick';
+    chip.innerHTML='<img alt="" src="'+esc(s.icon)+'"><span class="pn">'+esc(s.name)+'</span>';
+    var lv=document.createElement('button');
+    lv.type='button';
+    lv.className='lv'+(pk.level>1?' hi':'');
+    lv.textContent='L'+pk.level;
+    lv.addEventListener('click',function(){pk.level=pk.level>=5?1:pk.level+1;render();});
+    var rm=document.createElement('button');
+    rm.type='button';
+    rm.className='rmv';
+    rm.textContent='×';
+    rm.setAttribute('aria-label','Remove '+s.name);
+    rm.addEventListener('click',function(){picks[cat].splice(i,1);render();});
+    chip.appendChild(lv);
+    chip.appendChild(rm);
+    box.appendChild(chip);
+  });
+}
+
+function render(){
+  var p=parseTokens(state.q);
+  var cat=p.cat||p.weaponCat||state.cat;
+  state.effCat=cat;
+
+  catsEl.innerHTML='';
+  CATS.forEach(function(c){
+    var b=document.createElement('button');
+    b.type='button';
+    b.className='cat'+(c===cat?' on':'');
+    b.textContent=CAT_ABBR[c]+' '+catalog.filter(function(s){return s.cat===c;}).length;
+    b.addEventListener('click',function(){state.cat=c;state.sel=0;render();});
+    catsEl.appendChild(b);
+  });
+
+  Array.prototype.slice.call(presetsEl.querySelectorAll('.preset')).forEach(function(el){
+    var on;
+    if(el.dataset.tok){
+      on=!!p.tier&&(TIER_NAME[p.tier]+(p.tierMode==='min'?'+':'')).toLowerCase()===el.dataset.tok;
+    }else{on=state.top6;}
+    el.classList.toggle('on',on);
+  });
+
+  var list;
+  if(state.top6){
+    list=topSix();
+  }else{
+    list=catalog.filter(function(s){return s.cat===cat;});
+    if(p.tier){
+      var r=TIER_ORDER.indexOf(p.tier);
+      list=list.filter(function(s){return p.tierMode==='min'?tierRank(s)>=r:tierRank(s)===r;});
+    }
+    p.names.forEach(function(n){list=list.filter(function(s){return s.name.toLowerCase().indexOf(n)>-1;});});
+  }
+  list.sort(function(a,b){return tierRank(b)-tierRank(a)||a.name.localeCompare(b.name);});
+
+  var bits=[list.length+' '+(list.length===1?'RESULT':'RESULTS')];
+  if(state.top6)bits.push('TOP 6 BY TIER');
+  if(p.tier)bits.push(TIER_NAME[p.tier]+(p.tierMode==='min'?'+':''));
+  bits.push(CAT_ABBR[cat]);
+  ctxEl.textContent=bits.join(' · ');
+
+  qpEl.innerHTML='';
+  if(state.q.trim()===''&&!state.top6){
+    var lab=document.createElement('div');
+    lab.className='qp-label';
+    lab.textContent='QUICK PICKS — HIGHEST TIERS';
+    qpEl.appendChild(lab);
+    var grid=document.createElement('div');
+    grid.className='qp-grid';
+    topSix().forEach(function(s){grid.appendChild(tile(s,cat));});
+    qpEl.appendChild(grid);
+  }
+
+  resEl.innerHTML='';
+  if(!list.length){
+    var pe=document.createElement('div');
+    pe.className='pempty';
+    pe.textContent='Nothing matches — try fewer tokens.';
+    var cb=document.createElement('button');
+    cb.type='button';
+    cb.className='pclear';
+    cb.textContent='Clear filters';
+    cb.addEventListener('click',function(){state.q='';qEl.value='';state.top6=false;state.sel=0;render();qEl.focus();});
+    pe.appendChild(cb);
+    resEl.appendChild(pe);
+  }else{
+    list.forEach(function(s,i){resEl.appendChild(row(s,cat,i));});
+  }
+
+  renderTray();
+  applySel();
+}
+
+Array.prototype.slice.call(presetsEl.querySelectorAll('.preset')).forEach(function(el){
+  el.addEventListener('click',function(){
+    if(el.dataset.tok){
+      var tok=el.dataset.tok;
+      state.q=(state.q.trim().toLowerCase()===tok)?'':tok;
+      state.top6=false;
+    }else{
+      state.top6=!state.top6;
+      if(state.top6)state.q='';
+    }
+    qEl.value=state.q;
+    state.sel=0;
+    render();
+    qEl.focus();
+  });
+});
+
+qEl.addEventListener('input',function(){state.q=qEl.value;state.sel=0;render();});
+
+qEl.addEventListener('keydown',function(e){
+  var rows=Array.prototype.slice.call(resEl.querySelectorAll('.rrow'));
+  if(e.key==='ArrowDown'){
+    e.preventDefault();
+    if(rows.length){state.sel=(state.sel+1)%rows.length;applySel();}
+  }else if(e.key==='ArrowUp'){
+    e.preventDefault();
+    if(rows.length){state.sel=(state.sel-1+rows.length)%rows.length;applySel();}
+  }else if(e.key==='Enter'){
+    e.preventDefault();
+    var t=resEl.querySelector('.rrow.sel');
+    if(t){t.click();}
+    else if(rows.length){rows[0].click();}
+  }else if(e.key==='Escape'){
+    e.preventDefault();
+    if(state.q){state.q='';qEl.value='';state.top6=false;state.sel=0;render();}
+    else{qEl.blur();}
+  }
+});
+
+render();
+</script>
+</body>
+</html>

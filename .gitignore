@@ -28,6 +28,9 @@ Thumbs.db
 # ZCode session artifacts (review screenshots etc.)
 .zcode/
 
+# Playwright MCP snapshots
+.playwright-mcp/
+
 # Orchestrator run state (contains local credentials)
 .orchestrator/
 
