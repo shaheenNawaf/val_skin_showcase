@@ -279,7 +279,7 @@ function renderGrid() {
 
 function addSkin(cat, s, chroma) {
   const lvl = (state.ownedLevels || {})[s.id] || 0;
-  state.picks[cat].push({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon, ...(lvl >= 2 ? { level: lvl } : {}), ...(chroma ? { variant: { name: chroma.label, icon: chroma.icon } } : {}) });
+  state.picks[cat].push({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon, ...(chroma ? { level: chroma.unlock || s.maxLevel || 2, variant: { name: chroma.label, icon: chroma.icon } } : (lvl >= 2 ? { level: lvl } : {})) });
   renderPanel(cat, { animateLast: true });
 }
 
@@ -299,10 +299,11 @@ function paintVariantPreview() {
   const levels = s.levels || [];
   const lv = p.level || 1;
   const ld = levels[lv - 1];
-  CF.$('vpLevel').innerHTML = ld && ld.video ? `<video src="${CF.esc(ld.video)}" muted loop autoplay playsinline></video>` : (s.icon ? `<img src="${CF.esc(s.icon)}" alt=""><span class="vpnote">static preview — level animations load with the live API catalog</span>` : '<span class="vpnote">no preview</span>');
   const chromas = s.chromas || [];
   const k = p.variant ? chromas.findIndex(c => c.icon === p.variant.icon) : 0;
   const c = chromas[Math.max(0, k)];
+  const cv = k > 0 && chromas[k] && chromas[k].video;
+  CF.$('vpLevel').innerHTML = cv ? `<video src="${CF.esc(chromas[k].video)}" muted loop autoplay playsinline></video><span class="vpnote">${CF.esc(chromas[k].label || '')} showcase · L${lv}</span>` : (ld && ld.video ? `<video src="${CF.esc(ld.video)}" muted loop autoplay playsinline></video><span class="vpnote">Level ${lv} animation</span>` : (s.icon ? `<img src="${CF.esc(s.icon)}" alt=""><span class="vpnote">static preview — level animations load with the live API catalog</span>` : '<span class="vpnote">no preview</span>'));
   CF.$('vpChroma').innerHTML = c ? `<img src="${CF.esc(c.full || c.icon)}" alt="${CF.esc(c.label || '')}"><span class="vpnote">${CF.esc(c.label || '')}</span>` : '<span class="vpnote">no colorways</span>';
   CF.$('vPrev').hidden = !(levels.length > 1 || chromas.length > 1);
 }
@@ -320,7 +321,7 @@ function ensureRichSkin(s) {
       s.levels = (d.levels || []).map((l, i) => ({ level: i + 1, video: l.streamedVideo || '' }));
       s.chromas = (s.chromas || []).map((c, i) => {
         const dc = (d.chromas || [])[i] || {};
-        return Object.assign({}, c, { full: c.full || dc.fullRender || '', sw: c.sw || dc.swatch || '' });
+        return Object.assign({}, c, { full: c.full || dc.fullRender || '', sw: c.sw || dc.swatch || '', video: c.video || dc.streamedVideo || '' });
       });
       paintVariantPreview();
     })
@@ -522,12 +523,14 @@ CF.$('vChromas').addEventListener('click', e => {
   } else {
     p.variant = { name: c.label, icon: c.icon };
     p.icon = c.icon;
+    p.level = c.unlock || s.maxLevel || p.level;
   }
   renderPanel(variantCat);
   CF.$('vChromas').querySelectorAll('.vchroma').forEach(x => {
     const k = +x.dataset.ch;
     x.classList.toggle('active', p.variant ? chromas[k].icon === p.variant.icon : k === 0);
   });
+  CF.$('vLevels').querySelectorAll('.chip').forEach(x => x.classList.toggle('active', +x.dataset.lv === (p.level || 1)));
   paintVariantPreview();
 });
 CF.$('vRemove').addEventListener('click', () => {
