@@ -126,6 +126,13 @@ clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),cal
 ::-webkit-scrollbar-thumb{background:var(--c-line)}
 ::-webkit-scrollbar-thumb:hover{background:var(--c-accent)}
 html{scrollbar-width:thin;scrollbar-color:var(--c-line) transparent}
+
+.lpick{border-left-color:var(--tier-premium,#b44bf0)}
+.lpick-badge{background:#7a2ea8}
+.lpick-links{display:flex;gap:22px;margin:10px 2px 0}
+.lpick-links a{font:700 12px 'Inter',system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#FF7A85;text-decoration:none}
+.lpick-links a:hover{text-decoration:underline}
+@media (max-width:767px){.lpick-links{flex-direction:column;gap:8px}}
 </style>
 </head>
 <body>
@@ -163,6 +170,13 @@ html{scrollbar-width:thin;scrollbar-color:var(--c-line) transparent}
     <span class="lcomb-text">A's layout + B's featured hero &amp; cards + C's quick view as a modal rendering the full 1080p card — rebuilt in the new Manrope/Inter type system, with the Market Pulse as a full-width strip.</span>
     <span class="lcomb-cta">Open the combined marketplace →</span>
   </a>
+
+  <a class="lcomb lpick" href="picker-a.html">
+    <span class="lcomb-badge lpick-badge">PICKER LAB</span>
+    <span class="lcomb-text">Three redesigns of the add-skins picker with tier-first navigation — the current picker's tiers are an exact-match chip row buried under an alphabetical weapon list.</span>
+    <span class="lcomb-cta">Open A · Tier Ladder →</span>
+  </a>
+  <div class="lpick-links"><a href="picker-b.html">Open B · Grouped Shelves →</a><a href="picker-c.html">Open C · Command search →</a></div>
 
   <section class="lcards">
     <article class="dcard">

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="protocol">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardForge — Picker Lab A · Tier Ladder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--font-ui:'Inter',system-ui,sans-serif;--font-display:'Manrope','Inter',sans-serif;--notch:8px;--notch-lg:16px;--c-bg:#0B0F14;--c-surface:#10161D;--c-surface2:#151C24;--c-line:#222C37;--c-line-soft:#1A222C;--c-ink:#D9DCE0;--c-mut:#8A95A1;--c-accent:#FF4655;--c-accent-btn:#D62839;--t-select:#9ba8b9;--t-deluxe:#4aa8ff;--t-premium:#b44bf0;--t-ultra:#ff5d7b;--t-exclusive:#ffc45e}
+*{box-sizing:border-box;margin:0;padding:0;border-radius:0}
+html{background:var(--c-bg);scrollbar-width:thin;scrollbar-color:var(--c-line) transparent}
+body{font-family:var(--font-ui);background:var(--c-bg);color:var(--c-ink)}
+button,input{font-family:var(--font-ui)}
+::selection{background:var(--c-accent);color:#fff}
+:focus-visible{box-shadow:inset 0 0 0 2px var(--c-accent)!important}
+[hidden]{display:none!important}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--c-line)}
+::-webkit-scrollbar-thumb:hover{background:var(--c-accent)}
+
+#topbar{position:fixed;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 14px;background:var(--c-surface);border-bottom:1px solid var(--c-line);z-index:20}
+.tb-left,.tb-right{display:flex;align-items:center;gap:10px}
+.logo{font-family:var(--font-display);font-weight:800;font-size:15px;letter-spacing:.18em;color:var(--c-ink)}
+.logo::before{content:"";display:inline-block;width:9px;height:15px;background:var(--c-accent);transform:skewX(-20deg);margin-right:9px;vertical-align:-2px}
+.tb-link{border:1px solid var(--c-line-soft);color:var(--c-mut);padding:8px 16px;font-weight:600;font-size:11px;letter-spacing:.16em;text-transform:uppercase;text-decoration:none}
+.tb-link:hover{border-color:var(--c-mut);color:var(--c-ink)}
+.sib{width:24px;height:24px;display:flex;align-items:center;justify-content:center;border:1px solid var(--c-line);color:var(--c-mut);font-weight:700;font-size:11px;text-decoration:none;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.sib:hover{color:var(--c-ink);border-color:var(--c-mut)}
+.sib[aria-current=page]{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
+.proto-chip{background:var(--c-accent-btn);color:#fff;font-weight:700;font-size:10px;letter-spacing:.14em;padding:4px 10px;text-transform:uppercase;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+
+main{padding:76px 20px 120px;max-width:1200px;margin:0 auto}
+
+.cats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.cats button{border:1px solid var(--c-line);background:transparent;color:var(--c-mut);font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:9px 14px;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.cats button:hover{color:var(--c-ink)}
+.cats button[aria-pressed=true]{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
+.cats .cn{opacity:.6;font-weight:600}
+.cats button[aria-pressed=true] .cn{opacity:.85}
+
+.ctl{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+#q{flex:1;min-width:0;background:var(--c-surface2);border:1px solid var(--c-line);color:var(--c-ink);font-weight:500;font-size:13px;padding:10px 14px;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+#q::placeholder{color:var(--c-mut)}
+#q:focus{border-color:var(--c-accent)}
+#ctx{font-weight:600;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--c-mut);white-space:nowrap}
+
+.body{display:grid;grid-template-columns:210px 1fr;gap:18px;align-items:start}
+
+.ladder{position:sticky;top:76px;background:var(--c-surface);border:1px solid var(--c-line);padding:14px;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
+.ladder h2{font-weight:700;font-size:10px;letter-spacing:.2em;color:var(--c-mut);margin-bottom:10px}
+.lhint{font-weight:600;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--c-mut);margin:6px 0 10px}
+.rung{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;background:transparent;border:1px solid transparent;cursor:pointer;color:inherit}
+.rung .bar{width:6px;height:26px;flex:0 0 6px;clip-path:polygon(3px 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%,0 3px)}
+.rung span{font-weight:700;font-size:12px;letter-spacing:.1em;color:var(--c-ink);text-transform:uppercase}
+.rung b{margin-left:auto;font-family:var(--font-display);font-weight:800;font-size:13px;font-variant-numeric:tabular-nums;color:var(--c-mut)}
+.rung.t-select{--rung-c:var(--t-select)}
+.rung.t-deluxe{--rung-c:var(--t-deluxe)}
+.rung.t-premium{--rung-c:var(--t-premium)}
+.rung.t-ultra{--rung-c:var(--t-ultra)}
+.rung.t-exclusive{--rung-c:var(--t-exclusive)}
+.rung.t-select .bar{background:var(--t-select)}
+.rung.t-deluxe .bar{background:var(--t-deluxe)}
+.rung.t-premium .bar{background:var(--t-premium)}
+.rung.t-ultra .bar{background:var(--t-ultra)}
+.rung.t-exclusive .bar{background:var(--t-exclusive)}
+.rung.active,.rung.only{background:var(--c-surface2);background:color-mix(in srgb,var(--rung-c) 12%,transparent);border-color:var(--rung-c)}
+.rung.zero{opacity:.45}
+.lclear{display:block;width:100%;margin-top:10px;padding:6px 0;background:transparent;border:0;color:var(--c-mut);font-weight:600;font-size:10px;letter-spacing:.12em;text-transform:uppercase;text-align:center;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.lclear:hover{color:var(--c-accent)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.tile{position:relative;display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--c-surface);border:1px solid var(--c-line);border-top:2px solid var(--c-line);padding:10px;cursor:pointer;color:inherit;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
+.tile.t-select{border-top-color:var(--t-select)}
+.tile.t-deluxe{border-top-color:var(--t-deluxe)}
+.tile.t-premium{border-top-color:var(--t-premium)}
+.tile.t-ultra{border-top-color:var(--t-ultra)}
+.tile.t-exclusive{border-top-color:var(--t-exclusive)}
+.tile .ic{height:72px;display:flex;align-items:center;justify-content:center}
+.tile .ic img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.55))}
+.tile .nm{display:block;font-weight:600;font-size:12.5px;color:var(--c-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .sub{display:block;font-weight:600;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--c-mut)}
+.tile .cnt{position:absolute;top:6px;right:6px;background:var(--c-accent-btn);color:#fff;font-weight:700;font-size:10px;padding:2px 6px}
+
+.pempty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:48px 20px;border:1px dashed var(--c-line);color:var(--c-mut);font-size:13px;text-align:center}
+.pempty button{border:1px solid var(--c-line);background:transparent;color:var(--c-mut);font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:9px 14px;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.pempty button:hover{color:var(--c-ink);border-color:var(--c-mut)}
+
+.tray{position:fixed;bottom:0;left:0;right:0;z-index:30;background:var(--c-surface);border-top:1px solid var(--c-line);padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tray-label{font-family:var(--font-display);font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--c-ink)}
+.chip{display:flex;align-items:center;gap:6px;background:var(--c-surface2);border:1px solid var(--c-line);padding:5px 8px}
+.chip img{width:22px;height:22px;object-fit:contain}
+.chip .cn2{font-size:11px;color:var(--c-ink);max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lv{border:1px solid var(--c-line);background:transparent;color:var(--c-mut);font-weight:700;font-size:10px;letter-spacing:.06em;padding:3px 7px;cursor:pointer}
+.lv:hover{color:var(--c-ink)}
+.lv.on{border-color:var(--c-accent);color:var(--c-ink)}
+.rmv{border:0;background:transparent;color:var(--c-mut);font-size:14px;line-height:1;cursor:pointer;padding:2px 4px}
+.rmv:hover{color:var(--c-accent)}
+
+.disc{margin:24px 0 90px;font-size:11px;color:var(--c-mut);text-align:center;line-height:1.6}
+
+@media (prefers-reduced-motion:no-preference){
+  .tile{transition:transform .18s ease-out,border-color .18s ease-out}
+  .tile:hover{transform:translateY(-2px)}
+  .tile.t-select:hover{border-color:var(--t-select)}
+  .tile.t-deluxe:hover{border-color:var(--t-deluxe)}
+  .tile.t-premium:hover{border-color:var(--t-premium)}
+  .tile.t-ultra:hover{border-color:var(--t-ultra)}
+  .tile.t-exclusive:hover{border-color:var(--t-exclusive)}
+  .rung{transition:background .18s ease-out,border-color .18s ease-out}
+  .rung:hover{background:var(--c-surface2);border-color:var(--c-line)}
+  .cats button,.sib,.lclear{transition:background .18s ease-out,border-color .18s ease-out,color .18s ease-out}
+}
+
+@media (max-width:900px){
+  .body{grid-template-columns:1fr}
+  .ladder{position:static;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .ladder h2{width:100%;margin-bottom:0}
+  .rung{width:auto;flex:0 0 auto}
+  .lclear{width:100%;margin-top:0}
+}
+</style>
+</head>
+<body>
+<!-- Picker Lab A -->
+<header id="topbar">
+  <div class="tb-left"><span class="logo">CARD FORGE</span></div>
+  <div class="tb-right">
+    <a class="tb-link" href="index.html">Hub</a>
+    <a class="sib" href="picker-a.html" aria-current="page">A</a>
+    <a class="sib" href="picker-b.html">B</a>
+    <a class="sib" href="picker-c.html">C</a>
+    <span class="proto-chip">PICKER LAB · A</span>
+  </div>
+</header>
+<main>
+  <div class="cats" id="cats"></div>
+  <div class="ctl">
+    <input id="q" type="search" placeholder="Search skins or weapons…" autocomplete="off" aria-label="Search skins">
+    <span id="ctx"></span>
+  </div>
+  <div class="body">
+    <aside class="ladder">
+      <h2>TIER LADDER</h2>
+      <span class="lhint">click = tier &amp; above · 2nd = only · 3rd = clear</span>
+      <button class="rung t-exclusive" data-tier="exclusive" type="button"><i class="bar"></i><span>EXCLUSIVE</span><b>2</b></button>
+      <button class="rung t-ultra" data-tier="ultra" type="button"><i class="bar"></i><span>ULTRA</span><b>16</b></button>
+      <button class="rung t-premium" data-tier="premium" type="button"><i class="bar"></i><span>PREMIUM</span><b>12</b></button>
+      <button class="rung t-deluxe" data-tier="deluxe" type="button"><i class="bar"></i><span>DELUXE</span><b>3</b></button>
+      <button class="rung t-select" data-tier="select" type="button"><i class="bar"></i><span>SELECT</span><b>2</b></button>
+      <button id="ladderClear" class="lclear" type="button">Clear tier filter</button>
+    </aside>
+    <section>
+      <div class="grid" id="grid"></div>
+      <div class="pempty" id="pempty" hidden>
+        <p>No skins match — loosen the ladder or search.</p>
+        <button id="pemptyClear" type="button">Clear filters</button>
+      </div>
+    </section>
+  </div>
+  <p class="disc">CardForge is not affiliated with, endorsed by, or associated with Riot Games or any game publisher. All game names, skin names and imagery are trademarks/property of their respective owners. Picker lab prototype — mock catalog.</p>
+</main>
+<div class="tray" id="tray">
+  <b class="tray-label">ON CARD — <span id="trayCat"></span> (<span id="trayN"></span>)</b>
+</div>
+<script src="mock-data.js"></script>
+<script>
+(function(){
+  var TIERS=['select','deluxe','premium','ultra','exclusive'];
+  var PINS={Rifles:['Vandal','Phantom','Bulldog'],Sidearms:['Sheriff','Ghost','Frenzy'],SMGs:['Spectre','Stinger'],'Sniper Rifles':['Operator'],'Machine Guns':['Odin','Ares'],Melees:['Axe','Knife','Dagger','Catrina']};
+  var CATS=[
+    {key:'Sidearms',label:'SIDEARMS'},
+    {key:'SMGs',label:'SMGS'},
+    {key:'Rifles',label:'RIFLES'},
+    {key:'Sniper Rifles',label:'SNIPERS'},
+    {key:'Machine Guns',label:'MGS'},
+    {key:'Melees',label:'MELEES'}
+  ];
+  function lastWord(name){var p=name.split(' ');return p[p.length-1]}
+  function catOf(name){var w=lastWord(name);for(var c in PINS){if(PINS[c].indexOf(w)>=0)return c}return 'Melees'}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+
+  var catalog=Object.entries(CF_MOCK.skins).map(([key,s])=>({key,...s,cat:catOf(s.name),rank:TIERS.indexOf(s.tier),weapon:lastWord(s.name)}));
+
+  var curCat='Rifles';
+  var q='';
+  var ladder={tier:null,only:false};
+  var picks={};
+  CATS.forEach(function(c){picks[c.key]=[]});
+
+  var catsEl=document.getElementById('cats');
+  var qEl=document.getElementById('q');
+  var ctxEl=document.getElementById('ctx');
+  var gridEl=document.getElementById('grid');
+  var pemptyEl=document.getElementById('pempty');
+  var trayEl=document.getElementById('tray');
+  var trayCatEl=document.getElementById('trayCat');
+  var trayNEl=document.getElementById('trayN');
+  var rungEls=Array.prototype.slice.call(document.querySelectorAll('.rung'));
+  var clearEl=document.getElementById('ladderClear');
+  var pemptyClearEl=document.getElementById('pemptyClear');
+
+  function skinByKey(k){for(var i=0;i<catalog.length;i++){if(catalog[i].key===k)return catalog[i]}}
+
+  function qMatch(s){if(!q)return true;return s.name.toLowerCase().indexOf(q)>=0||s.weapon.toLowerCase().indexOf(q)>=0}
+  function tierMatch(s){if(!ladder.tier)return true;var r=TIERS.indexOf(ladder.tier);return ladder.only?s.rank===r:s.rank>=r}
+  function visible(){return catalog.filter(function(s){return s.cat===curCat&&qMatch(s)&&tierMatch(s)}).sort(function(a,b){return (b.rank-a.rank)||a.name.localeCompare(b.name)})}
+
+  function renderCats(){
+    catsEl.innerHTML='';
+    CATS.forEach(function(c){
+      var n=catalog.filter(function(s){return s.cat===c.key}).length;
+      var b=document.createElement('button');
+      b.type='button';
+      b.dataset.cat=c.key;
+      b.setAttribute('aria-pressed',c.key===curCat?'true':'false');
+      b.innerHTML=esc(c.label)+' <span class="cn">'+n+'</span>';
+      b.addEventListener('click',function(){curCat=c.key;renderAll()});
+      catsEl.appendChild(b);
+    });
+  }
+
+  function renderGrid(){
+    var list=visible();
+    gridEl.innerHTML='';
+    list.forEach(function(s){
+      var n=picks[curCat].filter(function(p){return p.key===s.key}).length;
+      var badge=n>1?'<span class="cnt">×'+n+'</span>':'';
+      var t=document.createElement('button');
+      t.type='button';
+      t.className='tile t-'+s.tier;
+      t.dataset.key=s.key;
+      t.innerHTML=badge+'<span class="ic"><img src="'+esc(s.icon)+'" alt="'+esc(s.name)+'" loading="lazy"></span>'+
+        '<span class="nm">'+esc(s.name)+'</span>'+
+        '<span class="sub">'+esc(s.weapon)+' • '+esc(CF_MOCK.tiers[s.tier].name)+'</span>';
+      t.addEventListener('click',function(){picks[curCat].push({key:s.key,level:1});renderTray();renderGrid()});
+      gridEl.appendChild(t);
+    });
+    pemptyEl.hidden=list.length>0;
+    gridEl.hidden=list.length===0;
+  }
+
+  function renderCtx(){
+    var n=visible().length;
+    var label=ladder.tier?(ladder.only?CF_MOCK.tiers[ladder.tier].name+' ONLY':CF_MOCK.tiers[ladder.tier].name+'+'):'ALL TIERS';
+    ctxEl.textContent=label+' · '+n+' SKINS';
+  }
+
+  function renderRungs(){
+    rungEls.forEach(function(r){
+      var tier=r.dataset.tier;
+      var active=ladder.tier===tier;
+      r.classList.toggle('active',active&&!ladder.only);
+      r.classList.toggle('only',active&&ladder.only);
+      r.querySelector('span').textContent=CF_MOCK.tiers[tier].name+(active&&ladder.only?' ONLY':'');
+      var count=catalog.filter(function(s){return s.cat===curCat&&qMatch(s)&&s.tier===tier}).length;
+      r.querySelector('b').textContent=count;
+      r.classList.toggle('zero',count===0);
+      r.title='Show '+CF_MOCK.tiers[tier].name+' and above — click again for '+CF_MOCK.tiers[tier].name+' only, third click clears';
+    });
+  }
+
+  function renderTray(){
+    trayCatEl.textContent=curCat;
+    trayNEl.textContent=picks[curCat].length;
+    Array.prototype.slice.call(trayEl.querySelectorAll('.chip')).forEach(function(c){c.remove()});
+    picks[curCat].forEach(function(p,i){
+      var s=skinByKey(p.key);
+      var chip=document.createElement('span');
+      chip.className='chip';
+      chip.innerHTML='<img src="'+esc(s.icon)+'" alt="" loading="lazy">'+
+        '<span class="cn2">'+esc(s.name)+'</span>'+
+        '<button type="button" class="lv'+(p.level>1?' on':'')+'">L'+p.level+'</button>'+
+        '<button type="button" class="rmv" aria-label="Remove '+esc(s.name)+'">×</button>';
+      chip.querySelector('.lv').addEventListener('click',function(){p.level=p.level>=5?1:p.level+1;renderTray()});
+      chip.querySelector('.rmv').addEventListener('click',function(){picks[curCat].splice(i,1);renderTray();renderGrid()});
+      trayEl.appendChild(chip);
+    });
+  }
+
+  function renderAll(){renderCats();renderGrid();renderCtx();renderRungs();renderTray()}
+
+  qEl.addEventListener('input',function(){q=qEl.value.trim().toLowerCase();renderGrid();renderCtx();renderRungs()});
+
+  rungEls.forEach(function(r){
+    r.addEventListener('click',function(){
+      var tier=r.dataset.tier;
+      if(ladder.tier!==tier){ladder={tier:tier,only:false}}
+      else if(!ladder.only){ladder.only=true}
+      else{ladder={tier:null,only:false}}
+      renderGrid();renderCtx();renderRungs();
+    });
+  });
+
+  clearEl.addEventListener('click',function(){ladder={tier:null,only:false};renderGrid();renderCtx();renderRungs()});
+  pemptyClearEl.addEventListener('click',function(){q='';qEl.value='';ladder={tier:null,only:false};renderGrid();renderCtx();renderRungs()});
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
