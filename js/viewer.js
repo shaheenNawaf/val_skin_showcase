@@ -218,6 +218,7 @@ function startSupabasePresence(slug) {
 // ── boot ──────────────────────────────────────────────────────────
 const fit = CF.makeFitter({ card, sizer: CF.$('sizer'), topbar: CF.$('topbar'), stage: CF.$('stage') });
 fit();
+CF.initDisclaimerCollapse();
 
 const slug = new URLSearchParams(location.search).get('slug');
 if (!slug) {
