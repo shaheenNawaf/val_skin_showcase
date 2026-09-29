@@ -32,7 +32,9 @@ const state = {
 let DB = {}, TIERS = [], RANKS = [], BUDDIES = {}, CARDS = {}, SKIN_BY_ID = new Map(), LEVEL_MAP = {}, CHROMA_MAP = {}, BUDDIES_LIST = [], BUDDY_BY_ANY = {};
 let catalogSource = 'api';
 let list = [], currentPool = [], currentCat = null, pickerMode = 'skin', rankRow = null, rankKey = null, variantCat = null, variantIdx = -1;
-let filterWeapon = '', filterTier = '', filterOwned = false, filterAnim = false;
+const TIER_RANK = { select: 1, deluxe: 2, premium: 3, ultra: 4, exclusive: 5 };
+let filterWeapon = '', filterTier = '', filterOwned = false, filterAnim = false, tierOnly = false;
+let lastTierCounts = {};
 let pendingUpload = null, editSlug = null, lastFocus = null, exporting = false;
 
 // Old #l=<id> viewer links move to the unified viewer page.
@@ -123,6 +125,7 @@ function captureTexts() {
 function modalVis({ search = true, filters = true, grid = true, variant = false, upload = false } = {}) {
   mSearch.style.display = search ? '' : 'none';
   CF.$('mFilters').style.display = filters ? '' : 'none';
+  CF.$('mLadder').style.display = filters ? '' : 'none';
   mGrid.style.display = grid ? '' : 'none';
   CF.$('mVariant').hidden = !variant;
   CF.$('mUpload').hidden = !upload;
@@ -144,15 +147,16 @@ function openPicker(cat) {
   filterTier = '';
   filterOwned = false;
   filterAnim = false;
+  tierOnly = false;
   CF.$('mTitle').textContent = 'Add ' + cat;
   modalVis();
+  CF.$('mLadder').style.display = '';
   currentPool = CF.FREE_CATS.includes(cat)
     ? Object.values(DB).flat().sort((x, y) => (x.weapon + x.name).localeCompare(y.weapon + y.name))
     : (DB[cat] || []);
-  const wCounts = {}, tCounts = {};
+  const wCounts = {};
   currentPool.forEach(s => {
     wCounts[s.weapon] = (wCounts[s.weapon] || 0) + 1;
-    if (s.tier) tCounts[s.tier] = (tCounts[s.tier] || 0) + 1;
   });
   const w = Object.keys(wCounts).sort();
   const ownedN = (state.owned[cat] || []).length;
@@ -166,10 +170,7 @@ function openPicker(cat) {
   addOwned.textContent = `Add all owned (${ownedN})`;
   CF.$('mTiers').style.display = TIERS.length ? '' : 'none';
   const animCount = currentPool.filter(s => (s.maxLevel || 1) >= 2).length;
-  CF.$('mTiers').innerHTML = `<button class="chip${filterAnim ? ' active' : ''}" data-anim="1">✦ Animated (${animCount})</button>` +
-    '<button class="chip active" data-t="">Any tier</button>' +
-    TIERS.filter(t => tCounts[t]).map(t =>
-      `<button class="chip" data-t="${CF.esc(t)}"><i class="dot ${CF.tierClass(t)}"></i>${CF.esc(t)} (${tCounts[t]})</button>`).join('');
+  CF.$('mTiers').innerHTML = `<button class="chip${filterAnim ? ' active' : ''}" data-anim="1">✦ Animated (${animCount})</button>`;
   mSearch.value = '';
   renderGrid();
   openModal();
@@ -193,7 +194,18 @@ function paintChips() {
   });
   document.querySelectorAll('#mTiers .chip').forEach(c => {
     if (c.dataset.anim !== undefined) c.classList.toggle('active', filterAnim);
-    else c.classList.toggle('active', (c.dataset.t || '') === filterTier);
+  });
+}
+
+function paintLadder(countsByTier) {
+  document.querySelectorAll('#mLadder .rung').forEach(rung => {
+    const t = rung.dataset.tier;
+    const n = countsByTier[t] || 0;
+    rung.querySelector('b').textContent = n;
+    rung.classList.toggle('zero', n === 0);
+    rung.classList.toggle('on', filterTier === t && !tierOnly);
+    rung.classList.toggle('only', filterTier === t && tierOnly);
+    rung.title = `Show ${t} and above — click again for ${t} only, third click clears`;
   });
 }
 
@@ -224,16 +236,25 @@ function renderGrid() {
   }
   const counts = {};
   (state.picks[currentCat] || []).forEach(p => counts[p.id] = (counts[p.id] || 0) + 1);
+  const ownedSet = filterOwned && (state.owned[currentCat] || []).length ? new Set(state.owned[currentCat]) : null;
+  lastTierCounts = {};
+  currentPool.forEach(s => {
+    if (filterWeapon && s.weapon !== filterWeapon) return;
+    if (filterAnim && (s.maxLevel || 1) < 2) return;
+    if (ownedSet && !ownedSet.has(s.id)) return;
+    if (q && !(s.name + ' ' + s.weapon).toLowerCase().includes(q)) return;
+    const t = CF.tierKey(s.tier);
+    lastTierCounts[t] = (lastTierCounts[t] || 0) + 1;
+  });
+  paintLadder(lastTierCounts);
   list = currentPool.filter(s =>
     (!filterWeapon || s.weapon === filterWeapon) &&
-    (!filterTier || (s.tier || '').toLowerCase() === filterTier.toLowerCase()) &&
+    (!filterTier || ((CF.tierKey(s.tier) === CF.tierKey(filterTier) && tierOnly) || (!tierOnly && TIER_RANK[CF.tierKey(s.tier)] >= TIER_RANK[CF.tierKey(filterTier)]))) &&
     (!filterAnim || (s.maxLevel || 1) >= 2) &&
     (!q || (s.name + ' ' + s.weapon).toLowerCase().includes(q)));
-  if (filterOwned && (state.owned[currentCat] || []).length) {
-    const os = new Set(state.owned[currentCat]);
-    list = list.filter(s => os.has(s.id));
-  }
-  CF.$('mCount').textContent = list.length + ' results';
+  if (ownedSet) list = list.filter(s => ownedSet.has(s.id));
+  list.sort((a, b) => (TIER_RANK[CF.tierKey(b.tier)] || 0) - (TIER_RANK[CF.tierKey(a.tier)] || 0) || a.name.localeCompare(b.name));
+  CF.$('mCount').textContent = list.length + ' results' + (filterTier ? ' · ' + filterTier.toUpperCase() + (tierOnly ? ' only' : '+') : '');
   mGrid.innerHTML = list.map((s, i) => {
     const anim = (s.maxLevel || 1) >= 2;
     const ownLv = (state.ownedLevels || {})[s.id] || 0;
@@ -292,6 +313,7 @@ function openBuddyPicker() {
   CF.$('mTitle').textContent = 'Add gun buddies';
   CF.$('mCount').textContent = '';
   modalVis({ search: true, filters: true, grid: true, upload: true });
+  CF.$('mLadder').style.display = 'none';
   const ownedN = (state.ownedBuddies || []).length;
   CF.$('mWeapons').innerHTML = ownedN
     ? `<button class="chip" data-owned="1">Owned (${ownedN})</button>`
@@ -328,8 +350,22 @@ CF.$('mWeapons').addEventListener('click', e => {
 });
 CF.$('mTiers').addEventListener('click', e => {
   const c = e.target.closest('.chip'); if (!c) return;
-  if (c.dataset.anim !== undefined) { filterAnim = !filterAnim; paintChips(); renderGrid(); return; }
-  filterTier = c.dataset.t || ''; paintChips(); renderGrid();
+  if (c.dataset.anim !== undefined) { filterAnim = !filterAnim; paintChips(); renderGrid(); }
+});
+CF.$('mLadder').addEventListener('click', e => {
+  const rung = e.target.closest('.rung');
+  if (rung) {
+    const t = rung.dataset.tier;
+    if (filterTier !== t) { filterTier = t; tierOnly = false; }
+    else if (!tierOnly) { tierOnly = true; }
+    else { filterTier = ''; tierOnly = false; }
+    paintLadder(lastTierCounts); renderGrid();
+    return;
+  }
+  if (e.target.closest('#mLadderClear')) {
+    filterTier = ''; tierOnly = false;
+    paintLadder(lastTierCounts); renderGrid();
+  }
 });
 CF.$('mAddOwned').addEventListener('click', () => {
   if (pickerMode === 'buddy') {
@@ -450,7 +486,9 @@ function parseTokenInput(raw) {
     try {
       const o = JSON.parse(v);
       token = String(o.accessToken || o.access_token || '').trim();
-      entitlements = String(o.token || o.entitlements || '').trim();
+      entitlements = String(
+        o.token || o.entitlements || o.entitlements_token || o.entitlementsToken || o.ent_token || ''
+      ).trim();
     } catch {
       return { code: 'malformed', message: "That looks like JSON but didn't parse. Copy the full entitlements response, or just the access token (starts with eyJ…)." };
     }
@@ -517,13 +555,13 @@ CF.$('iRun').addEventListener('click', async () => {
 
 function autoFillFlex() {
   const onCard = new Set(CF.ALL_CATS.flatMap(c => state.picks[c].map(p => p.id)));
-  const TIER_RANK = { exclusive: 3, ultra: 2, premium: 1 };
   const cand = [];
   SKIN_BY_ID.forEach(s => {
     if (onCard.has(s.id)) return;
     const lvl = state.ownedLevels[s.id] || 0;
     if (!lvl) return;
-    const prem = TIER_RANK[(s.tier || '').toLowerCase()] || 0;
+    const tr = TIER_RANK[CF.tierKey(s.tier)] || 0;
+    const prem = tr >= 3 ? tr : 0;
     if (prem || (s.maxLevel || 1) >= 2) cand.push({ s, lvl, prem });
   });
   cand.sort((a, b) => b.prem - a.prem || a.s.name.localeCompare(b.s.name));
@@ -605,7 +643,7 @@ card.addEventListener('click', e => {
   if (auto) {
     const n = auto.dataset.auto === 'anims'
       ? Object.values(state.picks).flat().filter(p => (p.level || 0) >= 2).length
-      : Object.values(state.picks).flat().filter(p => ['premium', 'ultra', 'exclusive'].includes((p.tier || '').toLowerCase())).length;
+      : Object.values(state.picks).flat().filter(p => ['premium', 'ultra', 'exclusive'].includes(CF.tierKey(p.tier))).length;
     auto.closest('.stat').querySelector('b').textContent = String(n).padStart(2, '0');
     return;
   }
