@@ -126,6 +126,7 @@ function modalVis({ search = true, filters = true, grid = true, variant = false,
   mSearch.style.display = search ? '' : 'none';
   CF.$('mFilters').style.display = filters ? '' : 'none';
   CF.$('mLadder').style.display = filters ? '' : 'none';
+  const mb = CF.$('mBody'); if (mb) mb.classList.toggle('noladder', !filters);
   mGrid.style.display = grid ? '' : 'none';
   CF.$('mVariant').hidden = !variant;
   CF.$('mUpload').hidden = !upload;
@@ -364,6 +365,7 @@ function openBuddyPicker() {
   CF.$('mCount').textContent = '';
   modalVis({ search: true, filters: true, grid: true, upload: true });
   CF.$('mLadder').style.display = 'none';
+  CF.$('mBody').classList.add('noladder');
   const ownedN = (state.ownedBuddies || []).length;
   CF.$('mWeapons').innerHTML = ownedN
     ? `<button class="chip" data-owned="1">Owned (${ownedN})</button>`
