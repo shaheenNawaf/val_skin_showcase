@@ -226,6 +226,7 @@ clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100
 #buildstamp[data-env=staging] .bs-env{background:#E8A33D}
 #buildstamp[data-env=preview] .bs-env{background:#4EA8DE}
 #buildstamp[data-env=local] .bs-env{background:#8A95A1}
+#buildstamp[data-env=beta] .bs-env{background:#B44BFF}
 #buildstamp .bs-ver{font:500 10px 'Chakra Petch',sans-serif;letter-spacing:.02em;color:var(--c-mut);background:var(--c-veil);backdrop-filter:blur(4px);padding:3px 8px;border:1px solid var(--c-line);
 clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px)}
 @media (max-width:760px){#buildstamp{position:absolute;bottom:calc(100% + 8px);right:8px;margin-left:0;flex-direction:column;align-items:flex-end;gap:4px;pointer-events:none}}

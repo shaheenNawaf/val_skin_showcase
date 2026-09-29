@@ -56,7 +56,15 @@ One-time enable in the Netlify dashboard:
 1. **Project configuration → Developer settings → Continuous deployment → Branches and deploy contexts** → *Configure* → next to **Branch deploys** choose **All** (or *Let me add individual branches* for specific ones — wildcards like `features/*` work) → **Save**.
 2. Confirm the production branch is `main` in that same **Branches and deploy contexts** section.
 
-Then pushing a branch `foo` deploys it to `https://foo--<site-name>.netlify.app` (Netlify prints the exact URL in the deploy log and lists it under *Deploys*). Merging `foo` → `main` updates production. Recommended flow: work on a feature branch (auto-staging — test it), then merge to `main` to release.
+Then pushing a branch `foo` deploys it to `https://foo--cardforge-showcase.netlify.app` (Netlify prints the exact URL in the deploy log and lists it under *Deploys*). Merging `foo` → `main` updates production. Recommended flow: work on a feature branch (auto-staging — test it), then merge to `main` to release.
+
+Live environments:
+
+| Environment | URL | Branch | Footer badge |
+|---|---|---|---|
+| Production | https://cardforge.shaheen.works | `main` | none |
+| Staging | https://staging--cardforge-showcase.netlify.app | `staging` | orange **STAGING** |
+| Beta | https://beta--cardforge-showcase.netlify.app | `beta` | purple **BETA** |
 
 ### Version stamp
 
@@ -66,7 +74,7 @@ Every built page carries a small stamp — in the footer bar on desktop, floatin
 v1.0.0 · e02ca52 · 2026-09-26 · main
 ```
 
-= `package.json` version · git short SHA · build date (UTC) · branch. On non-production deploys a colored badge precedes it: **STAGING** (orange, branch deploy), **PREVIEW** (blue, PR deploy preview), **LOCAL** (grey, `npm run build` on your machine). Production shows no badge. The stamp lives only in `dist/` (source files stay clean, so it never dirties git) and is hidden during PNG export.
+= `package.json` version · git short SHA · build date (UTC) · branch. On non-production deploys a colored badge precedes it: **STAGING** (orange, branch deploy), **BETA** (purple, the `beta` branch), **PREVIEW** (blue, PR deploy preview), **LOCAL** (grey, `npm run build` on your machine). Production shows no badge. The stamp lives only in `dist/` (source files stay clean, so it never dirties git) and is hidden during PNG export.
 
 To bump the released version, edit `"version"` in `package.json`. To preview the stamp locally: `npm run build && npx http-server dist`.
 

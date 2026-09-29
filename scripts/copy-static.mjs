@@ -17,11 +17,13 @@ const date = new Date().toISOString().slice(0, 10);
 
 // Netlify CONTEXT: production | deploy-preview | branch-deploy ; anything else = local build
 const ctx = process.env.CONTEXT;
-const env = ctx === 'production' ? 'production'
+let env = ctx === 'production' ? 'production'
   : ctx === 'deploy-preview' ? 'preview'
   : ctx === 'branch-deploy' ? 'staging'
   : 'local';
-const envLabel = { production: 'PRODUCTION', preview: 'PREVIEW', staging: 'STAGING', local: 'LOCAL' }[env];
+// the beta branch gets its own badge on branch deploys
+if (env === 'staging' && branch.toLowerCase() === 'beta') env = 'beta';
+const envLabel = { production: 'PRODUCTION', preview: 'PREVIEW', staging: 'STAGING', beta: 'BETA', local: 'LOCAL' }[env];
 
 const stamp =
   `<div id="buildstamp" data-env="${env}" title="Built from ${branch} @ ${sha} on ${date} (UTC)">` +
