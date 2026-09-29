@@ -45,8 +45,9 @@ export function status(m, kind = 'info') {
   el.textContent = m;
   el.dataset.kind = kind;
   el.classList.remove('dim');
+  el.classList.remove('fade');
   clearTimeout(statusTimer);
-  if (kind !== 'err') statusTimer = setTimeout(() => el.classList.add('dim'), 6000);
+  if (kind !== 'err') statusTimer = setTimeout(() => el.classList.add('fade'), 5000);
 }
 
 export function readJSON(key, fallback) {

@@ -63,13 +63,13 @@ max-width:min(560px,calc(100vw - 24px));white-space:normal;overflow:visible;text
 background:var(--c-surface2);border:1px solid var(--c-line);border-left:3px solid var(--c-mut);
 color:var(--c-ink);font-size:12.5px;letter-spacing:.04em;line-height:1.45;padding:9px 14px;
 clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
-@media (prefers-reduced-motion:no-preference){#status{transition:opacity .4s ease}}
+@media (prefers-reduced-motion:no-preference){#status{transition:opacity .45s ease,visibility 0s 0s}#status.fade{transition:opacity .45s ease,visibility 0s .45s}}
 #status::before{content:"// ";color:var(--c-mut)}
 #status[data-kind=ok]{border-left-color:#3DD68C}
 #status[data-kind=ok]::before{content:"✓ ";color:#3DD68C}
 #status[data-kind=err]{border-left-color:#FF6B77}
 #status[data-kind=err]::before{content:"✕ ";color:#FF6B77}
-#status.dim{opacity:.5}
+#status.fade{opacity:0;visibility:hidden;pointer-events:none}
 
 /* ── stage + card ──────────────────────────────────────────────── */
 /* vignette lives on the stage: every top-level element is fixed, so the
