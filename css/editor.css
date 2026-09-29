@@ -106,8 +106,20 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 /* variant/level modal + picker markers */
 .item .anim{color:var(--c-accent);font-style:normal}
 .item .ownlv{position:absolute;bottom:6px;left:6px;background:var(--c-accent-btn);color:#fff;font:700 10px var(--font-ui);font-style:normal;padding:2px 6px;letter-spacing:.05em}
+.vdots{position:absolute;bottom:6px;right:6px;display:flex;gap:3px}
+.vd{width:14px;height:14px;overflow:hidden;cursor:pointer;border:1px solid var(--c-line-soft);clip-path:polygon(3px 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%,0 3px)}
+.vd img{width:100%;height:100%;object-fit:cover;display:block}
+.vd:hover{border-color:var(--c-accent)}
 .mvariant{padding:6px 2px 2px;display:flex;flex-direction:column;gap:16px}
 #mVariant[hidden]{display:none}
+#vPrev[hidden]{display:none}
+.vprev{display:flex;gap:12px;padding:2px 2px 0}
+.vp-box{flex:1;min-width:0;background:var(--c-surface2);border:1px solid var(--c-line-soft);padding:8px;display:flex;flex-direction:column;gap:6px;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.vp-box label{font:600 9px var(--font-ui);letter-spacing:.18em;text-transform:uppercase;color:var(--c-mut)}
+.vp-media{height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;overflow:hidden;background:var(--c-bg)}
+.vp-media video,.vp-media img{max-width:100%;max-height:100%;object-fit:contain}
+.vpnote{font:500 9px var(--font-ui);letter-spacing:.06em;color:var(--c-mut);text-align:center;padding:0 6px}
+@media (max-width:767px){.vprev{flex-direction:column}}
 .vrow label{display:block;color:var(--c-mut);font:600 11px var(--font-ui);letter-spacing:.14em;margin-bottom:8px}
 .vchromas{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
 .vchroma{position:relative;background:var(--c-surface);border:1px solid var(--c-line-soft);padding:10px 8px;display:flex;flex-direction:column;gap:6px;align-items:center;cursor:pointer;color:var(--c-ink);font-family:var(--font-ui);text-align:center}

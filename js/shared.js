@@ -235,8 +235,8 @@ async function loadCatalogFromCache(sb) {
     const LEVEL_MAP = {};
     const CHROMA_MAP = {};
     skinRows.forEach(r => {
-      const chromas = Array.isArray(r.chromas) ? r.chromas : [];
-      (DB[r.category] = DB[r.category] || []).push({ id: r.uuid, weapon: r.weapon, name: r.name, tier: r.tier || '', icon: r.icon_url, maxLevel: r.max_level || 1, chromas });
+      const chromas = (Array.isArray(r.chromas) ? r.chromas : []).map(c => ({ ...c, full: c.full || c.fullRender || '', sw: c.sw || c.swatch || '' }));
+      (DB[r.category] = DB[r.category] || []).push({ id: r.uuid, weapon: r.weapon, name: r.name, tier: r.tier || '', icon: r.icon_url, maxLevel: r.max_level || 1, chromas, levels: (Array.isArray(r.levels) ? r.levels : []).map(l => ({ level: l.level, video: l.video || '' })) });
       (Array.isArray(r.levels) ? r.levels : []).forEach(l => { if (l && l.uuid) LEVEL_MAP[l.uuid] = { id: r.uuid, level: l.level }; });
       chromas.forEach((c, i) => { if (c && c.uuid) CHROMA_MAP[c.uuid] = { id: r.uuid, idx: i }; });
     });
@@ -281,9 +281,9 @@ export async function loadCatalogFromApi() {
         if (!cIcon) return null;
         const raw = String(c.displayName || '').replace(/\r?\n/g, ' ').trim();
         const unlock = (raw.match(/Level (\d+)/) || [])[1];
-        return { uuid: c.uuid, label: chromaLabel(s.displayName, c.displayName), icon: cIcon, swatch: c.swatch || null, unlock: unlock ? +unlock : null };
+        return { uuid: c.uuid, label: chromaLabel(s.displayName, c.displayName), icon: cIcon, swatch: c.swatch || null, unlock: unlock ? +unlock : null, full: c.fullRender || '', sw: c.swatch || '' };
       }).filter(Boolean);
-      (DB[cat] = DB[cat] || []).push({ id: s.uuid, weapon: w.displayName, name: s.displayName, icon, tier: tiers[s.contentTierUuid] || '', maxLevel: (s.levels || []).length || 1, chromas });
+      (DB[cat] = DB[cat] || []).push({ id: s.uuid, weapon: w.displayName, name: s.displayName, icon, tier: tiers[s.contentTierUuid] || '', maxLevel: (s.levels || []).length || 1, chromas, levels: (s.levels || []).map((l, i) => ({ level: i + 1, video: l.streamedVideo || '' })) });
       (s.levels || []).forEach((l, i) => { if (l.uuid) LEVEL_MAP[l.uuid] = { id: s.uuid, level: i + 1 }; });
       chromas.forEach((c, i) => { if (c.uuid) CHROMA_MAP[c.uuid] = { id: s.uuid, idx: i }; });
     });
