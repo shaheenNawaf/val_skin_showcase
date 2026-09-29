@@ -13,7 +13,7 @@ const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.or
 const card = CF.$('card');
 const mcard = CF.$('mcard');
 let totalViews = 0;
-const SPV_BY_ID = new Map();
+const SPV_LIST = [];
 let spv = null, spvFocus = null;
 
 function updateBadge(nowViewing) {
@@ -22,10 +22,10 @@ function updateBadge(nowViewing) {
   badge.hidden = false;
 }
 
-function skinCell(s) {
+function skinCell(s, spi) {
   const label = `${s.weapon || ''} — ${s.name || ''}${s.level >= 2 ? ` · LV${s.level}` : ''}${s.variant ? ` · ${s.variant.name}` : ''}`;
   const src = s.icon || s.img || '';
-  const attrs = s.id ? ` class="skin spv-open" data-spid="${CF.esc(s.id)}" title="Inspect skin"` : ' class="skin"';
+  const attrs = s.id ? ` class="skin spv-open" data-spi="${spi}" title="Inspect skin"` : ' class="skin"';
   return `<span${attrs}><img src="${CF.esc(src)}" alt="${CF.esc(label)}" title="${CF.esc(label)}">${s.level >= 2 ? `<i class="lv">LV${s.level}</i>` : ''}</span>`;
 }
 
@@ -54,9 +54,12 @@ function renderListing(listing) {
   CF.ALL_CATS.forEach(cat => {
     const slots = card.querySelector(`.panel[data-cat="${cat}"] .slots`);
     const skins = picks[cat] || [];
-    skins.forEach(s => { if (s.id) SPV_BY_ID.set(s.id, s); });
     slots.innerHTML = skins.length
-      ? skins.map(skinCell).join('')
+      ? skins.map(s => {
+          if (!s.id) return skinCell(s);
+          SPV_LIST.push(s);
+          return skinCell(s, SPV_LIST.length - 1);
+        }).join('')
       : '<div class="slotbox empty"></div>';
   });
 
@@ -153,10 +156,17 @@ function renderMobile(listing) {
     const g = document.createElement('div');
     g.className = 'mgrid';
     skins.forEach(s => {
-      if (s.id) SPV_BY_ID.set(s.id, s);
       const cell = document.createElement('figure');
-      cell.className = s.id ? 'mskin spv-open' : 'mskin';
-      if (s.id) { cell.dataset.spid = s.id; cell.title = 'Inspect skin'; cell.setAttribute('role', 'button'); cell.tabIndex = 0; }
+      if (s.id) {
+        SPV_LIST.push(s);
+        cell.className = 'mskin spv-open';
+        cell.dataset.spi = String(SPV_LIST.length - 1);
+        cell.title = 'Inspect skin';
+        cell.setAttribute('role', 'button');
+        cell.tabIndex = 0;
+      } else {
+        cell.className = 'mskin';
+      }
       const img = document.createElement('img');
       img.src = s.icon || s.img || '';
       img.alt = `${s.weapon || ''} — ${s.name || ''}`;
@@ -250,7 +260,7 @@ function paintSpv() {
 }
 
 function openSpv(cell) {
-  const pick = SPV_BY_ID.get(cell.dataset.spid);
+  const pick = SPV_LIST[+cell.dataset.spi];
   const overlay = CF.$('skinPrev');
   if (!pick || !overlay) return;
   spvFocus = cell;
