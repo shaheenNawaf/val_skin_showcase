@@ -151,7 +151,7 @@ async function fetchJSON(url) {
   return r.json();
 }
 
-function chromaLabel(skinName, dn) {
+export function chromaLabel(skinName, dn) {
   const raw = String(dn || '').replace(/\r?\n/g, ' ').trim();
   const m = raw.match(/\(([^)]+)\)\s*$/);
   if (m) return m[1];

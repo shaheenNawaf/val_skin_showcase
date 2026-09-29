@@ -35,6 +35,7 @@ let list = [], currentPool = [], currentCat = null, pickerMode = 'skin', rankRow
 const TIER_RANK = { select: 1, deluxe: 2, premium: 3, ultra: 4, exclusive: 5 };
 let filterWeapon = '', filterTier = '', filterOwned = false, filterAnim = false, tierOnly = false;
 let lastTierCounts = {};
+let vpAnim = false, vpMuted = true;
 let pendingUpload = null, editSlug = null, lastFocus = null, exporting = false;
 
 // Old #l=<id> viewer links move to the unified viewer page.
@@ -303,9 +304,25 @@ function paintVariantPreview() {
   const k = p.variant ? chromas.findIndex(c => c.icon === p.variant.icon) : 0;
   const c = chromas[Math.max(0, k)];
   const cv = k > 0 && chromas[k] && chromas[k].video;
-  CF.$('vpLevel').innerHTML = cv ? `<video src="${CF.esc(chromas[k].video)}" muted loop autoplay playsinline></video><span class="vpnote">${CF.esc(chromas[k].label || '')} showcase · L${lv}</span>` : (ld && ld.video ? `<video src="${CF.esc(ld.video)}" muted loop autoplay playsinline></video><span class="vpnote">Level ${lv} animation</span>` : (s.icon ? `<img src="${CF.esc(s.icon)}" alt=""><span class="vpnote">static preview — level animations load with the live API catalog</span>` : '<span class="vpnote">no preview</span>'));
+  const mute = `<button class="vp-mute" type="button" data-vp-mute aria-pressed="${vpMuted ? 'true' : 'false'}" aria-label="${vpMuted ? 'Unmute preview' : 'Mute preview'}">${vpMuted ? '🔇' : '🔊'}</button>`;
+  const video = (src) => `<video src="${CF.esc(src)}"${vpMuted ? ' muted' : ''} loop autoplay playsinline></video>${mute}`;
+  let levelHtml;
+  if (cv) {
+    levelHtml = video(chromas[k].video) + `<span class="vpnote">${CF.esc(chromas[k].label || '')} showcase · L${lv}</span>`;
+  } else if (k > 0) {
+    if (vpAnim && ld && ld.video) {
+      levelHtml = video(ld.video) + `<span class="vpnote">Level ${lv} animation · default colorway footage</span><button class="vp-anim" type="button" data-vp-anim>■ colorway render</button>`;
+    } else {
+      levelHtml = `<img src="${CF.esc(chromas[k].full || chromas[k].icon)}" alt=""><span class="vpnote">${CF.esc(chromas[k].label || '')} · L${lv} — colorway render (no showcase footage)</span>` +
+        (ld && ld.video ? '<button class="vp-anim" type="button" data-vp-anim>▶ level animation</button>' : '');
+    }
+  } else {
+    levelHtml = ld && ld.video ? video(ld.video) + `<span class="vpnote">Level ${lv} animation</span>` : (s.icon ? `<img src="${CF.esc(s.icon)}" alt=""><span class="vpnote">static preview — level animations load with the live API catalog</span>` : '<span class="vpnote">no preview</span>');
+  }
+  CF.$('vpLevel').innerHTML = levelHtml;
   CF.$('vpChroma').innerHTML = c ? `<img src="${CF.esc(c.full || c.icon)}" alt="${CF.esc(c.label || '')}"><span class="vpnote">${CF.esc(c.label || '')}</span>` : '<span class="vpnote">no colorways</span>';
   CF.$('vPrev').hidden = !(levels.length > 1 || chromas.length > 1);
+  const vv = CF.$('vpLevel').querySelector('video'); if (vv && !vpMuted) vv.play().catch(() => {});
 }
 
 function ensureRichSkin(s) {
@@ -331,6 +348,7 @@ function ensureRichSkin(s) {
 function openVariantModal(cat, idx) {
   pickerMode = 'variant';
   variantCat = cat; variantIdx = idx;
+  vpAnim = false;
   const p = state.picks[cat][idx];
   if (!p) return;
   const s = SKIN_BY_ID.get(p.id) || { maxLevel: 1, chromas: [] };
@@ -532,6 +550,19 @@ CF.$('vChromas').addEventListener('click', e => {
   });
   CF.$('vLevels').querySelectorAll('.chip').forEach(x => x.classList.toggle('active', +x.dataset.lv === (p.level || 1)));
   paintVariantPreview();
+});
+CF.$('vpLevel').addEventListener('click', e => {
+  const mute = e.target.closest('[data-vp-mute]');
+  if (mute) {
+    vpMuted = !vpMuted;
+    const v = CF.$('vpLevel').querySelector('video');
+    if (v) v.muted = vpMuted;
+    mute.textContent = vpMuted ? '🔇' : '🔊';
+    mute.setAttribute('aria-pressed', vpMuted ? 'true' : 'false');
+    mute.setAttribute('aria-label', vpMuted ? 'Unmute preview' : 'Mute preview');
+    return;
+  }
+  if (e.target.closest('[data-vp-anim]')) { vpAnim = !vpAnim; paintVariantPreview(); }
 });
 CF.$('vRemove').addEventListener('click', () => {
   if (pickerMode !== 'variant') return;
