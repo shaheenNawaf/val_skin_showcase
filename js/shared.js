@@ -136,38 +136,17 @@ async function fetchJSON(url) {
   return r.json();
 }
 
-export async function loadCatalog() {
-  const [wJ, tJ, cJ, bJ, pJ] = await Promise.all([
-    fetchJSON('https://valorant-api.com/v1/weapons?language=en-US'),
-    fetchJSON('https://valorant-api.com/v1/contenttiers?language=en-US'),
-    fetchJSON('https://valorant-api.com/v1/competitivetiers?language=en-US'),
-    fetchJSON('https://valorant-api.com/v1/buddies?language=en-US'),
-    fetchJSON('https://valorant-api.com/v1/playercards?language=en-US')
-  ]);
-  const tiers = Object.fromEntries((tJ.data || []).map(t => [t.uuid, t.displayName]));
-  const DB = {};
-  (wJ.data || []).forEach(w => {
-    const cat = mapCategory(w.category);
-    if (!cat) return;
-    (w.skins || []).forEach(s => {
-      if (s.displayName === 'Standard') return;
-      const icon = s.displayIcon || (s.chromas && s.chromas[0] && s.chromas[0].displayIcon);
-      if (!icon) return;
-      (DB[cat] = DB[cat] || []).push({ id: s.uuid, weapon: w.displayName, name: s.displayName, icon, tier: tiers[s.contentTierUuid] || '' });
-    });
-  });
-  Object.values(DB).forEach(a => a.sort((x, y) => (x.weapon + x.name).localeCompare(y.weapon + y.name)));
+function chromaLabel(skinName, dn) {
+  const raw = String(dn || '').replace(/\r?\n/g, ' ').trim();
+  const m = raw.match(/\(([^)]+)\)\s*$/);
+  if (m) return m[1];
+  return raw === skinName ? 'Standard' : (raw || 'Standard');
+}
 
-  const tierSet = new Set();
-  Object.values(DB).forEach(a => a.forEach(s => { if (s.tier) tierSet.add(s.tier); }));
-  const TIERS = [...tierSet].sort((a, b) => {
-    const ia = TIER_ORDER.indexOf(a.toLowerCase()), ib = TIER_ORDER.indexOf(b.toLowerCase());
-    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
-  });
-
-  const set = (cJ.data || []).slice(-1)[0];
+function buildRanks(ctData) {
+  const set = (ctData || []).slice(-1)[0];
   const seenRanks = new Set(['UNRANKED']); // the icon-less literal below wins
-  const RANKS = [
+  return [
     { name: 'UNRANKED', icon: null, order: -1, flat: 0 },
     // tierName is already the full display name ("IRON 1"); divisionName is
     // just the tier group ("IRON"). "Unused" entries are placeholder data.
@@ -183,24 +162,134 @@ export async function loadCatalog() {
       .filter(t => (seenRanks.has(t.name) ? false : seenRanks.add(t.name)))
       .sort((a, b) => a.order - b.order)
   ];
+}
 
+function buildBuddies(buddyData) {
   // gun buddies + player cards, keyed by every uuid Riot may hand back
   // (level-0 ids from entitlements, level ids from equipped loadouts)
   const BUDDIES = {};
-  (bJ.data || []).forEach(b => {
+  const BUDDIES_LIST = [];
+  const BUDDY_BY_ANY = {};
+  (buddyData || []).forEach(b => {
     const icon = b.displayIcon || (b.levels && b.levels[0] && b.levels[0].displayIcon);
     if (!icon) return;
     BUDDIES[b.uuid] = icon;
-    (b.levels || []).forEach(l => { BUDDIES[l.uuid] = l.displayIcon || icon; });
+    BUDDIES_LIST.push({ uuid: b.uuid, name: b.displayName || 'Buddy', icon });
+    BUDDY_BY_ANY[b.uuid] = b.uuid;
+    (b.levels || []).forEach(l => { if (l.uuid) BUDDIES[l.uuid] = l.displayIcon || icon; });
+    (b.levels || []).forEach(l => { if (l.uuid) BUDDY_BY_ANY[l.uuid] = b.uuid; });
   });
+  BUDDIES_LIST.sort((a, b) => a.name.localeCompare(b.name));
+  return { BUDDIES, BUDDIES_LIST, BUDDY_BY_ANY };
+}
+
+function buildCards(cardData) {
   const CARDS = {};
-  (pJ.data || []).forEach(c => {
+  (cardData || []).forEach(c => {
     const wide = c.wideArt || c.displayIcon;
     if (!wide) return;
     CARDS[c.uuid] = { wide, icon: c.displayIcon || wide };
   });
+  return { CARDS };
+}
 
-  return { DB, TIERS, RANKS, BUDDIES, CARDS };
+async function loadCatalogFromCache(sb) {
+  if (!sb) return null;
+  try {
+    const skinRows = [];
+    for (let from = 0; from < 10000; from += 1000) {
+      const { data, error } = await sb.from('skins')
+        .select('uuid,weapon,category,name,tier,icon_url,max_level,chromas,levels')
+        .order('uuid')
+        .range(from, from + 999);
+      if (error || !data) throw new Error(error?.message || 'skins query failed');
+      skinRows.push(...data);
+      if (data.length < 1000) break;
+    }
+    const { data: cacheRows, error: cacheErr } = await sb.from('catalog_cache')
+      .select('key,data')
+      .in('key', ['competitivetiers', 'buddies', 'playercards']);
+    if (cacheErr) throw new Error(cacheErr.message);
+    const cache = Object.fromEntries((cacheRows || []).map(r => [r.key, r.data]));
+    if (!skinRows.length || !cache.competitivetiers || !cache.buddies || !cache.playercards) return null;
+    const DB = {};
+    const LEVEL_MAP = {};
+    const CHROMA_MAP = {};
+    skinRows.forEach(r => {
+      const chromas = Array.isArray(r.chromas) ? r.chromas : [];
+      (DB[r.category] = DB[r.category] || []).push({ id: r.uuid, weapon: r.weapon, name: r.name, tier: r.tier || '', icon: r.icon_url, maxLevel: r.max_level || 1, chromas });
+      (Array.isArray(r.levels) ? r.levels : []).forEach(l => { if (l && l.uuid) LEVEL_MAP[l.uuid] = { id: r.uuid, level: l.level }; });
+      chromas.forEach((c, i) => { if (c && c.uuid) CHROMA_MAP[c.uuid] = { id: r.uuid, idx: i }; });
+    });
+    Object.values(DB).forEach(a => a.sort((x, y) => (x.weapon + x.name).localeCompare(y.weapon + y.name)));
+    const tierSet = new Set();
+    Object.values(DB).forEach(a => a.forEach(s => { if (s.tier) tierSet.add(s.tier); }));
+    const TIERS = [...tierSet].sort((a, b) => {
+      const ia = TIER_ORDER.indexOf(a.toLowerCase()), ib = TIER_ORDER.indexOf(b.toLowerCase());
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+    });
+    const SKIN_BY_ID = new Map(Object.values(DB).flat().map(s => [s.id, s]));
+    const { BUDDIES, BUDDIES_LIST, BUDDY_BY_ANY } = buildBuddies(cache.buddies);
+    const { CARDS } = buildCards(cache.playercards);
+    const RANKS = buildRanks(cache.competitivetiers);
+    return { DB, TIERS, RANKS, BUDDIES, CARDS, SKIN_BY_ID, LEVEL_MAP, CHROMA_MAP, BUDDIES_LIST, BUDDY_BY_ANY, source: 'cache' };
+  } catch {
+    return null;
+  }
+}
+
+export async function loadCatalogFromApi() {
+  const [wJ, tJ, cJ, bJ, pJ] = await Promise.all([
+    fetchJSON('https://valorant-api.com/v1/weapons?language=en-US'),
+    fetchJSON('https://valorant-api.com/v1/contenttiers?language=en-US'),
+    fetchJSON('https://valorant-api.com/v1/competitivetiers?language=en-US'),
+    fetchJSON('https://valorant-api.com/v1/buddies?language=en-US'),
+    fetchJSON('https://valorant-api.com/v1/playercards?language=en-US')
+  ]);
+  const tiers = Object.fromEntries((tJ.data || []).map(t => [t.uuid, t.displayName]));
+  const DB = {};
+  const LEVEL_MAP = {};
+  const CHROMA_MAP = {};
+  (wJ.data || []).forEach(w => {
+    const cat = mapCategory(w.category);
+    if (!cat) return;
+    (w.skins || []).forEach(s => {
+      if (s.displayName === 'Standard') return;
+      const icon = s.displayIcon || (s.chromas && s.chromas[0] && s.chromas[0].displayIcon);
+      if (!icon) return;
+      const chromas = (s.chromas || []).map(c => {
+        const cIcon = c.displayIcon || c.fullRender || c.swatch;
+        if (!cIcon) return null;
+        const raw = String(c.displayName || '').replace(/\r?\n/g, ' ').trim();
+        const unlock = (raw.match(/Level (\d+)/) || [])[1];
+        return { uuid: c.uuid, label: chromaLabel(s.displayName, c.displayName), icon: cIcon, swatch: c.swatch || null, unlock: unlock ? +unlock : null };
+      }).filter(Boolean);
+      (DB[cat] = DB[cat] || []).push({ id: s.uuid, weapon: w.displayName, name: s.displayName, icon, tier: tiers[s.contentTierUuid] || '', maxLevel: (s.levels || []).length || 1, chromas });
+      (s.levels || []).forEach((l, i) => { if (l.uuid) LEVEL_MAP[l.uuid] = { id: s.uuid, level: i + 1 }; });
+      chromas.forEach((c, i) => { if (c.uuid) CHROMA_MAP[c.uuid] = { id: s.uuid, idx: i }; });
+    });
+  });
+  Object.values(DB).forEach(a => a.sort((x, y) => (x.weapon + x.name).localeCompare(y.weapon + y.name)));
+  const SKIN_BY_ID = new Map(Object.values(DB).flat().map(s => [s.id, s]));
+
+  const tierSet = new Set();
+  Object.values(DB).forEach(a => a.forEach(s => { if (s.tier) tierSet.add(s.tier); }));
+  const TIERS = [...tierSet].sort((a, b) => {
+    const ia = TIER_ORDER.indexOf(a.toLowerCase()), ib = TIER_ORDER.indexOf(b.toLowerCase());
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  });
+
+  const RANKS = buildRanks(cJ.data);
+  const { BUDDIES, BUDDIES_LIST, BUDDY_BY_ANY } = buildBuddies(bJ.data);
+  const { CARDS } = buildCards(pJ.data);
+
+  return { DB, TIERS, RANKS, BUDDIES, CARDS, SKIN_BY_ID, LEVEL_MAP, CHROMA_MAP, BUDDIES_LIST, BUDDY_BY_ANY, source: 'api' };
+}
+
+export async function loadCatalog(supabaseClient) {
+  const cached = await loadCatalogFromCache(supabaseClient);
+  if (cached) return cached;
+  return loadCatalogFromApi();
 }
 
 // ── images ────────────────────────────────────────────────────────

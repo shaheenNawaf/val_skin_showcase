@@ -22,6 +22,7 @@ const CUR_RP = "e59aa87c-4cbf-517a-5983-6e81511be9b7";
 const TYPE_SKINS = "e7c63390-eda7-46e0-bb7a-a6abdacd2433";
 const TYPE_BUDDIES = "dd3bf334-87f3-40bd-b043-682a57a8dc3a";
 const TYPE_CARDS = "3f296c07-64c3-494c-923b-fe692a4fa1bd";
+const TYPE_VARIANTS = "3ad1b2b2-acdb-4524-852f-954a76ddae0a";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -42,6 +43,51 @@ async function getJSON(url: string, headers: Record<string, string>) {
   return r.json();
 }
 
+const JWT_RE = /^eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
+
+// Read a JWT's `exp` claim (seconds) without verifying the signature.
+function jwtExp(jwt: string): number | null {
+  try {
+    const part = jwt.split(".")[1];
+    if (!part) return null;
+    const b64 = part.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+    const claims = JSON.parse(atob(pad));
+    return typeof claims.exp === "number" ? claims.exp : null;
+  } catch {
+    return null;
+  }
+}
+
+// Current Riot client version, sourced live from valorant-api.com so the pd.*
+// calls never go stale across patches. Env override wins; cached 6h; the
+// hardcoded value is the offline fallback. The seller token is never sent here.
+const VERSION_URL = "https://valorant-api.com/v1/version";
+const FALLBACK_CLIENT_VERSION = "release-13.06-shipping-13-5435758";
+const VERSION_TTL_MS = 6 * 60 * 60 * 1000;
+let versionCache: { value: string; ts: number } | null = null;
+
+async function getClientVersion(): Promise<string> {
+  const override = Deno.env.get("RIOT_CLIENT_VERSION");
+  if (override) return override;
+  const now = Date.now();
+  if (versionCache && now - versionCache.ts < VERSION_TTL_MS) return versionCache.value;
+  try {
+    const r = await fetch(VERSION_URL);
+    if (r.ok) {
+      const j = await r.json();
+      const v = j?.data?.riotClientVersion;
+      if (typeof v === "string" && v) {
+        versionCache = { value: v, ts: now };
+        return v;
+      }
+    }
+  } catch {
+    // fall through to cache/default
+  }
+  return versionCache?.value || FALLBACK_CLIENT_VERSION;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ ok: false, error: "POST only" }, 405);
@@ -58,10 +104,25 @@ Deno.serve(async (req) => {
   const shard = SHARDS[region] || "na";
   if (!token) return json({ ok: false, error: "accessToken is required" }, 400);
 
+  // Validate shape + expiry before spending a Riot call, so the seller gets an
+  // actionable message instead of a generic 401.
+  if (!JWT_RE.test(token)) {
+    return json({ ok: false, error: "accessToken doesn't look like a Riot JWT (expected a token starting with eyJ…). Paste the token itself, not the surrounding URL or JSON." }, 400);
+  }
+  const exp = jwtExp(token);
+  if (exp !== null) {
+    const secsLeft = exp - Math.floor(Date.now() / 1000);
+    if (secsLeft <= 0) {
+      const mins = Math.max(1, Math.round(-secsLeft / 60));
+      return json({ ok: false, error: `Access token expired ~${mins} min ago (Riot tokens last ~1h). Grab a fresh one.` }, 401);
+    }
+  }
+
+  const clientVersion = await getClientVersion();
   const auth: Record<string, string> = {
     Authorization: `Bearer ${token}`,
     "X-Riot-ClientPlatform": CLIENT_PLATFORM,
-    "X-Riot-ClientVersion": "release-11.08-18-3918089",
+    "X-Riot-ClientVersion": clientVersion,
   };
   if (ent) auth["X-Riot-Entitlements-JWT"] = ent;
 
@@ -83,7 +144,7 @@ Deno.serve(async (req) => {
     out.name = info.acct?.game_name || "";
     out.tag = info.acct?.tag_line || "";
   } catch {
-    return json({ ok: false, error: "Invalid or expired access token." }, 401);
+    return json({ ok: false, error: "Riot rejected this access token (invalid, revoked, or wrong region). Re-copy a fresh token and try again." }, 401);
   }
 
   const pd = (p: string) => `https://pd.${shard}.a.pvp.net${p}`;
@@ -137,6 +198,7 @@ Deno.serve(async (req) => {
     await guard("skins", async () => { out.skins = await owned(TYPE_SKINS); });
     await guard("buddiesOwned", async () => { out.buddiesOwned = await owned(TYPE_BUDDIES); });
     await guard("cardsOwned", async () => { out.cardsOwned = await owned(TYPE_CARDS); });
+    await guard("variantsOwned", async () => { out.variantsOwned = await owned(TYPE_VARIANTS); });
   } else {
     out.errors.push("owned-items (no entitlements token)");
   }

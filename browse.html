@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/shared.css">
 <link rel="stylesheet" href="css/browse.css">
 <script src="js/vendor/supabase.js" defer></script>
@@ -29,14 +30,154 @@
     <span id="status" role="status" aria-live="polite">Loading listings…</span>
   </div>
 </div>
-<main id="bwrap">
-  <h1>Available listings</h1>
-  <div id="bgrid" aria-live="polite"></div>
-  <div class="bcta">
-    <span>Selling an account?</span>
-    <a href="index.html">Build your showcase card <b>→</b></a>
-  </div>
+<main id="awrap">
+  <aside id="aside">
+    <div class="fsearch">
+      <label class="sr" for="q">Search listings</label>
+      <input id="q" type="search" placeholder="Search title, code, seller…">
+    </div>
+    <fieldset class="facet" id="fTheme"><legend>THEME</legend></fieldset>
+    <fieldset class="facet" id="fRank"><legend>MIN RANK</legend></fieldset>
+    <fieldset class="facet" id="fPrice"><legend>PRICE</legend></fieldset>
+    <fieldset class="facet" id="fFlags"><legend>REQUIREMENTS</legend></fieldset>
+    <button id="clearAll" type="button">Clear all</button>
+  </aside>
+  <section id="main">
+    <div class="pulse" id="pulse"></div>
+    <header class="ahead">
+      <h1>Marketplace</h1>
+      <span id="count" aria-live="polite"></span>
+    </header>
+    <section id="feature"></section>
+    <div class="atools">
+      <button id="filtersBtn" type="button">Filters</button>
+      <div class="cardtog" role="group" aria-label="Card preview style">
+        <span class="ct-label">Card</span>
+        <button type="button" data-style="mini" aria-pressed="true">Mini</button>
+        <button type="button" data-style="rail" aria-pressed="false">Rail</button>
+      </div>
+      <label class="sr" for="sort">Sort listings</label>
+      <select id="sort">
+        <option value="new" selected>Newest</option>
+        <option value="views">Most viewed</option>
+        <option value="skins">Most skins</option>
+        <option value="price-asc">Price: low to high</option>
+        <option value="price-desc">Price: high to low</option>
+      </select>
+      <div class="viewtog" role="group" aria-label="View mode">
+        <button id="vGrid" type="button" aria-pressed="true">Grid</button>
+        <button id="vList" type="button" aria-pressed="false">List</button>
+      </div>
+    </div>
+    <div id="results" aria-live="polite">
+      <div id="grid" class="agrid"></div>
+      <div id="list" class="alist" hidden></div>
+      <div id="empty" class="aempty" hidden>
+        <b>No listings match</b>
+        <span>Try widening your filters.</span>
+        <button id="clearBtn" type="button">Clear all filters</button>
+      </div>
+    </div>
+  </section>
 </main>
+<div id="scrim" hidden></div>
+<div id="qv" class="qv-backdrop" hidden>
+  <div class="qv-modal" role="dialog" aria-modal="true" aria-labelledby="qvTitle">
+    <button class="qv-close" type="button" aria-label="Close quick view">×</button>
+    <div class="qv-stage"><div class="qv-sizer">
+      <div id="card">
+        <div class="grid">
+          <section class="panel" data-cat="Sidearms" style="grid-area:side">
+            <h3>Sidearms</h3>
+            <div class="slots"></div>
+          </section>
+          <section class="panel" data-cat="SMGs" style="grid-area:smg">
+            <h3>SMGs</h3>
+            <div class="slots"></div>
+          </section>
+          <section class="panel" data-cat="Shotguns" style="grid-area:shot">
+            <h3>Shotguns</h3>
+            <div class="slots"></div>
+          </section>
+          <section class="panel" data-cat="Rifles" style="grid-area:rifles">
+            <h3>Rifles</h3>
+            <div class="slots"></div>
+          </section>
+          <section class="panel" data-cat="Sniper Rifles" style="grid-area:sniper">
+            <h3>Sniper Rifles</h3>
+            <div class="slots"></div>
+          </section>
+          <section class="panel" data-cat="Machine Guns" style="grid-area:mg">
+            <h3>Machine Guns</h3>
+            <div class="slots"></div>
+          </section>
+          <section class="panel" data-cat="Melees" style="grid-area:melee">
+            <h3>Melees</h3>
+            <div class="slots"></div>
+          </section>
+          <section class="panel" data-cat="Battlepass" style="grid-area:bpass">
+            <h3>Battlepass</h3>
+            <div class="slots"></div>
+          </section>
+          <section class="panel flexcol" data-cat="Flex" style="grid-area:flex">
+            <h3>Buddies &amp; Flex</h3>
+            <div class="slotbox charms-box"><span class="hint">No buddies added</span></div>
+            <div class="slots"></div>
+          </section>
+
+          <div class="boxf codebox">
+            <div class="code" data-key="code">K486</div>
+            <div class="vlogin" data-key="vlogin">RIOT ID</div>
+          </div>
+          <div class="boxf stats">
+            <div class="counts">
+              <div class="stat"><label>PREMIUM</label><b data-key="prems">42</b></div>
+              <div class="stat limited"><label>LIMITED</label><b data-key="limited">02</b></div>
+              <div class="stat"><label>SEMI PREM</label><b data-key="semis">00</b></div>
+              <div class="stat"><label>BATTLEPASS</label><b data-key="bpass">10</b></div>
+              <div class="stat"><label>ANIMATED</label><b data-key="anims">00</b></div>
+            </div>
+            <div class="inforow"><span data-key="wtr">WTR: YES</span><span data-key="receipts">RECEIPTS: YES</span><span data-key="owner">0TH OWNER</span></div>
+            <div class="inforow"><span data-key="cname">CHANGE NAME</span><span class="warn" data-key="cstatus">NOT READY</span><span data-key="date">2/6/2026</span></div>
+            <div class="inforow"><span data-key="premier">PREMIER</span><span class="warn" data-key="vlink">UNLINKED</span><span data-key="price">PRICE OFFER</span></div>
+          </div>
+          <div class="boxf rankbox">
+            <div class="rankcols">
+              <div class="rankrow" data-rank="crank"><label>CURRENT</label><img class="rankbadge" alt=""><b data-key="crank">DIAMOND 2</b></div>
+              <div class="rankrow" data-rank="prank"><label>PEAK</label><img class="rankbadge" alt=""><b data-key="prank">IMMORTAL 3</b></div>
+            </div>
+            <div class="currow">
+              <span class="lvl">LEVEL <b data-key="level">376</b></span>
+              <span class="cur"><i class="ico">V</i><b data-key="vp">420</b></span>
+              <span class="cur"><i class="ico">R</i><b data-key="rp">140</b></span>
+              <span class="cur"><i class="ico">K</i><b data-key="kc">6422</b></span>
+            </div>
+          </div>
+          <div class="boxf pcardbox">
+            <div class="pcard"><span class="hint">Player card</span></div>
+            <div class="pclabel">Player card</div>
+            <div class="seller">
+              <img class="avatar" alt="Seller avatar"
+                src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>">
+              <div>
+                <div class="tag" data-key="tag">FS/FT+ADD</div>
+                <div class="link" data-key="link">https://www.facebook.com/Your.Page.Here</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="wstrip"><span>Card Forge</span><span data-wm="slug">Listing</span><span data-wm="stamp"></span></div>
+      </div>
+    </div></div>
+    <div class="qv-bar">
+      <b id="qvTitle"></b><span class="qv-code"></span>
+      <span class="qv-meta"></span>
+      <b class="qv-price" hidden></b><b class="qv-offer" hidden>Make an offer</b>
+      <a class="qv-cta" href="#">Open full listing →</a>
+      <button id="qvContact" type="button" class="qv-ghost" hidden>Contact seller</button>
+    </div>
+  </div>
+</div>
 
 <div id="disclaimer">CardForge is not affiliated with, endorsed by, or associated with Riot Games or any game publisher. All game names, skin names and imagery are trademarks/property of their respective owners. <a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></div>
 </body>
