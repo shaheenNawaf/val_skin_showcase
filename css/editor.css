@@ -39,7 +39,7 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 .chip:hover{color:var(--c-ink);border-color:var(--c-mut)}
 .chip.active{color:var(--c-ink);border-color:var(--c-accent);background:color-mix(in srgb,var(--c-accent) 14%,var(--c-surface))}
 .chip .dot{width:8px;height:8px;margin-right:6px}
-.mgrid{overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.mgrid{overflow:auto;min-height:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
 @media (max-width:640px){.mgrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}}
 .item{position:relative;background:var(--c-surface);border:1px solid var(--c-line-soft);padding:10px;display:flex;flex-direction:column;gap:4px;cursor:pointer;color:var(--c-ink);font-family:var(--font-ui);text-align:left;
 clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)))}
@@ -53,8 +53,8 @@ clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,va
 .none{color:var(--c-mut);grid-column:1/-1;text-align:center;padding:30px}
 
 /* ── tier ladder ──────────────────────────────────────────────── */
-.mbody{display:grid;grid-template-columns:186px 1fr;gap:14px;align-items:start}
-.mright{min-width:0;display:flex;flex-direction:column;gap:10px}
+.mbody{display:grid;grid-template-columns:186px 1fr;grid-template-rows:minmax(0,1fr);gap:14px;align-items:start;min-height:0}
+.mright{min-width:0;display:flex;flex-direction:column;gap:10px;min-height:0;align-self:stretch}
 .mbody.noladder{grid-template-columns:1fr}
 #mLadder{background:var(--c-surface);border:1px solid var(--c-line);padding:12px;display:flex;flex-direction:column;gap:6px;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
 .lhead{font:800 10px var(--font-display);letter-spacing:.2em;text-transform:uppercase;color:var(--c-mut)}
