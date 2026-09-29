@@ -1,6 +1,6 @@
 /* ── CardForge viewer-only styles ──────────────────────────────── */
 
-#viewBadge{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--c-line);color:var(--c-mut);padding:6px 14px;font:600 12px 'Chakra Petch',sans-serif;letter-spacing:.1em;
+#viewBadge{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--c-line);color:var(--c-mut);padding:6px 14px;font:600 12px var(--font-ui);letter-spacing:.1em;
 clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 #viewBadge[hidden]{display:none}
 #viewBadge svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;flex:none}
@@ -15,8 +15,8 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
   #mcard{display:block;margin:calc(var(--tbh) + 12px) 12px 64px;color:var(--ink);font-size:15px}
   .mhead{background:linear-gradient(180deg,var(--card1),var(--card2));border:1px solid var(--line);padding:18px 16px;margin-bottom:10px;
   clip-path:polygon(0 0,calc(100% - var(--notch-lg)) 0,100% var(--notch-lg),100% 100%,var(--notch-lg) 100%,0 calc(100% - var(--notch-lg)))}
-  .mcode{font-family:Anton,sans-serif;font-size:34px;letter-spacing:.14em;line-height:1}
-  .mvlogin{font:600 14px 'Chakra Petch',sans-serif;letter-spacing:.12em;color:var(--mut);margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mcode{font:800 30px var(--font-display);letter-spacing:.06em;line-height:1}
+  .mvlogin{font:600 14px var(--font-ui);letter-spacing:.12em;color:var(--mut);margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .mbox{background:var(--panel);border:1px solid var(--line);padding:14px;margin-bottom:10px;
   clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)))}
   .mranks{display:flex;flex-direction:column;gap:12px}
@@ -29,12 +29,12 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
   .mlvl{color:var(--mut);font-size:13px;letter-spacing:.14em;font-weight:600}
   .mlvl b{color:var(--ink);margin-left:4px}
   .mcur{display:flex;gap:6px;align-items:center;font-size:15px;font-weight:600}
-  .mico{width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font:700 11px 'Chakra Petch',sans-serif;font-style:normal;border:1px solid var(--mut);color:var(--mut)}
+  .mico{width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font:700 11px var(--font-ui);font-style:normal;border:1px solid var(--mut);color:var(--mut)}
   .mcounts{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:8px;padding-bottom:10px}
   .mstat{text-align:center;min-width:0}
   .mstat label{display:block;color:var(--mut);font-size:10px;letter-spacing:.08em}
   .mlimited label{color:var(--gold)}
-  .mstat b{font-family:Anton,sans-serif;font-size:22px;font-weight:400;letter-spacing:.06em}
+  .mstat b{font:800 20px var(--font-display);letter-spacing:.04em}
   .minforow{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding:8px 2px;font-size:13px;letter-spacing:.04em}
   .minforow span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .mwarn{color:var(--warn,var(--red))}
@@ -55,7 +55,7 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
   .mavatar{width:44px;height:44px;object-fit:cover;border:1px solid var(--line);flex:none;
   clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
   .msellertext{min-width:0}
-  .mtag{font-family:Anton,sans-serif;font-size:16px;letter-spacing:.05em}
+  .mtag{font:800 15px var(--font-display);letter-spacing:.03em}
   .mlink{color:var(--mut);font-size:13px;word-break:break-all;text-decoration:underline}
   .mstrip{display:flex;justify-content:space-between;gap:10px;color:var(--mut);font-size:11px;letter-spacing:.2em;text-transform:uppercase;padding:4px 2px}
 }

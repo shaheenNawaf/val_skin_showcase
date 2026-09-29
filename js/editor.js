@@ -883,6 +883,7 @@ async function initEditMode() {
 
 // ── boot ──────────────────────────────────────────────────────────
 CF.initThemeSwitch();
+CF.initDisclaimerCollapse();
 renderAll();
 const fit = CF.makeFitter({ card, sizer: CF.$('sizer'), topbar: CF.$('topbar'), stage: CF.$('stage') });
 fit();

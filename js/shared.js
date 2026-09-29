@@ -50,6 +50,18 @@ export function status(m, kind = 'info') {
   if (kind !== 'err') statusTimer = setTimeout(() => el.classList.add('fade'), 5000);
 }
 
+export function initDisclaimerCollapse() {
+  const t = $('discToggle');
+  const d = $('disclaimer');
+  if (!t || !d) return;
+  t.addEventListener('click', () => {
+    const hidden = d.classList.toggle('disc-hidden');
+    t.setAttribute('aria-expanded', String(!hidden));
+    t.setAttribute('aria-label', hidden ? 'Show legal notice' : 'Hide legal notice');
+    t.textContent = hidden ? '»' : '«';
+  });
+}
+
 export function readJSON(key, fallback) {
   try {
     const raw = localStorage.getItem(key);

@@ -1,7 +1,7 @@
 // CardForge browse — Direction-D marketplace over live Supabase listings.
 // Summary cards come from browse_listings_v2 (legacy browse_listings as a
 // fallback); the quick-view modal carries the REAL shared.css #card.
-import { esc, $, status, ALL_CATS, DESIGN_W, DESIGN_H } from './shared.js';
+import { esc, $, status, initDisclaimerCollapse, ALL_CATS, DESIGN_W, DESIGN_H } from './shared.js';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -842,13 +842,4 @@ if (savedStyle === 'mini' || savedStyle === 'rail') state.style = savedStyle;
 applyStyle();
 load();
 
-const discToggle = $('discToggle');
-const disc = $('disclaimer');
-if (discToggle && disc) {
-  discToggle.addEventListener('click', () => {
-    const hidden = disc.classList.toggle('disc-hidden');
-    discToggle.setAttribute('aria-expanded', String(!hidden));
-    discToggle.setAttribute('aria-label', hidden ? 'Show legal notice' : 'Hide legal notice');
-    discToggle.textContent = hidden ? '»' : '«';
-  });
-}
+initDisclaimerCollapse();
