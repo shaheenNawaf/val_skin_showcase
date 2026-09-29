@@ -279,7 +279,7 @@ function renderGrid() {
 
 function addSkin(cat, s, chroma) {
   const lvl = (state.ownedLevels || {})[s.id] || 0;
-  state.picks[cat].push({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon, ...(chroma ? { level: chroma.unlock || s.maxLevel || 2, variant: { name: chroma.label, icon: chroma.icon } } : (lvl >= 2 ? { level: lvl } : {})) });
+  state.picks[cat].push({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: chroma ? chroma.icon : s.icon, ...(chroma ? { level: chroma.unlock || s.maxLevel || 2, variant: { name: chroma.label, icon: chroma.icon } } : (lvl >= 2 ? { level: lvl } : {})) });
   renderPanel(cat, { animateLast: true });
 }
 
