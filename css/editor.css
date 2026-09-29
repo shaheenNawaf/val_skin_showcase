@@ -119,7 +119,10 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 .vp-box label{font:600 9px var(--font-ui);letter-spacing:.18em;text-transform:uppercase;color:var(--c-mut)}
 .vp-media{position:relative;width:100%;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--c-bg)}
 .vp-media video,.vp-media img{width:100%;height:100%;object-fit:contain}
-.vp-media .vpnote{position:absolute;bottom:4px;left:0;right:0}
+.vp-media .vpnote{position:absolute;bottom:4px;left:8px;right:86px;text-align:left}
+.vp-mute{position:absolute;top:6px;right:6px;z-index:2;background:rgba(4,7,11,.65);border:1px solid var(--c-line);color:var(--c-ink);font:600 11px/1 var(--font-ui);padding:4px 6px;cursor:pointer;clip-path:polygon(3px 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%,0 3px)}
+.vp-anim{position:absolute;bottom:6px;right:6px;z-index:2;background:rgba(4,7,11,.65);border:1px solid var(--c-line);color:var(--c-mut);font:700 9px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;padding:4px 7px;cursor:pointer;clip-path:polygon(3px 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%,0 3px)}
+.vp-anim:hover,.vp-mute:hover{color:var(--c-ink);border-color:var(--c-mut)}
 .vpnote{font:500 9px var(--font-ui);letter-spacing:.06em;color:var(--c-mut);text-align:center;padding:0 6px}
 .vsplit{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
 .vcol{min-width:0}

@@ -102,6 +102,10 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 .spv-media{position:relative;width:100%;aspect-ratio:16/9;background:var(--c-bg);display:flex;align-items:center;justify-content:center;overflow:hidden}
 .spv-media video,.spv-media img{width:100%;height:100%;object-fit:contain}
 .spv-cap{position:absolute;bottom:4px;left:0;right:0;text-align:center;font:500 9px 'Chakra Petch',sans-serif;letter-spacing:.06em;color:var(--c-mut)}
+.spv-media .spv-cap{left:8px;right:86px;text-align:left}
+.spv-mute{position:absolute;top:6px;right:6px;z-index:2;background:rgba(4,7,11,.65);border:1px solid var(--c-line);color:var(--c-ink);font:600 11px/1 'Chakra Petch',sans-serif;padding:4px 6px;cursor:pointer;clip-path:polygon(3px 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%,0 3px)}
+.spv-anim{position:absolute;bottom:6px;right:6px;z-index:2;background:rgba(4,7,11,.65);border:1px solid var(--c-line);color:var(--c-mut);font:700 9px 'Chakra Petch',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:4px 7px;cursor:pointer;clip-path:polygon(3px 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%,0 3px)}
+.spv-anim:hover,.spv-mute:hover{color:var(--c-ink);border-color:var(--c-mut)}
 .spv-shimmer{position:absolute;inset:0;background:linear-gradient(100deg,var(--c-surface2) 30%,var(--c-surface) 50%,var(--c-surface2) 70%);background-size:200% 100%}
 @keyframes spv-shim{from{background-position:200% 0}to{background-position:-200% 0}}
 @media (prefers-reduced-motion:no-preference){.spv-shimmer{animation:spv-shim 1.1s linear infinite}}
