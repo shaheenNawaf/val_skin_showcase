@@ -123,7 +123,7 @@
       </div>
     </div>
     <div class="boxf pcardbox">
-      <div class="pcard" data-upload="pcard"><span class="hint">Player card — click to upload</span></div>
+      <div class="pcard" data-upload="pcard"><span class="hint">Player card — click to choose</span></div>
       <div class="pclabel">Player card</div>
       <div class="seller">
         <img class="avatar" data-upload="avatar" alt="Seller avatar"
@@ -148,19 +148,33 @@
       <button id="mUpload" class="chip" hidden>Upload image…</button>
       <button id="mClose" aria-label="Close picker">✕</button>
     </div>
-    <div id="mFilters" class="mfilters">
-      <div id="mWeapons" class="chips" role="group" aria-label="Filter by weapon"></div>
-      <div id="mTiers" class="chips" role="group" aria-label="Filter by content tier"></div>
-    </div>
-    <div id="mVariant" class="mvariant" hidden>
-      <div class="vrow"><label>LEVEL</label><div id="vLevels" class="chips"></div></div>
-      <div class="vrow"><label>VARIANT</label><div id="vChromas" class="vchromas"></div></div>
-      <div class="vrow vactions">
-        <button id="vRemove" class="chip">Remove from card</button>
-        <button id="vDone" class="chip active">Done</button>
+    <div class="mbody">
+      <div id="mLadder" role="group" aria-label="Tier ladder: click for tier and above, click again for only that tier, third click clears">
+        <b class="lhead">Tier ladder</b>
+        <span class="lhint">click = &amp; above · 2nd = only · 3rd = clear</span>
+        <button class="rung" type="button" data-tier="exclusive"><i class="bar"></i><span>Exclusive</span><b>0</b></button>
+        <button class="rung" type="button" data-tier="ultra"><i class="bar"></i><span>Ultra</span><b>0</b></button>
+        <button class="rung" type="button" data-tier="premium"><i class="bar"></i><span>Premium</span><b>0</b></button>
+        <button class="rung" type="button" data-tier="deluxe"><i class="bar"></i><span>Deluxe</span><b>0</b></button>
+        <button class="rung" type="button" data-tier="select"><i class="bar"></i><span>Select</span><b>0</b></button>
+        <button id="mLadderClear" class="lclear" type="button">Clear tier filter</button>
+      </div>
+      <div class="mright">
+        <div id="mFilters" class="mfilters">
+          <div id="mWeapons" class="chips" role="group" aria-label="Filter by weapon"></div>
+          <div id="mTiers" class="chips" role="group" aria-label="Filter by content tier"></div>
+        </div>
+        <div id="mVariant" class="mvariant" hidden>
+          <div class="vrow"><label>LEVEL</label><div id="vLevels" class="chips"></div></div>
+          <div class="vrow"><label>VARIANT</label><div id="vChromas" class="vchromas"></div></div>
+          <div class="vrow vactions">
+            <button id="vRemove" class="chip">Remove from card</button>
+            <button id="vDone" class="chip active">Done</button>
+          </div>
+        </div>
+        <div id="mGrid" class="mgrid"></div>
       </div>
     </div>
-    <div id="mGrid" class="mgrid"></div>
   </div>
 </div>
 <div id="importModal" hidden role="dialog" aria-modal="true" aria-labelledby="iTitle">
@@ -170,7 +184,7 @@
       <button id="iClose" aria-label="Close import">✕</button>
     </div>
     <p class="inote">Paste your Riot <strong>access token</strong> (a JWT starting with <code>eyJ…</code>). You can also paste the full <strong>opt_in redirect URL</strong> — but copy it immediately, the <code>#access_token=…</code> part is stripped from the address bar within seconds — or the <strong>JSON</strong> from the local client's entitlements endpoint; the token (and entitlement) are picked out automatically. Add an entitlements token to also pull wallet, owned skins, buddies and cards.</p>
-    <p class="inote">CardForge imports level, rank, balances, equipped player card and buddies, and unlocks an “Owned” filter in the skin picker.</p>
+    <p class="inote">CardForge imports level, rank, balances, your equipped player card and buddies, and unlocks an “Owned” filter in the skin, buddy and player-card pickers.</p>
     <p class="inote">Tokens expire in ~1h, are sent only to the riot-import edge function over HTTPS, and are never stored or published.</p>
     <label class="ilabel" for="iRegion">Region</label>
     <select id="iRegion" class="iselect" aria-label="Account region">

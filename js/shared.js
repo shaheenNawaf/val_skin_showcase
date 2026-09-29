@@ -11,8 +11,10 @@ const TIER_ORDER = ['select', 'deluxe', 'premium', 'ultra', 'exclusive'];
 export const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const $ = (id) => document.getElementById(id);
 
+export const tierKey = (t) => String(t || '').toLowerCase().replace(/\s*edition\s*$/, '').trim();
+
 export function tierClass(t) {
-  const k = (t || '').toLowerCase();
+  const k = tierKey(t);
   return TIER_ORDER.includes(k) ? 't-' + k : '';
 }
 
@@ -198,12 +200,16 @@ function buildBuddies(buddyData) {
 
 function buildCards(cardData) {
   const CARDS = {};
+  const CARDS_LIST = [];
   (cardData || []).forEach(c => {
     const wide = c.wideArt || c.displayIcon;
     if (!wide) return;
-    CARDS[c.uuid] = { wide, icon: c.displayIcon || wide };
+    const icon = c.displayIcon || wide;
+    CARDS[c.uuid] = { wide, icon };
+    CARDS_LIST.push({ uuid: c.uuid, name: c.displayName || 'Player card', wide, icon });
   });
-  return { CARDS };
+  CARDS_LIST.sort((a, b) => a.name.localeCompare(b.name));
+  return { CARDS, CARDS_LIST };
 }
 
 async function loadCatalogFromCache(sb) {
@@ -238,14 +244,14 @@ async function loadCatalogFromCache(sb) {
     const tierSet = new Set();
     Object.values(DB).forEach(a => a.forEach(s => { if (s.tier) tierSet.add(s.tier); }));
     const TIERS = [...tierSet].sort((a, b) => {
-      const ia = TIER_ORDER.indexOf(a.toLowerCase()), ib = TIER_ORDER.indexOf(b.toLowerCase());
+      const ia = TIER_ORDER.indexOf(tierKey(a)), ib = TIER_ORDER.indexOf(tierKey(b));
       return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
     });
     const SKIN_BY_ID = new Map(Object.values(DB).flat().map(s => [s.id, s]));
     const { BUDDIES, BUDDIES_LIST, BUDDY_BY_ANY } = buildBuddies(cache.buddies);
-    const { CARDS } = buildCards(cache.playercards);
+    const { CARDS, CARDS_LIST } = buildCards(cache.playercards);
     const RANKS = buildRanks(cache.competitivetiers);
-    return { DB, TIERS, RANKS, BUDDIES, CARDS, SKIN_BY_ID, LEVEL_MAP, CHROMA_MAP, BUDDIES_LIST, BUDDY_BY_ANY, source: 'cache' };
+    return { DB, TIERS, RANKS, BUDDIES, CARDS, CARDS_LIST, SKIN_BY_ID, LEVEL_MAP, CHROMA_MAP, BUDDIES_LIST, BUDDY_BY_ANY, source: 'cache' };
   } catch {
     return null;
   }
@@ -288,15 +294,15 @@ export async function loadCatalogFromApi() {
   const tierSet = new Set();
   Object.values(DB).forEach(a => a.forEach(s => { if (s.tier) tierSet.add(s.tier); }));
   const TIERS = [...tierSet].sort((a, b) => {
-    const ia = TIER_ORDER.indexOf(a.toLowerCase()), ib = TIER_ORDER.indexOf(b.toLowerCase());
+    const ia = TIER_ORDER.indexOf(tierKey(a)), ib = TIER_ORDER.indexOf(tierKey(b));
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
   });
 
   const RANKS = buildRanks(cJ.data);
   const { BUDDIES, BUDDIES_LIST, BUDDY_BY_ANY } = buildBuddies(bJ.data);
-  const { CARDS } = buildCards(pJ.data);
+  const { CARDS, CARDS_LIST } = buildCards(pJ.data);
 
-  return { DB, TIERS, RANKS, BUDDIES, CARDS, SKIN_BY_ID, LEVEL_MAP, CHROMA_MAP, BUDDIES_LIST, BUDDY_BY_ANY, source: 'api' };
+  return { DB, TIERS, RANKS, BUDDIES, CARDS, CARDS_LIST, SKIN_BY_ID, LEVEL_MAP, CHROMA_MAP, BUDDIES_LIST, BUDDY_BY_ANY, source: 'api' };
 }
 
 export async function loadCatalog(supabaseClient) {
