@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="protocol">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardForge — Not found</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+main.nf{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:calc(100vh - 120px);padding:calc(var(--tbh) + 60px) 20px 40px}
+.nf-code{font-family:var(--font-display);font-weight:800;font-size:clamp(72px,14vw,140px);line-height:1;letter-spacing:-.02em;margin:0;color:var(--c-ink)}
+.nf-msg{font-size:16px;color:var(--c-ink);margin:8px 0 0}
+.nf-sub{font-size:13px;color:var(--c-mut);margin:6px 0 0}
+.nf-actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:28px}
+.btn-primary{display:inline-block;background:var(--c-accent-btn);color:#fff;text-decoration:none;font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:13px 22px;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.btn-primary:hover{background:var(--c-accent)}
+.btn-ghost{display:inline-block;border:1px solid var(--c-line);color:var(--c-ink);text-decoration:none;font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:13px 22px;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.btn-ghost:hover{border-color:var(--c-mut)}
+.nf-links{margin-top:22px;font-size:12px;color:var(--c-mut)}
+.nf-links a{color:var(--c-mut);text-decoration:underline}
+.nf-links a:hover{color:var(--c-ink)}
+</style>
+</head>
+<body>
+<div id="topbar">
+  <div class="tb-left">
+    <span class="logo">CARD FORGE</span>
+  </div>
+  <div class="tb-right">
+    <a class="tb-link" href="browse.html">Browse listings</a>
+    <a class="tb-link" href="index.html">Build a card</a>
+  </div>
+</div>
+<main class="nf">
+  <h1 class="nf-code">404</h1>
+  <p class="nf-msg">This page — or listing — doesn't exist.</p>
+  <p class="nf-sub">It may have been sold, removed, or the link is wrong.</p>
+  <div class="nf-actions">
+    <a class="btn-primary" href="browse.html">Browse listings →</a>
+    <a class="btn-ghost" href="index.html">Build a card</a>
+  </div>
+  <p class="nf-links"><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></p>
+</main>
+
+<div id="disclaimer">CardForge is not affiliated with, endorsed by, or associated with Riot Games or any game publisher. All game names, skin names and imagery are trademarks/property of their respective owners. <a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></div>
+</body>
+</html>
