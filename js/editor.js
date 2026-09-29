@@ -402,6 +402,8 @@ function openCardPicker() {
   CF.$('mTitle').textContent = 'Choose a player card';
   CF.$('mCount').textContent = '';
   modalVis({ search: true, filters: true, grid: true, upload: true });
+  CF.$('mLadder').style.display = 'none';
+  CF.$('mBody').classList.add('noladder');
   const ownedN = (state.ownedCards || []).length;
   CF.$('mWeapons').innerHTML = ownedN
     ? `<button class="chip" data-owned="1">Owned (${ownedN})</button>`
