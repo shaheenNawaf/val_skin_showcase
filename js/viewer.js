@@ -21,9 +21,9 @@ function updateBadge(nowViewing) {
 }
 
 function skinCell(s) {
-  const label = `${s.weapon || ''} — ${s.name || ''}`;
+  const label = `${s.weapon || ''} — ${s.name || ''}${s.level >= 2 ? ` · LV${s.level}` : ''}${s.variant ? ` · ${s.variant.name}` : ''}`;
   const src = s.icon || s.img || '';
-  return `<span class="skin"><img src="${CF.esc(src)}" alt="${CF.esc(label)}" title="${CF.esc(label)}"></span>`;
+  return `<span class="skin"><img src="${CF.esc(src)}" alt="${CF.esc(label)}" title="${CF.esc(label)}">${s.level >= 2 ? `<i class="lv">LV${s.level}</i>` : ''}</span>`;
 }
 
 function renderListing(listing) {
@@ -98,6 +98,7 @@ const MOBILE_SKELETON = `
     <div class="mstat mlimited"><label>LIMITED</label><b data-m="limited">02</b></div>
     <div class="mstat"><label>SEMI PREM</label><b data-m="semis">00</b></div>
     <div class="mstat"><label>BATTLEPASS</label><b data-m="bpass">10</b></div>
+    <div class="mstat"><label>ANIMATED</label><b data-m="anims">00</b></div>
   </div>
   <div class="minforow"><span data-m="wtr">WTR: YES</span><span data-m="receipts">RECEIPTS: YES</span><span data-m="owner">0TH OWNER</span></div>
   <div class="minforow"><span data-m="cname">CHANGE NAME</span><span class="mwarn" data-m="cstatus">NOT READY</span><span data-m="date">2/6/2026</span></div>
@@ -155,7 +156,7 @@ function renderMobile(listing) {
       img.alt = `${s.weapon || ''} — ${s.name || ''}`;
       img.loading = 'lazy';
       const cap = document.createElement('figcaption');
-      cap.textContent = [s.weapon, s.name].filter(Boolean).join(' — ');
+      cap.textContent = [s.weapon, s.name].filter(Boolean).join(' — ') + (s.level >= 2 ? ` · L${s.level}` : '');
       cell.append(img, cap);
       g.append(cell);
     });

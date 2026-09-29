@@ -45,9 +45,15 @@ select cron.schedule('skin-sync-nightly', '0 3 * * *', $$
 $$);
 ```
 
+The skins cache also stores `max_level` (highest upgrade level, 1–5), `chromas` (color variants, same shape the editor uses) and `levels` (per-level UUIDs for owned-level detection). The generic `catalog_cache` table caches `competitivetiers`, `buddies` and `playercards` under their keys, and the editor loads the catalog cache-first from Supabase, falling back to valorant-api.com when the cache is unavailable or incomplete. Before deploying a skin-sync that writes these columns, apply the migration:
+
+```bash
+supabase db push        # applies supabase/migrations/4_skin_levels.sql + 5_catalog_cache.sql (idempotent)
+```
+
 ## 4. Riot token import (optional)
 
-The editor's **Import account** button pulls level, rank, wallet, equipped player card/buddies and the owned-skin list straight from a seller's Riot access token (Explorant-style). Riot's private API blocks browser CORS, so the call is proxied by an edge function:
+The editor's **Import account** button pulls level, rank, wallet, equipped player card/buddies, the owned-skin list and owned skin variants straight from a seller's Riot access token (Explorant-style). Riot's private API blocks browser CORS, so the call is proxied by an edge function:
 
 ```bash
 supabase functions deploy riot-import --project-ref <project-ref> --no-verify-jwt
@@ -59,6 +65,7 @@ How it works / safety notes:
 - The token is sent once over HTTPS to `riot-import`, used in memory against `auth.riotgames.com` / `pd.<shard>.a.pvp.net`, and **never logged, stored or published**. Only the derived snapshot (level, rank tier numbers, balances, owned UUIDs) returns to the browser.
 - Without Supabase configured the button explains that the feature is unavailable; everything else keeps working in localStorage mode.
 - Getting tokens: any Riot auth helper that outputs a Bearer token + entitlements JWT works (see the community docs linked from the modal). Treat tokens like passwords — anyone holding one can read the account.
+- The function also returns `variantsOwned` (owned skin-variant UUIDs) used to mark owned color variants in the editor. If you deployed `riot-import` before this field existed, redeploy with the command above — the editor degrades gracefully when the field is absent.
 
 ## 5. Verify
 

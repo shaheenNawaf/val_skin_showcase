@@ -30,9 +30,9 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
   .mlvl b{color:var(--ink);margin-left:4px}
   .mcur{display:flex;gap:6px;align-items:center;font-size:15px;font-weight:600}
   .mico{width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font:700 11px 'Chakra Petch',sans-serif;font-style:normal;border:1px solid var(--mut);color:var(--mut)}
-  .mcounts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding-bottom:10px}
+  .mcounts{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:8px;padding-bottom:10px}
   .mstat{text-align:center;min-width:0}
-  .mstat label{display:block;color:var(--mut);font-size:11px;letter-spacing:.1em}
+  .mstat label{display:block;color:var(--mut);font-size:10px;letter-spacing:.08em}
   .mlimited label{color:var(--gold)}
   .mstat b{font-family:Anton,sans-serif;font-size:22px;font-weight:400;letter-spacing:.06em}
   .minforow{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding:8px 2px;font-size:13px;letter-spacing:.04em}

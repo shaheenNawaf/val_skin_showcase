@@ -21,12 +21,12 @@
   --c-veil:rgba(6,9,13,.78);
 }
 :root,[data-theme=protocol]{--bg:#0F1923;--card1:#1F2731;--card2:#16202B;--frame:#0B121B;--panel:#1F2731;--box:#2A3540;--box-hi:#48515B;--line:#2E3A46;--ink:#ECE8E1;--mut:#8A99A9;--accent:#FF4655;--gold:#F2C14E;--red:#FF4655;--warn:#FF7A85;
---sheen:rgba(255,255,255,.09);--sheen-soft:rgba(255,255,255,.06);--tint:rgba(255,255,255,.02);--raise:rgba(255,255,255,.05);--stripe:rgba(255,255,255,.015);--veil:rgba(4,8,14,.72)}
-[data-theme=holo]{--bg:#04101A;--card1:#0A1E30;--card2:#061523;--frame:#02090F;--panel:#0A1E30;--box:#0F2C44;--box-hi:#314A5E;--line:#164059;--ink:#DFF6FF;--mut:#7E9CB2;--accent:#46F6FF;--gold:#F2C14E;--red:#FF4655}
-[data-theme=reaver]{--bg:#0D0A14;--card1:#180F2A;--card2:#120B1F;--frame:#080512;--panel:#180F2A;--box:#241740;--box-hi:#43375B;--line:#37255C;--ink:#EFE9FF;--mut:#9D92BA;--accent:#B44BFF;--gold:#59E3B8;--red:#FF4655}
-[data-theme=oni]{--bg:#120B0B;--card1:#201114;--card2:#180D10;--frame:#0B0607;--panel:#201114;--box:#31191E;--box-hi:#4E393D;--line:#4A2A2C;--ink:#F5E9DC;--mut:#AF9889;--accent:#FF5540;--gold:#E8B14E;--red:#FF5540}
+--sheen:rgba(255,255,255,.09);--sheen-soft:rgba(255,255,255,.06);--tint:rgba(255,255,255,.02);--raise:rgba(255,255,255,.05);--stripe:rgba(255,255,255,.015);--veil:rgba(4,8,14,.72);--accent-dash:rgba(255,70,85,.3)}
+[data-theme=holo]{--bg:#04101A;--card1:#0A1E30;--card2:#061523;--frame:#02090F;--panel:#0A1E30;--box:#0F2C44;--box-hi:#314A5E;--line:#164059;--ink:#DFF6FF;--mut:#7E9CB2;--accent:#46F6FF;--gold:#F2C14E;--red:#FF4655;--accent-dash:rgba(70,246,255,.3)}
+[data-theme=reaver]{--bg:#0D0A14;--card1:#180F2A;--card2:#120B1F;--frame:#080512;--panel:#180F2A;--box:#241740;--box-hi:#43375B;--line:#37255C;--ink:#EFE9FF;--mut:#9D92BA;--accent:#B44BFF;--gold:#59E3B8;--red:#FF4655;--accent-dash:rgba(180,75,255,.3)}
+[data-theme=oni]{--bg:#120B0B;--card1:#201114;--card2:#180D10;--frame:#0B0607;--panel:#201114;--box:#31191E;--box-hi:#4E393D;--line:#4A2A2C;--ink:#F5E9DC;--mut:#AF9889;--accent:#FF5540;--gold:#E8B14E;--red:#FF5540;--accent-dash:rgba(255,85,64,.3)}
 [data-theme=arctic]{--bg:#DAD5CB;--card1:#F7F4EE;--card2:#ECE8E1;--frame:#B8B2A6;--panel:#F2EEE6;--box:#E0DBD1;--box-hi:#E4E0D7;--line:#8E8676;--ink:#0F1923;--mut:#525D6B;--accent:#C22E3C;--gold:#6E5614;--red:#C22E3C;
---sheen:rgba(15,25,35,.05);--sheen-soft:rgba(15,25,35,.035);--tint:rgba(15,25,35,.02);--raise:rgba(15,25,35,.04);--stripe:rgba(15,25,35,.02);--veil:rgba(184,178,166,.72)}
+--sheen:rgba(15,25,35,.05);--sheen-soft:rgba(15,25,35,.035);--tint:rgba(15,25,35,.02);--raise:rgba(15,25,35,.04);--stripe:rgba(15,25,35,.02);--veil:rgba(184,178,166,.72);--accent-dash:rgba(194,46,60,.3)}
 
 *{box-sizing:border-box;margin:0;padding:0;border-radius:0}
 ::selection{background:var(--c-accent);color:#fff}
@@ -93,7 +93,7 @@ body.exporting #card{position:relative;transform:none!important}
 body.exporting .auto,body.exporting .pickrank,body.exporting .add{display:none}
 body.exporting .hint{visibility:hidden}
 
-[contenteditable]{outline:none;border-bottom:1px dashed color-mix(in srgb,var(--accent) 30%,transparent)}
+[contenteditable]{outline:none;border-bottom:1px dashed var(--accent-dash,rgba(255,70,85,.3))}
 [contenteditable]:hover{border-bottom-color:var(--accent);cursor:text}
 
 /* ── card identity + currency bits (live in footer boxes) ───────── */
@@ -127,6 +127,7 @@ linear-gradient(180deg,var(--box-hi),var(--box));
 box-shadow:inset 0 0 0 1px var(--raise);
 clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)))}
 .skin img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:2px 8px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.55))}
+.skin .lv{position:absolute;right:3px;bottom:3px;z-index:2;background:var(--c-accent-btn);color:#fff;font:700 10px/1 'Chakra Petch',sans-serif;letter-spacing:.06em;padding:2px 5px;pointer-events:none}
 .rm{position:absolute;top:3px;right:3px;width:18px;height:18px;background:var(--red);color:#fff;border:none;font:700 11px/1 'Chakra Petch',sans-serif;cursor:pointer;display:none;z-index:2}
 .skin:hover .rm{display:block}
 @media (hover:none){.skin .rm{display:block}}

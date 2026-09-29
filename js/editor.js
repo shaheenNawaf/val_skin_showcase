@@ -25,12 +25,14 @@ const state = {
   ranks: { crank: null, prank: null },
   picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, []])),
   assets: { avatar: null, pcard: null, buddies: [] },
-  owned: {}
+  owned: {},
+  ownedLevels: {}, ownedVariants: [], ownedBuddies: []
 };
 
-let DB = {}, TIERS = [], RANKS = [], BUDDIES = {}, CARDS = {};
-let list = [], currentPool = [], currentCat = null, pickerMode = 'skin', rankRow = null, rankKey = null;
-let filterWeapon = '', filterTier = '', filterOwned = false;
+let DB = {}, TIERS = [], RANKS = [], BUDDIES = {}, CARDS = {}, SKIN_BY_ID = new Map(), LEVEL_MAP = {}, CHROMA_MAP = {}, BUDDIES_LIST = [], BUDDY_BY_ANY = {};
+let catalogSource = 'api';
+let list = [], currentPool = [], currentCat = null, pickerMode = 'skin', rankRow = null, rankKey = null, variantCat = null, variantIdx = -1;
+let filterWeapon = '', filterTier = '', filterOwned = false, filterAnim = false;
 let pendingUpload = null, editSlug = null, lastFocus = null, exporting = false;
 
 // Old #l=<id> viewer links move to the unified viewer page.
@@ -40,9 +42,10 @@ if (hashListing) {
 }
 
 // ── rendering ─────────────────────────────────────────────────────
-function skinCell(s) {
-  const label = `${s.weapon} — ${s.name}`;
-  return `<span class="skin"><img src="${CF.esc(s.icon)}" alt="${CF.esc(label)}" title="${CF.esc(label)}">` +
+function skinCell(s, i) {
+  const label = `${s.weapon} — ${s.name}` + (s.level ? ` · LV${s.level}` : '') + (s.variant ? ` · ${s.variant.name}` : '');
+  return `<span class="skin" data-vp="${i}"><img src="${CF.esc(s.icon)}" alt="${CF.esc(label)}" title="${CF.esc(label)}">` +
+    `${s.level >= 2 ? `<i class="lv">LV${s.level}</i>` : ''}` +
     `<button class="rm" data-remove="${CF.esc(s.id)}" aria-label="Remove ${CF.esc(s.name)}">×</button></span>`;
 }
 
@@ -51,7 +54,7 @@ function renderPanel(cat, { animateLast = false } = {}) {
   const picks = state.picks[cat];
   const slots = el.querySelector('.slots');
   slots.innerHTML = picks.length
-    ? picks.map(skinCell).join('')
+    ? picks.map((s, i) => skinCell(s, i)).join('')
     : '<div class="slotbox empty"><span class="hint">+ add</span></div>';
   const add = el.querySelector('.add');
   if (add) add.textContent = `+ Add (${picks.length})`;
@@ -117,6 +120,13 @@ function captureTexts() {
 }
 
 // ── picker modal ──────────────────────────────────────────────────
+function modalVis({ search = true, filters = true, grid = true, variant = false, upload = false } = {}) {
+  mSearch.style.display = search ? '' : 'none';
+  CF.$('mFilters').style.display = filters ? '' : 'none';
+  mGrid.style.display = grid ? '' : 'none';
+  CF.$('mVariant').hidden = !variant;
+  CF.$('mUpload').hidden = !upload;
+}
 function openModal() {
   lastFocus = document.activeElement;
   modal.hidden = false;
@@ -133,8 +143,9 @@ function openPicker(cat) {
   filterWeapon = '';
   filterTier = '';
   filterOwned = false;
+  filterAnim = false;
   CF.$('mTitle').textContent = 'Add ' + cat;
-  CF.$('mFilters').style.display = '';
+  modalVis();
   currentPool = CF.FREE_CATS.includes(cat)
     ? Object.values(DB).flat().sort((x, y) => (x.weapon + x.name).localeCompare(y.weapon + y.name))
     : (DB[cat] || []);
@@ -151,10 +162,12 @@ function openPicker(cat) {
     '<button class="chip active" data-w="">All</button>' +
     w.map(x => `<button class="chip" data-w="${CF.esc(x)}">${CF.esc(x)} (${wCounts[x]})</button>`).join('');
   const addOwned = CF.$('mAddOwned');
-  addOwned.hidden = !ownedN;
+  addOwned.hidden = !ownedN || CF.FREE_CATS.includes(cat);
   addOwned.textContent = `Add all owned (${ownedN})`;
   CF.$('mTiers').style.display = TIERS.length ? '' : 'none';
-  CF.$('mTiers').innerHTML = '<button class="chip active" data-t="">Any tier</button>' +
+  const animCount = currentPool.filter(s => (s.maxLevel || 1) >= 2).length;
+  CF.$('mTiers').innerHTML = `<button class="chip${filterAnim ? ' active' : ''}" data-anim="1">✦ Animated (${animCount})</button>` +
+    '<button class="chip active" data-t="">Any tier</button>' +
     TIERS.filter(t => tCounts[t]).map(t =>
       `<button class="chip" data-t="${CF.esc(t)}"><i class="dot ${CF.tierClass(t)}"></i>${CF.esc(t)} (${tCounts[t]})</button>`).join('');
   mSearch.value = '';
@@ -167,7 +180,7 @@ function openRankPicker(btn) {
   rankRow = btn.closest('.rankrow');
   rankKey = btn.dataset.rankpick;
   CF.$('mTitle').textContent = 'Select rank';
-  CF.$('mFilters').style.display = 'none';
+  modalVis({ filters: false });
   mSearch.value = '';
   renderGrid();
   openModal();
@@ -178,7 +191,10 @@ function paintChips() {
     if (c.dataset.owned !== undefined) c.classList.toggle('active', filterOwned);
     else c.classList.toggle('active', !filterOwned && (c.dataset.w || '') === filterWeapon);
   });
-  document.querySelectorAll('#mTiers .chip').forEach(c => c.classList.toggle('active', (c.dataset.t || '') === filterTier));
+  document.querySelectorAll('#mTiers .chip').forEach(c => {
+    if (c.dataset.anim !== undefined) c.classList.toggle('active', filterAnim);
+    else c.classList.toggle('active', (c.dataset.t || '') === filterTier);
+  });
 }
 
 function renderGrid() {
@@ -193,24 +209,41 @@ function renderGrid() {
     ).join('') || '<p class="none">No matches.</p>';
     return;
   }
+  if (pickerMode === 'buddy') {
+    const q = mSearch.value.toLowerCase();
+    const ownedSet = new Set(state.ownedBuddies || []);
+    const onCard = new Set(state.assets.buddies);
+    list = currentPool.filter(b =>
+      (!filterOwned || ownedSet.has(b.uuid)) &&
+      (!q || b.name.toLowerCase().includes(q)));
+    CF.$('mCount').textContent = list.length + ' results';
+    mGrid.innerHTML = list.map((b, i) =>
+      `<button class="item" data-i="${i}"${onCard.has(b.icon) ? ' aria-label="' + CF.esc(b.name) + ', already on card"' : ''}>${onCard.has(b.icon) ? '<i class="cnt">✓</i>' : ''}<img loading="lazy" src="${CF.esc(b.icon)}" alt=""><b>${CF.esc(b.name)}</b><span>gun buddy</span></button>`
+    ).join('') || '<p class="none">No matches.</p>';
+    return;
+  }
   const counts = {};
   (state.picks[currentCat] || []).forEach(p => counts[p.id] = (counts[p.id] || 0) + 1);
   list = currentPool.filter(s =>
     (!filterWeapon || s.weapon === filterWeapon) &&
     (!filterTier || (s.tier || '').toLowerCase() === filterTier.toLowerCase()) &&
+    (!filterAnim || (s.maxLevel || 1) >= 2) &&
     (!q || (s.name + ' ' + s.weapon).toLowerCase().includes(q)));
   if (filterOwned && (state.owned[currentCat] || []).length) {
     const os = new Set(state.owned[currentCat]);
     list = list.filter(s => os.has(s.id));
   }
   CF.$('mCount').textContent = list.length + ' results';
-  mGrid.innerHTML = list.map((s, i) =>
-    `<button class="item" data-i="${i}"${counts[s.id] ? ' aria-label="' + CF.esc(s.name) + ', already on card ' + counts[s.id] + '×"' : ''}>${counts[s.id] ? `<i class="cnt">×${counts[s.id]}</i>` : ''}<img loading="lazy" src="${CF.esc(s.icon)}" alt=""><b>${CF.esc(s.name)}</b><span>${CF.esc(s.weapon)}${s.tier ? ' • ' + CF.esc(s.tier) : ''}</span>${s.tier ? `<i class="dot tdot ${CF.tierClass(s.tier)}"></i>` : ''}</button>`
-  ).join('') || '<p class="none">No matches.</p>';
+  mGrid.innerHTML = list.map((s, i) => {
+    const anim = (s.maxLevel || 1) >= 2;
+    const ownLv = (state.ownedLevels || {})[s.id] || 0;
+    return `<button class="item" data-i="${i}"${counts[s.id] ? ' aria-label="' + CF.esc(s.name) + ', already on card ' + counts[s.id] + '×"' : ''}>${counts[s.id] ? `<i class="cnt">×${counts[s.id]}</i>` : ''}${ownLv >= 2 ? `<i class="ownlv">L${ownLv}</i>` : ''}<img loading="lazy" src="${CF.esc(s.icon)}" alt=""><b>${CF.esc(s.name)}</b><span>${CF.esc(s.weapon)}${s.tier ? ' • ' + CF.esc(s.tier) : ''}${anim ? ' • <em class="anim" title="Has upgrade levels (animations)">✦</em>' : ''}</span>${s.tier ? `<i class="dot tdot ${CF.tierClass(s.tier)}"></i>` : ''}</button>`;
+  }).join('') || '<p class="none">No matches.</p>';
 }
 
 function addSkin(cat, s) {
-  state.picks[cat].push({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon });
+  const lvl = (state.ownedLevels || {})[s.id] || 0;
+  state.picks[cat].push({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon, ...(lvl >= 2 ? { level: lvl } : {}) });
   renderPanel(cat, { animateLast: true });
 }
 
@@ -224,6 +257,69 @@ function applyRank(r) {
   closeModal();
 }
 
+function openVariantModal(cat, idx) {
+  pickerMode = 'variant';
+  variantCat = cat; variantIdx = idx;
+  const p = state.picks[cat][idx];
+  if (!p) return;
+  const s = SKIN_BY_ID.get(p.id) || { maxLevel: 1, chromas: [] };
+  CF.$('mTitle').textContent = `${p.weapon} — ${p.name}`;
+  CF.$('mCount').textContent = '';
+  modalVis({ search: false, filters: false, grid: false, variant: true });
+  CF.$('mAddOwned').hidden = true;
+  const maxLevel = s.maxLevel || 1;
+  CF.$('vLevels').innerHTML = maxLevel > 1
+    ? Array.from({ length: maxLevel }, (_, k) =>
+        `<button class="chip${(p.level || 1) === k + 1 ? ' active' : ''}" data-lv="${k + 1}">L${k + 1}${k === 0 ? ' · base' : ''}</button>`).join('')
+    : '<span class="vnote">Base skin — no upgrade levels.</span>';
+  const chromas = s.chromas || [];
+  const ownedSet = new Set(state.ownedVariants || []);
+  CF.$('vChromas').innerHTML = chromas.length > 1
+    ? chromas.map((c, k) => {
+        const sel = p.variant ? p.variant.icon === c.icon : k === 0;
+        return `<button class="vchroma${sel ? ' active' : ''}" data-ch="${k}" title="${CF.esc(c.label)}">${ownedSet.has(c.uuid) ? '<i class="own">✓</i>' : ''}<img loading="lazy" src="${CF.esc(c.icon)}" alt=""><b>${CF.esc(c.label)}</b>${c.unlock ? `<span>unlocks L${c.unlock}</span>` : ''}</button>`;
+      }).join('')
+    : '<span class="vnote">No color variants.</span>';
+  openModal();
+  CF.$('vDone').focus();
+}
+
+function openBuddyPicker() {
+  if (!BUDDIES_LIST.length) { CF.status('Buddy database still loading — try again in a moment.', 'info'); return; }
+  pickerMode = 'buddy';
+  currentPool = BUDDIES_LIST;
+  filterOwned = false;
+  CF.$('mTitle').textContent = 'Add gun buddies';
+  CF.$('mCount').textContent = '';
+  modalVis({ search: true, filters: true, grid: true, upload: true });
+  const ownedN = (state.ownedBuddies || []).length;
+  CF.$('mWeapons').innerHTML = ownedN
+    ? `<button class="chip" data-owned="1">Owned (${ownedN})</button>`
+    : '';
+  CF.$('mTiers').style.display = 'none';
+  const addOwned = CF.$('mAddOwned');
+  addOwned.hidden = !ownedN;
+  addOwned.textContent = `Add all owned (${Math.min(ownedN, 12)})`;
+  mSearch.value = '';
+  renderGrid();
+  openModal();
+}
+
+function addBuddy(b) {
+  if (!b) return;
+  if (state.assets.buddies.includes(b.icon)) {
+    CF.status(`${b.name} is already on the card.`, 'info');
+    return;
+  }
+  state.assets.buddies.push(b.icon);
+  const box = card.querySelector('.charms-box');
+  box.querySelector('.hint')?.remove();
+  const img = new Image();
+  img.src = b.icon;
+  img.alt = 'Gun buddy';
+  box.appendChild(img);
+}
+
 // ── modal events ──────────────────────────────────────────────────
 CF.$('mWeapons').addEventListener('click', e => {
   const c = e.target.closest('.chip'); if (!c) return;
@@ -232,16 +328,25 @@ CF.$('mWeapons').addEventListener('click', e => {
 });
 CF.$('mTiers').addEventListener('click', e => {
   const c = e.target.closest('.chip'); if (!c) return;
+  if (c.dataset.anim !== undefined) { filterAnim = !filterAnim; paintChips(); renderGrid(); return; }
   filterTier = c.dataset.t || ''; paintChips(); renderGrid();
 });
 CF.$('mAddOwned').addEventListener('click', () => {
+  if (pickerMode === 'buddy') {
+    const ownedSet = new Set(state.ownedBuddies || []);
+    const onCard = new Set(state.assets.buddies);
+    BUDDIES_LIST.filter(b => ownedSet.has(b.uuid) && !onCard.has(b.icon)).slice(0, 12).forEach(addBuddy);
+    renderGrid();
+    return;
+  }
   const ids = state.owned[currentCat] || [];
   if (!ids.length) return;
   const idSet = new Set(ids);
   const have = new Set(state.picks[currentCat].map(p => p.id));
   (DB[currentCat] || []).forEach(s => {
     if (idSet.has(s.id) && !have.has(s.id)) {
-      state.picks[currentCat].push({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon });
+      const lvl = (state.ownedLevels || {})[s.id] || 0;
+      state.picks[currentCat].push({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon, ...(lvl >= 2 ? { level: lvl } : {}) });
       have.add(s.id);
     }
   });
@@ -251,6 +356,7 @@ CF.$('mAddOwned').addEventListener('click', () => {
 mGrid.addEventListener('click', e => {
   const b = e.target.closest('.item'); if (!b) return;
   if (pickerMode === 'rank') { applyRank(list[+b.dataset.i]); return; }
+  if (pickerMode === 'buddy') { addBuddy(list[+b.dataset.i]); renderGrid(); return; }
   addSkin(currentCat, list[+b.dataset.i]);
   renderGrid();
 });
@@ -258,11 +364,50 @@ mSearch.addEventListener('input', renderGrid);
 mSearch.addEventListener('keydown', e => {
   if (e.key === 'Enter' && list.length) {
     if (pickerMode === 'rank') applyRank(list[0]);
+    else if (pickerMode === 'buddy') { addBuddy(list[0]); renderGrid(); }
     else { addSkin(currentCat, list[0]); renderGrid(); }
   }
 });
 CF.$('mClose').addEventListener('click', closeModal);
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+CF.$('mUpload').addEventListener('click', () => {
+  pendingUpload = card.querySelector('.charms-box');
+  fileInput.click();
+});
+CF.$('vLevels').addEventListener('click', e => {
+  const c = e.target.closest('.chip'); if (!c || pickerMode !== 'variant') return;
+  const p = state.picks[variantCat]?.[variantIdx]; if (!p) return;
+  const lv = +c.dataset.lv;
+  if (lv >= 2) p.level = lv; else delete p.level;
+  renderPanel(variantCat);
+  CF.$('vLevels').querySelectorAll('.chip').forEach(x => x.classList.toggle('active', +x.dataset.lv === (p.level || 1)));
+});
+CF.$('vChromas').addEventListener('click', e => {
+  const b = e.target.closest('.vchroma'); if (!b || pickerMode !== 'variant') return;
+  const p = state.picks[variantCat]?.[variantIdx]; if (!p) return;
+  const s = SKIN_BY_ID.get(p.id);
+  const chromas = (s && s.chromas) || [];
+  const c = chromas[+b.dataset.ch]; if (!c) return;
+  if (+b.dataset.ch === 0) {
+    delete p.variant;
+    if (s) p.icon = s.icon;
+  } else {
+    p.variant = { name: c.label, icon: c.icon };
+    p.icon = c.icon;
+  }
+  renderPanel(variantCat);
+  CF.$('vChromas').querySelectorAll('.vchroma').forEach(x => {
+    const k = +x.dataset.ch;
+    x.classList.toggle('active', p.variant ? chromas[k].icon === p.variant.icon : k === 0);
+  });
+});
+CF.$('vRemove').addEventListener('click', () => {
+  if (pickerMode !== 'variant') return;
+  const arr = state.picks[variantCat];
+  if (arr && arr[variantIdx]) { arr.splice(variantIdx, 1); renderPanel(variantCat); }
+  closeModal();
+});
+CF.$('vDone').addEventListener('click', () => { if (pickerMode === 'variant') closeModal(); });
 
 // ── riot token import (Explorant-style account pull) ────────────
 CF.$('importBtn').addEventListener('click', () => {
@@ -276,18 +421,72 @@ CF.$('importBtn').addEventListener('click', () => {
 CF.$('iClose').addEventListener('click', () => { importModal.hidden = true; });
 importModal.addEventListener('click', e => { if (e.target === importModal) importModal.hidden = true; });
 
-function extractToken(v) {
-  v = (v || '').trim();
-  if (v.includes('access_token=')) {
-    v = v.replace(/\s+/g, '');
-    const m = v.match(/access_token=([^&]+)/);
-    if (m) { try { return decodeURIComponent(m[1]); } catch { return m[1]; } }
+// Decode a JWT's payload claims (base64url) without verifying the signature.
+// Only used to read `exp`; multi-byte values elsewhere are irrelevant to us.
+function jwtClaims(jwt) {
+  try {
+    const part = String(jwt).split('.')[1];
+    if (!part) return null;
+    const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+    return JSON.parse(atob(pad));
+  } catch { return null; }
+}
+
+const JWT_RE = /^eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
+
+// Parse whatever the seller pasted into { token, entitlements }, or return an
+// actionable { code, message } explaining why it can't be used. Accepts a bare
+// JWT, the opt_in redirect URL (#access_token=...), or the local-client
+// entitlements JSON ({"accessToken":...,"token":...}).
+function parseTokenInput(raw) {
+  const v = (raw || '').trim();
+  if (!v) return { code: 'empty', message: 'Paste your Riot access token first.' };
+
+  let token = '';
+  let entitlements = '';
+
+  if (v.startsWith('{')) {
+    try {
+      const o = JSON.parse(v);
+      token = String(o.accessToken || o.access_token || '').trim();
+      entitlements = String(o.token || o.entitlements || '').trim();
+    } catch {
+      return { code: 'malformed', message: "That looks like JSON but didn't parse. Copy the full entitlements response, or just the access token (starts with eyJ…)." };
+    }
+  } else if (v.includes('access_token=') || v.includes('accessToken=')) {
+    const compact = v.replace(/\s+/g, '');
+    const m = compact.match(/(?:access_token|accessToken)=([^&#\s]+)/);
+    if (m) { try { token = decodeURIComponent(m[1]); } catch { token = m[1]; } }
+  } else if (/^[a-z][a-z0-9+.-]*:\/\//i.test(v)) {
+    // A URL with no access_token in it (e.g. a stripped opt_in redirect).
+    return { code: 'no-token', message: "Couldn't find an access token in that URL. If it's the opt_in redirect, copy it before the page redirects — the #access_token=… part is stripped within seconds. Or paste the token itself (starts with eyJ…)." };
+  } else {
+    token = v;
   }
-  return v;
+
+  if (!token) {
+    return { code: 'no-token', message: "Couldn't find an access token in that. If you pasted the opt_in URL, copy it before the page redirects — the #access_token=… part is stripped within seconds. Or paste the token itself (starts with eyJ…)." };
+  }
+  if (!JWT_RE.test(token)) {
+    return { code: 'malformed', message: "That doesn't look like a Riot access token (expected a JWT starting with eyJ…). Re-copy the token, not the surrounding URL or JSON." };
+  }
+  const exp = jwtClaims(token) && jwtClaims(token).exp;
+  if (typeof exp === 'number') {
+    const secsLeft = exp - Math.floor(Date.now() / 1000);
+    if (secsLeft <= 0) {
+      const mins = Math.max(1, Math.round(-secsLeft / 60));
+      return { code: 'expired', message: `That access token expired ~${mins} min ago — Riot tokens last ~1h. Grab a fresh one.` };
+    }
+  }
+  return { token, entitlements };
 }
 
 CF.$('iRun').addEventListener('click', async () => {
   const btn = CF.$('iRun');
+  const parsed = parseTokenInput(CF.$('iToken').value);
+  if (!parsed.token) { CF.status(parsed.message, 'err'); CF.$('iToken').focus(); return; }
+  const ent = CF.$('iEnt').value.trim() || parsed.entitlements || '';
   btn.disabled = true;
   CF.status('Importing account…');
   try {
@@ -295,8 +494,8 @@ CF.$('iRun').addEventListener('click', async () => {
       method: 'POST',
       headers: { apikey: CONFIG.SUPABASE_ANON_KEY, 'content-type': 'application/json' },
       body: JSON.stringify({
-        accessToken: extractToken(CF.$('iToken').value),
-        entitlements: CF.$('iEnt').value.trim(),
+        accessToken: parsed.token,
+        entitlements: ent,
         region: CF.$('iRegion').value
       })
     });
@@ -306,13 +505,32 @@ CF.$('iRun').addEventListener('click', async () => {
     importModal.hidden = true;
     CF.$('iToken').value = '';
     CF.$('iEnt').value = '';
-    CF.status(`Imported ${j.name || 'account'}#${j.tag || ''} — level ${j.level ?? '?'}${j.errors && j.errors.length ? ' · partial: ' + j.errors.join(', ') : ''}.`, 'ok');
+    CF.status(`Imported ${j.name || 'account'}#${j.tag || ''} — level ${j.level ?? '?'}` +
+      (j.skins ? ` · ${j.skins.length} skins owned (${Object.values(state.ownedLevels).filter(l => l >= 2).length} animated)` : '') +
+      (j.errors && j.errors.length ? ' · partial: ' + j.errors.join(', ') : '') + '.', 'ok');
   } catch (e) {
     CF.status('Import failed: ' + (e.message || e), 'err');
   } finally {
     btn.disabled = false;
   }
 });
+
+function autoFillFlex() {
+  const onCard = new Set(CF.ALL_CATS.flatMap(c => state.picks[c].map(p => p.id)));
+  const TIER_RANK = { exclusive: 3, ultra: 2, premium: 1 };
+  const cand = [];
+  SKIN_BY_ID.forEach(s => {
+    if (onCard.has(s.id)) return;
+    const lvl = state.ownedLevels[s.id] || 0;
+    if (!lvl) return;
+    const prem = TIER_RANK[(s.tier || '').toLowerCase()] || 0;
+    if (prem || (s.maxLevel || 1) >= 2) cand.push({ s, lvl, prem });
+  });
+  cand.sort((a, b) => b.prem - a.prem || a.s.name.localeCompare(b.s.name));
+  cand.slice(0, 24).forEach(({ s, lvl }) => {
+    state.picks.Flex.push({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon, ...(lvl >= 2 ? { level: lvl } : {}) });
+  });
+}
 
 function applyImport(j) {
   if (j.level != null) state.texts.level = String(j.level);
@@ -331,12 +549,37 @@ function applyImport(j) {
   const charmIcons = (j.charms || []).map(id => BUDDIES[id]).filter(Boolean);
   if (charmIcons.length) state.assets.buddies = charmIcons.slice(0, 12);
   if (j.skins) {
-    state.owned = {};
-    const set = new Set(j.skins);
-    CF.CATS.forEach(c => {
-      const ids = (DB[c] || []).filter(s => set.has(s.id)).map(s => s.id);
-      if (ids.length) state.owned[c] = ids;
+    const ownedLevels = {};
+    j.skins.forEach(u => {
+      const m = LEVEL_MAP[u];
+      if (m) ownedLevels[m.id] = Math.max(ownedLevels[m.id] || 0, m.level);
+      else if (SKIN_BY_ID.has(u)) ownedLevels[u] = Math.max(ownedLevels[u] || 1, 1);
     });
+    state.ownedLevels = ownedLevels;
+    state.owned = {};
+    CF.ALL_CATS.forEach(c => state.owned[c] = []);
+    const union = [];
+    SKIN_BY_ID.forEach(s => { if (ownedLevels[s.id]) union.push(s.id); });
+    CF.CATS.forEach(c => {
+      state.owned[c] = (DB[c] || []).filter(s => ownedLevels[s.id]).map(s => s.id);
+    });
+    state.owned['Flex'] = union;
+    state.owned['Battlepass'] = union;
+    CF.ALL_CATS.forEach(c => state.picks[c].forEach(p => {
+      const l = ownedLevels[p.id];
+      if (l >= 2) p.level = l;
+      else if (l === 1) delete p.level;
+    }));
+    autoFillFlex();
+  }
+  if (j.variantsOwned) state.ownedVariants = j.variantsOwned.filter(u => CHROMA_MAP[u]);
+  if (j.buddiesOwned || j.charms) {
+    const set = new Set();
+    [...(j.buddiesOwned || []), ...(j.charms || [])].forEach(u => {
+      const base = BUDDY_BY_ANY[u];
+      if (base) set.add(base);
+    });
+    state.ownedBuddies = [...set];
   }
   renderFromState();
   updateWm();
@@ -360,8 +603,9 @@ document.addEventListener('keydown', e => {
 card.addEventListener('click', e => {
   const auto = e.target.closest('[data-auto]');
   if (auto) {
-    const n = Object.values(state.picks).flat()
-      .filter(p => ['premium', 'ultra', 'exclusive'].includes((p.tier || '').toLowerCase())).length;
+    const n = auto.dataset.auto === 'anims'
+      ? Object.values(state.picks).flat().filter(p => (p.level || 0) >= 2).length
+      : Object.values(state.picks).flat().filter(p => ['premium', 'ultra', 'exclusive'].includes((p.tier || '').toLowerCase())).length;
     auto.closest('.stat').querySelector('b').textContent = String(n).padStart(2, '0');
     return;
   }
@@ -372,6 +616,8 @@ card.addEventListener('click', e => {
     buddy.remove();
     return;
   }
+  const cbox = e.target.closest('.charms-box');
+  if (cbox) { openBuddyPicker(); return; }
   const rm = e.target.closest('.rm');
   if (rm) {
     const skinEl = rm.closest('.skin');
@@ -385,6 +631,13 @@ card.addEventListener('click', e => {
         renderPanel(cat);
       }
     }, 160);
+    return;
+  }
+  const vs = e.target.closest('.skin');
+  if (vs) {
+    const cat = vs.closest('.panel')?.dataset.cat;
+    const idx = +vs.dataset.vp;
+    if (cat && state.picks[cat] && state.picks[cat][idx]) openVariantModal(cat, idx);
     return;
   }
   const rp = e.target.closest('[data-rankpick]');
@@ -454,7 +707,7 @@ CF.$('postBtn').addEventListener('click', () => {
   const txt = [
     `${t.code || ''} • ${t.vlogin || ''} • ${t.tag || ''}`,
     `LEVEL ${t.level || '?'} • ${t.crank || 'UNRANKED'} (peak ${t.prank || 'UNRANKED'})`,
-    `PREMIUM ${t.prems || '00'} | LIMITED ${t.limited || '00'} | SEMI PREM ${t.semis || '00'} | BATTLEPASS ${t.bpass || '00'}`,
+    `PREMIUM ${t.prems || '00'} | LIMITED ${t.limited || '00'} | SEMI PREM ${t.semis || '00'} | BATTLEPASS ${t.bpass || '00'} | ANIMATED ${t.anims || '00'}`,
     `${t.wtr || ''} | ${t.receipts || ''} | ${t.owner || ''}`,
     `${t.cname || ''} | ${t.cstatus || ''} | ${t.date || ''}`,
     `${t.premier || ''} | ${t.vlink || ''} | ${t.price || ''}`,
@@ -495,7 +748,8 @@ CF.$('loadBtn').addEventListener('click', () => {
       ranks: draft.ranks || { crank: null, prank: null },
       picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, draft.picks?.[c] || []])),
       assets: Object.assign({ avatar: null, pcard: null, buddies: [] }, draft.assets),
-      owned: draft.owned || {}
+      owned: draft.owned || {},
+      ownedLevels: draft.ownedLevels || {}, ownedVariants: draft.ownedVariants || [], ownedBuddies: draft.ownedBuddies || []
     });
     renderFromState();
     CF.status('Draft loaded.', 'ok');
@@ -524,7 +778,8 @@ function buildPayload() {
     ranks: state.ranks,
     picks: state.picks,
     assets: state.assets,
-    owned: state.owned
+    owned: state.owned,
+    ownedLevels: state.ownedLevels, ownedVariants: state.ownedVariants, ownedBuddies: state.ownedBuddies
   };
 }
 
@@ -617,7 +872,8 @@ async function initEditMode() {
     ranks: p.ranks || { crank: null, prank: null },
     picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, p.picks?.[c] || []])),
     assets: Object.assign({ avatar: null, pcard: null, buddies: [] }, p.assets),
-    owned: p.owned || {}
+    owned: p.owned || {},
+    ownedLevels: p.ownedLevels || {}, ownedVariants: p.ownedVariants || [], ownedBuddies: p.ownedBuddies || []
   });
   renderFromState();
   updateWm();
@@ -641,7 +897,8 @@ if (bootDraft) {
     ranks: bootDraft.ranks || { crank: null, prank: null },
     picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, bootDraft.picks?.[c] || []])),
     assets: Object.assign({ avatar: null, pcard: null, buddies: [] }, bootDraft.assets),
-    owned: bootDraft.owned || {}
+    owned: bootDraft.owned || {},
+    ownedLevels: bootDraft.ownedLevels || {}, ownedVariants: bootDraft.ownedVariants || [], ownedBuddies: bootDraft.ownedBuddies || []
   });
   renderFromState();
 }
@@ -650,15 +907,18 @@ updateWm();
 function bootStatus() {
   CF.status(editSlug
     ? `Editing listing ${editSlug} — publish to update it.`
-    : `Ready — ${Object.values(DB).flat().length} skins, ${TIERS.length} tiers, ${RANKS.length - 1} ranks.` +
+    : `Ready — ${Object.values(DB).flat().length} skins${catalogSource === 'cache' ? ' · Supabase cache' : ''}, ${TIERS.length} tiers, ${RANKS.length - 1} ranks.` +
       (bootDraft ? ' Draft restored.' : ''), editSlug ? 'ok' : 'info');
 }
 
 initEditMode().finally(async () => {
   try {
-    const catalog = await CF.loadCatalog();
+    const catalog = await CF.loadCatalog(supabase);
     DB = catalog.DB; TIERS = catalog.TIERS; RANKS = catalog.RANKS;
     BUDDIES = catalog.BUDDIES; CARDS = catalog.CARDS;
+    SKIN_BY_ID = catalog.SKIN_BY_ID; LEVEL_MAP = catalog.LEVEL_MAP; CHROMA_MAP = catalog.CHROMA_MAP;
+    BUDDIES_LIST = catalog.BUDDIES_LIST; BUDDY_BY_ANY = catalog.BUDDY_BY_ANY;
+    catalogSource = catalog.source || 'api';
   } catch (e) {
     CF.status('Skin database failed to load: ' + (e.message || e), 'err');
     return;
