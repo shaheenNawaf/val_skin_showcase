@@ -26,10 +26,10 @@ const state = {
   picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, []])),
   assets: { avatar: null, pcard: null, buddies: [] },
   owned: {},
-  ownedLevels: {}, ownedVariants: [], ownedBuddies: []
+  ownedLevels: {}, ownedVariants: [], ownedBuddies: [], ownedCards: []
 };
 
-let DB = {}, TIERS = [], RANKS = [], BUDDIES = {}, CARDS = {}, SKIN_BY_ID = new Map(), LEVEL_MAP = {}, CHROMA_MAP = {}, BUDDIES_LIST = [], BUDDY_BY_ANY = {};
+let DB = {}, TIERS = [], RANKS = [], BUDDIES = {}, CARDS = {}, SKIN_BY_ID = new Map(), LEVEL_MAP = {}, CHROMA_MAP = {}, BUDDIES_LIST = [], BUDDY_BY_ANY = {}, CARDS_LIST = [];
 let catalogSource = 'api';
 let list = [], currentPool = [], currentCat = null, pickerMode = 'skin', rankRow = null, rankKey = null, variantCat = null, variantIdx = -1;
 const TIER_RANK = { select: 1, deluxe: 2, premium: 3, ultra: 4, exclusive: 5 };
@@ -200,12 +200,13 @@ function paintChips() {
 function paintLadder(countsByTier) {
   document.querySelectorAll('#mLadder .rung').forEach(rung => {
     const t = rung.dataset.tier;
+    const name = rung.querySelector('span').textContent;
     const n = countsByTier[t] || 0;
     rung.querySelector('b').textContent = n;
     rung.classList.toggle('zero', n === 0);
     rung.classList.toggle('on', filterTier === t && !tierOnly);
     rung.classList.toggle('only', filterTier === t && tierOnly);
-    rung.title = `Show ${t} and above — click again for ${t} only, third click clears`;
+    rung.title = `Show only ${name} — click again for ${name} and above, third click clears`;
   });
 }
 
@@ -234,6 +235,19 @@ function renderGrid() {
     ).join('') || '<p class="none">No matches.</p>';
     return;
   }
+  if (pickerMode === 'card') {
+    const ownedSet = new Set(state.ownedCards || []);
+    const shown = state.assets.pcard;
+    list = currentPool.filter(c =>
+      (!filterOwned || ownedSet.has(c.uuid)) &&
+      (!q || c.name.toLowerCase().includes(q)));
+    CF.$('mCount').textContent = list.length + ' results';
+    mGrid.innerHTML = list.map((c, i) => {
+      const active = !!shown && c.wide === shown;
+      return `<button class="item" data-i="${i}"${active ? ' aria-label="' + CF.esc(c.name) + ', currently shown"' : ''}>${active ? '<i class="cnt">✓</i>' : ''}${ownedSet.has(c.uuid) ? '<i class="ownlv">owned</i>' : ''}<img loading="lazy" src="${CF.esc(c.icon)}" alt=""><b>${CF.esc(c.name)}</b><span>player card</span></button>`;
+    }).join('') || '<p class="none">No matches.</p>';
+    return;
+  }
   const counts = {};
   (state.picks[currentCat] || []).forEach(p => counts[p.id] = (counts[p.id] || 0) + 1);
   const ownedSet = filterOwned && (state.owned[currentCat] || []).length ? new Set(state.owned[currentCat]) : null;
@@ -258,13 +272,13 @@ function renderGrid() {
   mGrid.innerHTML = list.map((s, i) => {
     const anim = (s.maxLevel || 1) >= 2;
     const ownLv = (state.ownedLevels || {})[s.id] || 0;
-    return `<button class="item" data-i="${i}"${counts[s.id] ? ' aria-label="' + CF.esc(s.name) + ', already on card ' + counts[s.id] + '×"' : ''}>${counts[s.id] ? `<i class="cnt">×${counts[s.id]}</i>` : ''}${ownLv >= 2 ? `<i class="ownlv">L${ownLv}</i>` : ''}<img loading="lazy" src="${CF.esc(s.icon)}" alt=""><b>${CF.esc(s.name)}</b><span>${CF.esc(s.weapon)}${s.tier ? ' • ' + CF.esc(s.tier) : ''}${anim ? ' • <em class="anim" title="Has upgrade levels (animations)">✦</em>' : ''}</span>${s.tier ? `<i class="dot tdot ${CF.tierClass(s.tier)}"></i>` : ''}</button>`;
+    return `<button class="item" data-i="${i}"${counts[s.id] ? ' aria-label="' + CF.esc(s.name) + ', already on card ' + counts[s.id] + '×"' : ''}>${counts[s.id] ? `<i class="cnt">×${counts[s.id]}</i>` : ''}${ownLv >= 2 ? `<i class="ownlv">L${ownLv}</i>` : ''}<img loading="lazy" src="${CF.esc(s.icon)}" alt=""><b>${CF.esc(s.name)}</b><span>${CF.esc(s.weapon)}${s.tier ? ' • ' + CF.esc(s.tier) : ''}${anim ? ' • <em class="anim" title="Has upgrade levels (animations)">✦</em>' : ''}</span>${s.tier ? `<i class="dot tdot ${CF.tierClass(s.tier)}"></i>` : ''}${s.chromas && s.chromas.length > 1 ? `<span class="vdots">${s.chromas.slice(0, 5).map((c, ci) => `<span class="vd" data-ch="${ci}" title="${CF.esc(c.label)}"><img loading="lazy" src="${CF.esc(c.sw || c.icon)}" alt=""></span>`).join('')}</span>` : ''}</button>`;
   }).join('') || '<p class="none">No matches.</p>';
 }
 
-function addSkin(cat, s) {
+function addSkin(cat, s, chroma) {
   const lvl = (state.ownedLevels || {})[s.id] || 0;
-  state.picks[cat].push({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon, ...(lvl >= 2 ? { level: lvl } : {}) });
+  state.picks[cat].push({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon, ...(lvl >= 2 ? { level: lvl } : {}), ...(chroma ? { variant: { name: chroma.label, icon: chroma.icon } } : {}) });
   renderPanel(cat, { animateLast: true });
 }
 
@@ -276,6 +290,40 @@ function applyRank(r) {
   if (r.icon) badge.src = r.icon;
   else badge.removeAttribute('src');
   closeModal();
+}
+
+function paintVariantPreview() {
+  const p = state.picks[variantCat] && state.picks[variantCat][variantIdx]; if (!p) return;
+  const s = SKIN_BY_ID.get(p.id) || {};
+  const levels = s.levels || [];
+  const lv = p.level || 1;
+  const ld = levels[lv - 1];
+  CF.$('vpLevel').innerHTML = ld && ld.video ? `<video src="${CF.esc(ld.video)}" muted loop autoplay playsinline></video>` : (s.icon ? `<img src="${CF.esc(s.icon)}" alt=""><span class="vpnote">static preview — level animations load with the live API catalog</span>` : '<span class="vpnote">no preview</span>');
+  const chromas = s.chromas || [];
+  const k = p.variant ? chromas.findIndex(c => c.icon === p.variant.icon) : 0;
+  const c = chromas[Math.max(0, k)];
+  CF.$('vpChroma').innerHTML = c ? `<img src="${CF.esc(c.full || c.icon)}" alt="${CF.esc(c.label || '')}"><span class="vpnote">${CF.esc(c.label || '')}</span>` : '<span class="vpnote">no colorways</span>';
+  CF.$('vPrev').hidden = !(levels.length > 1 || chromas.length > 1);
+}
+
+function ensureRichSkin(s) {
+  if (!s || s._rich) return;
+  s._rich = true;
+  const needs = !(s.levels || []).some(l => l.video) || (s.chromas || []).some(c => !c.full);
+  if (!needs) return;
+  fetch('https://valorant-api.com/v1/weapons/skins/' + encodeURIComponent(s.id))
+    .then(r => (r.ok ? r.json() : null))
+    .then(j => {
+      const d = j && j.data;
+      if (!d) return;
+      s.levels = (d.levels || []).map((l, i) => ({ level: i + 1, video: l.streamedVideo || '' }));
+      s.chromas = (s.chromas || []).map((c, i) => {
+        const dc = (d.chromas || [])[i] || {};
+        return Object.assign({}, c, { full: c.full || dc.fullRender || '', sw: c.sw || dc.swatch || '' });
+      });
+      paintVariantPreview();
+    })
+    .catch(() => {});
 }
 
 function openVariantModal(cat, idx) {
@@ -303,6 +351,8 @@ function openVariantModal(cat, idx) {
     : '<span class="vnote">No color variants.</span>';
   openModal();
   CF.$('vDone').focus();
+  ensureRichSkin(s);
+  paintVariantPreview();
 }
 
 function openBuddyPicker() {
@@ -342,6 +392,34 @@ function addBuddy(b) {
   box.appendChild(img);
 }
 
+function openCardPicker() {
+  if (!CARDS_LIST.length) { CF.status('Player-card database still loading — try again in a moment.', 'info'); return; }
+  pickerMode = 'card';
+  currentPool = CARDS_LIST;
+  filterOwned = false;
+  CF.$('mTitle').textContent = 'Choose a player card';
+  CF.$('mCount').textContent = '';
+  modalVis({ search: true, filters: true, grid: true, upload: true });
+  const ownedN = (state.ownedCards || []).length;
+  CF.$('mWeapons').innerHTML = ownedN
+    ? `<button class="chip" data-owned="1">Owned (${ownedN})</button>`
+    : '';
+  CF.$('mTiers').style.display = 'none';
+  CF.$('mAddOwned').hidden = true;
+  mSearch.value = '';
+  renderGrid();
+  openModal();
+}
+
+function applyCard(c) {
+  if (!c) return;
+  state.assets.pcard = c.wide;
+  const pc = card.querySelector('.pcard');
+  pc.style.backgroundImage = `url("${c.wide}")`;
+  pc.querySelector('.hint')?.remove();
+  closeModal();
+}
+
 // ── modal events ──────────────────────────────────────────────────
 CF.$('mWeapons').addEventListener('click', e => {
   const c = e.target.closest('.chip'); if (!c) return;
@@ -356,9 +434,9 @@ CF.$('mLadder').addEventListener('click', e => {
   const rung = e.target.closest('.rung');
   if (rung) {
     const t = rung.dataset.tier;
-    if (filterTier !== t) { filterTier = t; tierOnly = false; }
-    else if (!tierOnly) { tierOnly = true; }
-    else { filterTier = ''; tierOnly = false; }
+    if (filterTier !== t) { filterTier = t; tierOnly = true; }
+    else if (tierOnly) { tierOnly = false; }
+    else { filterTier = ''; }
     paintLadder(lastTierCounts); renderGrid();
     return;
   }
@@ -390,9 +468,17 @@ CF.$('mAddOwned').addEventListener('click', () => {
   renderGrid();
 });
 mGrid.addEventListener('click', e => {
+  const vd = e.target.closest('.vd');
+  if (vd && pickerMode === 'skin') {
+    const item = vd.closest('.item');
+    const s = list[+item.dataset.i];
+    const c = +vd.dataset.ch > 0 ? s.chromas[+vd.dataset.ch] : null;
+    addSkin(currentCat, s, c); renderGrid(); return;
+  }
   const b = e.target.closest('.item'); if (!b) return;
   if (pickerMode === 'rank') { applyRank(list[+b.dataset.i]); return; }
   if (pickerMode === 'buddy') { addBuddy(list[+b.dataset.i]); renderGrid(); return; }
+  if (pickerMode === 'card') { applyCard(list[+b.dataset.i]); return; }
   addSkin(currentCat, list[+b.dataset.i]);
   renderGrid();
 });
@@ -401,13 +487,14 @@ mSearch.addEventListener('keydown', e => {
   if (e.key === 'Enter' && list.length) {
     if (pickerMode === 'rank') applyRank(list[0]);
     else if (pickerMode === 'buddy') { addBuddy(list[0]); renderGrid(); }
+    else if (pickerMode === 'card') applyCard(list[0]);
     else { addSkin(currentCat, list[0]); renderGrid(); }
   }
 });
 CF.$('mClose').addEventListener('click', closeModal);
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 CF.$('mUpload').addEventListener('click', () => {
-  pendingUpload = card.querySelector('.charms-box');
+  pendingUpload = pickerMode === 'card' ? card.querySelector('.pcard') : card.querySelector('.charms-box');
   fileInput.click();
 });
 CF.$('vLevels').addEventListener('click', e => {
@@ -417,6 +504,7 @@ CF.$('vLevels').addEventListener('click', e => {
   if (lv >= 2) p.level = lv; else delete p.level;
   renderPanel(variantCat);
   CF.$('vLevels').querySelectorAll('.chip').forEach(x => x.classList.toggle('active', +x.dataset.lv === (p.level || 1)));
+  paintVariantPreview();
 });
 CF.$('vChromas').addEventListener('click', e => {
   const b = e.target.closest('.vchroma'); if (!b || pickerMode !== 'variant') return;
@@ -436,6 +524,7 @@ CF.$('vChromas').addEventListener('click', e => {
     const k = +x.dataset.ch;
     x.classList.toggle('active', p.variant ? chromas[k].icon === p.variant.icon : k === 0);
   });
+  paintVariantPreview();
 });
 CF.$('vRemove').addEventListener('click', () => {
   if (pickerMode !== 'variant') return;
@@ -611,6 +700,7 @@ function applyImport(j) {
     autoFillFlex();
   }
   if (j.variantsOwned) state.ownedVariants = j.variantsOwned.filter(u => CHROMA_MAP[u]);
+  if (j.cardsOwned) state.ownedCards = j.cardsOwned.filter(u => CARDS[u]);
   if (j.buddiesOwned || j.charms) {
     const set = new Set();
     [...(j.buddiesOwned || []), ...(j.charms || [])].forEach(u => {
@@ -682,6 +772,8 @@ card.addEventListener('click', e => {
   if (rp) { openRankPicker(rp); return; }
   const add = e.target.closest('.add');
   if (add) { openPicker(add.dataset.add); return; }
+  const pc = e.target.closest('.pcard');
+  if (pc) { openCardPicker(); return; }
   const up = e.target.closest('[data-upload]');
   if (up) { pendingUpload = up; fileInput.click(); return; }
 });
@@ -700,6 +792,7 @@ fileInput.addEventListener('change', async e => {
       t.style.backgroundImage = `url("${url}")`;
       t.querySelector('.hint')?.remove();
       state.assets.pcard = url;
+      closeModal();
     } else {
       t.querySelector('.hint')?.remove();
       const img = new Image();
@@ -787,7 +880,7 @@ CF.$('loadBtn').addEventListener('click', () => {
       picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, draft.picks?.[c] || []])),
       assets: Object.assign({ avatar: null, pcard: null, buddies: [] }, draft.assets),
       owned: draft.owned || {},
-      ownedLevels: draft.ownedLevels || {}, ownedVariants: draft.ownedVariants || [], ownedBuddies: draft.ownedBuddies || []
+      ownedLevels: draft.ownedLevels || {}, ownedVariants: draft.ownedVariants || [], ownedBuddies: draft.ownedBuddies || [], ownedCards: draft.ownedCards || []
     });
     renderFromState();
     CF.status('Draft loaded.', 'ok');
@@ -817,7 +910,7 @@ function buildPayload() {
     picks: state.picks,
     assets: state.assets,
     owned: state.owned,
-    ownedLevels: state.ownedLevels, ownedVariants: state.ownedVariants, ownedBuddies: state.ownedBuddies
+    ownedLevels: state.ownedLevels, ownedVariants: state.ownedVariants, ownedBuddies: state.ownedBuddies, ownedCards: state.ownedCards
   };
 }
 
@@ -911,7 +1004,7 @@ async function initEditMode() {
     picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, p.picks?.[c] || []])),
     assets: Object.assign({ avatar: null, pcard: null, buddies: [] }, p.assets),
     owned: p.owned || {},
-    ownedLevels: p.ownedLevels || {}, ownedVariants: p.ownedVariants || [], ownedBuddies: p.ownedBuddies || []
+    ownedLevels: p.ownedLevels || {}, ownedVariants: p.ownedVariants || [], ownedBuddies: p.ownedBuddies || [], ownedCards: p.ownedCards || []
   });
   renderFromState();
   updateWm();
@@ -937,7 +1030,7 @@ if (bootDraft) {
     picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, bootDraft.picks?.[c] || []])),
     assets: Object.assign({ avatar: null, pcard: null, buddies: [] }, bootDraft.assets),
     owned: bootDraft.owned || {},
-    ownedLevels: bootDraft.ownedLevels || {}, ownedVariants: bootDraft.ownedVariants || [], ownedBuddies: bootDraft.ownedBuddies || []
+    ownedLevels: bootDraft.ownedLevels || {}, ownedVariants: bootDraft.ownedVariants || [], ownedBuddies: bootDraft.ownedBuddies || [], ownedCards: bootDraft.ownedCards || []
   });
   renderFromState();
 }
@@ -954,7 +1047,7 @@ initEditMode().finally(async () => {
   try {
     const catalog = await CF.loadCatalog(supabase);
     DB = catalog.DB; TIERS = catalog.TIERS; RANKS = catalog.RANKS;
-    BUDDIES = catalog.BUDDIES; CARDS = catalog.CARDS;
+    BUDDIES = catalog.BUDDIES; CARDS = catalog.CARDS; CARDS_LIST = catalog.CARDS_LIST || [];
     SKIN_BY_ID = catalog.SKIN_BY_ID; LEVEL_MAP = catalog.LEVEL_MAP; CHROMA_MAP = catalog.CHROMA_MAP;
     BUDDIES_LIST = catalog.BUDDIES_LIST; BUDDY_BY_ANY = catalog.BUDDY_BY_ANY;
     catalogSource = catalog.source || 'api';
