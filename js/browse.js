@@ -287,7 +287,7 @@ function previewInner(l, style) {
   const rn = l.rankNow;
   const st = l.stats;
   return '<div class="mc">'
-    + '<div class="mc-head"><span class="mc-code2">' + esc(l.code) + '</span><span class="mc-rank">' + rankImg(rn) + esc(rn.name) + '</span></div>'
+    + '<div class="mc-head"><span></span><span class="mc-rank">' + rankImg(rn) + esc(rn.name) + '</span></div>'
     + '<div class="mc-grid">' + g + '</div>'
     + '<div class="mc-foot"><span>SKINS ' + esc(st.skins) + ' · PREM ' + esc(st.premium) + ' · ANIM ' + esc(st.animated) + '</span><span>LV ' + esc(st.level) + '</span></div>'
     + '</div>';
@@ -304,7 +304,6 @@ function cardHTML(l, i) {
     + '<span class="gc-badges">' + badgesGrid(l) + '</span>'
     + '<span class="gc-theme">' + esc(t.label) + '</span>'
     + previewInner(l, state.style)
-    + '<span class="gc-code">' + esc(l.code) + '</span>'
     + '</div>'
     + '<div class="gc-body">'
     + '<h2>' + esc(l.title) + '</h2>'
@@ -323,8 +322,8 @@ function rowHTML(l) {
   const rp = l.rankPeak;
   const icons = flattenPicks(l, FEATURE_ORDER).slice(0, 2).map(pickIconWrap).join('');
   return '<button type="button" class="arow" data-slug="' + esc(l.slug) + '">'
-    + '<div class="lr-thumb" data-imgwrap><div class="lc-icons">' + icons + '</div><span class="lr-code">' + esc(l.code) + '</span></div>'
-    + '<div class="lr-main"><div class="lr-title"><h2>' + esc(l.title) + '</h2><span class="lc-code">' + esc(l.code) + '</span><span class="lr-badges">' + badgesGrid(l) + '</span></div></div>'
+    + '<div class="lr-thumb" data-imgwrap><div class="lc-icons">' + icons + '</div></div>'
+    + '<div class="lr-main"><div class="lr-title"><h2>' + esc(l.title) + '</h2><span class="lr-badges">' + badgesGrid(l) + '</span></div></div>'
     + '<div class="lr-ranks"><div class="r">' + rankImg(rn) + '<span>' + esc(rn.name) + '</span></div><div class="r">' + rankImg(rp) + '<span class="pk">PEAK ' + esc(rp.name) + '</span></div></div>'
     + '<div class="lr-chips">' + chipsList(l) + '</div>'
     + '<div class="lr-price">' + priceHTML(l) + '<span class="lc-meta">' + esc(l.views) + ' views · ' + esc(agoText(l.daysAgo)) + '</span></div>'
@@ -345,7 +344,6 @@ function featHTML(l) {
   return '<div class="gfeat" data-slug="' + esc(l.slug) + '">'
     + '<div class="gf-preview" data-imgwrap>'
     + '<span class="gf-ribbon">FEATURED</span>'
-    + '<span class="gf-code">' + esc(l.code) + '</span>'
     + '<div class="gf-skins">' + sk + '</div>'
     + '<div class="gf-strip"><span>PREM ' + esc(s.premium) + '</span><span>LIM ' + esc(s.limited) + '</span><span>ANIM ' + esc(s.animated) + '</span><span>LV ' + esc(s.level) + '</span></div>'
     + '<div class="gf-ranks"><span class="gfr">' + rankImg(rn) + '<b>' + esc(rn.name) + '</b></span><span class="gfr">' + rankImg(rp) + '<b>PEAK ' + esc(rp.name) + '</b></span></div>'
@@ -843,3 +841,14 @@ const savedStyle = localStorage.getItem('cf-card-style');
 if (savedStyle === 'mini' || savedStyle === 'rail') state.style = savedStyle;
 applyStyle();
 load();
+
+const discToggle = $('discToggle');
+const disc = $('disclaimer');
+if (discToggle && disc) {
+  discToggle.addEventListener('click', () => {
+    const hidden = disc.classList.toggle('disc-hidden');
+    discToggle.setAttribute('aria-expanded', String(!hidden));
+    discToggle.setAttribute('aria-label', hidden ? 'Show legal notice' : 'Hide legal notice');
+    discToggle.textContent = hidden ? '»' : '«';
+  });
+}
