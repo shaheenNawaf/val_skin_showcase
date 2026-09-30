@@ -171,8 +171,8 @@ function buildRanks(ctData) {
         name: t.tierName,
         icon: t.displayIcon || t.largeIcon,
         color: t.color || '#888',
-        order: (t.tier || 0) * 10 + (t.division || 0),
-        flat: (t.tier || 0) ? (t.tier || 0) * 3 + (t.division || 1) - 1 : 0
+        order: (t.tier || 0) * 10,
+        flat: (t.tier || 0) || 0
       }))
       .filter(t => (seenRanks.has(t.name) ? false : seenRanks.add(t.name)))
       .sort((a, b) => a.order - b.order)
