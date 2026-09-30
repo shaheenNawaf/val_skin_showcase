@@ -10,6 +10,17 @@ const SHARDS: Record<string, string> = {
   na: "na", br: "na", latam: "na", eu: "eu", ap: "ap", kr: "kr",
 };
 
+const REGION_CODE_TO_REGION: Record<string, string> = {
+  NA1: "na", NA: "na",
+  EUW1: "eu", EUN1: "eu", EUW: "eu", EUN: "eu", EU: "eu",
+  KR: "kr",
+  BR1: "br", BR: "br",
+  LA1: "latam", LA2: "latam", LATAM: "latam",
+  AP: "ap", SG1: "ap", SG2: "ap", PH1: "ap", PH2: "ap", TH1: "ap", TH2: "ap",
+  VN1: "ap", VN2: "ap", MY1: "ap", MY2: "ap", ID1: "ap", ID2: "ap",
+  TW1: "ap", TW2: "ap", HK1: "ap", HK2: "ap",
+};
+
 // Base-64 client-platform blob from the community API docs (value that works).
 const CLIENT_PLATFORM =
   "ew0KCSJwbGF0Zm9ybVR5cGUiOiAiUEMiLA0KCSJwbGF0Zm9ybU9TIjogIldpbmRvd3MiLA0KCSJwbGF0Zm9ybU9TVmVyc2lvbiI6ICIxMC4wLjE5MDQyLjEuMjU2LjY0Yml0IiwNCgkicGxhdGZvcm1DaGlwc2V0IjogIlVua25vd24iDQp9";
@@ -59,6 +70,18 @@ function jwtExp(jwt: string): number | null {
   }
 }
 
+function jwtClaims(jwt: string): any {
+  try {
+    const part = jwt.split(".")[1];
+    if (!part) return {};
+    const b64 = part.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+    return JSON.parse(atob(pad));
+  } catch {
+    return {};
+  }
+}
+
 // Current Riot client version, sourced live from valorant-api.com so the pd.*
 // calls never go stale across patches. Env override wins; cached 6h; the
 // hardcoded value is the offline fallback. The seller token is never sent here.
@@ -100,8 +123,11 @@ Deno.serve(async (req) => {
   }
   const token = String(body.accessToken || "").trim();
   const ent = String(body.entitlements || "").trim();
-  const region = String(body.region || "na").toLowerCase();
+  const claims = jwtClaims(token);
+  const autoRegion = REGION_CODE_TO_REGION[String(claims?.dat?.r || "").toUpperCase()];
+  const region = autoRegion || String(body.region || "na").toLowerCase();
   const shard = SHARDS[region] || "na";
+  const regionSource = autoRegion ? "token" : "manual";
   if (!token) return json({ ok: false, error: "accessToken is required" }, 400);
 
   // Validate shape + expiry before spending a Riot call, so the seller gets an
@@ -124,14 +150,13 @@ Deno.serve(async (req) => {
     "X-Riot-ClientPlatform": CLIENT_PLATFORM,
     "X-Riot-ClientVersion": clientVersion,
   };
-  if (ent) auth["X-Riot-Entitlements-JWT"] = ent;
 
-  const out: any = { ok: true, region, shard, errors: [] as string[] };
+  const out: any = { ok: true, region, shard, regionSource, errors: [] as string[] };
   const guard = async (key: string, fn: () => Promise<void>) => {
     try {
       await fn();
-    } catch {
-      out.errors.push(key);
+    } catch (e) {
+      out.errors.push(`${key} (${(e as Error)?.message || "error"})`);
     }
   };
 
@@ -147,61 +172,132 @@ Deno.serve(async (req) => {
     return json({ ok: false, error: "Riot rejected this access token (invalid, revoked, or wrong region). Re-copy a fresh token and try again." }, 401);
   }
 
+  // Derive the entitlements JWT server-side when the seller didn't paste one, so a
+  // single access-token paste is enough for a full import (fire-and-forget).
+  let entJwt = ent;
+  if (!entJwt) {
+    try {
+      const er = await fetch("https://entitlements.auth.riotgames.com/api/token/v1", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      });
+      if (er.ok) {
+        const ej = await er.json();
+        entJwt = String(ej.entitlements_token || "").trim();
+      }
+    } catch {
+      // leave entJwt empty; the no-ent path below explains what is missing
+    }
+  }
+  if (entJwt) auth["X-Riot-Entitlements-JWT"] = entJwt;
+
   const pd = (p: string) => `https://pd.${shard}.a.pvp.net${p}`;
 
-  await guard("loadout", async () => {
-    const j = await getJSON(
-      pd(`/personalization/v2/players/${out.puuid}/playerloadout`), auth);
-    out.level = j.Identity?.AccountLevel ?? null;
-    out.playerCard = j.Identity?.PlayerCardID || null;
-    out.playerTitle = j.Identity?.PlayerTitleID || null;
-    out.charms = (j.Guns || []).map((g: any) => g.CharmID).filter(Boolean);
-  });
-
-  await guard("wallet", async () => {
-    const j = await getJSON(pd(`/store/v1/wallet/${out.puuid}`), auth);
-    const b = j.Balances || {};
-    out.vp = b[CUR_VP] ?? 0;
-    out.rp = b[CUR_RP] ?? 0;
-  });
-
-  await guard("rank", async () => {
-    const j = await getJSON(pd(`/mmr/v1/players/${out.puuid}`), auth);
-    const qs = j.QueueSkills?.competitive;
-    const seasons: any[] = Object.values(qs?.SeasonalInfoBySeasonID || {});
-    const cur = j.LatestCompetitiveUpdate?.TierAfterUpdate;
-    const seasonTier = seasons.length
-      ? Math.max(...seasons.map(s => s.CompetitiveTier || 0))
-      : 0;
-    out.rankTier = cur ?? seasonTier;
-    out.rr = j.LatestCompetitiveUpdate?.RankedRatingAfterUpdate ?? 0;
-    out.wins = seasons.length
-      ? Math.max(...seasons.map(s => s.NumberOfWins || 0))
-      : 0;
-    // peak = highest tier number that has recorded wins in any season
-    let peak = out.rankTier || 0;
-    for (const s of seasons) {
-      for (const k of Object.keys(s.WinsByTier || {})) {
-        if ((s.WinsByTier[k] || 0) > 0) peak = Math.max(peak, Number(k) || 0);
+  if (entJwt) {
+    await guard("loadout", async () => {
+      const paths = [
+        `/personalization/v2/players/${out.puuid}/playerloadout`,
+        `/personalization/v1/players/${out.puuid}/playerloadout`,
+      ];
+      let j: any = null;
+      const fails: string[] = [];
+      const shardList = [shard, ...["na", "eu", "ap", "kr"].filter((s) => s !== shard)];
+      let usedShard = "";
+      for (const s of shardList) {
+        for (const p of paths) {
+          try {
+            j = await getJSON(`https://pd.${s}.a.pvp.net${p}`, auth);
+            usedShard = s;
+            break;
+          } catch (e) {
+            fails.push(`${s}/${p.includes("/v2/") ? "v2" : "v1"}:${(e as Error)?.message || "?"}`);
+          }
+        }
+        if (j) break;
       }
-    }
-    out.peakTier = peak;
-  });
+      if (usedShard) out.loadoutShard = usedShard;
+      if (!j) {
+        try {
+          const xp = await getJSON(pd(`/account-xp/v1/players/${out.puuid}`), auth);
+          out.level = xp.Progress?.Level ?? null;
+          return;
+        } catch {
+          throw new Error(fails.join(","));
+        }
+      }
+      out.level = j.Identity?.AccountLevel ?? null;
+      out.playerCard = j.Identity?.PlayerCardID || null;
+      out.playerTitle = j.Identity?.PlayerTitleID || null;
+      out.charms = (j.Guns || []).map((g: any) => g.CharmID).filter(Boolean);
+    });
 
-  if (ent) {
+    await guard("wallet", async () => {
+      const j = await getJSON(pd(`/store/v1/wallet/${out.puuid}`), auth);
+      const b = j.Balances || {};
+      out.vp = b[CUR_VP] ?? 0;
+      out.rp = b[CUR_RP] ?? 0;
+    });
+
+    await guard("rank", async () => {
+      const j = await getJSON(pd(`/mmr/v1/players/${out.puuid}`), auth);
+      const qs = j.QueueSkills?.competitive;
+      const seasons: any[] = Object.values(qs?.SeasonalInfoBySeasonID || {});
+      const cur = j.LatestCompetitiveUpdate?.TierAfterUpdate;
+      const seasonTier = seasons.length
+        ? Math.max(...seasons.map(s => s.CompetitiveTier || 0))
+        : 0;
+      out.rankTier = cur ?? seasonTier;
+      out.rr = j.LatestCompetitiveUpdate?.RankedRatingAfterUpdate ?? 0;
+      out.wins = seasons.length
+        ? Math.max(...seasons.map(s => s.NumberOfWins || 0))
+        : 0;
+      // peak = highest tier number that has recorded wins in any season
+      let peak = out.rankTier || 0;
+      for (const s of seasons) {
+        for (const k of Object.keys(s.WinsByTier || {})) {
+          if ((s.WinsByTier[k] || 0) > 0) peak = Math.max(peak, Number(k) || 0);
+        }
+      }
+      out.peakTier = peak;
+    });
+
+    const authNoEnt = { ...auth };
+    delete authNoEnt["X-Riot-Entitlements-JWT"];
+    const ids = (j: any, type: string) => {
+      const all = j?.EntitlementsByTypes || [];
+      const bucket = all.find((b: any) => b?.ItemTypeID === type);
+      if (bucket) return (bucket.Entitlements || []).map((e: any) => e.ItemID as string);
+      // A bulk response may carry several buckets; only accept an untagged single bucket.
+      if (all.length === 1) return (all[0]?.Entitlements || []).map((e: any) => e.ItemID as string);
+      return [];
+    };
     const owned = async (type: string) => {
-      const j = await getJSON(
-        pd(`/store/v1/entitlements/${out.puuid}/${type}`), auth);
-      return (j.EntitlementsByTypes?.[0]?.Entitlements || [])
-        .map((e: any) => e.ItemID as string);
+      const tries: [string, Record<string, string>][] = [
+        [`/store/v1/entitlements/${out.puuid}/${type}`, auth],
+        [`/store/v1/entitlements/${out.puuid}/${type}`, authNoEnt],
+        [`/store/v1/entitlements/${out.puuid}`, auth],
+        [`/store/v1/entitlements/${out.puuid}`, authNoEnt],
+      ];
+      for (const [p, h] of tries) {
+        try {
+          const got = ids(await getJSON(pd(p), h), type);
+          if (got.length) return got;
+        } catch {
+          // try the next variant
+        }
+      }
+      return [];
     };
     await guard("skins", async () => { out.skins = await owned(TYPE_SKINS); });
     await guard("buddiesOwned", async () => { out.buddiesOwned = await owned(TYPE_BUDDIES); });
     await guard("cardsOwned", async () => { out.cardsOwned = await owned(TYPE_CARDS); });
     await guard("variantsOwned", async () => { out.variantsOwned = await owned(TYPE_VARIANTS); });
   } else {
-    out.errors.push("owned-items (no entitlements token)");
+    out.errors.push("level, rank, wallet and owned items need the entitlements token, and auto-fetching it from your access token failed. Paste one manually in the second field and re-run.");
   }
+
+  const noProfile = out.level == null && !(out.skins || []).length && !out.vp && !out.rp && !out.rankTier;
+  if (noProfile) out.errors.push(`no Valorant profile found for this account on shard "${shard}" (no loadout, no inventory). Import with an account that has played Valorant.`);
 
   return json(out);
 });

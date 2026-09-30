@@ -716,6 +716,7 @@ function applyImport(j) {
     state.ownedLevels = ownedLevels;
     state.owned = {};
     CF.ALL_CATS.forEach(c => state.owned[c] = []);
+    CF.ALL_CATS.forEach(c => { state.picks[c] = []; });
     const union = [];
     SKIN_BY_ID.forEach(s => { if (ownedLevels[s.id]) union.push(s.id); });
     CF.CATS.forEach(c => {
@@ -723,6 +724,20 @@ function applyImport(j) {
     });
     state.owned['Flex'] = union;
     state.owned['Battlepass'] = union;
+    const used = new Set();
+    const scoreOf = (s) => {
+      const tr = TIER_RANK[CF.tierKey(s.tier)] || 0;
+      return (tr >= 3 ? 1000 - tr : 0) + ((s.maxLevel || 1) >= 2 ? 100 : 0) + (s.maxLevel || 1);
+    };
+    CF.CATS.forEach(c => {
+      const pool = (state.owned[c] || []).map((id) => SKIN_BY_ID.get(id)).filter(Boolean).filter((s) => !used.has(s.id));
+      if (!pool.length) return;
+      pool.sort((a, b) => scoreOf(b) - scoreOf(a) || a.name.localeCompare(b.name));
+      const best = pool[0];
+      used.add(best.id);
+      const lvl = state.ownedLevels[best.id] || 0;
+      state.picks[c].push({ id: best.id, weapon: best.weapon, name: best.name, tier: best.tier, icon: best.icon, ...(lvl >= 2 ? { level: lvl } : {}) });
+    });
     CF.ALL_CATS.forEach(c => state.picks[c].forEach(p => {
       const l = ownedLevels[p.id];
       if (l >= 2) p.level = l;
