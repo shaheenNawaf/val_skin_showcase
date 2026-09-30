@@ -193,8 +193,8 @@
       <h2 id="iTitle">Import account — Riot token</h2>
       <button id="iClose" aria-label="Close import">✕</button>
     </div>
-    <p class="inote">Paste your Riot <strong>access token</strong> (a JWT starting with <code>eyJ…</code>). You can also paste the full <strong>opt_in redirect URL</strong> — but copy it immediately, the <code>#access_token=…</code> part is stripped from the address bar within seconds — or the <strong>JSON</strong> from the local client's entitlements endpoint; the token (and entitlement) are picked out automatically. Add an entitlements token to also pull wallet, owned skins, buddies and cards.</p>
-    <p class="inote">CardForge imports level, rank, balances, your equipped player card and buddies, and unlocks an “Owned” filter in the skin, buddy and player-card pickers.</p>
+    <p class="inote">Paste your Riot <strong>access token</strong> (a JWT starting with <code>eyJ…</code>). You can also paste the full <strong>opt_in redirect URL</strong> — but copy it immediately, the <code>#access_token=…</code> part is stripped from the address bar within seconds — or the <strong>JSON</strong> from the local client's entitlements endpoint; the token (and entitlement) are picked out automatically. Paste just the access token — CardForge fetches the entitlements token for you automatically. Add one manually below only if auto-fetch fails.</p>
+    <p class="inote">From a single paste CardForge imports level, rank, balances, your equipped player card and buddies, plus your owned skins, variants, buddies and cards, and unlocks an “Owned” filter in the skin, buddy and player-card pickers.</p>
     <p class="inote">Tokens expire in ~1h, are sent only to the riot-import edge function over HTTPS, and are never stored or published.</p>
     <label class="ilabel" for="iRegion">Region</label>
     <select id="iRegion" class="iselect" aria-label="Account region">
@@ -207,7 +207,7 @@
     </select>
     <label class="ilabel" for="iToken">Access token</label>
     <textarea id="iToken" class="itoken" rows="3" placeholder="Riot access token (eyJ…), the opt_in URL, or the entitlements JSON"></textarea>
-    <label class="ilabel" for="iEnt">Entitlements token (optional — unlocks owned items + wallet)</label>
+    <label class="ilabel" for="iEnt">Entitlements token (optional — auto-fetched from your access token if left blank)</label>
     <input id="iEnt" class="itoken" type="text" placeholder="entitlements JWT">
     <div class="irow">
       <button id="iRun" class="primary">Import</button>
