@@ -37,6 +37,7 @@ let filterWeapon = '', filterTier = '', filterOwned = false, filterAnim = false,
 let lastTierCounts = {};
 let tierSel = new Set(['premium', 'ultra']);
 let tierAnim = false;
+let allPicks = null;
 let vpMuted = false;
 let pendingUpload = null, editSlug = null, lastFocus = null, exporting = false;
 
@@ -785,6 +786,7 @@ function applyImport(j) {
       if (l >= 2) p.level = l;
       else if (l === 1) delete p.level;
     }));
+    snapshotPicks();
   }
   const ownedSkins = SKIN_BY_ID ? [...new Set(Object.keys(state.ownedLevels))]
     .map(id => SKIN_BY_ID.get(id)).filter(Boolean) : [];
@@ -836,11 +838,29 @@ const TIER_CHIPS = [
   { key: 'ultra', label: 'Limited' },
   { key: 'exclusive', label: 'Melee' },
 ];
+const TIER_PRESETS = [
+  { id: 'prems', label: 'Premium only', tiers: ['premium'], anim: false },
+  { id: 'premlimited', label: 'Premium + Limited', tiers: ['premium', 'ultra'], anim: false },
+  { id: 'limited', label: 'Limited only', tiers: ['ultra'], anim: false },
+  { id: 'all', label: 'Everything', tiers: ['select', 'deluxe', 'premium', 'ultra', 'exclusive'], anim: false },
+  { id: 'anim', label: 'Animated only', tiers: ['select', 'deluxe', 'premium', 'ultra', 'exclusive'], anim: true },
+];
 function renderTierChips() {
   const box = CF.$('tierChips');
   if (!box) return;
   box.innerHTML = TIER_CHIPS.map(t => `<button type="button" data-tierkey="${t.key}" aria-pressed="${tierSel.has(t.key)}" style="--dot:var(--t-${t.key})"><i class="dot" style="background:var(--t-${t.key})"></i>${t.label}</button>`).join('')
     + `<button type="button" data-tierkey="anim" aria-pressed="${tierAnim}"><i class="dot" style="background:var(--c-accent)"></i>Animated</button>`;
+}
+function activePresetId() {
+  const cur = [...tierSel].sort().join(',');
+  const hit = TIER_PRESETS.find(p => p.tiers.slice().sort().join(',') === cur && p.anim === tierAnim);
+  return hit ? hit.id : '';
+}
+function renderTierPresets() {
+  const box = CF.$('tierPresets');
+  if (!box) return;
+  const active = activePresetId();
+  box.innerHTML = TIER_PRESETS.map(p => `<button type="button" data-preset="${p.id}" aria-pressed="${active === p.id}">${p.label}</button>`).join('');
 }
 function recountStats() {
   const all = CF.ALL_CATS.flatMap(c => state.picks[c] || []);
@@ -858,12 +878,17 @@ function recountStats() {
     if (el) el.textContent = v;
   });
 }
+function snapshotPicks() {
+  allPicks = {};
+  CF.CATS.forEach(c => { allPicks[c] = (state.picks[c] || []).slice(); });
+}
 function applyTierFilter() {
   const cap = Math.max(1, Math.min(40, parseInt(CF.$('tierCap').value, 10) || 8));
   CF.$('tierCap').value = String(cap);
   let before = 0, after = 0;
+  if (!allPicks) snapshotPicks();
   CF.CATS.forEach(c => {
-    const picks = state.picks[c] || [];
+    const picks = allPicks[c] || [];
     before += picks.length;
     const kept = picks.filter(p => {
       if (!tierSel.has(CF.tierKey(p.tier))) return false;
@@ -873,10 +898,12 @@ function applyTierFilter() {
     state.picks[c] = kept;
     after += kept.length;
   });
+  const total = CF.CATS.reduce((n, c) => n + (allPicks[c] || []).length, 0);
+  state.picks['Flex'] = state.picks['Flex'] || [];
   renderAll();
   recountStats();
-  CF.$('tierCount').textContent = `Showing ${after} of ${before} placed skins across ${CF.CATS.length} categories`;
-  CF.status(`Tier filter applied — ${after} of ${before} skins kept (max ${cap} per category).`, 'ok');
+  CF.$('tierCount').textContent = `Showing ${after} of ${total} owned skins across ${CF.CATS.length} categories`;
+  CF.status(`Tier filter applied — ${after} of ${total} skins kept (max ${cap} per category).`, 'ok');
 }
 CF.$('tierChips').addEventListener('click', e => {
   const b = e.target.closest('button[data-tierkey]');
@@ -886,14 +913,28 @@ CF.$('tierChips').addEventListener('click', e => {
   else if (tierSel.has(k)) tierSel.delete(k);
   else tierSel.add(k);
   renderTierChips();
+  renderTierPresets();
+  applyTierFilter();
+});
+CF.$('tierPresets').addEventListener('click', e => {
+  const b = e.target.closest('button[data-preset]');
+  if (!b) return;
+  const p = TIER_PRESETS.find(x => x.id === b.dataset.preset);
+  if (!p) return;
+  tierSel = new Set(p.tiers);
+  tierAnim = p.anim;
+  renderTierChips();
+  renderTierPresets();
   applyTierFilter();
 });
 CF.$('tierApply').addEventListener('click', applyTierFilter);
 CF.$('tierReset').addEventListener('click', () => {
   CF.ALL_CATS.forEach(c => { state.picks[c] = (state.owned[c] || []).map(id => SKIN_BY_ID.get(id)).filter(Boolean).map(s => ({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon, ...((state.ownedLevels[s.id] || 0) >= 2 ? { level: state.ownedLevels[s.id] } : {}) })); });
   tierSel = new Set(['premium', 'ultra']);
+  snapshotPicks();
   tierAnim = false;
   renderTierChips();
+  renderTierPresets();
   applyTierFilter();
 });
 
@@ -1193,6 +1234,7 @@ CF.initThemeSwitch();
 CF.initDisclaimerCollapse();
 renderAll();
 renderTierChips();
+renderTierPresets();
 recountStats();
 const fit = CF.makeFitter({ card, sizer: CF.$('sizer'), topbar: CF.$('topbar'), stage: CF.$('stage') });
 fit();

@@ -310,7 +310,15 @@ Deno.serve(async (req) => {
   }
 
   if (entJwt && out.level == null) {
-    out.errors.push("account level unavailable: neither playerloadout nor account-xp returned a level for this account");
+    try {
+      const xp = await getJSON(pd(`/account-xp/v1/players/${out.puuid}`), auth);
+      out.level = posNum(xp.Progress?.Level ?? xp.Progression?.Level ?? xp.level);
+    } catch (e) {
+      out.errors.push("account level unavailable: playerloadout returned no level and account-xp failed (" + ((e as Error)?.message || "?") + ")");
+    }
+    if (out.level == null) {
+      out.errors.push("account level unavailable: Riot returned no level for this account (it may have 'hide account level' enabled)");
+    }
   }
 
   const noProfile = out.level == null && !(out.skins || []).length && !out.vp && !out.rp && !out.rankTier;

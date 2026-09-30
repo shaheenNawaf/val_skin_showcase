@@ -161,3 +161,7 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 @keyframes ispin{to{transform:rotate(360deg)}}
 .pubswitch{display:flex;align-items:center;gap:8px;margin:10px 0 0;font-size:12px;color:var(--c-mut);cursor:pointer}
 .pubswitch input{width:15px;height:15px;accent-color:var(--c-accent-btn);cursor:pointer}
+.tb-presets{display:flex;gap:6px;flex-wrap:wrap;padding-right:10px;margin-right:4px;border-right:1px solid var(--c-line)}
+.tb-presets button{border:1px solid var(--c-accent-btn);background:transparent;color:var(--c-ink);font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:7px 11px;cursor:pointer}
+.tb-presets button:hover{background:var(--c-accent-btn);color:#fff}
+.tb-presets button[aria-pressed=true]{background:var(--c-accent-btn);color:#fff}
