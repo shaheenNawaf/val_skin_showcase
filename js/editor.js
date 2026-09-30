@@ -136,6 +136,7 @@ function modalVis({ search = true, filters = true, grid = true, variant = false,
   const mb = CF.$('mBody'); if (mb) mb.classList.toggle('noladder', !filters);
   mGrid.style.display = grid ? '' : 'none';
   CF.$('mVariant').hidden = !variant;
+  if (!variant) modal.querySelectorAll('video').forEach((v) => { try { v.pause(); } catch {} });
   modal.classList.toggle('variant-wide', variant);
   CF.$('mUpload').hidden = !upload;
 }
@@ -145,6 +146,9 @@ function openModal() {
   mSearch.focus();
 }
 function closeModal() {
+  modal.querySelectorAll('video').forEach((v) => {
+    try { v.pause(); } catch {}
+  });
   modal.hidden = true;
   if (lastFocus?.isConnected) lastFocus.focus();
 }
