@@ -4,7 +4,7 @@ export const DESIGN_W = 1920;
 export const DESIGN_H = 1080;
 export const CATS = ['Sidearms', 'SMGs', 'Shotguns', 'Rifles', 'Sniper Rifles', 'Machine Guns', 'Melees'];
 // free-slot groups: not tied to a weapon category, picker offers the whole catalog
-export const FREE_CATS = ['Flex', 'Battlepass'];
+export const FREE_CATS = ['Flex'];
 export const ALL_CATS = [...CATS, ...FREE_CATS];
 const TIER_ORDER = ['select', 'deluxe', 'premium', 'ultra', 'exclusive'];
 

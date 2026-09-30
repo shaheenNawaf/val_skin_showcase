@@ -740,7 +740,6 @@ function applyImport(j) {
       state.owned[c] = (DB[c] || []).filter(s => ownedLevels[s.id]).map(s => s.id);
     });
     state.owned['Flex'] = union;
-    state.owned['Battlepass'] = union;
     const used = new Set();
     const scoreOf = (s) => {
       const tr = TIER_RANK[CF.tierKey(s.tier)] || 0;

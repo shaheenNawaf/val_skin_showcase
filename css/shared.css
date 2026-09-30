@@ -112,7 +112,7 @@ grid-template-rows:1fr 1fr 1fr 1.1fr .6fr 1.35fr;
 grid-template-areas:
 "side smg  rifles sniper mg    flex"
 "side smg  rifles sniper mg    flex"
-"side shot rifles sniper bpass flex"
+"side shot rifles sniper mg    flex"
 "side shot rifles melee melee  melee"
 "side shot rifles melee melee  melee"
 "code stats stats  rank  pcard pcard"}
