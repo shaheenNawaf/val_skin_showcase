@@ -80,8 +80,14 @@ function hydrateRanks() {
     const row = card.querySelector(`.rankrow[data-rank="${key}"]`);
     if (!row) return;
     const badge = row.querySelector('.rankbadge');
-    if (state.ranks[key]) badge.src = state.ranks[key];
-    else badge.removeAttribute('src');
+    if (state.ranks[key]) {
+      badge.src = state.ranks[key];
+      badge.removeAttribute('hidden');
+      badge.style.display = '';
+    } else {
+      badge.removeAttribute('src');
+      badge.style.display = 'none';
+    }
     const txt = state.texts[key];
     if (txt != null) row.querySelector('b').textContent = txt;
   });
@@ -697,13 +703,17 @@ function applyImport(j) {
   if (j.rp != null) state.texts.rp = String(j.rp);
   if (j.rankTier) {
     const r = CF.rankByFlat(j.rankTier, RANKS);
-    if (r && r.name !== 'UNRANKED') { state.texts.crank = r.name; state.ranks.crank = r.icon || null; }
+    if (r && r.name !== 'UNRANKED') { state.texts.crank = r.name; const crankIcon = r.icon || (RANKS.find(x => x.name === r.name) || {}).icon || null; state.ranks.crank = crankIcon; }
   }
   if (j.peakTier) {
     const r = CF.rankByFlat(j.peakTier, RANKS);
-    if (r && r.name !== 'UNRANKED') { state.texts.prank = r.name; state.ranks.prank = r.icon || null; }
+    if (r && r.name !== 'UNRANKED') { state.texts.prank = r.name; const prankIcon = r.icon || (RANKS.find(x => x.name === r.name) || {}).icon || null; state.ranks.prank = prankIcon; }
   }
-  if (j.playerCard && CARDS[j.playerCard]) state.assets.pcard = CARDS[j.playerCard].wide;
+  if (j.playerCard) {
+    const wide = (CARDS[j.playerCard] || {}).wide ||
+      `https://media.valorant-api.com/playercards/${j.playerCard}/wideart.png`;
+    if (wide) state.assets.pcard = wide;
+  }
   const charmIcons = (j.charms || []).map(id => BUDDIES[id]).filter(Boolean);
   if (charmIcons.length) state.assets.buddies = charmIcons.slice(0, 12);
   if (j.skins) {
@@ -743,8 +753,24 @@ function applyImport(j) {
       if (l >= 2) p.level = l;
       else if (l === 1) delete p.level;
     }));
-    autoFillFlex();
   }
+  const ownedSkins = SKIN_BY_ID ? [...new Set(Object.keys(state.ownedLevels))]
+    .map(id => SKIN_BY_ID.get(id)).filter(Boolean) : [];
+  const bpSet = new Set((DB['Battlepass'] || []).map(s => s.id));
+  const keyOf = s => CF.tierKey(s.tier);
+  const counts = {
+    prems: ownedSkins.filter(s => ['premium', 'ultra', 'exclusive'].includes(keyOf(s))).length,
+    limited: ownedSkins.filter(s => ['ultra', 'exclusive'].includes(keyOf(s))).length,
+    semis: ownedSkins.filter(s => keyOf(s) === 'deluxe').length,
+    bpass: ownedSkins.filter(s => bpSet.has(s.id)).length,
+    anims: ownedSkins.filter(s => (state.ownedLevels[s.id] || 0) >= 2).length,
+  };
+  Object.keys(counts).forEach(k => {
+    const v = String(counts[k]).padStart(2, '0');
+    state.texts[k] = v;
+    const el = card.querySelector(`.stat b[data-key="${k}"]`);
+    if (el) el.textContent = v;
+  });
   if (j.variantsOwned) state.ownedVariants = j.variantsOwned.filter(u => CHROMA_MAP[u]);
   if (j.cardsOwned) state.ownedCards = j.cardsOwned.filter(u => CARDS[u]);
   if (j.buddiesOwned || j.charms) {
