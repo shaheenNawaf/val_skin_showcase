@@ -111,6 +111,11 @@ async function getClientVersion(): Promise<string> {
   return versionCache?.value || FALLBACK_CLIENT_VERSION;
 }
 
+function posNum(v: any): number | null {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ ok: false, error: "POST only" }, 405);
@@ -226,14 +231,15 @@ Deno.serve(async (req) => {
       if (!j) {
         try {
           const xp = await getJSON(pd(`/account-xp/v1/players/${out.puuid}`), auth);
-          out.level = xp.Progress?.Level ?? null;
+          out.level = posNum(xp.Progress?.Level ?? xp.Progression?.Level ?? xp.level);
+          if (out.level == null) out.errors.push("account level unavailable (neither playerloadout nor account-xp returned a level)");
           out.errors.push(`player card, title and gun buddies unavailable (playerloadout ${fails.slice(0, 6).join(" ")}); level came from account XP`);
           return;
         } catch {
           throw new Error(fails.join(","));
         }
       }
-      out.level = j.Identity?.AccountLevel ?? null;
+      out.level = posNum(j.Identity?.AccountLevel);
       out.playerCard = j.Identity?.PlayerCardID || null;
       out.playerTitle = j.Identity?.PlayerTitleID || null;
       out.charms = (j.Guns || []).map((g: any) => g.CharmID).filter(Boolean);
