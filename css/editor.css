@@ -153,3 +153,9 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 .tb-apply{border:1px solid var(--c-line);background:transparent;color:var(--c-ink);font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;padding:8px 13px;cursor:pointer}
 .tb-apply:hover{border-color:var(--c-mut)}
 .tb-count{margin-left:auto;font-size:11px;color:var(--c-mut)}
+.istatus{min-height:18px;margin:10px 0 0;font-size:12px;line-height:1.45;color:var(--c-mut)}
+.istatus[data-kind="busy"]{color:var(--c-ink);display:flex;align-items:center;gap:8px}
+.istatus[data-kind="busy"]::before{content:"";width:11px;height:11px;border:2px solid var(--c-line);border-top-color:var(--c-accent);border-radius:50%;animation:ispin .7s linear infinite;flex:0 0 auto}
+.istatus[data-kind="err"]{color:var(--c-accent)}
+.istatus[data-kind="ok"]{color:var(--c-ink)}
+@keyframes ispin{to{transform:rotate(360deg)}}

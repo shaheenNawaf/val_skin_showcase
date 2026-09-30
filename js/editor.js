@@ -586,6 +586,7 @@ CF.$('vDone').addEventListener('click', () => { if (pickerMode === 'variant') cl
 
 // ── riot token import (Explorant-style account pull) ────────────
 CF.$('importBtn').addEventListener('click', () => {
+  iStatus('');
   if (!supabase) {
     CF.status('Token import needs Supabase configured — see SETUP.md (riot-import).', 'err');
     return;
@@ -659,13 +660,27 @@ function parseTokenInput(raw) {
   return { token, entitlements };
 }
 
+function iStatus(text, kind) {
+  const el = CF.$('iStatus');
+  if (!el) return;
+  el.textContent = text || '';
+  if (kind) el.setAttribute('data-kind', kind);
+  else el.removeAttribute('data-kind');
+}
+
 CF.$('iRun').addEventListener('click', async () => {
   const btn = CF.$('iRun');
   const parsed = parseTokenInput(CF.$('iToken').value);
-  if (!parsed.token) { CF.status(parsed.message, 'err'); CF.$('iToken').focus(); return; }
+  if (!parsed.token) {
+    if (parsed.code === 'expired') { iStatus(''); importModal.hidden = true; CF.status(parsed.message, 'err'); }
+    else iStatus(parsed.message, 'err');
+    CF.$('iToken').focus();
+    return;
+  }
   const ent = CF.$('iEnt').value.trim() || parsed.entitlements || '';
   btn.disabled = true;
-  CF.status('Importing account…');
+  btn.textContent = 'Importing…';
+  iStatus('Importing account — checking your Riot ID, inventory and rank. This takes a few seconds.', 'busy');
   try {
     const r = await fetch(CONFIG.SUPABASE_URL + '/functions/v1/riot-import', {
       method: 'POST',
@@ -679,6 +694,7 @@ CF.$('iRun').addEventListener('click', async () => {
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !j.ok) throw new Error(j.error || ('HTTP ' + r.status));
     applyImport(j);
+    iStatus('');
     importModal.hidden = true;
     CF.$('iToken').value = '';
     CF.$('iEnt').value = '';
@@ -686,9 +702,12 @@ CF.$('iRun').addEventListener('click', async () => {
       (j.skins ? ` · ${j.skins.length} skins owned (${Object.values(state.ownedLevels).filter(l => l >= 2).length} animated)` : '') +
       (j.errors && j.errors.length ? ' · partial: ' + j.errors.join(', ') : '') + '.', 'ok');
   } catch (e) {
-    CF.status('Import failed: ' + (e.message || e), 'err');
+    const msg = 'Import failed: ' + (e.message || e);
+    if (/expired/i.test(e.message || '')) { iStatus(''); importModal.hidden = true; CF.status(msg, 'err'); }
+    else iStatus(msg, 'err');
   } finally {
     btn.disabled = false;
+    btn.textContent = 'Import';
   }
 });
 
