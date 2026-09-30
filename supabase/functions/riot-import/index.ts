@@ -195,23 +195,30 @@ Deno.serve(async (req) => {
 
   if (entJwt) {
     await guard("loadout", async () => {
+      const noEnt = { ...auth };
+      delete noEnt["X-Riot-Entitlements-JWT"];
       const paths = [
         `/personalization/v2/players/${out.puuid}/playerloadout`,
         `/personalization/v1/players/${out.puuid}/playerloadout`,
+        `/personalization/v3/players/${out.puuid}/playerloadout`,
       ];
+      const shardList = [shard, ...["na", "eu", "ap", "kr"].filter((s) => s !== shard)];
+      const headers: [string, Record<string, string>][] = [["ent", auth], ["noent", noEnt]];
       let j: any = null;
       const fails: string[] = [];
-      const shardList = [shard, ...["na", "eu", "ap", "kr"].filter((s) => s !== shard)];
       let usedShard = "";
       for (const s of shardList) {
         for (const p of paths) {
-          try {
-            j = await getJSON(`https://pd.${s}.a.pvp.net${p}`, auth);
-            usedShard = s;
-            break;
-          } catch (e) {
-            fails.push(`${s}/${p.includes("/v2/") ? "v2" : "v1"}:${(e as Error)?.message || "?"}`);
+          for (const [hName, h] of headers) {
+            try {
+              j = await getJSON(`https://pd.${s}.a.pvp.net${p}`, h);
+              usedShard = s;
+              break;
+            } catch (e) {
+              fails.push(`${s}/${p.split("/")[2]}/${hName}:${(e as Error)?.message || "?"}`);
+            }
           }
+          if (j) break;
         }
         if (j) break;
       }
@@ -220,6 +227,7 @@ Deno.serve(async (req) => {
         try {
           const xp = await getJSON(pd(`/account-xp/v1/players/${out.puuid}`), auth);
           out.level = xp.Progress?.Level ?? null;
+          out.errors.push(`player card, title and gun buddies unavailable (playerloadout ${fails.slice(0, 6).join(" ")}); level came from account XP`);
           return;
         } catch {
           throw new Error(fails.join(","));
