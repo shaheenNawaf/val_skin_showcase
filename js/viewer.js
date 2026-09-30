@@ -85,6 +85,21 @@ function renderListing(listing) {
       box.appendChild(img);
     });
   }
+
+  const p = payload;
+  const owned = (p.ownedCards || []).map((u) => ({ icon: `https://media.valorant-api.com/playercards/${u}/wideart.png`, name: 'Player card' }));
+  const host = document.querySelector('#allCards');
+  if (host) {
+    if (p.showAllCards && owned.length) {
+      host.hidden = false;
+      host.innerHTML = `<h4>Player cards (${owned.length})</h4><div class="cardgrid">` +
+        owned.map((c) => `<img loading="lazy" src="${CF.esc(c.icon)}" alt="${CF.esc(c.name || 'Player card')}" title="${CF.esc(c.name || '')}">`).join('') +
+        `</div>`;
+    } else {
+      host.hidden = true;
+      host.innerHTML = '';
+    }
+  }
 }
 
 // ── mobile-native layout (<=700px): same payload, readable single column ──

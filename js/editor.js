@@ -788,13 +788,11 @@ function applyImport(j) {
   }
   const ownedSkins = SKIN_BY_ID ? [...new Set(Object.keys(state.ownedLevels))]
     .map(id => SKIN_BY_ID.get(id)).filter(Boolean) : [];
-  const bpSet = new Set((DB['Battlepass'] || []).map(s => s.id));
   const keyOf = s => CF.tierKey(s.tier);
   const counts = {
     prems: ownedSkins.filter(s => ['premium', 'ultra', 'exclusive'].includes(keyOf(s))).length,
     limited: ownedSkins.filter(s => ['ultra', 'exclusive'].includes(keyOf(s))).length,
     semis: ownedSkins.filter(s => keyOf(s) === 'deluxe').length,
-    bpass: ownedSkins.filter(s => bpSet.has(s.id)).length,
     anims: ownedSkins.filter(s => (state.ownedLevels[s.id] || 0) >= 2).length,
   };
   Object.keys(counts).forEach(k => {
@@ -847,12 +845,10 @@ function renderTierChips() {
 function recountStats() {
   const all = CF.ALL_CATS.flatMap(c => state.picks[c] || []);
   const keyOf = p => CF.tierKey(p.tier);
-  const bpSet = new Set((DB['Battlepass'] || []).map(s => s.id));
   const counts = {
     prems: all.filter(p => ['premium', 'ultra', 'exclusive'].includes(keyOf(p))).length,
     limited: all.filter(p => keyOf(p) === 'ultra').length,
     semis: all.filter(p => keyOf(p) === 'deluxe').length,
-    bpass: all.filter(p => bpSet.has(p.id)).length,
     anims: all.filter(p => (p.level || 0) >= 2).length,
   };
   Object.keys(counts).forEach(k => {
@@ -1012,7 +1008,7 @@ CF.$('postBtn').addEventListener('click', () => {
   const txt = [
     `${t.code || ''} • ${t.vlogin || ''} • ${t.tag || ''}`,
     `LEVEL ${t.level || '?'} • ${t.crank || 'UNRANKED'} (peak ${t.prank || 'UNRANKED'})`,
-    `PREMIUM ${t.prems || '00'} | LIMITED ${t.limited || '00'} | SEMI PREM ${t.semis || '00'} | BATTLEPASS ${t.bpass || '00'} | ANIMATED ${t.anims || '00'}`,
+    `PREMIUM ${t.prems || '00'} | LIMITED ${t.limited || '00'} | SEMI PREM ${t.semis || '00'} | ANIMATED ${t.anims || '00'}`,
     `${t.wtr || ''} | ${t.receipts || ''} | ${t.owner || ''}`,
     `${t.cname || ''} | ${t.cstatus || ''} | ${t.date || ''}`,
     `${t.premier || ''} | ${t.vlink || ''} | ${t.price || ''}`,
@@ -1036,6 +1032,7 @@ function updateWm() {
 CF.$('saveBtn').addEventListener('click', () => {
   captureTexts();
   state.theme = document.documentElement.dataset.theme;
+  if (CF.$('showAllCards')) state.showAllCards = CF.$('showAllCards').checked;
   try {
     CF.writeJSON(DRAFT_KEY, state);
     CF.status('Draft saved.', 'ok');
@@ -1048,6 +1045,7 @@ CF.$('loadBtn').addEventListener('click', () => {
   const draft = CF.readJSON(DRAFT_KEY, null);
   if (draft) {
     Object.assign(state, {
+      showAllCards: draft.showAllCards || false,
       theme: draft.theme || 'protocol',
       texts: draft.texts || {},
       ranks: draft.ranks || { crank: null, prank: null },
@@ -1056,6 +1054,7 @@ CF.$('loadBtn').addEventListener('click', () => {
       owned: draft.owned || {},
       ownedLevels: draft.ownedLevels || {}, ownedVariants: draft.ownedVariants || [], ownedBuddies: draft.ownedBuddies || [], ownedCards: draft.ownedCards || []
     });
+    if (CF.$('showAllCards')) CF.$('showAllCards').checked = !!state.showAllCards;
     renderFromState();
     CF.status('Draft loaded.', 'ok');
     return;
@@ -1079,6 +1078,7 @@ function buildPayload() {
   state.theme = document.documentElement.dataset.theme;
   return {
     theme: state.theme,
+    showAllCards: !!CF.$('showAllCards') && CF.$('showAllCards').checked,
     texts: state.texts,
     ranks: state.ranks,
     picks: state.picks,
@@ -1172,6 +1172,7 @@ async function initEditMode() {
   editSlug = slug;
   const p = listing.payload || {};
   Object.assign(state, {
+    showAllCards: p.showAllCards || false,
     theme: listing.theme || p.theme || 'protocol',
     texts: p.texts || {},
     ranks: p.ranks || { crank: null, prank: null },
@@ -1180,6 +1181,7 @@ async function initEditMode() {
     owned: p.owned || {},
     ownedLevels: p.ownedLevels || {}, ownedVariants: p.ownedVariants || [], ownedBuddies: p.ownedBuddies || [], ownedCards: p.ownedCards || []
   });
+  if (CF.$('showAllCards')) CF.$('showAllCards').checked = !!state.showAllCards;
   renderFromState();
   updateWm();
   CF.$('publishBtn').textContent = supabase ? 'Update listing' : 'Republish';
