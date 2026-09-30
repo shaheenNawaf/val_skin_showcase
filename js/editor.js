@@ -35,6 +35,8 @@ let list = [], currentPool = [], currentCat = null, pickerMode = 'skin', rankRow
 const TIER_RANK = { select: 1, deluxe: 2, premium: 3, ultra: 4, exclusive: 5 };
 let filterWeapon = '', filterTier = '', filterOwned = false, filterAnim = false, tierOnly = false;
 let lastTierCounts = {};
+let tierSel = new Set(['premium', 'ultra']);
+let tierAnim = false;
 let vpMuted = false;
 let pendingUpload = null, editSlug = null, lastFocus = null, exporting = false;
 
@@ -810,6 +812,76 @@ document.addEventListener('keydown', e => {
   }
 });
 
+const TIER_CHIPS = [
+  { key: 'select', label: 'Select' },
+  { key: 'deluxe', label: 'Semi-prem' },
+  { key: 'premium', label: 'Premium' },
+  { key: 'ultra', label: 'Limited' },
+  { key: 'exclusive', label: 'Melee' },
+];
+function renderTierChips() {
+  const box = CF.$('tierChips');
+  if (!box) return;
+  box.innerHTML = TIER_CHIPS.map(t => `<button type="button" data-tierkey="${t.key}" aria-pressed="${tierSel.has(t.key)}" style="--dot:var(--t-${t.key})"><i class="dot" style="background:var(--t-${t.key})"></i>${t.label}</button>`).join('')
+    + `<button type="button" data-tierkey="anim" aria-pressed="${tierAnim}"><i class="dot" style="background:var(--c-accent)"></i>Animated</button>`;
+}
+function recountStats() {
+  const all = CF.ALL_CATS.flatMap(c => state.picks[c] || []);
+  const keyOf = p => CF.tierKey(p.tier);
+  const bpSet = new Set((DB['Battlepass'] || []).map(s => s.id));
+  const counts = {
+    prems: all.filter(p => ['premium', 'ultra', 'exclusive'].includes(keyOf(p))).length,
+    limited: all.filter(p => keyOf(p) === 'ultra').length,
+    semis: all.filter(p => keyOf(p) === 'deluxe').length,
+    bpass: all.filter(p => bpSet.has(p.id)).length,
+    anims: all.filter(p => (p.level || 0) >= 2).length,
+  };
+  Object.keys(counts).forEach(k => {
+    const v = String(counts[k]).padStart(2, '0');
+    state.texts[k] = v;
+    const el = card.querySelector(`.stat b[data-key="${k}"]`);
+    if (el) el.textContent = v;
+  });
+}
+function applyTierFilter() {
+  const cap = Math.max(1, Math.min(40, parseInt(CF.$('tierCap').value, 10) || 8));
+  CF.$('tierCap').value = String(cap);
+  let before = 0, after = 0;
+  CF.CATS.forEach(c => {
+    const picks = state.picks[c] || [];
+    before += picks.length;
+    const kept = picks.filter(p => {
+      if (!tierSel.has(CF.tierKey(p.tier))) return false;
+      if (tierAnim && (p.level || 0) < 2) return false;
+      return true;
+    }).slice(0, cap);
+    state.picks[c] = kept;
+    after += kept.length;
+  });
+  renderAll();
+  recountStats();
+  CF.$('tierCount').textContent = `Showing ${after} of ${before} placed skins across ${CF.CATS.length} categories`;
+  CF.status(`Tier filter applied — ${after} of ${before} skins kept (max ${cap} per category).`, 'ok');
+}
+CF.$('tierChips').addEventListener('click', e => {
+  const b = e.target.closest('button[data-tierkey]');
+  if (!b) return;
+  const k = b.dataset.tierkey;
+  if (k === 'anim') tierAnim = !tierAnim;
+  else if (tierSel.has(k)) tierSel.delete(k);
+  else tierSel.add(k);
+  renderTierChips();
+  applyTierFilter();
+});
+CF.$('tierApply').addEventListener('click', applyTierFilter);
+CF.$('tierReset').addEventListener('click', () => {
+  CF.ALL_CATS.forEach(c => { state.picks[c] = (state.owned[c] || []).map(id => SKIN_BY_ID.get(id)).filter(Boolean).map(s => ({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon, ...((state.ownedLevels[s.id] || 0) >= 2 ? { level: state.ownedLevels[s.id] } : {}) })); });
+  tierSel = new Set(['premium', 'ultra']);
+  tierAnim = false;
+  renderTierChips();
+  applyTierFilter();
+});
+
 // ── card interactions ─────────────────────────────────────────────
 card.addEventListener('click', e => {
   const auto = e.target.closest('[data-auto]');
@@ -1099,6 +1171,8 @@ async function initEditMode() {
 CF.initThemeSwitch();
 CF.initDisclaimerCollapse();
 renderAll();
+renderTierChips();
+recountStats();
 const fit = CF.makeFitter({ card, sizer: CF.$('sizer'), topbar: CF.$('topbar'), stage: CF.$('stage') });
 fit();
 

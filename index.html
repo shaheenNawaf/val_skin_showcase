@@ -45,6 +45,16 @@
   </div>
 </div>
 
+  <div class="tierbar" role="group" aria-label="Filter and limit which skins the card shows">
+    <span class="tb-label">Show</span>
+    <div class="tb-chips" id="tierChips"></div>
+    <label class="tb-cap" for="tierCap">Max per category</label>
+    <input id="tierCap" class="tb-num" type="number" min="1" max="40" value="8">
+    <button id="tierApply" class="tb-apply" type="button">Apply</button>
+    <button id="tierReset" class="tb-apply" type="button">Reset</button>
+    <span class="tb-count" id="tierCount"></span>
+  </div>
+
 <div id="stage"><div id="sizer"><div id="card">
   <div class="grid">
     <section class="panel" data-cat="Sidearms" style="grid-area:side">

@@ -232,7 +232,6 @@ Deno.serve(async (req) => {
         try {
           const xp = await getJSON(pd(`/account-xp/v1/players/${out.puuid}`), auth);
           out.level = posNum(xp.Progress?.Level ?? xp.Progression?.Level ?? xp.level);
-          if (out.level == null) out.errors.push("account level unavailable (neither playerloadout nor account-xp returned a level)");
           out.errors.push(`player card, title and gun buddies unavailable (playerloadout ${fails.slice(0, 6).join(" ")}); level came from account XP`);
           return;
         } catch {
@@ -308,6 +307,10 @@ Deno.serve(async (req) => {
     await guard("variantsOwned", async () => { out.variantsOwned = await owned(TYPE_VARIANTS); });
   } else {
     out.errors.push("level, rank, wallet and owned items need the entitlements token, and auto-fetching it from your access token failed. Paste one manually in the second field and re-run.");
+  }
+
+  if (entJwt && out.level == null) {
+    out.errors.push("account level unavailable: neither playerloadout nor account-xp returned a level for this account");
   }
 
   const noProfile = out.level == null && !(out.skins || []).length && !out.vp && !out.rp && !out.rankTier;
