@@ -15,6 +15,7 @@ const mcard = CF.$('mcard');
 let totalViews = 0;
 const SPV_LIST = [];
 let spv = null, spvFocus = null;
+let spvMuted = false;
 
 function updateBadge(nowViewing) {
   const badge = CF.$('viewBadge');
@@ -243,20 +244,25 @@ function paintSpv() {
   const c = chromas[spv.k];
   const ld = levels[spv.lv - 1] || {};
   const cv = spv.k > 0 && c && c.video;
-  const videoSrc = cv || ld.video || '';
-  const cap = cv ? `${c.label} showcase · L${spv.lv}` : `Level ${spv.lv} animation`;
+  const muteBtn = `<button class="spv-mute" type="button" data-spv-mute aria-pressed="${spvMuted}" aria-label="${spvMuted ? 'Unmute preview' : 'Mute preview'}">${spvMuted ? '🔇' : '🔊'}</button>`;
 
-  CF.$('spvLevel').innerHTML = failed
-    ? `<img src="${CF.esc(fallbackIcon)}" alt=""><span class="spv-cap">Preview unavailable — showing card art.</span>`
-    : (videoSrc
-      ? `<video src="${CF.esc(videoSrc)}" muted loop autoplay playsinline></video><span class="spv-cap">${CF.esc(cap)}</span>`
-      : `<img src="${CF.esc(fallbackIcon)}" alt=""><span class="spv-cap">${CF.esc(cap)}</span>`);
+  let levelHtml;
+  if (cv) {
+    levelHtml = `<video src="${CF.esc(cv)}" loop autoplay playsinline></video><span class="spv-cap">${CF.esc(`${c.label} showcase · L${spv.lv}`)}</span>${muteBtn}`;
+  } else if (ld.video) {
+    const cap = spv.k > 0 ? `Level ${spv.lv} animation · default colorway footage` : `Level ${spv.lv} animation`;
+    levelHtml = `<video src="${CF.esc(ld.video)}" loop autoplay playsinline></video><span class="spv-cap">${CF.esc(cap)}</span>${muteBtn}`;
+  } else {
+    levelHtml = '<p class="spv-note">No preview footage for this skin.</p>';
+  }
+  CF.$('spvLevel').innerHTML = levelHtml;
 
   CF.$('spvChroma').innerHTML = failed
     ? `<img src="${CF.esc(fallbackIcon)}" alt=""><span class="spv-cap">Preview unavailable — showing card art.</span>`
     : (c
       ? `<img src="${CF.esc(c.full || c.icon || fallbackIcon)}" alt="${CF.esc(c.label || '')}"><span class="spv-cap">${CF.esc(c.label || 'Standard')}</span>`
       : `<img src="${CF.esc(fallbackIcon)}" alt=""><span class="spv-cap">Standard</span>`);
+  const vv = CF.$('spvLevel').querySelector('video'); if (vv) vv.play().then(() => {}).catch(() => { vv.muted = true; spvMuted = true; const mb = CF.$('spvLevel').querySelector('[data-spv-mute]'); if (mb) { mb.textContent = '🔇'; mb.setAttribute('aria-pressed', 'false'); mb.setAttribute('aria-label', 'Unmute preview'); } });
 }
 
 function openSpv(cell) {
@@ -280,8 +286,8 @@ function openSpv(cell) {
       const d = j && j.data;
       if (!d) throw new Error('no data');
       spv.chromas = (d.chromas || []).map(c => {
-        const label = String(c.displayName || '').replace(/\r?\n/g, ' ').trim();
-        const m = label.match(/Level\s+(\d+)/);
+        const label = CF.chromaLabel(pick.name, c.displayName);
+        const m = String(c.displayName || '').match(/Level\s+(\d+)/);
         return { label, icon: c.displayIcon || '', full: c.fullRender || '', video: c.streamedVideo || '', sw: c.swatch || '', unlock: m ? +m[1] : null };
       });
       spv.levels = (d.levels || []).map((l, i) => ({ level: i + 1, video: l.streamedVideo || '' }));
@@ -323,6 +329,18 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && spv) { closeSpv(); return; }
   const open = e.target.closest ? e.target.closest('.spv-open') : null;
   if ((e.key === 'Enter' || e.key === ' ') && open) { e.preventDefault(); openSpv(open); }
+});
+CF.$('spvLevel')?.addEventListener('click', e => {
+  const mute = e.target.closest('[data-spv-mute]');
+  if (mute && spv) {
+    spvMuted = !spvMuted;
+    const vid = CF.$('spvLevel').querySelector('video');
+    if (vid) vid.muted = spvMuted;
+    mute.textContent = spvMuted ? '🔇' : '🔊';
+    mute.setAttribute('aria-pressed', String(spvMuted));
+    mute.setAttribute('aria-label', spvMuted ? 'Unmute preview' : 'Mute preview');
+    return;
+  }
 });
 
 // ── presence ──────────────────────────────────────────────────────

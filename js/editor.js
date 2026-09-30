@@ -35,6 +35,7 @@ let list = [], currentPool = [], currentCat = null, pickerMode = 'skin', rankRow
 const TIER_RANK = { select: 1, deluxe: 2, premium: 3, ultra: 4, exclusive: 5 };
 let filterWeapon = '', filterTier = '', filterOwned = false, filterAnim = false, tierOnly = false;
 let lastTierCounts = {};
+let vpMuted = false;
 let pendingUpload = null, editSlug = null, lastFocus = null, exporting = false;
 
 // Old #l=<id> viewer links move to the unified viewer page.
@@ -79,8 +80,14 @@ function hydrateRanks() {
     const row = card.querySelector(`.rankrow[data-rank="${key}"]`);
     if (!row) return;
     const badge = row.querySelector('.rankbadge');
-    if (state.ranks[key]) badge.src = state.ranks[key];
-    else badge.removeAttribute('src');
+    if (state.ranks[key]) {
+      badge.src = state.ranks[key];
+      badge.removeAttribute('hidden');
+      badge.style.display = '';
+    } else {
+      badge.removeAttribute('src');
+      badge.style.display = 'none';
+    }
     const txt = state.texts[key];
     if (txt != null) row.querySelector('b').textContent = txt;
   });
@@ -129,6 +136,7 @@ function modalVis({ search = true, filters = true, grid = true, variant = false,
   const mb = CF.$('mBody'); if (mb) mb.classList.toggle('noladder', !filters);
   mGrid.style.display = grid ? '' : 'none';
   CF.$('mVariant').hidden = !variant;
+  modal.classList.toggle('variant-wide', variant);
   CF.$('mUpload').hidden = !upload;
 }
 function openModal() {
@@ -191,6 +199,7 @@ function openRankPicker(btn) {
 function paintChips() {
   document.querySelectorAll('#mWeapons .chip').forEach(c => {
     if (c.dataset.owned !== undefined) c.classList.toggle('active', filterOwned);
+    else if (c.dataset.allcards !== undefined) c.classList.toggle('active', !filterOwned);
     else c.classList.toggle('active', !filterOwned && (c.dataset.w || '') === filterWeapon);
   });
   document.querySelectorAll('#mTiers .chip').forEach(c => {
@@ -213,6 +222,7 @@ function paintLadder(countsByTier) {
 
 function renderGrid() {
   const q = mSearch.value.toLowerCase();
+  if (pickerMode !== 'card') mGrid.parentElement.querySelector('.gridcap')?.remove();
   if (pickerMode === 'rank') {
     list = RANKS.filter(r => !q || r.name.toLowerCase().includes(q));
     CF.$('mCount').textContent = list.length + ' results';
@@ -245,8 +255,11 @@ function renderGrid() {
     CF.$('mCount').textContent = list.length + ' results';
     mGrid.innerHTML = list.map((c, i) => {
       const active = !!shown && c.wide === shown;
-      return `<button class="item" data-i="${i}"${active ? ' aria-label="' + CF.esc(c.name) + ', currently shown"' : ''}>${active ? '<i class="cnt">✓</i>' : ''}${ownedSet.has(c.uuid) ? '<i class="ownlv">owned</i>' : ''}<img loading="lazy" src="${CF.esc(c.icon)}" alt=""><b>${CF.esc(c.name)}</b><span>player card</span></button>`;
+      return `<button class="item cardcell" data-i="${i}"${active ? ' aria-label="' + CF.esc(c.name) + ', currently shown"' : ''}>${active ? '<i class="cnt">✓</i>' : ''}${ownedSet.has(c.uuid) ? '<i class="ownlv">owned</i>' : ''}<img loading="lazy" src="${CF.esc(c.icon)}" alt=""><b>${CF.esc(c.name)}</b><span>Player card</span></button>`;
     }).join('') || '<p class="none">No matches.</p>';
+    if (!mGrid.parentElement.querySelector('.gridcap')) {
+      mGrid.insertAdjacentHTML('afterend', '<p class="gridcap">Player card</p>');
+    }
     return;
   }
   const counts = {};
@@ -303,9 +316,19 @@ function paintVariantPreview() {
   const k = p.variant ? chromas.findIndex(c => c.icon === p.variant.icon) : 0;
   const c = chromas[Math.max(0, k)];
   const cv = k > 0 && chromas[k] && chromas[k].video;
-  CF.$('vpLevel').innerHTML = cv ? `<video src="${CF.esc(chromas[k].video)}" muted loop autoplay playsinline></video><span class="vpnote">${CF.esc(chromas[k].label || '')} showcase · L${lv}</span>` : (ld && ld.video ? `<video src="${CF.esc(ld.video)}" muted loop autoplay playsinline></video><span class="vpnote">Level ${lv} animation</span>` : (s.icon ? `<img src="${CF.esc(s.icon)}" alt=""><span class="vpnote">static preview — level animations load with the live API catalog</span>` : '<span class="vpnote">no preview</span>'));
+  const mute = `<button class="vp-mute" type="button" data-vp-mute aria-pressed="${vpMuted ? 'true' : 'false'}" aria-label="${vpMuted ? 'Unmute preview' : 'Mute preview'}">${vpMuted ? '🔇' : '🔊'}</button>`;
+  let levelHtml;
+  if (cv) {
+    levelHtml = `<video src="${CF.esc(chromas[k].video)}" loop autoplay playsinline></video>${mute}<span class="vpnote">${CF.esc(chromas[k].label || '')} showcase · L${lv}</span>`;
+  } else if (ld && ld.video) {
+    levelHtml = `<video src="${CF.esc(ld.video)}" loop autoplay playsinline></video>${mute}<span class="vpnote">Level ${lv} animation${k > 0 ? ' · default colorway footage' : ''}</span>`;
+  } else {
+    levelHtml = '<span class="vpnote">No preview footage for this skin.</span>';
+  }
+  CF.$('vpLevel').innerHTML = levelHtml;
   CF.$('vpChroma').innerHTML = c ? `<img src="${CF.esc(c.full || c.icon)}" alt="${CF.esc(c.label || '')}"><span class="vpnote">${CF.esc(c.label || '')}</span>` : '<span class="vpnote">no colorways</span>';
   CF.$('vPrev').hidden = !(levels.length > 1 || chromas.length > 1);
+  const vv = CF.$('vpLevel').querySelector('video'); if (vv) vv.play().then(() => {}).catch(() => { vv.muted = true; vpMuted = true; const mb = CF.$('vpLevel').querySelector('[data-vp-mute]'); if (mb) { mb.textContent = '🔇'; mb.setAttribute('aria-pressed', 'false'); mb.setAttribute('aria-label', 'Unmute preview'); } });
 }
 
 function ensureRichSkin(s) {
@@ -399,19 +422,20 @@ function openCardPicker() {
   if (!CARDS_LIST.length) { CF.status('Player-card database still loading — try again in a moment.', 'info'); return; }
   pickerMode = 'card';
   currentPool = CARDS_LIST;
-  filterOwned = false;
+  filterOwned = (state.ownedCards || []).length > 0;
   CF.$('mTitle').textContent = 'Choose a player card';
   CF.$('mCount').textContent = '';
   modalVis({ search: true, filters: true, grid: true, upload: true });
   CF.$('mLadder').style.display = 'none';
   CF.$('mBody').classList.add('noladder');
   const ownedN = (state.ownedCards || []).length;
-  CF.$('mWeapons').innerHTML = ownedN
-    ? `<button class="chip" data-owned="1">Owned (${ownedN})</button>`
-    : '';
+  CF.$('mWeapons').innerHTML =
+    (ownedN ? `<button class="chip" data-owned="1">Owned (${ownedN})</button>` : '') +
+    '<button class="chip" data-allcards="1">All cards</button>';
   CF.$('mTiers').style.display = 'none';
   CF.$('mAddOwned').hidden = true;
   mSearch.value = '';
+  paintChips();
   renderGrid();
   openModal();
 }
@@ -428,6 +452,7 @@ function applyCard(c) {
 // ── modal events ──────────────────────────────────────────────────
 CF.$('mWeapons').addEventListener('click', e => {
   const c = e.target.closest('.chip'); if (!c) return;
+  if (c.dataset.allcards !== undefined) { filterOwned = false; paintChips(); renderGrid(); return; }
   if (c.dataset.owned !== undefined) { filterOwned = !filterOwned; paintChips(); renderGrid(); return; }
   filterWeapon = c.dataset.w || ''; paintChips(); renderGrid();
 });
@@ -532,6 +557,18 @@ CF.$('vChromas').addEventListener('click', e => {
   });
   CF.$('vLevels').querySelectorAll('.chip').forEach(x => x.classList.toggle('active', +x.dataset.lv === (p.level || 1)));
   paintVariantPreview();
+});
+CF.$('vpLevel').addEventListener('click', e => {
+  const mute = e.target.closest('[data-vp-mute]');
+  if (mute) {
+    vpMuted = !vpMuted;
+    const v = CF.$('vpLevel').querySelector('video');
+    if (v) v.muted = vpMuted;
+    mute.textContent = vpMuted ? '🔇' : '🔊';
+    mute.setAttribute('aria-pressed', vpMuted ? 'true' : 'false');
+    mute.setAttribute('aria-label', vpMuted ? 'Unmute preview' : 'Mute preview');
+    return;
+  }
 });
 CF.$('vRemove').addEventListener('click', () => {
   if (pickerMode !== 'variant') return;
@@ -673,13 +710,17 @@ function applyImport(j) {
   if (j.rp != null) state.texts.rp = String(j.rp);
   if (j.rankTier) {
     const r = CF.rankByFlat(j.rankTier, RANKS);
-    if (r && r.name !== 'UNRANKED') { state.texts.crank = r.name; state.ranks.crank = r.icon || null; }
+    if (r && r.name !== 'UNRANKED') { state.texts.crank = r.name; const crankIcon = r.icon || (RANKS.find(x => x.name === r.name) || {}).icon || null; state.ranks.crank = crankIcon; }
   }
   if (j.peakTier) {
     const r = CF.rankByFlat(j.peakTier, RANKS);
-    if (r && r.name !== 'UNRANKED') { state.texts.prank = r.name; state.ranks.prank = r.icon || null; }
+    if (r && r.name !== 'UNRANKED') { state.texts.prank = r.name; const prankIcon = r.icon || (RANKS.find(x => x.name === r.name) || {}).icon || null; state.ranks.prank = prankIcon; }
   }
-  if (j.playerCard && CARDS[j.playerCard]) state.assets.pcard = CARDS[j.playerCard].wide;
+  if (j.playerCard) {
+    const wide = (CARDS[j.playerCard] || {}).wide ||
+      `https://media.valorant-api.com/playercards/${j.playerCard}/wideart.png`;
+    if (wide) state.assets.pcard = wide;
+  }
   const charmIcons = (j.charms || []).map(id => BUDDIES[id]).filter(Boolean);
   if (charmIcons.length) state.assets.buddies = charmIcons.slice(0, 12);
   if (j.skins) {
@@ -692,6 +733,7 @@ function applyImport(j) {
     state.ownedLevels = ownedLevels;
     state.owned = {};
     CF.ALL_CATS.forEach(c => state.owned[c] = []);
+    CF.ALL_CATS.forEach(c => { state.picks[c] = []; });
     const union = [];
     SKIN_BY_ID.forEach(s => { if (ownedLevels[s.id]) union.push(s.id); });
     CF.CATS.forEach(c => {
@@ -699,13 +741,44 @@ function applyImport(j) {
     });
     state.owned['Flex'] = union;
     state.owned['Battlepass'] = union;
+    const used = new Set();
+    const scoreOf = (s) => {
+      const tr = TIER_RANK[CF.tierKey(s.tier)] || 0;
+      return (tr >= 3 ? 1000 - tr : 0) + ((s.maxLevel || 1) >= 2 ? 100 : 0) + (s.maxLevel || 1);
+    };
+    CF.CATS.forEach(c => {
+      const pool = (state.owned[c] || []).map((id) => SKIN_BY_ID.get(id)).filter(Boolean).filter((s) => !used.has(s.id));
+      if (!pool.length) return;
+      pool.sort((a, b) => scoreOf(b) - scoreOf(a) || a.name.localeCompare(b.name));
+      pool.forEach(s => {
+        used.add(s.id);
+        const lvl = state.ownedLevels[s.id] || 0;
+        state.picks[c].push({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon, ...(lvl >= 2 ? { level: lvl } : {}) });
+      });
+    });
     CF.ALL_CATS.forEach(c => state.picks[c].forEach(p => {
       const l = ownedLevels[p.id];
       if (l >= 2) p.level = l;
       else if (l === 1) delete p.level;
     }));
-    autoFillFlex();
   }
+  const ownedSkins = SKIN_BY_ID ? [...new Set(Object.keys(state.ownedLevels))]
+    .map(id => SKIN_BY_ID.get(id)).filter(Boolean) : [];
+  const bpSet = new Set((DB['Battlepass'] || []).map(s => s.id));
+  const keyOf = s => CF.tierKey(s.tier);
+  const counts = {
+    prems: ownedSkins.filter(s => ['premium', 'ultra', 'exclusive'].includes(keyOf(s))).length,
+    limited: ownedSkins.filter(s => ['ultra', 'exclusive'].includes(keyOf(s))).length,
+    semis: ownedSkins.filter(s => keyOf(s) === 'deluxe').length,
+    bpass: ownedSkins.filter(s => bpSet.has(s.id)).length,
+    anims: ownedSkins.filter(s => (state.ownedLevels[s.id] || 0) >= 2).length,
+  };
+  Object.keys(counts).forEach(k => {
+    const v = String(counts[k]).padStart(2, '0');
+    state.texts[k] = v;
+    const el = card.querySelector(`.stat b[data-key="${k}"]`);
+    if (el) el.textContent = v;
+  });
   if (j.variantsOwned) state.ownedVariants = j.variantsOwned.filter(u => CHROMA_MAP[u]);
   if (j.cardsOwned) state.ownedCards = j.cardsOwned.filter(u => CARDS[u]);
   if (j.buddiesOwned || j.charms) {
