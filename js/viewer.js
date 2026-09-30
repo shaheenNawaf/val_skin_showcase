@@ -100,6 +100,29 @@ function renderListing(listing) {
       host.innerHTML = '';
     }
   }
+  const hint = document.querySelector('#cardsHint');
+  const pcard = card.querySelector('.pcard');
+  if (hint && pcard) {
+    if (p.showAllCards && owned.length) {
+      const r = pcard.getBoundingClientRect();
+      const host2 = pcard.offsetParent || pcard.parentElement;
+      hint.hidden = false;
+      hint.textContent = `View all ${owned.length} player card${owned.length === 1 ? '' : 's'}`;
+      hint.style.left = (r.left - host2.getBoundingClientRect().left + r.width / 2) + 'px';
+      hint.style.top = (r.top - host2.getBoundingClientRect().top + r.height / 2) + 'px';
+      if (!hint.dataset.wired) {
+        hint.dataset.wired = '1';
+        hint.addEventListener('click', () => {
+          const open = host.hidden === true;
+          host.hidden = !open;
+          if (open) host.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          hint.textContent = open ? 'Hide player cards' : `View all ${owned.length} player card${owned.length === 1 ? '' : 's'}`;
+        });
+      }
+    } else {
+      hint.hidden = true;
+    }
+  }
 }
 
 // ── mobile-native layout (<=700px): same payload, readable single column ──

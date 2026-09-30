@@ -22,6 +22,9 @@
 .allcards h4{margin:0 0 10px;font:700 10px var(--font-display);letter-spacing:.2em;text-transform:uppercase;color:var(--mut)}
 .allcards .cardgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
 .allcards .cardgrid img{width:100%;aspect-ratio:3/2;object-fit:cover;border:1px solid var(--c-line-soft)}
+.cards-hint{position:absolute;transform:translate(-50%,-50%);z-index:6;display:flex;align-items:center;gap:7px;padding:7px 13px;background:rgba(8,11,15,.82);border:1px solid var(--c-line);color:var(--c-ink);font:700 10px var(--font-display);letter-spacing:.16em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+.cards-hint:hover{border-color:var(--c-accent);color:#fff}
+.cards-hint[hidden]{display:none}
 </style>
 <script src="js/vendor/supabase.js" defer></script>
 <script src="js/config.js"></script>
@@ -127,7 +130,9 @@
     </div>
   </div>
   <div class="wstrip"><span>Card Forge</span><span data-wm="slug">Listing</span><span data-wm="stamp"></span></div>
-</div></div></div>
+</div>
+<button id="cardsHint" class="cards-hint" type="button" hidden></button>
+</div></div>
 
 <main id="mcard" aria-label="Listing details (mobile layout)"></main>
 
