@@ -435,6 +435,7 @@ function openCardPicker() {
   CF.$('mTiers').style.display = 'none';
   CF.$('mAddOwned').hidden = true;
   mSearch.value = '';
+  paintChips();
   renderGrid();
   openModal();
 }
