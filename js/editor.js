@@ -199,6 +199,7 @@ function openRankPicker(btn) {
 function paintChips() {
   document.querySelectorAll('#mWeapons .chip').forEach(c => {
     if (c.dataset.owned !== undefined) c.classList.toggle('active', filterOwned);
+    else if (c.dataset.allcards !== undefined) c.classList.toggle('active', !filterOwned);
     else c.classList.toggle('active', !filterOwned && (c.dataset.w || '') === filterWeapon);
   });
   document.querySelectorAll('#mTiers .chip').forEach(c => {
@@ -221,6 +222,7 @@ function paintLadder(countsByTier) {
 
 function renderGrid() {
   const q = mSearch.value.toLowerCase();
+  if (pickerMode !== 'card') mGrid.parentElement.querySelector('.gridcap')?.remove();
   if (pickerMode === 'rank') {
     list = RANKS.filter(r => !q || r.name.toLowerCase().includes(q));
     CF.$('mCount').textContent = list.length + ' results';
@@ -253,8 +255,11 @@ function renderGrid() {
     CF.$('mCount').textContent = list.length + ' results';
     mGrid.innerHTML = list.map((c, i) => {
       const active = !!shown && c.wide === shown;
-      return `<button class="item" data-i="${i}"${active ? ' aria-label="' + CF.esc(c.name) + ', currently shown"' : ''}>${active ? '<i class="cnt">✓</i>' : ''}${ownedSet.has(c.uuid) ? '<i class="ownlv">owned</i>' : ''}<img loading="lazy" src="${CF.esc(c.icon)}" alt=""><b>${CF.esc(c.name)}</b><span>player card</span></button>`;
+      return `<button class="item cardcell" data-i="${i}"${active ? ' aria-label="' + CF.esc(c.name) + ', currently shown"' : ''}>${active ? '<i class="cnt">✓</i>' : ''}${ownedSet.has(c.uuid) ? '<i class="ownlv">owned</i>' : ''}<img loading="lazy" src="${CF.esc(c.icon)}" alt=""><b>${CF.esc(c.name)}</b><span>Player card</span></button>`;
     }).join('') || '<p class="none">No matches.</p>';
+    if (!mGrid.parentElement.querySelector('.gridcap')) {
+      mGrid.insertAdjacentHTML('afterend', '<p class="gridcap">Player card</p>');
+    }
     return;
   }
   const counts = {};
@@ -417,16 +422,16 @@ function openCardPicker() {
   if (!CARDS_LIST.length) { CF.status('Player-card database still loading — try again in a moment.', 'info'); return; }
   pickerMode = 'card';
   currentPool = CARDS_LIST;
-  filterOwned = false;
+  filterOwned = (state.ownedCards || []).length > 0;
   CF.$('mTitle').textContent = 'Choose a player card';
   CF.$('mCount').textContent = '';
   modalVis({ search: true, filters: true, grid: true, upload: true });
   CF.$('mLadder').style.display = 'none';
   CF.$('mBody').classList.add('noladder');
   const ownedN = (state.ownedCards || []).length;
-  CF.$('mWeapons').innerHTML = ownedN
-    ? `<button class="chip" data-owned="1">Owned (${ownedN})</button>`
-    : '';
+  CF.$('mWeapons').innerHTML =
+    (ownedN ? `<button class="chip" data-owned="1">Owned (${ownedN})</button>` : '') +
+    '<button class="chip" data-allcards="1">All cards</button>';
   CF.$('mTiers').style.display = 'none';
   CF.$('mAddOwned').hidden = true;
   mSearch.value = '';
@@ -446,6 +451,7 @@ function applyCard(c) {
 // ── modal events ──────────────────────────────────────────────────
 CF.$('mWeapons').addEventListener('click', e => {
   const c = e.target.closest('.chip'); if (!c) return;
+  if (c.dataset.allcards !== undefined) { filterOwned = false; paintChips(); renderGrid(); return; }
   if (c.dataset.owned !== undefined) { filterOwned = !filterOwned; paintChips(); renderGrid(); return; }
   filterWeapon = c.dataset.w || ''; paintChips(); renderGrid();
 });
