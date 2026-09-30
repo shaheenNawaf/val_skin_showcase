@@ -743,10 +743,11 @@ function applyImport(j) {
       const pool = (state.owned[c] || []).map((id) => SKIN_BY_ID.get(id)).filter(Boolean).filter((s) => !used.has(s.id));
       if (!pool.length) return;
       pool.sort((a, b) => scoreOf(b) - scoreOf(a) || a.name.localeCompare(b.name));
-      const best = pool[0];
-      used.add(best.id);
-      const lvl = state.ownedLevels[best.id] || 0;
-      state.picks[c].push({ id: best.id, weapon: best.weapon, name: best.name, tier: best.tier, icon: best.icon, ...(lvl >= 2 ? { level: lvl } : {}) });
+      pool.forEach(s => {
+        used.add(s.id);
+        const lvl = state.ownedLevels[s.id] || 0;
+        state.picks[c].push({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon, ...(lvl >= 2 ? { level: lvl } : {}) });
+      });
     });
     CF.ALL_CATS.forEach(c => state.picks[c].forEach(p => {
       const l = ownedLevels[p.id];
