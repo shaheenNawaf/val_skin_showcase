@@ -105,41 +105,47 @@ function renderListing(listing) {
   const grid = document.querySelector('#cardsGrid');
   const hint = document.querySelector('#cardsHint');
   const mcard = document.querySelector('#mcard');
-  // the mobile layout has no .pcard, and #stage (the hint's ancestor) is display:none there
-  const pcard = [...document.querySelectorAll('.pcard')].find((el) => el.getBoundingClientRect().width > 0);
   const showHint = !!(p.showAllCards && owned.length);
   if (hint) {
     hint.hidden = !showHint;
     if (showHint) {
       hint.textContent = `View all ${owned.length} player card${owned.length === 1 ? '' : 's'}`;
-      if (pcard) {
-        // desktop: overlay the player card. this math is verified correct - do not alter it.
-        hint.dataset.where = 'desktop';
-        hint.classList.remove('is-inline');
-        const r = pcard.getBoundingClientRect();
-        const host2 = pcard.offsetParent || pcard.parentElement;
-        hint.style.left = (r.left - host2.getBoundingClientRect().left + r.width / 2) + 'px';
-        hint.style.top = (r.top - host2.getBoundingClientRect().top + r.height / 2) + 'px';
-      } else if (mcard && hint.dataset.where !== 'mobile') {
-        // mobile: #stage is display:none here, so the button must move out of it. It must be
-        // a SIBLING of #mcard, never a child: renderMobile() runs straight after this function
-        // and does mcard.innerHTML = MOBILE_SKELETON, which would destroy a child.
-        hint.classList.add('is-inline');
-        hint.style.left = '';
-        hint.style.top = '';
-        mcard.insertAdjacentElement('afterend', hint);
-        hint.dataset.where = 'mobile';
-      } else {
-        // another card layout is active (e.g. the alternate "spread" view): there is no
-        // player card to sit on, and #mcard is hidden, so keep the button in place and let
-        // it flow inline instead of hanging on stale absolute coordinates.
-        if (hint.dataset.where !== 'inline') {
+      const mcardShown = () => !!mcard && mcard.getBoundingClientRect().width > 0;
+      const placeHint = () => {
+        const live = [...document.querySelectorAll('.pcard')].find((el) => el.getBoundingClientRect().width > 0);
+        if (live) {
+          // overlay the player card. this math is verified correct - do not alter it.
+          hint.dataset.where = 'desktop';
+          hint.classList.remove('is-inline');
+          const r = live.getBoundingClientRect();
+          const host2 = live.offsetParent || live.parentElement;
+          hint.style.left = (r.left - host2.getBoundingClientRect().left + r.width / 2) + 'px';
+          hint.style.top = (r.top - host2.getBoundingClientRect().top + r.height / 2) + 'px';
+        } else if (mcardShown()) {
+          // #stage is display:none on mobile, so the button must move out of it. It must be a
+          // SIBLING of #mcard, never a child: renderMobile() runs straight after this function
+          // and does mcard.innerHTML = MOBILE_SKELETON, which would destroy a child.
+          if (hint.dataset.where !== 'mobile') {
+            hint.classList.add('is-inline');
+            hint.style.left = '';
+            hint.style.top = '';
+            mcard.insertAdjacentElement('afterend', hint);
+            hint.dataset.where = 'mobile';
+          }
+        } else if (hint.dataset.where !== 'inline') {
+          // a card layout with no player card is active (e.g. the M4 spread). there is nothing
+          // to sit on, so stop floating on stale absolute coordinates and flow inline instead.
           hint.dataset.where = 'inline';
           hint.classList.add('is-inline');
           hint.style.left = '';
           hint.style.top = '';
         }
-      }
+      };
+      placeHint();
+      // the card layout is applied AFTER this function returns, so the player card can appear or
+      // vanish underneath us. Re-check once it has settled. Both guards above are idempotent.
+      requestAnimationFrame(placeHint);
+      setTimeout(placeHint, 350);
       if (!hint.dataset.wired) {
         hint.dataset.wired = '1';
         hint.addEventListener('click', openCardsModal);
