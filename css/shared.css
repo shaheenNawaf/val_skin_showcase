@@ -121,8 +121,8 @@ grid-template-areas:
 .panel h3::before{content:"";display:inline-block;width:7px;height:10px;background:var(--accent);transform:skewX(-20deg);margin-right:9px}
 .slots{display:flex;flex-direction:column;height:100%;gap:6px;flex:1;min-height:0;overflow:hidden}
 .panel[data-cat="Melees"] .slots{flex-direction:row}
-.panel[data-cat="Melees"] .skin,.panel[data-cat="Melees"] .slotbox.empty{width:auto;min-width:0}
-.skin{position:relative;flex:1 1 0;min-height:0;width:100%;overflow:hidden;border:1px solid var(--line);
+.panel[data-cat="Melees"] .skin,.panel[data-cat="Melees"] .slotbox.empty{width:auto;min-width:64px}
+.skin{position:relative;flex:1 1 0;min-height:64px;width:100%;overflow:hidden;border:1px solid var(--line);
 background:
 radial-gradient(120% 100% at 50% 0%,var(--sheen),transparent 60%),
 linear-gradient(180deg,var(--box-hi),var(--box));
@@ -135,7 +135,7 @@ clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,va
 @media (hover:none){.skin .rm{display:block}}
 .slotbox{position:relative;border:1px solid var(--line);overflow:hidden;
 background:radial-gradient(120% 100% at 50% 0%,var(--sheen-soft),transparent 60%),var(--box)}
-.slotbox.empty{flex:1 1 0;min-height:0;border-style:dashed;background:var(--tint);display:flex;align-items:center;justify-content:center}
+.slotbox.empty{flex:1 1 0;min-height:64px;border-style:dashed;background:var(--tint);display:flex;align-items:center;justify-content:center}
 .add{margin-top:6px;width:100%;background:var(--tint);border:1px solid var(--line);color:var(--mut);padding:6px;font:700 13px 'Chakra Petch',sans-serif;letter-spacing:.2em;cursor:pointer;text-transform:uppercase;
 clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 .add:hover{color:var(--accent);border-color:var(--accent)}

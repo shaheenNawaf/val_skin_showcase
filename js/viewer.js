@@ -143,7 +143,6 @@ const MOBILE_SKELETON = `
     <div class="mstat"><label>PREMIUM</label><b data-m="prems">42</b></div>
     <div class="mstat mlimited"><label>LIMITED</label><b data-m="limited">02</b></div>
     <div class="mstat"><label>SEMI PREM</label><b data-m="semis">00</b></div>
-    <div class="mstat"><label>BATTLEPASS</label><b data-m="bpass">10</b></div>
     <div class="mstat"><label>ANIMATED</label><b data-m="anims">00</b></div>
   </div>
   <div class="minforow"><span data-m="wtr">WTR: YES</span><span data-m="receipts">RECEIPTS: YES</span><span data-m="owner">0TH OWNER</span></div>

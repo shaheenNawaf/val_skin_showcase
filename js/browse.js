@@ -131,8 +131,7 @@ function normalize(r) {
     rankNow: { name: r.crank_name || 'UNRANKED', icon: r.crank_icon || '', tier: rankTier(r.crank_name) },
     rankPeak: { name: r.prank_name || 'UNRANKED', icon: r.prank_icon || '', tier: rankTier(r.prank_name) },
     stats: {
-      skins: r.skins || 0, premium: r.prems || 0, limited: r.limited || 0, animated: r.anims || 0,
-      battlepass: r.bpass || 0, level: r.level || 0, vp: r.vp || 0, rp: r.rp || 0, kc: r.kc || 0
+      skins: r.skins || 0, premium: r.prems || 0, limited: r.limited || 0, animated: r.anims || 0, level: r.level || 0, vp: r.vp || 0, rp: r.rp || 0, kc: r.kc || 0
     },
     flags: {
       wtr: /yes/i.test(r.wtr || ''), receipts: /yes/i.test(r.receipts || ''),
@@ -252,7 +251,6 @@ function chipsGrid(l) {
 function chipsList(l) {
   let c = '<span class="chip">' + esc(l.stats.skins) + ' SKINS</span><span class="chip">' + esc(l.stats.premium) + ' PREMIUM</span>';
   if (l.stats.animated > 0) c += '<span class="chip">' + esc(l.stats.animated) + ' ANIMATED</span>';
-  c += '<span class="chip">' + esc(l.stats.battlepass) + ' BP</span>';
   if (l.flags.wtr) c += '<span class="chip">WTR</span>';
   if (l.flags.receipts) c += '<span class="chip">RECEIPTS</span>';
   return c;
@@ -805,7 +803,7 @@ async function load() {
         slug: r.slug, title: r.title, code: r.code, theme: r.theme,
         views: r.views, skins: r.skins, updated_at: r.updated_at,
         price: null, negotiable: false,
-        prems: null, limited: null, anims: null, bpass: null, level: null,
+        prems: null, limited: null, anims: null, level: null,
         vp: null, rp: null, kc: null,
         crank_name: '', prank_name: '', crank_icon: '', prank_icon: '',
         vlogin: '', tag: '', link: '', wtr: '', receipts: '', owner: '', picks_top: {}

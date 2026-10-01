@@ -712,23 +712,6 @@ CF.$('iRun').addEventListener('click', async () => {
   }
 });
 
-function autoFillFlex() {
-  const onCard = new Set(CF.ALL_CATS.flatMap(c => state.picks[c].map(p => p.id)));
-  const cand = [];
-  SKIN_BY_ID.forEach(s => {
-    if (onCard.has(s.id)) return;
-    const lvl = state.ownedLevels[s.id] || 0;
-    if (!lvl) return;
-    const tr = TIER_RANK[CF.tierKey(s.tier)] || 0;
-    const prem = tr >= 3 ? tr : 0;
-    if (prem || (s.maxLevel || 1) >= 2) cand.push({ s, lvl, prem });
-  });
-  cand.sort((a, b) => b.prem - a.prem || a.s.name.localeCompare(b.s.name));
-  cand.slice(0, 24).forEach(({ s, lvl }) => {
-    state.picks.Flex.push({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon, ...(lvl >= 2 ? { level: lvl } : {}) });
-  });
-}
-
 function applyImport(j) {
   if (j.level != null) state.texts.level = String(j.level);
   if (j.name) state.texts.vlogin = j.tag ? j.name + '#' + j.tag : j.name;
@@ -885,11 +868,10 @@ function snapshotPicks() {
 function applyTierFilter() {
   const cap = Math.max(1, Math.min(40, parseInt(CF.$('tierCap').value, 10) || 8));
   CF.$('tierCap').value = String(cap);
-  let before = 0, after = 0;
+  let after = 0;
   if (!allPicks) snapshotPicks();
   CF.CATS.forEach(c => {
     const picks = allPicks[c] || [];
-    before += picks.length;
     const kept = picks.filter(p => {
       if (!tierSel.has(CF.tierKey(p.tier))) return false;
       if (tierAnim && (p.level || 0) < 2) return false;
