@@ -78,6 +78,18 @@ v1.0.0 · e02ca52 · 2026-09-26 · main
 
 To bump the released version, edit `"version"` in `package.json`. To preview the stamp locally: `npm run build && npx http-server dist`.
 
+## Card layouts (density modes)
+
+Large inventories no longer squish: the card picks a layout per listing.
+
+- **M1 Tiles (default for small/medium):** category panels; panels flip from rows to tile grids with `+N MORE` chips when rows would get unreadable.
+- **M4 Catalog (default for large):** multi-page spread — page 1 is a mosaic overview (category cells sized by share), then justified catalog pages that fill the canvas edge-to-edge. Export produces a **ZIP of one 3840×2160 PNG per page**.
+- **M2 Showcase (optional):** top-N skins per category as named rows, overflow deferred to a chip that jumps to the catalog.
+
+**Auto rule:** `premium-tier count >= 20 OR total skins >= 50` → M4, else M1. Sellers override per listing via the editor's layout selector (AUTO / TILES / SHOWCASE / CATALOG); the choice is stored in the listing payload. On published listings, buyers get the seller's default plus a TILES / SHOWCASE / CATALOG switcher and `?view=` / `?page=` URL params.
+
+Prototypes and measurement history: `prototypes/density.html` (harness) and `UIUX-AUDIT.md`.
+
 ## Notes & limitations
 
 - Listings carry no authentication: anyone with the share link can view (by design); only the browser holding the edit token can update a listing.

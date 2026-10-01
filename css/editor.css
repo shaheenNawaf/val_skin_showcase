@@ -165,3 +165,11 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 .tb-presets button{border:1px solid var(--c-accent-btn);background:transparent;color:var(--c-ink);font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:7px 11px;cursor:pointer}
 .tb-presets button:hover{background:var(--c-accent-btn);color:#fff}
 .tb-presets button[aria-pressed=true]{background:var(--c-accent-btn);color:#fff}
+
+#layoutSel{background:var(--c-surface);border:1px solid var(--c-line);color:var(--c-mut);font:600 10px 'Chakra Petch',sans-serif;letter-spacing:.14em;padding:7px 6px;cursor:pointer}
+#layoutSel:focus-visible{box-shadow:inset 0 0 0 2px var(--c-accent)}
+#pageNav{display:flex;align-items:center;gap:6px}
+#pageNav[hidden]{display:none}
+#pageNav button{background:var(--c-surface);border:1px solid var(--c-line);color:var(--c-mut);width:26px;height:26px;font:700 14px/1 'Chakra Petch',sans-serif;cursor:pointer}
+#pageNav button:hover{color:var(--c-ink);border-color:var(--c-mut)}
+#pageNav b{font:700 10px 'Chakra Petch',sans-serif;letter-spacing:.12em;color:var(--c-mut)}

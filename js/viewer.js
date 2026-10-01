@@ -1,6 +1,7 @@
 // CardForge viewer — renders a published listing from Supabase (public share
 // links) or, as a fallback, from this browser's localStorage.
 import * as CF from './shared.js';
+import { applyLayout, resolveLayout } from './layouts.js';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -16,6 +17,9 @@ let totalViews = 0;
 const SPV_LIST = [];
 let spv = null, spvFocus = null;
 let spvMuted = false;
+let viewMode = null;
+let viewPage = 1;
+let currentListing = null;
 
 function updateBadge(nowViewing) {
   const badge = CF.$('viewBadge');
@@ -30,6 +34,16 @@ function skinCell(s, spi) {
   return `<span${attrs}><img src="${CF.esc(src)}" alt="${CF.esc(label)}" title="${CF.esc(label)}">${s.level >= 2 ? `<i class="lv">LV${s.level}</i>` : ''}</span>`;
 }
 
+function openCardsModal() {
+  const m = document.getElementById('cardsModal');
+  if (!m) return;
+  m.hidden = false;
+  m.querySelector('.spv-close')?.focus();
+}
+function closeCardsModal() {
+  const m = document.getElementById('cardsModal');
+  if (m) m.hidden = true;
+}
 function renderListing(listing) {
   const payload = listing.payload || {};
   const theme = listing.theme || payload.theme || 'protocol';
@@ -88,41 +102,59 @@ function renderListing(listing) {
 
   const p = payload;
   const owned = (p.ownedCards || []).map((u) => ({ icon: `https://media.valorant-api.com/playercards/${u}/wideart.png`, name: 'Player card' }));
-  const host = document.querySelector('#allCards');
-  if (host) {
-    if (p.showAllCards && owned.length) {
-      host.hidden = false;
-      host.innerHTML = `<h4>Player cards (${owned.length})</h4><div class="cardgrid">` +
-        owned.map((c) => `<img loading="lazy" src="${CF.esc(c.icon)}" alt="${CF.esc(c.name || 'Player card')}" title="${CF.esc(c.name || '')}">`).join('') +
-        `</div>`;
-    } else {
-      host.hidden = true;
-      host.innerHTML = '';
-    }
-  }
+  const grid = document.querySelector('#cardsGrid');
   const hint = document.querySelector('#cardsHint');
-  const pcard = card.querySelector('.pcard');
-  if (hint && pcard) {
-    if (p.showAllCards && owned.length) {
-      const r = pcard.getBoundingClientRect();
-      const host2 = pcard.offsetParent || pcard.parentElement;
-      hint.hidden = false;
+  const mcard = document.querySelector('#mcard');
+  // the mobile layout has no .pcard, and #stage (the hint's ancestor) is display:none there
+  const pcard = [...document.querySelectorAll('.pcard')].find((el) => el.getBoundingClientRect().width > 0);
+  const showHint = !!(p.showAllCards && owned.length);
+  if (hint) {
+    hint.hidden = !showHint;
+    if (showHint) {
       hint.textContent = `View all ${owned.length} player card${owned.length === 1 ? '' : 's'}`;
-      hint.style.left = (r.left - host2.getBoundingClientRect().left + r.width / 2) + 'px';
-      hint.style.top = (r.top - host2.getBoundingClientRect().top + r.height / 2) + 'px';
+      if (pcard) {
+        // desktop: overlay the player card. this math is verified correct - do not alter it.
+        hint.dataset.where = 'desktop';
+        hint.classList.remove('is-inline');
+        const r = pcard.getBoundingClientRect();
+        const host2 = pcard.offsetParent || pcard.parentElement;
+        hint.style.left = (r.left - host2.getBoundingClientRect().left + r.width / 2) + 'px';
+        hint.style.top = (r.top - host2.getBoundingClientRect().top + r.height / 2) + 'px';
+      } else if (mcard && hint.dataset.where !== 'mobile') {
+        // mobile: #stage is display:none here, so the button must move out of it. It must be
+        // a SIBLING of #mcard, never a child: renderMobile() runs straight after this function
+        // and does mcard.innerHTML = MOBILE_SKELETON, which would destroy a child.
+        hint.classList.add('is-inline');
+        hint.style.left = '';
+        hint.style.top = '';
+        mcard.insertAdjacentElement('afterend', hint);
+        hint.dataset.where = 'mobile';
+      } else {
+        // another card layout is active (e.g. the alternate "spread" view): there is no
+        // player card to sit on, and #mcard is hidden, so keep the button in place and let
+        // it flow inline instead of hanging on stale absolute coordinates.
+        if (hint.dataset.where !== 'inline') {
+          hint.dataset.where = 'inline';
+          hint.classList.add('is-inline');
+          hint.style.left = '';
+          hint.style.top = '';
+        }
+      }
       if (!hint.dataset.wired) {
         hint.dataset.wired = '1';
-        hint.addEventListener('click', () => {
-          const open = host.hidden === true;
-          host.hidden = !open;
-          if (open) host.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          hint.textContent = open ? 'Hide player cards' : `View all ${owned.length} player card${owned.length === 1 ? '' : 's'}`;
-        });
+        hint.addEventListener('click', openCardsModal);
       }
-    } else {
-      hint.hidden = true;
     }
   }
+  if (grid) {
+    grid.innerHTML = showHint
+      ? owned.map((c) => `<img loading="lazy" src="${CF.esc(c.icon)}" alt="${CF.esc(c.name || 'Player card')}" title="${CF.esc(c.name || '')}">`).join('')
+      : '';
+  }
+  const cmTitle = document.getElementById('cardsModalTitle');
+  const cmSub = document.getElementById('cardsModalSub');
+  if (cmTitle) cmTitle.textContent = `Player cards (${owned.length})`;
+  if (cmSub) cmSub.textContent = showHint ? 'Full collection published by the seller' : '';
 }
 
 // ── mobile-native layout (<=700px): same payload, readable single column ──
@@ -258,6 +290,57 @@ function renderMobile(listing) {
   if (wmStamp) wmStamp.textContent = new Date().toISOString().slice(0, 10);
 }
 
+// ── buyer view switcher + catalog paging ──────────────────────────
+function viewRefresh(listing) {
+  const payload = listing.payload || {};
+  const auto = resolveLayout(payload);
+  const mode = viewMode || auto;
+  const r = applyLayout(CF.$('card'), payload, mode, viewPage, { editable: false, gotoCatalog: true });
+  viewPage = Math.min(viewPage, r.pages);
+  document.querySelectorAll('#viewSwitch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === mode)));
+  const nav = CF.$('viewPageNav');
+  nav.hidden = mode !== 'm4';
+  CF.$('vpgLabel').textContent = 'PAGE ' + viewPage + '/' + r.pages;
+  CF.$('vpgPrev').disabled = viewPage <= 1;
+  CF.$('vpgNext').disabled = viewPage >= r.pages;
+}
+
+function syncUrl() {
+  const u = new URL(location.href);
+  if (viewMode) u.searchParams.set('view', viewMode);
+  else u.searchParams.delete('view');
+  if (viewPage > 1) u.searchParams.set('page', String(viewPage));
+  else u.searchParams.delete('page');
+  window.history.replaceState(null, '', u);
+}
+
+CF.$('viewSwitch')?.addEventListener('click', e => {
+  const btn = e.target.closest('button[data-view]');
+  if (!btn) return;
+  viewMode = btn.dataset.view;
+  viewPage = 1;
+  viewRefresh(currentListing);
+  syncUrl();
+});
+CF.$('vpgPrev')?.addEventListener('click', () => {
+  viewPage--;
+  viewRefresh(currentListing);
+  syncUrl();
+});
+CF.$('vpgNext')?.addEventListener('click', () => {
+  viewPage++;
+  viewRefresh(currentListing);
+  syncUrl();
+});
+card?.addEventListener('click', e => {
+  const g = e.target.closest('[data-goto="m4"]');
+  if (!g) return;
+  viewMode = 'm4';
+  viewPage = 1;
+  viewRefresh(currentListing);
+  syncUrl();
+});
+
 // ── skin inspect overlay (preview-only; never mutates picks/listing) ──
 function paintSpv() {
   if (!spv) return;
@@ -362,8 +445,17 @@ document.addEventListener('click', e => {
   const chBtn = e.target.closest('[data-ch]');
   if (chBtn && spv) { spv.k = +chBtn.dataset.ch; paintSpv(); }
 });
+const cardsModalEl = document.getElementById('cardsModal');
+if (cardsModalEl) {
+  cardsModalEl.querySelector('.spv-close')?.addEventListener('click', closeCardsModal);
+  cardsModalEl.addEventListener('click', (e) => { if (e.target === cardsModalEl) closeCardsModal(); });
+}
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && spv) { closeSpv(); return; }
+  if (e.key === 'Escape') {
+    const cme = document.getElementById('cardsModal');
+    if (cme && !cme.hidden) { closeCardsModal(); return; }
+    if (spv) { closeSpv(); return; }
+  }
   const open = e.target.closest ? e.target.closest('.spv-open') : null;
   if ((e.key === 'Enter' || e.key === ' ') && open) { e.preventDefault(); openSpv(open); }
 });
@@ -428,6 +520,11 @@ if (!slug) {
   } else {
     renderListing(listing);
     renderMobile(listing);
+    currentListing = listing;
+    viewMode = new URLSearchParams(location.search).get('view');
+    if (viewMode && !['m1', 'm2', 'm4'].includes(viewMode)) viewMode = null;
+    viewPage = Math.max(1, parseInt(new URLSearchParams(location.search).get('page') || '1', 10) || 1);
+    viewRefresh(listing);
     totalViews = Number(listing.views) || 0;
     CF.status('Listing loaded.', 'ok');
 

@@ -1,5 +1,6 @@
 // CardForge editor — card builder, PNG export, draft storage, listing publish.
 import * as CF from './shared.js';
+import { applyLayout, resolveLayout } from './layouts.js';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -28,6 +29,8 @@ const state = {
   owned: {},
   ownedLevels: {}, ownedVariants: [], ownedBuddies: [], ownedCards: []
 };
+state.layout = 'auto';
+state.page = 1;
 
 let DB = {}, TIERS = [], RANKS = [], BUDDIES = {}, CARDS = {}, SKIN_BY_ID = new Map(), LEVEL_MAP = {}, CHROMA_MAP = {}, BUDDIES_LIST = [], BUDDY_BY_ANY = {}, CARDS_LIST = [];
 let catalogSource = 'api';
@@ -69,7 +72,7 @@ function renderPanel(cat, { animateLast = false } = {}) {
     skins[skins.length - 1]?.classList.add('added');
   }
 }
-const renderAll = (opts) => CF.ALL_CATS.forEach(c => renderPanel(c, opts));
+const renderAll = (opts) => { CF.ALL_CATS.forEach(c => renderPanel(c, opts)); refreshLayout(); };
 
 function hydrateTexts() {
   card.querySelectorAll('[data-key]').forEach(el => {
@@ -301,6 +304,7 @@ function addSkin(cat, s, chroma) {
   const lvl = (state.ownedLevels || {})[s.id] || 0;
   state.picks[cat].push({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: chroma ? chroma.icon : s.icon, ...(chroma ? { level: chroma.unlock || s.maxLevel || 2, variant: { name: chroma.label, icon: chroma.icon } } : (lvl >= 2 ? { level: lvl } : {})) });
   renderPanel(cat, { animateLast: true });
+  refreshLayout();
 }
 
 function applyRank(r) {
@@ -311,6 +315,7 @@ function applyRank(r) {
   if (r.icon) badge.src = r.icon;
   else badge.removeAttribute('src');
   closeModal();
+  refreshLayout();
 }
 
 function paintVariantPreview() {
@@ -423,6 +428,7 @@ function addBuddy(b) {
   img.src = b.icon;
   img.alt = 'Gun buddy';
   box.appendChild(img);
+  refreshLayout();
 }
 
 function openCardPicker() {
@@ -454,6 +460,7 @@ function applyCard(c) {
   pc.style.backgroundImage = `url("${c.wide}")`;
   pc.querySelector('.hint')?.remove();
   closeModal();
+  refreshLayout();
 }
 
 // ── modal events ──────────────────────────────────────────────────
@@ -502,6 +509,7 @@ CF.$('mAddOwned').addEventListener('click', () => {
     }
   });
   renderPanel(currentCat);
+  refreshLayout();
   renderGrid();
 });
 mGrid.addEventListener('click', e => {
@@ -542,6 +550,7 @@ CF.$('vLevels').addEventListener('click', e => {
   renderPanel(variantCat);
   CF.$('vLevels').querySelectorAll('.chip').forEach(x => x.classList.toggle('active', +x.dataset.lv === (p.level || 1)));
   paintVariantPreview();
+  refreshLayout();
 });
 CF.$('vChromas').addEventListener('click', e => {
   const b = e.target.closest('.vchroma'); if (!b || pickerMode !== 'variant') return;
@@ -564,6 +573,7 @@ CF.$('vChromas').addEventListener('click', e => {
   });
   CF.$('vLevels').querySelectorAll('.chip').forEach(x => x.classList.toggle('active', +x.dataset.lv === (p.level || 1)));
   paintVariantPreview();
+  refreshLayout();
 });
 CF.$('vpLevel').addEventListener('click', e => {
   const mute = e.target.closest('[data-vp-mute]');
@@ -582,8 +592,9 @@ CF.$('vRemove').addEventListener('click', () => {
   const arr = state.picks[variantCat];
   if (arr && arr[variantIdx]) { arr.splice(variantIdx, 1); renderPanel(variantCat); }
   closeModal();
+  refreshLayout();
 });
-CF.$('vDone').addEventListener('click', () => { if (pickerMode === 'variant') closeModal(); });
+CF.$('vDone').addEventListener('click', () => { if (pickerMode === 'variant') closeModal(); refreshLayout(); });
 
 // ── riot token import (Explorant-style account pull) ────────────
 CF.$('importBtn').addEventListener('click', () => {
@@ -702,6 +713,7 @@ CF.$('iRun').addEventListener('click', async () => {
     CF.status(`Imported ${j.name || 'account'}#${j.tag || ''} — level ${j.level ?? '?'}` +
       (j.skins ? ` · ${j.skins.length} skins owned (${Object.values(state.ownedLevels).filter(l => l >= 2).length} animated)` : '') +
       (j.errors && j.errors.length ? ' · partial: ' + j.errors.join(', ') : '') + '.', 'ok');
+    refreshLayout();
   } catch (e) {
     const msg = 'Import failed: ' + (e.message || e);
     if (/expired/i.test(e.message || '')) { iStatus(''); importModal.hidden = true; CF.status(msg, 'err'); }
@@ -950,6 +962,7 @@ card.addEventListener('click', e => {
         const i = arr.findIndex(p => p.id === rm.dataset.remove);
         if (i > -1) arr.splice(i, 1);
         renderPanel(cat);
+        refreshLayout();
       }
     }, 160);
     return;
@@ -1006,13 +1019,45 @@ CF.$('exportBtn').addEventListener('click', async () => {
   if (exporting) return;
   exporting = true;
   CF.$('exportBtn').disabled = true;
-  CF.status('Rendering 3840×2160 PNG…');
+  const payload = buildPayload();
+  const mode = state.layout === 'auto' ? resolveLayout(payload) : state.layout;
+  if (mode !== 'm4') {
+    CF.status('Rendering 3840×2160 PNG…');
+    try {
+      await CF.exportCard(card);
+      CF.status('PNG exported (3840×2160).', 'ok');
+    } catch (e) {
+      CF.status('Export failed: ' + (e.message || e), 'err');
+    } finally {
+      exporting = false;
+      CF.$('exportBtn').disabled = false;
+      fit();
+    }
+    return;
+  }
+  const pages = CF.$('pgLabel').textContent.split('/')[1] | 0;
+  const files = {};
+  const keep = state.page;
   try {
-    await CF.exportCard(card);
-    CF.status('PNG exported (3840×2160).', 'ok');
+    CF.status('Rendering ' + pages + ' pages…');
+    for (let p = 1; p <= pages; p++) {
+      applyLayout(CF.$('card'), payload, 'm4', p, { editable: false });
+      await new Promise(r => setTimeout(r, 60));
+      const canvas = await html2canvas(CF.$('card'), { scale: 2, useCORS: true, backgroundColor: null });
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+      files['cardforge-page-' + p + '.png'] = new Uint8Array(await blob.arrayBuffer());
+    }
+    const zip = window.fflate.zipSync(files, { level: 6 });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new window.Blob([zip], { type: 'application/zip' }));
+    a.download = 'cardforge-' + (editSlug || 'card') + '-png.zip';
+    a.click(); URL.revokeObjectURL(a.href);
+    CF.status('Exported ' + pages + '-page ZIP.', 'ok');
   } catch (e) {
     CF.status('Export failed: ' + (e.message || e), 'err');
   } finally {
+    applyLayout(CF.$('card'), payload, 'm4', keep, { editable: true });
+    refreshLayout();
     exporting = false;
     CF.$('exportBtn').disabled = false;
     fit();
@@ -1070,6 +1115,7 @@ CF.$('loadBtn').addEventListener('click', () => {
     Object.assign(state, {
       showAllCards: draft.showAllCards || false,
       theme: draft.theme || 'protocol',
+      layout: draft.layout || 'auto',
       texts: draft.texts || {},
       ranks: draft.ranks || { crank: null, prank: null },
       picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, draft.picks?.[c] || []])),
@@ -1079,6 +1125,7 @@ CF.$('loadBtn').addEventListener('click', () => {
     });
     if (CF.$('showAllCards')) CF.$('showAllCards').checked = !!state.showAllCards;
     renderFromState();
+    refreshLayout();
     CF.status('Draft loaded.', 'ok');
     return;
   }
@@ -1101,6 +1148,7 @@ function buildPayload() {
   state.theme = document.documentElement.dataset.theme;
   return {
     theme: state.theme,
+    layout: state.layout,
     showAllCards: !!CF.$('showAllCards') && CF.$('showAllCards').checked,
     texts: state.texts,
     ranks: state.ranks,
@@ -1110,6 +1158,37 @@ function buildPayload() {
     ownedLevels: state.ownedLevels, ownedVariants: state.ownedVariants, ownedBuddies: state.ownedBuddies, ownedCards: state.ownedCards
   };
 }
+
+function refreshLayout() {
+  const payload = buildPayload();
+  const mode = state.layout === 'auto' ? resolveLayout(payload) : state.layout;
+  const r = applyLayout(CF.$('card'), payload, mode, state.page, { editable: true });
+  state.page = Math.min(state.page, r.pages);
+  const nav = CF.$('pageNav');
+  nav.hidden = mode !== 'm4';
+  CF.$('pgLabel').textContent = 'PAGE ' + state.page + '/' + r.pages;
+  CF.$('pgPrev').disabled = state.page <= 1;
+  CF.$('pgNext').disabled = state.page >= r.pages;
+  CF.$('exportBtn').textContent = mode === 'm4' ? 'EXPORT ZIP' : 'EXPORT PNG';
+  CF.$('layoutSel').value = state.layout;
+}
+
+CF.$('layoutSel').addEventListener('change', () => {
+  state.layout = CF.$('layoutSel').value;
+  state.page = 1;
+  refreshLayout();
+});
+CF.$('pgPrev').addEventListener('click', () => {
+  state.page -= 1;
+  refreshLayout();
+});
+CF.$('pgNext').addEventListener('click', () => {
+  state.page += 1;
+  refreshLayout();
+});
+document.querySelector('.themes')?.addEventListener('click', e => {
+  if (e.target.closest('.swatch')) refreshLayout();
+});
 
 async function publishListing() {
   const payload = buildPayload();
@@ -1197,6 +1276,7 @@ async function initEditMode() {
   Object.assign(state, {
     showAllCards: p.showAllCards || false,
     theme: listing.theme || p.theme || 'protocol',
+    layout: p.layout || 'auto',
     texts: p.texts || {},
     ranks: p.ranks || { crank: null, prank: null },
     picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, p.picks?.[c] || []])),
@@ -1227,6 +1307,7 @@ const bootDraft = CF.readJSON(DRAFT_KEY, null);
 if (bootDraft) {
   Object.assign(state, {
     theme: bootDraft.theme || 'protocol',
+    layout: bootDraft.layout || 'auto',
     texts: bootDraft.texts || {},
     ranks: bootDraft.ranks || { crank: null, prank: null },
     picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, bootDraft.picks?.[c] || []])),

@@ -18,10 +18,10 @@
 <link rel="stylesheet" href="css/shared.css">
 <link rel="stylesheet" href="css/viewer.css">
 <style>
-.allcards{margin:18px 0 0;padding:14px;border:1px solid var(--line)}
-.allcards h4{margin:0 0 10px;font:700 10px var(--font-display);letter-spacing:.2em;text-transform:uppercase;color:var(--mut)}
-.allcards .cardgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
-.allcards .cardgrid img{width:100%;aspect-ratio:3/2;object-fit:cover;border:1px solid var(--c-line-soft)}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;align-content:start;margin-top:12px}
+.cards-grid img{width:100%;aspect-ratio:3/2;object-fit:cover;border:1px solid var(--c-line-soft)}
+.cards-grid img:hover{outline:1px solid var(--c-accent);outline-offset:-1px}
+.cards-hint.is-inline{position:static;transform:none;display:flex;width:max-content;margin:12px auto}
 .cards-hint{position:absolute;transform:translate(-50%,-50%);z-index:6;display:flex;align-items:center;gap:7px;padding:7px 13px;background:rgba(8,11,15,.82);border:1px solid var(--c-line);color:var(--c-ink);font:700 10px var(--font-display);letter-spacing:.16em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
 .cards-hint:hover{border-color:var(--c-accent);color:#fff}
 .cards-hint[hidden]{display:none}
@@ -40,6 +40,8 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/></svg>
       <span id="viewText"></span>
     </span>
+    <span id="viewSwitch" role="group" aria-label="Card view"><button type="button" data-view="m1">TILES</button><button type="button" data-view="m2">SHOWCASE</button><button type="button" data-view="m4">CATALOG</button></span>
+    <span id="viewPageNav" hidden><button id="vpgPrev" type="button" aria-label="Previous page">‹</button><b id="vpgLabel">PAGE 1/1</b><button id="vpgNext" type="button" aria-label="Next page">›</button></span>
     <button id="contactBtn" class="primary" hidden>Contact seller</button>
     <a class="tb-link" href="browse.html">Browse listings</a>
     <button id="copyLinkBtn">Copy link</button>
@@ -147,7 +149,13 @@
   </div>
 </div>
 
-<div id="allCards" class="allcards" hidden></div>
+<div id="cardsModal" class="spv-backdrop" hidden>
+  <div class="spv-modal" role="dialog" aria-modal="true" aria-labelledby="cardsModalTitle">
+    <button class="spv-close" type="button" aria-label="Close player cards">&times;</button>
+    <div class="spv-head"><b id="cardsModalTitle">Player cards</b><span id="cardsModalSub"></span></div>
+    <div id="cardsGrid" class="cards-grid"></div>
+  </div>
+</div>
 <div id="disclaimer">CardForge is not affiliated with, endorsed by, or associated with Riot Games or any game publisher. All game names, skin names and imagery are trademarks/property of their respective owners. <a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></div>
 <button id="discToggle" type="button" aria-expanded="true" aria-controls="disclaimer" aria-label="Hide legal notice">«</button>
 </body>

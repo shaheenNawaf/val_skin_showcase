@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="css/editor.css">
 <script src="js/vendor/html2canvas.min.js" defer></script>
 <script src="js/vendor/supabase.js" defer></script>
+<script src="js/vendor/fflate.min.js"></script>
 <script src="js/config.js"></script>
 <script type="module" src="js/editor.js"></script>
 </head>
@@ -32,6 +33,10 @@
       <button class="swatch" data-theme="oni"     style="--sw:#31191E" title="Oni"     aria-label="Oni theme" aria-pressed="false"></button>
       <button class="swatch" data-theme="arctic"  style="--sw:#ECE8E1" title="Arctic"  aria-label="Arctic theme" aria-pressed="false"></button>
     </div>
+    <select id="layoutSel" title="Card layout" aria-label="Card layout">
+      <option value="auto">AUTO</option><option value="m1">TILES</option><option value="m2">SHOWCASE</option><option value="m4">CATALOG</option>
+    </select>
+    <span id="pageNav" hidden><button id="pgPrev" type="button" aria-label="Previous page">‹</button><b id="pgLabel">PAGE 1/1</b><button id="pgNext" type="button" aria-label="Next page">›</button></span>
   </div>
   <div class="tb-right">
     <a class="tb-link" href="browse.html">Browse listings</a>
