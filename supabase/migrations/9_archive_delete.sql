@@ -14,9 +14,10 @@ alter table public.listings add column if not exists archived boolean not null d
 
 -- Public read surface now carries the flag so direct-link pages can show the
 -- ARCHIVED notice. Archived rows are still selected here by design.
+-- archived is appended last: CREATE OR REPLACE VIEW cannot reorder existing columns.
 create or replace view public.listing_public as
 select id, slug, payload, theme, status, price, currency, negotiable,
-       inventory_hash, watermark, views, archived, created_at, updated_at
+       inventory_hash, watermark, views, created_at, updated_at, archived
 from public.listings;
 
 -- Owner-only archive/unarchive. Only succeeds when the caller proves ownership

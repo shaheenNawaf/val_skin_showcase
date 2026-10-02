@@ -44,7 +44,7 @@ for each row execute function public.touch_updated_at();
 -- Public read surface (hides edit_token_hash). View runs as owner → bypasses RLS by design.
 create or replace view public.listing_public as
 select id, slug, payload, theme, status, price, currency, negotiable,
-       inventory_hash, watermark, views, archived, created_at, updated_at
+       inventory_hash, watermark, views, created_at, updated_at, archived
 from public.listings;
 
 -- Views counter (security definer; client dedupes per session)
