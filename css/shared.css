@@ -110,7 +110,7 @@ body.exporting-full #card.is-live .slots.tiles{align-content:start}
 .code{font-family:Anton,sans-serif;font-size:52px;letter-spacing:.18em;line-height:1}
 .vlogin{font:600 16px 'Chakra Petch',sans-serif;letter-spacing:.14em;color:var(--mut);max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cur{display:flex;gap:7px;align-items:center;font-size:16px;font-weight:600}
-.ico{width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font:700 11px 'Chakra Petch',sans-serif;font-style:normal;border:1px solid var(--mut);color:var(--mut)}
+.ico{width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font:700 13px 'Chakra Petch',sans-serif;font-style:normal;border:1px solid var(--mut);color:var(--mut)}
 .lvl{letter-spacing:.22em;color:var(--mut);font-weight:600;font-size:14px;white-space:nowrap}
 .lvl b{color:var(--ink);letter-spacing:.14em;margin-left:5px}
 
@@ -125,7 +125,7 @@ grid-template-areas:
 "side shot rifles melee melee  melee"
 "code stats stats  rank  pcard pcard"}
 .panel{overflow:hidden;display:flex;flex-direction:column}
-.panel h3{text-align:center;letter-spacing:.4em;font-size:14px;color:var(--mut);font-weight:600;margin:0 0 6px;text-transform:uppercase}
+.panel h3{text-align:center;letter-spacing:.4em;font-size:15px;color:var(--mut);font-weight:600;margin:0 0 6px;text-transform:uppercase}
 .panel h3::before{content:"";display:inline-block;width:7px;height:10px;background:var(--accent);transform:skewX(-20deg);margin-right:9px}
 .slots{display:flex;flex-direction:column;height:100%;gap:6px;flex:1;min-height:0;overflow:hidden}
 .panel[data-cat="Melees"] .slots{flex-direction:row}
@@ -139,25 +139,25 @@ linear-gradient(180deg,var(--box-hi),var(--box));
 box-shadow:inset 0 0 0 1px var(--raise);
 clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)))}
 .skin img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:2px 8px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.55))}
-.skin .lv{position:absolute;right:3px;bottom:3px;z-index:2;background:var(--c-accent-btn);color:#fff;font:700 10px/1 'Chakra Petch',sans-serif;letter-spacing:.06em;padding:2px 5px;pointer-events:none}
+.skin .lv{position:absolute;right:3px;bottom:3px;z-index:2;background:var(--c-accent-btn);color:#fff;font:700 12px/1 'Chakra Petch',sans-serif;letter-spacing:.06em;padding:2px 5px;pointer-events:none}
 .rm{position:absolute;top:3px;right:3px;width:18px;height:18px;background:var(--red);color:#fff;border:none;font:700 11px/1 'Chakra Petch',sans-serif;cursor:pointer;display:none;z-index:2}
 .skin:hover .rm{display:block}
 @media (hover:none){.skin .rm{display:block}}
 .slotbox{position:relative;border:1px solid var(--line);overflow:hidden;
 background:radial-gradient(120% 100% at 50% 0%,var(--sheen-soft),transparent 60%),var(--box)}
 .slotbox.empty{flex:1 1 0;min-height:64px;border-style:dashed;background:var(--tint);display:flex;align-items:center;justify-content:center}
-.add{margin-top:6px;width:100%;background:var(--tint);border:1px solid var(--line);color:var(--mut);padding:6px;font:700 13px 'Chakra Petch',sans-serif;letter-spacing:.2em;cursor:pointer;text-transform:uppercase;
+.add{margin-top:6px;width:100%;background:var(--tint);border:1px solid var(--line);color:var(--mut);padding:6px;font:700 14px 'Chakra Petch',sans-serif;letter-spacing:.2em;cursor:pointer;text-transform:uppercase;
 clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 .add:hover{color:var(--accent);border-color:var(--accent)}
 .charms-box{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;align-content:start;padding:6px;flex:1;min-height:0;overflow:hidden}
 .charms-box img{width:100%;height:52px;object-fit:contain}
-.hint{color:var(--mut);font-size:12px;font-weight:600;letter-spacing:.25em;text-align:center;text-transform:uppercase;grid-column:1/-1;align-self:center}
+.hint{color:var(--mut);font-size:13px;font-weight:600;letter-spacing:.25em;text-align:center;text-transform:uppercase;grid-column:1/-1;align-self:center}
 
 /* buddies & flex strip (right edge, template-style) */
-.flexcol h3{font-size:11px;letter-spacing:.18em;margin-bottom:4px}
+.flexcol h3{font-size:12px;letter-spacing:.18em;margin-bottom:4px}
 .flexcol .charms-box{grid-template-columns:repeat(2,1fr)}
 .flexcol .charms-box img{height:40px}
-.flexcol .add{padding:4px;font-size:10px;letter-spacing:.1em}
+.flexcol .add{padding:4px;font-size:12px;letter-spacing:.1em}
 
 /* ── footer boxes (grid row 6, template-style) ──────────────────── */
 .boxf{background:var(--panel);border:1px solid var(--line);padding:12px 14px;overflow:hidden;
@@ -166,10 +166,10 @@ clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,va
 .stats{grid-area:stats;display:flex;flex-direction:column;justify-content:space-between}
 .counts{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:6px}
 .stat{text-align:center;position:relative}
-.stat label{display:block;color:var(--mut);font-size:12px;letter-spacing:.16em}
+.stat label{display:block;color:var(--mut);font-size:14px;letter-spacing:.16em}
 .stat.limited label{color:var(--gold)}
 .stat b{font-family:Anton,sans-serif;font-size:26px;letter-spacing:.08em;font-weight:400}
-.auto{position:absolute;right:-16px;bottom:2px;background:none;border:none;color:var(--mut);font:600 12px 'Chakra Petch',sans-serif;cursor:pointer;letter-spacing:.1em}
+.auto{position:absolute;right:-16px;bottom:2px;background:none;border:none;color:var(--mut);font:600 13px 'Chakra Petch',sans-serif;cursor:pointer;letter-spacing:.1em}
 .auto:hover{color:var(--accent)}
 .inforow{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding:6px 2px;font-size:15px;letter-spacing:.05em}
 .inforow span+span{border-left:1px solid var(--line);padding-left:10px}
@@ -177,18 +177,18 @@ clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,va
 .rankbox{grid-area:rank;display:flex;flex-direction:column;justify-content:space-between}
 .rankcols{display:flex;gap:10px}
 .rankrow{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;font-size:14px}
-.rankrow label{color:var(--mut);letter-spacing:.2em;font-size:12px}
+.rankrow label{color:var(--mut);letter-spacing:.2em;font-size:14px}
 .rankrow b{letter-spacing:.06em;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rankbadge{width:52px;height:52px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));flex:none}
 .rankbadge:not([src]){display:none}
 .currow{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;align-items:center;border-top:1px solid var(--line);padding-top:8px}
 .pcardbox{grid-area:pcard;display:flex;flex-direction:column;gap:6px}
 .pcard{flex:1;min-height:0;background-size:cover;background-position:center;display:flex;align-items:flex-end;justify-content:center;border:1px solid var(--line)}
-.pclabel{text-align:center;color:var(--mut);font-size:11px;letter-spacing:.3em;text-transform:uppercase}
+.pclabel{text-align:center;color:var(--mut);font-size:13px;letter-spacing:.3em;text-transform:uppercase}
 .seller{display:flex;gap:10px;align-items:center}
 .avatar{width:44px;height:44px;object-fit:cover;border:1px solid var(--line);clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 .tag{font-family:Anton,sans-serif;font-size:17px;letter-spacing:.06em}
-.link{color:var(--mut);font-size:12px;word-break:break-all}
+.link{color:var(--mut);font-size:13px;word-break:break-all}
 
 /* tier dots (picker chips) */
 .dot{display:inline-block;width:9px;height:9px;flex:none;background:var(--mut);transform:rotate(45deg)}
@@ -208,7 +208,7 @@ clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,va
 box-shadow:0 24px 70px -18px rgba(0,0,0,.6),0 6px 22px rgba(0,0,0,.35)}
 #sizer::before,#sizer::after{content:none}
 .wstrip{position:absolute;left:34px;right:34px;bottom:8px;display:flex;justify-content:space-between;gap:14px;
-color:var(--mut);font-size:11px;letter-spacing:.28em;text-transform:uppercase;pointer-events:none}
+color:var(--mut);font-size:13px;letter-spacing:.28em;text-transform:uppercase;pointer-events:none}
 
 /* ── small screens ─────────────────────────────────────────────── */
 @media (max-width:760px){
@@ -252,19 +252,19 @@ clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100
 
 .skin.tile{flex:1;min-width:0;display:flex;flex-direction:column;border:1px solid var(--line);border-left:3px solid var(--mut);background:radial-gradient(120% 100% at 50% 0%,var(--sheen),transparent 60%),linear-gradient(180deg,var(--box-hi),var(--box));clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)));position:relative;overflow:hidden}
 .skin.tile img{position:static;flex:1;min-height:0;width:auto;height:auto;inset:auto;padding:4px 6px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.5))}
-.skin.tile .tname{display:none;font:500 11px/1.2 'Chakra Petch',sans-serif;color:var(--ink);letter-spacing:.02em;padding:0 6px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.skin.tile .tname{display:none;font:500 13px/1.2 'Chakra Petch',sans-serif;color:var(--ink);letter-spacing:.02em;padding:0 6px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .skin.tile.tall .tname{display:block}
 .slots.tiles{display:grid;grid-template-columns:repeat(var(--cols,3),1fr);grid-auto-rows:56px;gap:6px}
 .slots.tiles .skin.tile{width:auto}
-.jchip{display:flex;align-items:center;justify-content:center;border:1px dashed var(--line);color:var(--mut);font:700 12px 'Chakra Petch',sans-serif;letter-spacing:.14em;background:transparent;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.jchip{display:flex;align-items:center;justify-content:center;border:1px dashed var(--line);color:var(--mut);font:700 13px 'Chakra Petch',sans-serif;letter-spacing:.14em;background:transparent;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
 button.jchip{cursor:pointer}
 button.jchip:hover{color:var(--ink);border-color:var(--mut)}
 .jchip.wide{width:100%;height:40px;flex:none}
 .more-note{font-style:normal}
-.slots.tiles .jchip,.panel[data-cat="Melees"] .slots .jchip{white-space:normal;text-align:center;line-height:1.25;font-size:10px;letter-spacing:.08em;padding:2px 4px}
+.slots.tiles .jchip,.panel[data-cat="Melees"] .slots .jchip{white-space:normal;text-align:center;line-height:1.25;font-size:12px;letter-spacing:.08em;padding:2px 4px}
 .skin.named{flex:none;height:44px;display:flex;align-items:center;gap:10px;padding:0 10px}
 .skin.named img{position:static;inset:auto;width:72px;height:36px;flex:none;padding:0}
-.skin.named .tname{display:block;flex:1;min-width:0;font:500 12px 'Chakra Petch',sans-serif;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.skin.named .tname{display:block;flex:1;min-width:0;font:500 13px 'Chakra Petch',sans-serif;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mode-m2 .slots{gap:6px}
 /* ── live surfaces (viewer, quick view): categories scroll, never clip ── */
 #card.is-live .slots{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;

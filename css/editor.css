@@ -15,7 +15,7 @@
 .pcard[data-upload]:hover .hint,.charms-box[data-upload]:hover .hint{color:var(--accent)}
 
 /* rank "set" buttons */
-.pickrank{background:none;border:1px solid var(--line);color:var(--mut);font:700 11px var(--font-ui);letter-spacing:.12em;padding:2px 7px;cursor:pointer;text-transform:uppercase;margin-left:auto}
+.pickrank{background:none;border:1px solid var(--line);color:var(--mut);font:700 13px var(--font-ui);letter-spacing:.12em;padding:2px 7px;cursor:pointer;text-transform:uppercase;margin-left:auto}
 .pickrank:hover{color:var(--accent);border-color:var(--accent)}
 .rankrow .pickrank{margin-left:0}
 
