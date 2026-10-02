@@ -184,3 +184,14 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
   #zoomDock{display:none}
   body.canvas-mode #zoomDock{display:flex}
 }
+
+/* uniform topbar controls: one notched shape, one type scale */
+#viewSwitch button,#topbar #copyLinkBtn,#topbar a.tb-link,#viewBadge{
+  background:transparent;border:1px solid var(--c-line);color:var(--c-mut);
+  font:700 9px 'Chakra Petch',sans-serif;letter-spacing:.14em;text-transform:uppercase;
+  padding:7px 12px;cursor:pointer;
+  clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+#viewSwitch button:hover,#topbar #copyLinkBtn:hover,#topbar a.tb-link:hover{color:var(--c-ink);border-color:var(--c-mut)}
+#viewSwitch button[aria-pressed=true]{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
+#viewBadge{display:inline-flex;align-items:center;gap:7px;cursor:default}
+#viewBadge svg{width:12px;height:12px;flex:none}
