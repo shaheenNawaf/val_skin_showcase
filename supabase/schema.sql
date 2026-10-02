@@ -30,6 +30,7 @@ create table if not exists public.listings (
   negotiable      boolean not null default true,
   inventory_hash  text,
   watermark       boolean not null default true,
+  archived        boolean not null default false,
   views           bigint not null default 0,
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now()
@@ -43,7 +44,7 @@ for each row execute function public.touch_updated_at();
 -- Public read surface (hides edit_token_hash). View runs as owner → bypasses RLS by design.
 create or replace view public.listing_public as
 select id, slug, payload, theme, status, price, currency, negotiable,
-       inventory_hash, watermark, views, created_at, updated_at
+       inventory_hash, watermark, views, archived, created_at, updated_at
 from public.listings;
 
 -- Views counter (security definer; client dedupes per session)
@@ -128,6 +129,42 @@ $$;
 
 grant execute on function public.create_listing(text, text, jsonb, text) to anon, authenticated;
 grant execute on function public.update_listing(text, text, jsonb, text) to anon, authenticated;
+
+-- Owner-only lifecycle: archive (soft hide) + hard delete, token-checked like update_listing.
+create or replace function public.set_listing_archived(
+  p_slug text,
+  p_edit_token_hash text,
+  p_archived boolean
+) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  update public.listings
+     set archived = coalesce(p_archived, false)
+   where slug = p_slug
+     and edit_token_hash = p_edit_token_hash;
+  if not found then
+    raise exception 'listing not found or edit token mismatch' using errcode = '42501';
+  end if;
+end;
+$$;
+
+create or replace function public.delete_listing(
+  p_slug text,
+  p_edit_token_hash text
+) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  delete from public.listings
+   where slug = p_slug
+     and edit_token_hash = p_edit_token_hash;
+  if not found then
+    raise exception 'listing not found or edit token mismatch' using errcode = '42501';
+  end if;
+end;
+$$;
+
+grant execute on function public.set_listing_archived(text, text, boolean) to anon, authenticated;
+grant execute on function public.delete_listing(text, text) to anon, authenticated;
 
 -- ── Nightly sync (fill placeholders, run once) ────────────────────
 -- select cron.schedule('skin-sync-nightly', '0 3 * * *', $$

@@ -65,7 +65,10 @@ let currentListing = null;
 
 function updateBadge(nowViewing) {
   const badge = CF.$('viewBadge');
-  CF.$('viewText').textContent = `${nowViewing} viewing now • ${totalViews} total views`;
+  const full = `${nowViewing} viewing now • ${totalViews} total views`;
+  /* M-C2: phones get a compact badge; the full sentence stays on hover */
+  CF.$('viewText').textContent = innerWidth <= 700 ? `${nowViewing} • ${totalViews}` : full;
+  badge.title = full;
   badge.hidden = false;
 }
 
@@ -154,13 +157,11 @@ function renderListing(listing) {
   const owned = (p.ownedCards || []).map((u, i) => ({ icon: `https://media.valorant-api.com/playercards/${u}/wideart.png`, name: `Player card ${i + 1} of ${p.ownedCards.length}` }));
   const grid = document.querySelector('#cardsGrid');
   const hint = document.querySelector('#cardsHint');
-  const mcard = document.querySelector('#mcard');
   const showHint = !!(p.showAllCards && owned.length);
   if (hint) {
     hint.hidden = !showHint;
     if (showHint) {
       hint.textContent = `View all ${owned.length} player card${owned.length === 1 ? '' : 's'}`;
-      const mcardShown = () => !!mcard && mcard.getBoundingClientRect().width > 0;
       const placeHint = () => {
         const live = [...document.querySelectorAll('.pcard')].find((el) => el.getBoundingClientRect().width > 0);
         if (live) {
@@ -173,18 +174,6 @@ function renderListing(listing) {
           hint.classList.add('in-box');
           hint.style.left = '';
           hint.style.top = '';
-        } else if (mcardShown()) {
-          // #stage is display:none on mobile, so the button must move out of it. It must be a
-          // SIBLING of #mcard, never a child: renderMobile() runs straight after this function
-          // and does mcard.innerHTML = MOBILE_SKELETON, which would destroy a child.
-          if (hint.dataset.where !== 'mobile') {
-            hint.classList.add('is-inline');
-            hint.classList.remove('in-box');
-            hint.style.left = '';
-            hint.style.top = '';
-            mcard.insertAdjacentElement('afterend', hint);
-            hint.dataset.where = 'mobile';
-          }
         } else if (hint.dataset.where !== 'inline') {
           // a card layout with no player card is active (e.g. the M4 spread). there is nothing
           // to sit on, so stop floating on stale absolute coordinates and flow inline instead.
@@ -219,40 +208,75 @@ function renderListing(listing) {
 
 // ── mobile-native layout (<=700px): same payload, readable single column ──
 const MOBILE_SKELETON = `
-<section class="mhead"><div class="mcode" data-m="code">K486</div><div class="mvlogin" data-m="vlogin">RIOT ID</div></section>
-<section class="mbox mranks">
-  <div class="mrank"><label>CURRENT</label><img class="mrankbadge" data-mrank="crank" alt=""><b data-m="crank">DIAMOND 2</b></div>
-  <div class="mrank"><label>PEAK</label><img class="mrankbadge" data-mrank="prank" alt=""><b data-m="prank">IMMORTAL 3</b></div>
-  <div class="mcurrow">
-    <span class="mlvl">LEVEL <b data-m="level">376</b></span>
-    <span class="mcur"><i class="mico">V</i><b data-m="vp">420</b></span>
-    <span class="mcur"><i class="mico">R</i><b data-m="rp">140</b></span>
-    <span class="mcur"><i class="mico">K</i><b data-m="kc">6422</b></span>
+<section class="mhead2">
+  <div class="mhrow mhrow1">
+    <span class="mhcode" data-m="code">K486</span>
+    <span class="mhid"><b data-m="cname">CHANGE NAME</b><span data-m="vlogin">RIOT ID</span></span>
+    <span class="mstatus"></span>
+  </div>
+  <div class="mhrow mhrow2">
+    <span class="mhrank"><img class="mrankbadge" data-mrank="crank" alt=""><span class="mrl"><label>CURRENT</label><b data-m="crank">DIAMOND 2</b></span></span>
+    <span class="mhrank"><img class="mrankbadge" data-mrank="prank" alt=""><span class="mrl"><label>PEAK</label><b data-m="prank">IMMORTAL 3</b></span></span>
+    <span class="mhlvl">LVL<b data-m="level">376</b></span>
+  </div>
+  <div class="mhrow mhrow3">
+    <span class="mhstat"><label>PREMIUM</label><b data-m="prems">42</b></span>
+    <span class="mhstat mlimited"><label>LIMITED</label><b data-m="limited">02</b></span>
+    <span class="mhstat"><label>SEMI PREM</label><b data-m="semis">00</b></span>
+    <span class="mhstat"><label>ANIMATED</label><b data-m="anims">00</b></span>
+  </div>
+  <div class="mhrow mhrow4">
+    <span class="mhcur2"><i>V</i><b data-m="vp">420</b></span>
+    <span class="mhcur2"><i>R</i><b data-m="rp">140</b></span>
+    <span class="mhcur2"><i>K</i><b data-m="kc">6422</b></span>
+    <span data-m="wtr">WTR: YES</span>
+    <span data-m="receipts">RECEIPTS: YES</span>
+    <span data-m="owner">0TH OWNER</span>
+    <span data-m="cname">CHANGE NAME</span>
+    <span class="mwarn" data-m="cstatus">NOT READY</span>
+    <span data-m="date">2/6/2026</span>
+    <span data-m="premier">PREMIER</span>
+    <span class="mwarn" data-m="vlink">UNLINKED</span>
   </div>
 </section>
-<section class="mbox mstats">
-  <div class="mcounts">
-    <div class="mstat"><label>PREMIUM</label><b data-m="prems">42</b></div>
-    <div class="mstat mlimited"><label>LIMITED</label><b data-m="limited">02</b></div>
-    <div class="mstat"><label>SEMI PREM</label><b data-m="semis">00</b></div>
-    <div class="mstat"><label>ANIMATED</label><b data-m="anims">00</b></div>
-  </div>
-  <div class="minforow"><span data-m="wtr">WTR: YES</span><span data-m="receipts">RECEIPTS: YES</span><span data-m="owner">0TH OWNER</span></div>
-  <div class="minforow"><span data-m="cname">CHANGE NAME</span><span class="mwarn" data-m="cstatus">NOT READY</span><span data-m="date">2/6/2026</span></div>
-  <div class="minforow"><span data-m="premier">PREMIER</span><span class="mwarn" data-m="vlink">UNLINKED</span><span data-m="price">PRICE OFFER</span></div>
-</section>
-<section class="mskins"></section>
-<section class="mbox mseller">
-  <img class="mpcard" alt="Player card" hidden>
-  <div class="msellerrow">
-    <img class="mavatar" alt="Seller avatar">
-    <div class="msellertext">
-      <div class="mtag" data-m="tag">FS/FT+ADD</div>
-      <a class="mlink" data-m="link" rel="noopener">https://www.facebook.com/Your.Page.Here</a>
-    </div>
-  </div>
-</section>
-<div class="mstrip"><span>Card Forge</span><span data-mwm="slug">Listing</span><span data-mwm="stamp"></span></div>`;
+<nav class="mcats" aria-label="Categories"></nav>
+<div class="mpanels"></div>`;
+
+/* Plan 001: hybrid mobile layout — tabbed frame above the threshold,
+   dense mosaic below (single consumer, stays a module const). */
+const TAB_THRESHOLD = 24;
+
+function mobileCaption(s) {
+  /* one-line de-duplicated name — the weapon is the category context */
+  let n = s.name || s.weapon || 'Skin';
+  if (s.variant && s.variant.name && !n.includes(s.variant.name)) n += ' · ' + s.variant.name;
+  return n;
+}
+function mobileTierKey(t) {
+  /* payload carries display names ("Premium Edition") — normalize to the
+     token key used by --tier-* */
+  return (String(t || '').toLowerCase().match(/exclusive|ultra|premium|deluxe|select/) || [''])[0];
+}
+/* Plan 001: chip → panel activation. Resets the frame's internal scroll. */
+function activateCat(cat) {
+  const panels = mcard.querySelector('.mpanels');
+  if (!panels) return;
+  panels.querySelectorAll('.mpanel').forEach(pn => pn.classList.toggle('active', pn.dataset.cat === cat));
+  mcard.querySelectorAll('.mcat-chip').forEach(ch => {
+    const on = ch.dataset.goto === cat;
+    ch.setAttribute('aria-current', String(on));
+    if (on) ch.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+  });
+  panels.scrollTop = 0;
+}
+/* Plan 001: one delegated chip listener — panels are rebuilt on re-render */
+mcard?.addEventListener('click', e => {
+  const chip = e.target.closest ? e.target.closest('.mcat-chip') : null;
+  if (chip) activateCat(chip.dataset.goto);
+  /* M-H: native Info-panel cards button */
+  const cb = e.target.closest('.mcards-btn');
+  if (cb) { openCardsModal(); return; }
+});
 
 function renderMobile(listing, force) {
   if (!mcard) return;
@@ -265,10 +289,69 @@ function renderMobile(listing, force) {
   const texts = payload.texts || {};
   mcard.innerHTML = MOBILE_SKELETON;
 
+  const picks = payload.picks || {};
+  const cats = CF.ALL_CATS.filter(c => (picks[c] || []).length);
+  const total = Object.values(picks).reduce((n, a) => n + a.length, 0);
+  const tabs = total > TAB_THRESHOLD;
+  mcard.classList.toggle('mode-tabs', tabs);
+  mcard.classList.toggle('mode-flow', !tabs);
+
+  /* Plan 001: mobile inspect indices must match markInspectCells' fill
+     order — flat picks[cat] over ALL_CATS, id-only. Never push SPV_LIST. */
+  let spvI = 0;
+  let panelHTML = '';
+  if (!cats.length) {
+    panelHTML += '<section class="mpanel" data-cat=""><div class="mempty">No skins in this listing.</div></section>';
+  }
+  cats.forEach(cat => {
+    const skins = picks[cat] || [];
+    const tiles = skins.map(s => {
+      const tier = mobileTierKey(s.tier);
+      const lv = s.level >= 2 ? `<i class="mlv">LV${s.level}</i>` : '';
+      const img = `<img loading="lazy" src="${CF.esc(s.icon || s.img || '')}" alt="${CF.esc(`${s.weapon || ''} — ${s.name || ''}`)}">`;
+      const cap = `<figcaption>${CF.esc(mobileCaption(s))}</figcaption>`;
+      if (!s.id) return `<figure class="mtile" data-tier="${CF.esc(tier)}">${lv}${img}${cap}</figure>`;
+      const label = 'Inspect ' + (s.weapon ? s.weapon + ' — ' : '') + (s.name || '');
+      return `<figure class="mtile spv-open" data-tier="${CF.esc(tier)}" data-spi="${spvI++}" role="button" tabindex="0" title="${CF.esc(label)}" aria-label="${CF.esc(label)}">${lv}${img}${cap}</figure>`;
+    }).join('');
+    panelHTML += `<section class="mpanel" data-cat="${CF.esc(cat)}"><h3>${CF.esc(cat)}<span class="hn">${skins.length}</span></h3><div class="mgrid3">${tiles}</div></section>`;
+  });
+
+  const assets = payload.assets || {};
+  const buddies = (assets.buddies || []).filter(Boolean);
+  const owned = payload.ownedCards || [];
+  const buddyHTML = buddies.length
+    ? `<div class="mbuddygrid">${buddies.map(u => `<img loading="lazy" src="${CF.esc(u)}" alt="Gun buddy">`).join('')}</div>`
+    : '';
+  const infoSub = [buddies.length ? buddies.length + ' buddies' : '', owned.length ? owned.length + ' cards' : ''].filter(Boolean).join(' · ') || 'seller';
+  /* M-H: native cards button — replaces the mobile DOM-teleport of #cardsHint */
+  const cardsBtnHTML = (payload.showAllCards && owned.length)
+    ? `<button type="button" class="mcards-btn">View all ${owned.length} player card${owned.length === 1 ? '' : 's'}</button>`
+    : '';
+  panelHTML += `<section class="mpanel" data-cat="Info">
+    <h3>Info<span class="hn">${CF.esc(infoSub)}</span></h3>
+    ${buddyHTML}
+    <div class="mpcardwrap"><img class="mpcard" alt="Player card" hidden>${cardsBtnHTML}</div>
+    <div class="mseller"><div class="msellerrow">
+      <img class="mavatar" alt="Seller avatar">
+      <div class="msellertext"><span class="mtag" data-m="tag">FS/FT+ADD</span><a class="mlink" data-m="link" rel="noopener">https://www.facebook.com/Your.Page.Here</a></div>
+    </div></div>
+    <div class="mstrip"><span>Card Forge</span><span data-mwm="slug">Listing</span><span data-mwm="stamp"></span></div>
+  </section>`;
+  mcard.querySelector('.mpanels').innerHTML = panelHTML;
+
   mcard.querySelectorAll('[data-m]').forEach(el => {
     const v = texts[el.dataset.m];
     if (v != null && v !== '') el.textContent = v;
   });
+
+  /* M-T: head title fallback (mirrors applyHero) */
+  const mtitle = mcard.querySelector('.mhead2 .mhid b[data-m="cname"]');
+  if (mtitle) mtitle.textContent = (texts.code && texts.code.trim()) || (texts.cname && texts.cname !== 'CHANGE NAME' && texts.cname.trim()) || ('Listing ' + (listing.slug || slug));
+  const msub = mcard.querySelector('.mhead2 .mhid span[data-m="vlogin"]');
+  const mriot = texts.vlogin ? (texts.vlogin.includes('#') || !texts.tag ? texts.vlogin : texts.vlogin + '#' + texts.tag) : (texts.tag || '');
+  const mident = mriot || ((texts.cname && texts.cname !== 'CHANGE NAME' && texts.cname.trim()) || '');
+  if (msub) msub.textContent = [mident, total + ' skin' + (total === 1 ? '' : 's')].filter(Boolean).join(' · ');
 
   const ranks = payload.ranks || {};
   ['crank', 'prank'].forEach(key => {
@@ -277,74 +360,22 @@ function renderMobile(listing, force) {
     else badge.removeAttribute('src');
   });
 
-  const picks = payload.picks || {};
-  const wrap = mcard.querySelector('.mskins');
-  let any = false;
-  CF.ALL_CATS.forEach(cat => {
-    const skins = picks[cat] || [];
-    if (!skins.length) return;
-    any = true;
-    const sec = document.createElement('div');
-    sec.className = 'mcat';
-    const h = document.createElement('h3');
-    h.textContent = cat;
-    const g = document.createElement('div');
-    g.className = 'spread-mosaic';
-    skins.forEach(s => {
-      const cell = document.createElement('figure');
-      if (s.id) {
-        SPV_LIST.push(s);
-        cell.className = 'mskin spv-open';
-        cell.dataset.spi = String(SPV_LIST.length - 1);
-        cell.title = 'Inspect skin';
-        cell.setAttribute('role', 'button');
-        cell.tabIndex = 0;
-      } else {
-        cell.className = 'mskin';
-      }
-      const img = document.createElement('img');
-      img.src = s.icon || s.img || '';
-      img.alt = `${s.weapon || ''} — ${s.name || ''}`;
-      img.loading = 'lazy';
-      const cap = document.createElement('figcaption');
-      cap.textContent = [s.weapon, s.name].filter(Boolean).join(' — ') + (s.level >= 2 ? ` · L${s.level}` : '');
-      cell.append(img, cap);
-      g.append(cell);
-    });
-    sec.append(h, g);
-    wrap.append(sec);
-  });
-  if (!any) {
-    const e = document.createElement('div');
-    e.className = 'mempty';
-    e.textContent = 'No skins in this listing.';
-    wrap.append(e);
-  }
+  const st = listing.status || 'available';
+  const stCfg = listing.archived ? { txt: 'ARCHIVED', cls: 'bad' }
+    : st === 'sold' ? { txt: 'SOLD', cls: 'bad' }
+    : st === 'pending' ? { txt: 'PENDING', cls: 'warn' }
+    : { txt: 'AVAILABLE', cls: 'ok' };
+  const stEl = mcard.querySelector('.mstatus');
+  stEl.textContent = stCfg.txt;
+  stEl.className = 'mstatus ' + stCfg.cls;
 
-  const assets = payload.assets || {};
   mcard.querySelector('.mavatar').src = assets.avatar || AVATAR_PLACEHOLDER;
   if (assets.pcard) {
     const pc = mcard.querySelector('.mpcard');
     pc.src = assets.pcard;
     pc.hidden = false;
   }
-  if (assets.buddies?.length) {
-    const sec = document.createElement('section');
-    sec.className = 'mbuddies';
-    const h = document.createElement('h3');
-    h.textContent = 'Buddies';
-    const g = document.createElement('div');
-    g.className = 'mbuddygrid';
-    assets.buddies.forEach(url => {
-      const img = document.createElement('img');
-      img.src = url;
-      img.alt = 'Gun buddy';
-      img.loading = 'lazy';
-      g.append(img);
-    });
-    sec.append(h, g);
-    mcard.querySelector('.mseller').before(sec);
-  }
+
   const linkEl = mcard.querySelector('.mlink');
   const link = (texts.link || '').trim();
   if (/^https?:\/\//.test(link)) linkEl.href = link;
@@ -353,6 +384,14 @@ function renderMobile(listing, force) {
   if (wmSlug && slug) wmSlug.textContent = 'Listing ' + slug;
   const wmStamp = mcard.querySelector('[data-mwm="stamp"]');
   if (wmStamp) wmStamp.textContent = new Date().toISOString().slice(0, 10);
+
+  const chipCats = cats.length ? cats.concat(['Info']) : ['Info'];
+  mcard.querySelector('.mcats').innerHTML = chipCats.map(c => {
+    const n = c === 'Info' ? '' : `<b>${(picks[c] || []).length}</b>`;
+    const label = c === 'Sniper Rifles' ? 'Snipers' : c;
+    return `<button type="button" class="mcat-chip" data-goto="${CF.esc(c)}" aria-current="false">${CF.esc(label)}${n}</button>`;
+  }).join('');
+  activateCat(cats[0] || 'Info');
 }
 
 // ── buyer view switcher + catalog paging ──────────────────────────
@@ -388,11 +427,13 @@ function viewRefresh(listing) {
   const mode = viewMode || auto;
   applyLayout(CF.$('card'), payload, mode, 1, { editable: false, showAll: true });
   markInspectCells(payload);
-  document.querySelectorAll('#viewSwitch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === mode)));
+  /* M-C2: the switcher is unreachable on phones — never paint stale pressed states */
+  if (!document.body.classList.contains('phone-native')) {
+    document.querySelectorAll('#viewSwitch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === mode)));
+  }
   fit();
   if (zoomMode == null) {
-    CF.$('zoomNote').textContent = CF.$('stage').scrollHeight > CF.$('stage').clientHeight
-      ? 'fit width — scroll to explore' : 'fit width';
+    CF.$('zoomNote').textContent = zoomNoteText();
   }
 }
 
@@ -407,11 +448,6 @@ CF.$('viewSwitch')?.addEventListener('click', e => {
   const btn = e.target.closest('button[data-view]');
   if (!btn) return;
   viewMode = btn.dataset.view;
-  /* CF-14: on a phone, picking a card view swaps the native layout for
-     the zoomable canvas — the switch no longer disappears below 700px */
-  if (innerWidth <= 700) {
-    document.body.classList.add('canvas-mode');
-  }
   viewRefresh(currentListing);
   syncUrl();
   fit();
@@ -569,6 +605,20 @@ const fit = CF.makeFitter({ card, sizer: CF.$('sizer'), topbar: CF.$('vchrome'),
     : (card.classList.contains('is-live') ? Math.min((CF.$('stage').clientWidth - 2) / 1920, 1) : null) });
 fit();
 card.classList.add('is-live'); /* live surface: categories scroll instead of clipping */
+/* Plan 001: the phone tabbed frame reserves room for the pinned action bar +
+   disclaimer via --mobar (CSS falls back to 91px). Phone-only measurement. */
+const mobarEls = [CF.$('mactbar'), CF.$('disclaimer')].filter(Boolean);
+if (mobarEls.length && 'ResizeObserver' in window) {
+  const phoneMq = window.matchMedia('(max-width:700px)');
+  const measureMobar = () => {
+    if (!phoneMq.matches) return;
+    const h = mobarEls.reduce((n, el) => n + el.offsetHeight, 0);
+    document.documentElement.style.setProperty('--mobar', h + 16 + 'px');
+  };
+  const mobarRo = new ResizeObserver(measureMobar);
+  mobarEls.forEach(el => mobarRo.observe(el));
+  measureMobar();
+}
 CF.initDisclaimerCollapse();
 CF.initStatusDismiss();
 
@@ -583,11 +633,13 @@ function moneyText(price, currency) {
 function applyHero(listing) {
   const t = listing.payload?.texts || {};
   const hero = CF.$('vhero');
-  const title = (t.cname && t.cname !== 'CHANGE NAME' && t.cname.trim()) || t.vlogin || 'Listing ' + (listing.slug || '');
+  const title = (t.code && t.code.trim()) || (t.cname && t.cname !== 'CHANGE NAME' && t.cname.trim()) || 'Listing ' + (listing.slug || '');
   CF.$('vhTitle').textContent = title;
   document.title = title + (listing.price != null ? ' · ' + (moneyText(listing.price, listing.currency)?.sym || '') + listing.price : '') + ' — CardForge';
   const bits = [];
-  if (t.code) bits.push(t.code);
+  const riot = t.vlogin ? (t.vlogin.includes('#') || !t.tag ? t.vlogin : t.vlogin + '#' + t.tag) : (t.tag || '');
+  const ident = riot || ((t.cname && t.cname !== 'CHANGE NAME' && t.cname.trim()) || '');
+  if (ident) bits.push(ident);
   if (t.crank) bits.push(t.crank);
   const skins = (listing.payload?.picks ? Object.values(listing.payload.picks).reduce((n, a) => n + (Array.isArray(a) ? a.length : 0), 0) : null);
   if (skins != null) bits.push(skins + ' skins');
@@ -595,7 +647,8 @@ function applyHero(listing) {
 
   const m = moneyText(listing.price, listing.currency);
   const st = listing.status || 'available';
-  const stCfg = st === 'sold' ? { txt: 'SOLD', cls: 'bad' }
+  const stCfg = listing.archived ? { txt: 'ARCHIVED', cls: 'bad' }
+    : st === 'sold' ? { txt: 'SOLD', cls: 'bad' }
     : st === 'pending' ? { txt: 'PENDING', cls: 'warn' }
     : { txt: 'AVAILABLE', cls: 'ok' };
   const vs = CF.$('vhStatus');
@@ -647,9 +700,81 @@ function wireContact(link) {
   mob?.addEventListener('click', act);
 }
 
+/* Owner-only lifecycle: archive (soft hide) + hard delete. Buttons exist in
+   the DOM hidden; only this browser's edit token can un-hide and use them. */
+function wireOwnerControls(sb, listing, slug) {
+  const aBtn = CF.$('archiveBtn');
+  const dBtn = CF.$('deleteBtn');
+  const note = CF.$('archNote');
+  const token = localStorage.getItem('vc-edit-' + slug) || '';
+  const sync = () => {
+    aBtn.hidden = false;
+    dBtn.hidden = false;
+    aBtn.textContent = listing.archived ? 'Unarchive' : 'Archive';
+    note.hidden = !listing.archived;
+    if (listing.archived) note.textContent = 'This listing is archived — hidden from the marketplace, still reachable by this link.';
+  };
+  const deny = e => /42501|token mismatch/i.test(String((e && e.message) || e))
+    ? 'This browser’s edit key was rejected for that action.'
+    : null;
+  aBtn.addEventListener('click', async () => {
+    const next = !listing.archived;
+    if (!window.confirm(next
+      ? 'Archive this listing? It disappears from the marketplace until you unarchive it.'
+      : 'Unarchive this listing? It returns to the marketplace.')) return;
+    aBtn.disabled = true;
+    try {
+      const h = await CF.hashToken(token);
+      const { error } = await sb.rpc('set_listing_archived', { p_slug: slug, p_edit_token_hash: h, p_archived: next });
+      if (error) throw error;
+      listing.archived = next;
+      applyHero(listing);
+      sync();
+      CF.status(next ? 'Listing archived — hidden from the marketplace.' : 'Listing unarchived — back in the marketplace.', 'ok');
+    } catch (e) {
+      CF.status(deny(e) || ('Archive failed: ' + ((e && e.message) || e)), 'err');
+    } finally { aBtn.disabled = false; }
+  });
+  dBtn.addEventListener('click', async () => {
+    if (prompt('Permanently delete this listing? This cannot be undone. Type DELETE to confirm.') !== 'DELETE') return;
+    dBtn.disabled = true;
+    try {
+      const h = await CF.hashToken(token);
+      const { error } = await sb.rpc('delete_listing', { p_slug: slug, p_edit_token_hash: h });
+      if (error) throw error;
+      aBtn.hidden = true;
+      dBtn.hidden = true;
+      const eb = CF.$('editBtn'); if (eb) eb.hidden = true;
+      const card = CF.$('card'); if (card) card.style.display = 'none';
+      const hero = CF.$('vhero'); if (hero) hero.hidden = true;
+      note.hidden = false;
+      note.textContent = 'This listing has been deleted by its owner.';
+      CF.status('Listing deleted.', 'ok');
+    } catch (e) {
+      CF.status(deny(e) || ('Delete failed: ' + ((e && e.message) || e)), 'err');
+    } finally { dBtn.disabled = false; }
+  });
+  sync();
+}
+
 /* CF-15 successor: a slim dock in the footer band — dedicated space,
    never over the canvas; collapses to a tab like the disclaimer does */
 const zoomDock = CF.$('zoomDock'), zoomDockBar = CF.$('zoomDockBar'), zoomDockToggle = CF.$('zoomDockToggle');
+/* ZL: label names the binding constraint, not a fixed string */
+function zoomNoteText() {
+  if (zoomMode != null) return `viewing at ${Math.round(zoomMode * 100)}% — drag to pan`;
+  const st = CF.$('stage');
+  if (st.clientWidth === 0 || st.clientHeight === 0) return 'fit width';
+  const chrome = CF.$('vchrome');
+  const tbh = chrome ? chrome.offsetHeight : 52;
+  const wFit = (st.clientWidth - 2) / 1920;
+  const hFit = (innerHeight - tbh - 34) / 1080;
+  const natural = Math.min(wFit, hFit);
+  if (natural < 0.35 + 1e-6) return 'min zoom — scroll to explore';
+  if (st.scrollHeight > st.clientHeight + 1) return 'fit width — scroll to explore';
+  if (wFit <= hFit) return 'fit width';
+  return 'fit to screen';
+}
 function setDockCollapsed(collapsed) {
   zoomDock.classList.toggle('collapsed', collapsed);
   zoomDockToggle.setAttribute('aria-expanded', String(!collapsed));
@@ -663,9 +788,7 @@ zoomDockBar.querySelectorAll('button').forEach(b => b.addEventListener('click', 
   const z = b.dataset.zoom;
   zoomMode = z === 'fit' ? null : Number(z);
   zoomDockBar.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-  CF.$('zoomNote').textContent = zoomMode == null
-    ? (CF.$('stage').scrollHeight > CF.$('stage').clientHeight ? 'fit width — scroll to explore' : 'fit width')
-    : ('viewing at ' + Math.round(zoomMode * 100) + '% — drag to pan');
+  CF.$('zoomNote').textContent = zoomNoteText();
   if (zoomDock.classList.contains('collapsed')) setDockCollapsed(true); /* refresh tab label */
   fit();
 }));
@@ -690,6 +813,46 @@ addEventListener('resize', () => {
   if (mcard.dataset.filled) return;
   if (window.getComputedStyle(mcard).display !== 'none') renderMobile(currentListing, true);
 });
+
+/* M-C2: one boundary listener — phone chrome and canvas modes are mutually
+   exclusive. Leaving the phone range restores the URL's chosen canvas. */
+const phoneNativeMq = window.matchMedia('(max-width:700px)');
+phoneNativeMq.addEventListener('change', e => {
+  if (!currentListing) return;
+  if (e.matches) {
+    document.body.classList.remove('canvas-mode');
+    document.body.classList.add('phone-native');
+    if (mcard && !mcard.dataset.filled) renderMobile(currentListing, true);
+  } else {
+    document.body.classList.remove('phone-native');
+    let v = new URLSearchParams(location.search).get('view');
+    if (v && !['m1', 'm2', 'm3', 'native'].includes(v)) v = null;
+    viewMode = (!v || v === 'native') ? null : v;
+    viewRefresh(currentListing);
+    fit();
+  }
+});
+
+/* M-C2: ⋯ overflow menu — CF-05 pattern (toggle, outside click, Escape) */
+(function () {
+  const btn = CF.$('tbMoreBtn'), menu = CF.$('tbMore');
+  if (!btn || !menu) return;
+  function setOpen(open) {
+    menu.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+  }
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    setOpen(menu.hidden);
+  });
+  document.addEventListener('click', e => {
+    if (!menu.hidden && !menu.contains(e.target) && e.target !== btn) setOpen(false);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !menu.hidden) setOpen(false);
+  });
+  menu.querySelectorAll('button, a').forEach(i => i.addEventListener('click', () => setOpen(false)));
+})();
 
 const slug = new URLSearchParams(location.search).get('slug');
 if (!slug) {
@@ -729,13 +892,23 @@ if (!slug) {
     renderListing(listing);
     renderMobile(listing);
     currentListing = listing;
-    viewMode = new URLSearchParams(location.search).get('view');
-    if (viewMode && !['m1', 'm2', 'm3'].includes(viewMode)) viewMode = null;
+    /* M-C2: phones always render the native layout; the ?view= deep link is
+       left in the URL so a desktop open of the same link still lands there. */
+    if (innerWidth <= 700) {
+      viewMode = null;
+      document.body.classList.add('phone-native');
+    } else {
+      viewMode = new URLSearchParams(location.search).get('view');
+      if (viewMode && !['m1', 'm2', 'm3'].includes(viewMode)) viewMode = null;
+    }
     viewRefresh(listing);
     totalViews = Number(listing.views) || 0;
     /* CF-11/CF-12: structured price, seller, status — from columns the
        fetch already returned and used to discard */
     applyHero(listing);
+    const archNote = CF.$('archNote');
+    archNote.hidden = !listing.archived;
+    if (listing.archived) archNote.textContent = 'This listing is archived — hidden from the marketplace, still reachable by this link.';
     wireContact(listing.payload?.texts?.link);
     CF.status('Listing loaded.', 'ok');
 
@@ -761,6 +934,7 @@ if (!slug) {
         /* CF-22: the seller's own loads are not "views" — skip the bump when
            this browser holds the edit token for the listing */
         const isOwner = !!localStorage.getItem('vc-edit-' + slug);
+        if (isOwner) wireOwnerControls(sb, listing, slug);
         if (!isOwner) {
           try {
             const v = await restBumpViews(slug);

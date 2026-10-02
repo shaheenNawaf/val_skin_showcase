@@ -8,6 +8,7 @@ In the Supabase SQL editor, run:
 
 1. `supabase/schema.sql` — tables, views, RPCs, RLS.
 2. `supabase/migrations/2_listings_hardening.sql` — validated `create_listing`, token-checked `update_listing`.
+9. `supabase/migrations/9_archive_delete.sql` — archived column, owner-only `set_listing_archived` / `delete_listing` RPCs, marketplace RPCs skip archived rows.
 
 ## 2. Point the app at your project
 
