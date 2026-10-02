@@ -94,4 +94,4 @@ export default async (request: Request, context: any) => {
   });
 };
 
-export const config = { path: ['/l/:slug', '/view.html'] };
+export const config = { path: ['/l/*', '/view.html'] };
