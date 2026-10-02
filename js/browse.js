@@ -36,6 +36,8 @@ const qv = $('qv');
 const qvClose = qv ? qv.querySelector('.qv-close') : null;
 let qvLastFocus = null;
 let qvResizePending = false;
+let qvPicks = null; /* QV-T: last payload picks, so a resize can re-render the phone thumbs */
+let qvSlug = '';
 
 const CARD_DEFAULTS = new Map();
 document.querySelectorAll('#card [data-key]').forEach(el => CARD_DEFAULTS.set(el, el.textContent));
@@ -645,6 +647,43 @@ function skinCell(s) {
   return '<span class="skin"><img src="' + esc(pickIcon(s)) + '" alt="' + esc(label) + '" title="' + esc(label) + '">' + (lv >= 2 ? '<i class="lv">LV' + lv + '</i>' : '') + '</span>';
 }
 
+/* QV-T: phone quick-view swaps the unreadable 0.19× card for a tier-ordered
+   hero-skin thumb strip; above 700px nothing changes. */
+const TIER_RANK = { exclusive: 5, ultra: 4, premium: 3, deluxe: 2, select: 1 };
+function tierKey(t) { return (String(t || '').toLowerCase().match(/exclusive|ultra|premium|deluxe|select/) || [''])[0]; }
+function heroThumbs(picks) {
+  return ALL_CATS.flatMap(cat => (picks && picks[cat]) || [])
+    .map((s, i) => ({ s, i, rank: TIER_RANK[tierKey(s.tier)] || 0 }))
+    .sort((a, b) => b.rank - a.rank || a.i - b.i)
+    .slice(0, 6)
+    .map(x => ({ name: pickName(x.s) || pickWeapon(x.s) || 'Skin', weapon: pickWeapon(x.s), icon: pickIcon(x.s), tier: tierKey(x.s.tier) }));
+}
+
+function renderThumbs(picks, slug) {
+  const stage = qv.querySelector('.qv-stage');
+  if (!stage) return;
+  const bar = qv.querySelector('.qv-bar');
+  let box = qv.querySelector('.qv-thumbs');
+  if (innerWidth > 700) {
+    stage.hidden = false;
+    if (box) { box.innerHTML = ''; box.hidden = true; }
+    return;
+  }
+  stage.hidden = true;
+  if (!box) {
+    box = document.createElement('div');
+    box.className = 'qv-thumbs';
+    if (bar && bar.parentNode) bar.parentNode.insertBefore(box, bar);
+    else qv.querySelector('.qv-modal').appendChild(box);
+  }
+  const thumbs = heroThumbs(picks);
+  if (!thumbs.length) { box.innerHTML = ''; box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = thumbs.map(t => '<a class="qv-thumb" href="view.html?slug=' + encodeURIComponent(slug) + '" data-tier="' + esc(t.tier) + '">'
+    + '<img loading="lazy" src="' + esc(t.icon) + '" alt="' + esc(t.weapon + ' — ' + t.name) + '">'
+    + '<span>' + esc(t.name) + '</span></a>').join('');
+}
+
 function resetCard() {
   const card = $('card');
   card.querySelectorAll('[data-key]').forEach(el => { el.textContent = CARD_DEFAULTS.get(el) ?? ''; });
@@ -723,11 +762,16 @@ function fillCard(payload, slug) {
   if (wmSlug) wmSlug.textContent = 'Listing ' + slug;
   const wmStamp = card.querySelector('[data-wm="stamp"]');
   if (wmStamp) wmStamp.textContent = new Date().toISOString().slice(0, 10);
+
+  qvPicks = picks;
+  qvSlug = slug;
+  renderThumbs(qvPicks, qvSlug);
 }
 
 function fitCard() {
   if (qv.hidden) return;
   const stage = qv.querySelector('.qv-stage');
+  if (stage.hidden) return; /* QV-T: phone thumbs replace the scaled card */
   const sizer = qv.querySelector('.qv-sizer');
   const card = $('card');
   if (!stage || !sizer || !card) return;
@@ -797,6 +841,9 @@ function openQV(slug, opener) {
     if (slug) status('That listing is not available — it may have been removed or sold.', 'err');
     return; }
   qvLastFocus = opener || null;
+  /* QV-F: never flash the previous listing while loading */
+  const stage = qv.querySelector('.qv-stage'); if (stage) stage.hidden = true;
+  const box = qv.querySelector('.qv-thumbs'); if (box) { box.innerHTML = ''; box.hidden = true; }
   qv.hidden = false;
   $('card').classList.add('is-live'); /* live surface: categories scroll instead of clipping */
   document.body.classList.add('modal-open');
@@ -881,7 +928,7 @@ function wire() {
   window.addEventListener('resize', () => {
     if (qv.hidden || qvResizePending) return;
     qvResizePending = true;
-    requestAnimationFrame(() => { qvResizePending = false; fitCard(); });
+    requestAnimationFrame(() => { qvResizePending = false; renderThumbs(qvPicks, qvSlug); fitCard(); });
   });
 }
 
