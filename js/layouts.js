@@ -148,13 +148,15 @@ export function renderSlotsM1(panel, skins, opts) {
   const W = slots.clientWidth;
   const H = slots.clientHeight;
   if (cat === 'Melees') {
-    const cols = clamp(4, Math.floor(W / 76), 14);
+    slots.classList.add('melee-grid');
     if (opts.showAll) {
-      for (let i = 0; i < count; i++) slots.appendChild(skinCell(skins[i], i, opts.editable));
+      skins.forEach((s, i) => slots.appendChild(skinCell(s, i, opts.editable)));
       return;
     }
-    const chip = count > cols;
-    const shown = chip ? cols - 1 : Math.min(count, cols);
+    const rows = Math.max(1, Math.floor((H + 6) / 62));
+    const cap = rows * 2;
+    const chip = count > cap;
+    const shown = chip ? cap - 1 : Math.min(count, cap);
     for (let i = 0; i < shown; i++) slots.appendChild(skinCell(skins[i], i, opts.editable));
     if (chip) slots.appendChild(moreChip(count - shown));
     return;
@@ -194,16 +196,17 @@ export function renderSlotsM2(panel, skins, opts) {
   const cat = panel.dataset.cat;
   const count = skins.length;
   if (!count) { renderEmpty(slots, cat); return; }
-  const W = slots.clientWidth;
   const H = slots.clientHeight;
   if (cat === 'Melees') {
-    const cols = clamp(4, Math.floor(W / 90), 10);
+    slots.classList.add('melee-grid');
     if (opts.showAll) {
-      for (let i = 0; i < count; i++) slots.appendChild(skinCell(skins[i], i, opts.editable));
+      skins.forEach((s, i) => slots.appendChild(skinCell(s, i, opts.editable)));
       return;
     }
-    const chip = count > cols;
-    const shown = chip ? cols - 1 : Math.min(count, cols);
+    const rows = Math.max(1, Math.floor((H + 6) / 62));
+    const cap = rows * 2;
+    const chip = count > cap;
+    const shown = chip ? cap - 1 : Math.min(count, cap);
     for (let i = 0; i < shown; i++) slots.appendChild(skinCell(skins[i], i, opts.editable));
     if (chip) slots.appendChild(moreChip(count - shown));
     return;
