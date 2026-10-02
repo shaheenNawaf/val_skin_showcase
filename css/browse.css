@@ -241,8 +241,11 @@ body.modal-open{overflow:hidden}
 @keyframes sh{to{background-position:-200% 0}}
 @keyframes rise{from{opacity:0;transform:translateY(14px)}}
 
-[data-imgfail] img{visibility:hidden}
+/* CF-31: broken art degrades honestly — a dashed slot, not a silent gap */
+[data-imgfail] img[data-imgfail]{visibility:hidden}
 [data-imgfail]{background:linear-gradient(135deg,var(--c-surface2),var(--c-line))}
+img[data-imgfail]{border:1px dashed var(--c-line);box-sizing:border-box}
+[data-imgfail] .mc-icons img[data-imgfail]{opacity:.35;filter:grayscale(1)}
 
 @media(prefers-reduced-motion:no-preference){
   .gfeat,.gf-skins img{transition:border-color .2s ease,transform .2s ease}

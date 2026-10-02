@@ -48,8 +48,21 @@ export function status(m, kind = 'info') {
   el.dataset.kind = kind;
   el.classList.remove('dim');
   el.classList.remove('fade');
+  el.title = kind === 'err' ? 'Click to dismiss' : '';
   clearTimeout(statusTimer);
   if (kind !== 'err') statusTimer = setTimeout(() => el.classList.add('fade'), 5000);
+}
+
+/* CF-32: errors used to pin themselves over the card forever with no way
+   out except triggering another message. Every toast is now dismissible. */
+export function initStatusDismiss() {
+  const el = $('status');
+  if (!el || el.dataset.dismissWired) return;
+  el.dataset.dismissWired = '1';
+  el.addEventListener('click', () => {
+    el.classList.add('fade');
+    clearTimeout(statusTimer);
+  });
 }
 
 export function initDisclaimerCollapse() {
@@ -217,8 +230,9 @@ function buildCards(cardData) {
   return { CARDS, CARDS_LIST };
 }
 
-async function loadCatalogFromCache(sb) {
+async function loadCatalogFromCache(sb, opts) {
   if (!sb) return null;
+  const withExtras = !(opts && opts.extras === false);
   try {
     const skinRows = [];
     for (let from = 0; from < 10000; from += 1000) {
@@ -232,10 +246,10 @@ async function loadCatalogFromCache(sb) {
     }
     const { data: cacheRows, error: cacheErr } = await sb.from('catalog_cache')
       .select('key,data')
-      .in('key', ['competitivetiers', 'buddies', 'playercards']);
+      .in('key', withExtras ? ['competitivetiers', 'buddies', 'playercards'] : ['competitivetiers']);
     if (cacheErr) throw new Error(cacheErr.message);
     const cache = Object.fromEntries((cacheRows || []).map(r => [r.key, r.data]));
-    if (!skinRows.length || !cache.competitivetiers || !cache.buddies || !cache.playercards) return null;
+    if (!skinRows.length || !cache.competitivetiers) return null;
     const DB = {};
     const LEVEL_MAP = {};
     const CHROMA_MAP = {};
@@ -253,22 +267,24 @@ async function loadCatalogFromCache(sb) {
       return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
     });
     const SKIN_BY_ID = new Map(Object.values(DB).flat().map(s => [s.id, s]));
-    const { BUDDIES, BUDDIES_LIST, BUDDY_BY_ANY } = buildBuddies(cache.buddies);
-    const { CARDS, CARDS_LIST } = buildCards(cache.playercards);
+    /* CF-24: buddies/player cards load on demand via loadCatalogExtras() */
+    const { BUDDIES, BUDDIES_LIST, BUDDY_BY_ANY } = cache.buddies ? buildBuddies(cache.buddies) : { BUDDIES: {}, BUDDIES_LIST: [], BUDDY_BY_ANY: {} };
+    const { CARDS, CARDS_LIST } = cache.playercards ? buildCards(cache.playercards) : { CARDS: {}, CARDS_LIST: [] };
     const RANKS = buildRanks(cache.competitivetiers);
-    return { DB, TIERS, RANKS, BUDDIES, CARDS, CARDS_LIST, SKIN_BY_ID, LEVEL_MAP, CHROMA_MAP, BUDDIES_LIST, BUDDY_BY_ANY, source: 'cache' };
+    return { DB, TIERS, RANKS, BUDDIES, CARDS, CARDS_LIST, SKIN_BY_ID, LEVEL_MAP, CHROMA_MAP, BUDDIES_LIST, BUDDY_BY_ANY, source: 'cache', extrasLoaded: !!(cache.buddies && cache.playercards) };
   } catch {
     return null;
   }
 }
 
-export async function loadCatalogFromApi() {
+export async function loadCatalogFromApi(opts) {
+  const withExtras = !(opts && opts.extras === false);
   const [wJ, tJ, cJ, bJ, pJ] = await Promise.all([
     fetchJSON('https://valorant-api.com/v1/weapons?language=en-US'),
     fetchJSON('https://valorant-api.com/v1/contenttiers?language=en-US'),
     fetchJSON('https://valorant-api.com/v1/competitivetiers?language=en-US'),
-    fetchJSON('https://valorant-api.com/v1/buddies?language=en-US'),
-    fetchJSON('https://valorant-api.com/v1/playercards?language=en-US')
+    withExtras ? fetchJSON('https://valorant-api.com/v1/buddies?language=en-US') : Promise.resolve({ data: [] }),
+    withExtras ? fetchJSON('https://valorant-api.com/v1/playercards?language=en-US') : Promise.resolve({ data: [] })
   ]);
   const tiers = Object.fromEntries((tJ.data || []).map(t => [t.uuid, t.displayName]));
   const DB = {};
@@ -310,10 +326,41 @@ export async function loadCatalogFromApi() {
   return { DB, TIERS, RANKS, BUDDIES, CARDS, CARDS_LIST, SKIN_BY_ID, LEVEL_MAP, CHROMA_MAP, BUDDIES_LIST, BUDDY_BY_ANY, source: 'api' };
 }
 
-export async function loadCatalog(supabaseClient) {
-  const cached = await loadCatalogFromCache(supabaseClient);
+export async function loadCatalog(supabaseClient, opts) {
+  const cached = await loadCatalogFromCache(supabaseClient, opts);
   if (cached) return cached;
-  return loadCatalogFromApi();
+  return loadCatalogFromApi(opts);
+}
+
+/* CF-24: buddies (604 KB) and player cards (676 KB) were fetched eagerly at
+   boot for every seller, though only the buddy/card pickers and the owned-
+   collection opt-in use them. Load them on first use instead — the editor's
+   boot drops from ~2.07 MB to ~0.79 MB on the wire. */
+export async function loadCatalogExtras(supabaseClient) {
+  let buddies = null, playercards = null;
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient.from('catalog_cache')
+        .select('key,data')
+        .in('key', ['buddies', 'playercards']);
+      if (!error && data) {
+        const c = Object.fromEntries((data || []).map(r => [r.key, r.data]));
+        buddies = c.buddies || null;
+        playercards = c.playercards || null;
+      }
+    } catch { /* fall through to the API */ }
+  }
+  if (!buddies || !playercards) {
+    const [bJ, pJ] = await Promise.all([
+      fetchJSON('https://valorant-api.com/v1/buddies?language=en-US'),
+      fetchJSON('https://valorant-api.com/v1/playercards?language=en-US'),
+    ]);
+    buddies = buddies || bJ.data || [];
+    playercards = playercards || pJ.data || [];
+  }
+  const { BUDDIES, BUDDIES_LIST, BUDDY_BY_ANY } = buildBuddies(buddies);
+  const { CARDS, CARDS_LIST } = buildCards(playercards);
+  return { BUDDIES, BUDDIES_LIST, BUDDY_BY_ANY, CARDS, CARDS_LIST };
 }
 
 // ── images ────────────────────────────────────────────────────────

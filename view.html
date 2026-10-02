@@ -10,6 +10,8 @@
 <meta property="og:type" content="website">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0B0F14">
+<!-- CF-25: supabase.js is NOT loaded here — the viewer reads the listing via
+     plain REST and loads the SDK after first render, only for presence. -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1923'/%3E%3Cpath d='M10 24 24 10v6l-8 8z' fill='%23FF4655'/%3E%3Cpath d='M8 20l6-6v4l-4 4z' fill='%23FF4655' opacity='.6'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,7 +28,6 @@
 .cards-hint:hover{border-color:var(--c-accent);color:#fff}
 .cards-hint[hidden]{display:none}
 </style>
-<script src="js/vendor/supabase.js" defer></script>
 <script src="js/config.js"></script>
 <script type="module" src="js/viewer.js"></script>
 </head>

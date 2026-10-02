@@ -5,8 +5,51 @@ import { applyLayout, resolveLayout } from './layouts.js';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
-if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase) {
-  supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+let sbLoading = null;
+
+/* CF-25: listing reads are anon REST — a plain fetch returns the row in
+   ~1.5KB. The 209KB supabase.js SDK used to sit on the buyer's critical
+   path just to do this; it now loads after first render, when presence
+   actually needs it. */
+async function restFetchListing(slug) {
+  const r = await fetch(
+    `${CONFIG.SUPABASE_URL}/rest/v1/listing_public?select=*&slug=eq.${encodeURIComponent(slug)}`,
+    { headers: { apikey: CONFIG.SUPABASE_ANON_KEY, Authorization: `Bearer ${CONFIG.SUPABASE_ANON_KEY}` } },
+  );
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const rows = await r.json();
+  return Array.isArray(rows) && rows.length ? rows[0] : null;
+}
+async function restBumpViews(slug) {
+  const r = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/rpc/bump_views`, {
+    method: 'POST',
+    headers: {
+      apikey: CONFIG.SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ p_slug: slug }),
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+function loadSupabase() {
+  if (supabase) return Promise.resolve(supabase);
+  if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY) return Promise.resolve(null);
+  if (!sbLoading) {
+    sbLoading = new Promise(res => {
+      const s = document.createElement('script');
+      s.src = 'js/vendor/supabase.js';
+      s.onload = () => {
+        try { supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY); }
+        catch { supabase = null; }
+        res(supabase);
+      };
+      s.onerror = () => res(null);
+      document.head.appendChild(s);
+    });
+  }
+  return sbLoading;
 }
 
 const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>";
@@ -30,8 +73,13 @@ function updateBadge(nowViewing) {
 function skinCell(s, spi) {
   const label = `${s.weapon || ''} — ${s.name || ''}${s.level >= 2 ? ` · LV${s.level}` : ''}${s.variant ? ` · ${s.variant.name}` : ''}`;
   const src = s.icon || s.img || '';
-  const attrs = s.id ? ` class="skin spv-open" data-spi="${spi}" title="Inspect skin"` : ' class="skin"';
-  return `<span${attrs}><img src="${CF.esc(src)}" alt="${CF.esc(label)}" title="${CF.esc(label)}">${s.level >= 2 ? `<i class="lv">LV${s.level}</i>` : ''}</span>`;
+  /* CF-26: inspect was hover-only and not keyboard reachable — the mobile
+     figure got role/tabIndex but this desktop cell was a bare span. */
+  const attrs = s.id
+    ? ` class="skin spv-open" data-spi="${spi}" title="Inspect skin" role="button" tabindex="0" aria-label="Inspect ${CF.esc(label)}"`
+    : ' class="skin"';
+  /* CF-33: lazy icons — the desktop cells were the only renderer without it */
+  return `<span${attrs}><img src="${CF.esc(src)}" alt="${CF.esc(label)}" title="${CF.esc(label)}" loading="lazy">${s.level >= 2 ? `<i class="lv">LV${s.level}</i>` : ''}</span>`;
 }
 
 function openCardsModal() {
@@ -101,7 +149,10 @@ function renderListing(listing) {
   }
 
   const p = payload;
-  const owned = (p.ownedCards || []).map((u) => ({ icon: `https://media.valorant-api.com/playercards/${u}/wideart.png`, name: 'Player card' }));
+  /* CF-26: every image was labelled with the literal string 'Player card',
+     so the collection had no accessible names. Numbered labels until the
+     names ship with the payload. */
+  const owned = (p.ownedCards || []).map((u, i) => ({ icon: `https://media.valorant-api.com/playercards/${u}/wideart.png`, name: `Player card ${i + 1} of ${p.ownedCards.length}` }));
   const grid = document.querySelector('#cardsGrid');
   const hint = document.querySelector('#cardsHint');
   const mcard = document.querySelector('#mcard');
@@ -200,8 +251,13 @@ const MOBILE_SKELETON = `
 </section>
 <div class="mstrip"><span>Card Forge</span><span data-mwm="slug">Listing</span><span data-mwm="stamp"></span></div>`;
 
-function renderMobile(listing) {
+function renderMobile(listing, force) {
   if (!mcard) return;
+  /* CF-33: the mobile layout used to render unconditionally into a
+     display:none container on every desktop visit — a full second set of
+     skin icon downloads nobody ever saw. Render on first need instead. */
+  if (!force && window.getComputedStyle(mcard).display === 'none') return;
+  mcard.dataset.filled = '1';
   const payload = listing.payload || {};
   const texts = payload.texts || {};
   mcard.innerHTML = MOBILE_SKELETON;
@@ -297,12 +353,39 @@ function renderMobile(listing) {
 }
 
 // ── buyer view switcher + catalog paging ──────────────────────────
+/* CF-26: applyLayout renders the panel cells, so the inspect affordance is
+   attached here — right after the layout pass, on the live DOM. Cells are
+   real buttons now: focusable, labelled, Enter/Space opens the preview
+   (the keydown handler already existed; the cells were never focusable). */
+function markInspectCells(payload) {
+  SPV_LIST.length = 0;
+  const picks = payload.picks || {};
+  card.querySelectorAll('.panel[data-cat]').forEach(panel => {
+    const cat = panel.dataset.cat;
+    const skins = picks[cat] || [];
+    panel.querySelectorAll('.skin[data-vp]').forEach(cell => {
+      const s = skins[+cell.dataset.vp];
+      if (!s || !s.id) return;
+      SPV_LIST.push(s);
+      const spi = SPV_LIST.length - 1;
+      cell.classList.add('spv-open');
+      cell.dataset.spi = String(spi);
+      cell.setAttribute('role', 'button');
+      cell.setAttribute('tabindex', '0');
+      const label = (s.weapon ? s.weapon + ' — ' : '') + (s.name || '');
+      cell.setAttribute('aria-label', 'Inspect ' + label);
+      cell.title = 'Inspect ' + label;
+    });
+  });
+}
+
 function viewRefresh(listing) {
   const payload = listing.payload || {};
   const auto = resolveLayout(payload);
   const mode = viewMode || auto;
   const r = applyLayout(CF.$('card'), payload, mode, viewPage, { editable: false, gotoCatalog: true });
   viewPage = Math.min(viewPage, r.pages);
+  markInspectCells(payload);
   document.querySelectorAll('#viewSwitch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === mode)));
   const nav = CF.$('viewPageNav');
   nav.hidden = mode !== 'm4';
@@ -329,6 +412,7 @@ CF.$('viewSwitch')?.addEventListener('click', e => {
     viewPage = 1;
     document.body.classList.remove('canvas-mode');
     CF.$('nativeBtn').hidden = true;
+    renderMobile(currentListing, true); /* CF-33: fill the native layout on demand */
     viewRefresh(currentListing);
     syncUrl();
     fit();
@@ -465,8 +549,7 @@ document.addEventListener('click', e => {
   if (!overlay || overlay.hidden) return;
   if (e.target === overlay || e.target.closest('.spv-close')) { closeSpv(); return; }
   const lvBtn = e.target.closest('[data-lv]');
-  if (lvBtn && spv) { spv.lv = +lvBtn.dataset.lv; paintSpv(); return; }
-  const chBtn = e.target.closest('[data-ch]');
+  if (lvBtn && spv) { spv.lv = +lvBtn.dataset.lv; paintSpv(); return; }  const chBtn = e.target.closest('[data-ch]');
   if (chBtn && spv) { spv.k = +chBtn.dataset.ch; paintSpv(); }
 });
 const cardsModalEl = document.getElementById('cardsModal');
@@ -514,6 +597,7 @@ const fit = CF.makeFitter({ card, sizer: CF.$('sizer'), topbar: CF.$('vchrome'),
   getZoom: () => zoomMode });
 fit();
 CF.initDisclaimerCollapse();
+CF.initStatusDismiss();
 
 /* ── CF-11/CF-12: listing hero — structured price, seller, status ── */
 const CUR_SYMBOL = { USD: '$', EUR: '€', GBP: '£', JPY: '¥' };
@@ -598,6 +682,14 @@ document.querySelectorAll('#zoomBar button').forEach(b => b.addEventListener('cl
   fit();
 }));
 
+/* CF-33: fill the native layout the moment it actually becomes visible —
+   a desktop visit no longer downloads the second set of icons */
+addEventListener('resize', () => {
+  if (!currentListing || !mcard) return;
+  if (mcard.dataset.filled) return;
+  if (window.getComputedStyle(mcard).display !== 'none') renderMobile(currentListing, true);
+});
+
 /* CF-14: the SIMPLE chip is shown/hidden by the viewSwitch handler above */
 
 const slug = new URLSearchParams(location.search).get('slug');
@@ -611,11 +703,9 @@ if (!slug) {
   CF.status('Loading listing…');
   let listing = null;
 
-  if (supabase) {
+  if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY) {
     try {
-      const { data, error } = await supabase.from('listing_public').select('*').eq('slug', slug).maybeSingle();
-      if (error) throw error;
-      listing = data;
+      listing = await restFetchListing(slug);
     } catch {
       CF.status('Supabase unavailable — trying local copy…');
     }
@@ -664,18 +754,26 @@ if (!slug) {
     CF.$('copyLinkBtn').addEventListener('click', () => CF.copyText(location.href));
 
     fit();
-    if (supabase) {
-      startSupabasePresence(slug);
-      /* CF-22: the seller's own loads are not "views" — skip the bump when
-         this browser holds the edit token for the listing */
-      const isOwner = !!localStorage.getItem('vc-edit-' + slug);
-      if (!isOwner) {
-        try {
-          const { data, error } = await supabase.rpc('bump_views', { p_slug: slug });
-          if (!error && data != null) totalViews = Number(data);
-        } catch { /* view count is best-effort */ }
+    /* CF-25: the SDK loads now — after first render — because only presence
+       needs it. Listing read and view bump are plain REST above. */
+    if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY) {
+      const sb = await loadSupabase();
+      if (sb) {
+        startSupabasePresence(slug);
+        /* CF-22: the seller's own loads are not "views" — skip the bump when
+           this browser holds the edit token for the listing */
+        const isOwner = !!localStorage.getItem('vc-edit-' + slug);
+        if (!isOwner) {
+          try {
+            const v = await restBumpViews(slug);
+            if (v != null) totalViews = Number(v);
+          } catch { /* view count is best-effort */ }
+        }
+        updateBadge(1);
+      } else {
+        CF.startLocalPresence(slug, updateBadge);
+        updateBadge(1);
       }
-      updateBadge(1);
     } else {
       CF.startLocalPresence(slug, updateBadge);
       updateBadge(1);

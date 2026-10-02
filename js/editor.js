@@ -393,8 +393,12 @@ function openVariantModal(cat, idx) {
   paintVariantPreview();
 }
 
-function openBuddyPicker() {
-  if (!BUDDIES_LIST.length) { CF.status('Buddy database still loading — try again in a moment.', 'info'); return; }
+async function openBuddyPicker() {
+  if (!BUDDIES_LIST.length) {
+    CF.status('Loading the buddy database…', 'info');
+    const ok = await ensureBuddyCardData();
+    if (!ok) return;
+  }
   pickerMode = 'buddy';
   currentPool = BUDDIES_LIST;
   filterOwned = false;
@@ -432,8 +436,12 @@ function addBuddy(b) {
   refreshLayout();
 }
 
-function openCardPicker() {
-  if (!CARDS_LIST.length) { CF.status('Player-card database still loading — try again in a moment.', 'info'); return; }
+async function openCardPicker() {
+  if (!CARDS_LIST.length) {
+    CF.status('Loading the player-card database…', 'info');
+    const ok = await ensureBuddyCardData();
+    if (!ok) return;
+  }
   pickerMode = 'card';
   currentPool = CARDS_LIST;
   filterOwned = (state.ownedCards || []).length > 0;
@@ -706,6 +714,10 @@ CF.$('iRun').addEventListener('click', async () => {
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !j.ok) throw new Error(j.error || ('HTTP ' + r.status));
+    /* CF-24: the import maps owned buddies/cards through the lazy picker
+       data, so load it before applying — the import is the one flow that
+       needs it immediately */
+    if (j.buddiesOwned || j.charms || j.cardsOwned) await ensureBuddyCardData();
     applyImport(j);
     iStatus('');
     importModal.hidden = true;
@@ -1155,10 +1167,28 @@ function updateWm() {
 }
 
 // ── drafts ────────────────────────────────────────────────────────
+function captureTierState() {
+  /* CF-28: the tier filter's selection used to live only in module state —
+     every boot restored a hardcoded default and the chips rendered before
+     the draft was even read, so the toolbar showed settings that were not
+     in effect. Persist it with the draft. */
+  return { sel: [...tierSel], anim: !!tierAnim, cap: parseInt(CF.$('tierCap')?.value, 10) || 8 };
+}
+function applyTierState(t) {
+  if (!t || !Array.isArray(t.sel)) return false;
+  tierSel = new Set(t.sel.filter(k => ['select', 'deluxe', 'premium', 'ultra', 'exclusive'].includes(k)));
+  tierAnim = !!t.anim;
+  const capInput = CF.$('tierCap');
+  if (capInput && t.cap) capInput.value = String(Math.max(1, Math.min(40, t.cap)));
+  renderTierChips();
+  renderTierPresets();
+  return true;
+}
 CF.$('saveBtn').addEventListener('click', () => {
   captureTexts();
   state.theme = document.documentElement.dataset.theme;
   if (CF.$('showAllCards')) state.showAllCards = CF.$('showAllCards').checked;
+  state.tier = captureTierState();
   try {
     CF.writeJSON(DRAFT_KEY, state);
     CF.status('Draft saved.', 'ok');
@@ -1179,11 +1209,14 @@ CF.$('loadBtn').addEventListener('click', () => {
       picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, draft.picks?.[c] || []])),
       assets: Object.assign({ avatar: null, pcard: null, buddies: [] }, draft.assets),
       owned: draft.owned || {},
-      ownedLevels: draft.ownedLevels || {}, ownedVariants: draft.ownedVariants || [], ownedBuddies: draft.ownedBuddies || [], ownedCards: draft.ownedCards || []
+      ownedLevels: draft.ownedLevels || {}, ownedVariants: draft.ownedVariants || [], ownedBuddies: draft.ownedBuddies || [], ownedCards: draft.ownedCards || [],
+      tier: draft.tier || null
     });
     if (CF.$('showAllCards')) CF.$('showAllCards').checked = !!state.showAllCards;
+    applyTierState(state.tier);   /* CF-28: restore what was actually saved */
     renderFromState();
     refreshLayout();
+    updateTierCount();
     CF.status('Draft loaded.', 'ok');
     return;
   }
@@ -1498,6 +1531,7 @@ async function initEditMode() {
 // ── boot ──────────────────────────────────────────────────────────
 CF.initThemeSwitch();
 CF.initDisclaimerCollapse();
+CF.initStatusDismiss();
 renderAll();
 renderTierChips();
 renderTierPresets();
@@ -1518,8 +1552,11 @@ if (bootDraft) {
     picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, bootDraft.picks?.[c] || []])),
     assets: Object.assign({ avatar: null, pcard: null, buddies: [] }, bootDraft.assets),
     owned: bootDraft.owned || {},
-    ownedLevels: bootDraft.ownedLevels || {}, ownedVariants: bootDraft.ownedVariants || [], ownedBuddies: bootDraft.ownedBuddies || [], ownedCards: bootDraft.ownedCards || []
+    ownedLevels: bootDraft.ownedLevels || {}, ownedVariants: bootDraft.ownedVariants || [], ownedBuddies: bootDraft.ownedBuddies || [], ownedCards: bootDraft.ownedCards || [],
+    tier: bootDraft.tier || null
   });
+  applyTierState(state.tier); /* CF-28: the chips now reflect the saved draft,
+     instead of rendering a default before the draft was ever read */
   renderFromState();
 }
 updateWm();
@@ -1533,7 +1570,9 @@ function bootStatus() {
 
 initEditMode().finally(async () => {
   try {
-    const catalog = await CF.loadCatalog(supabase);
+    /* CF-24: boot without the 1.28 MB of buddy/card picker data —
+       ensureBuddyCardData() loads it on first use instead */
+    const catalog = await CF.loadCatalog(supabase, { extras: false });
     DB = catalog.DB; TIERS = catalog.TIERS; RANKS = catalog.RANKS;
     BUDDIES = catalog.BUDDIES; CARDS = catalog.CARDS; CARDS_LIST = catalog.CARDS_LIST || [];
     SKIN_BY_ID = catalog.SKIN_BY_ID; LEVEL_MAP = catalog.LEVEL_MAP; CHROMA_MAP = catalog.CHROMA_MAP;
@@ -1545,3 +1584,24 @@ initEditMode().finally(async () => {
   }
   bootStatus();
 });
+
+/* CF-24: one-shot lazy load for the buddy/card pickers. The import path
+   that maps owned buddies needs it too, so the import flow pre-warms it. */
+let extrasPromise = null;
+function ensureBuddyCardData() {
+  if (BUDDIES_LIST.length && CARDS_LIST.length) return Promise.resolve(true);
+  if (!extrasPromise) {
+    extrasPromise = CF.loadCatalogExtras(supabase)
+      .then(x => {
+        BUDDIES = x.BUDDIES; BUDDIES_LIST = x.BUDDIES_LIST; BUDDY_BY_ANY = x.BUDDY_BY_ANY;
+        CARDS = x.CARDS; CARDS_LIST = x.CARDS_LIST;
+        return true;
+      })
+      .catch(e => {
+        CF.status('Buddy/card database failed to load: ' + (e.message || e), 'err');
+        extrasPromise = null;
+        return false;
+      });
+  }
+  return extrasPromise;
+}

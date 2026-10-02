@@ -1,7 +1,7 @@
 // CardForge browse — Direction-D marketplace over live Supabase listings.
 // Summary cards come from browse_listings_v2 (legacy browse_listings as a
 // fallback); the quick-view modal carries the REAL shared.css #card.
-import { esc, $, status, initDisclaimerCollapse, ALL_CATS, DESIGN_W, DESIGN_H } from './shared.js';
+import { esc, $, status, initDisclaimerCollapse, initStatusDismiss, ALL_CATS, DESIGN_W, DESIGN_H } from './shared.js';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -11,7 +11,10 @@ if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase) {
 
 const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>";
 
-const IMGERR = "onerror=\"this.closest('[data-imgwrap]')?.setAttribute('data-imgfail','1')\"";
+/* CF-31: a failed skin icon used to become visibility:hidden behind a
+   gradient — a silent gap with no alt and no per-skin signal. Mark the
+   wrap so CSS can show an honest placeholder instead. */
+const IMGERR = "onerror=\"this.setAttribute('data-imgfail','1');this.closest('[data-imgwrap]')?.setAttribute('data-imgfail','1')\"";
 
 const THEME_ACCENTS = {
   protocol: { label: 'PROTOCOL', bg: '#0F1923', panel: '#1F2731', accent: '#FF4655', ink: '#ECE8E1', mut: '#8A99A9' },
@@ -172,20 +175,27 @@ function buildFacets() {
   $('fFlags').innerHTML = '<legend>REQUIREMENTS</legend>' + flagRows;
 }
 
+/* CF-30: facet counts come from the set filtered by every OTHER dimension,
+   so each row shows what choosing it would yield — they used to be computed
+   from the unfiltered list and never moved as filters changed. */
+function facetBase(skip) { return listings.filter(l => matches(l, skip)); }
+
 function themeCounts() {
+  const base = facetBase('themes');
   Object.keys(THEME_ACCENTS).forEach(k => {
     const el = document.querySelector('[data-theme-count="' + k + '"]');
-    if (el) el.textContent = '(' + listings.filter(l => l.theme === k).length + ')';
+    if (el) el.textContent = '(' + base.filter(l => l.theme === k).length + ')';
   });
 }
 
 function priceCounts() {
+  const base = facetBase('price');
   document.querySelectorAll('#fPrice input[name="price"]').forEach(r => {
     const v = r.value;
     let count;
-    if (!v) count = listings.length;
-    else if (v === 'off') count = listings.filter(l => l.price === null).length;
-    else count = listings.filter(l => {
+    if (!v) count = base.length;
+    else if (v === 'off') count = base.filter(l => l.price === null).length;
+    else count = base.filter(l => {
       const p = l.price;
       if (p === null) return false;
       if (v === 'u100') return p < 100;
@@ -201,14 +211,15 @@ function priceCounts() {
 }
 
 function rankCounts() {
+  const base = facetBase('rank');
   const N = listings.length || 1;
   document.querySelectorAll('#fRank input[name="minrank"]').forEach(r => {
     const v = r.value;
     let count;
-    if (!v) count = listings.length;
+    if (!v) count = base.length;
     else {
       const need = RANK_THRESHOLDS[v];
-      count = listings.filter(l => need && l.rankNow.tier >= need).length;
+      count = base.filter(l => need && l.rankNow.tier >= need).length;
     }
     const row = r.closest('.frow');
     if (!row) return;
@@ -220,6 +231,7 @@ function rankCounts() {
 }
 
 function flagCounts() {
+  const base = facetBase('flags');
   const map = {
     anim: l => l.stats.animated > 0,
     wtr: l => l.flags.wtr,
@@ -230,7 +242,7 @@ function flagCounts() {
     const row = cb.closest('label');
     const fn = row ? row.querySelector('.fn') : null;
     const test = map[cb.value];
-    if (fn && test) fn.textContent = listings.filter(test).length;
+    if (fn && test) fn.textContent = base.filter(test).length;
   });
 }
 
@@ -407,18 +419,24 @@ function applyStyle() {
   });
 }
 
-function matches(l) {
-  if (state.q) {
+function matches(l, skip) {
+  if (state.q && skip !== 'q') {
     const q = state.q.toLowerCase();
-    const hay = (l.title + ' ' + l.code + ' ' + l.seller.name + ' ' + l.vlogin).toLowerCase();
+    /* CF-29: the matcher used to cover title/code/seller/vlogin only —
+       searching "reaver" found nothing even when cards showed Reaver skins */
+    const skinNames = Object.values(l.picks_top || {})
+      .flat()
+      .map(p => p && (p.name || '')).filter(Boolean);
+    const hay = (l.title + ' ' + l.code + ' ' + l.seller.name + ' ' + l.vlogin
+      + ' ' + skinNames.join(' ')).toLowerCase();
     if (!hay.includes(q)) return false;
   }
-  if (state.themes.size && !state.themes.has(l.theme)) return false;
-  if (state.minRank) {
+  if (skip !== 'themes' && state.themes.size && !state.themes.has(l.theme)) return false;
+  if (skip !== 'rank' && state.minRank) {
     const need = RANK_THRESHOLDS[state.minRank];
     if (!need || l.rankNow.tier < need) return false;
   }
-  if (state.price) {
+  if (skip !== 'price' && state.price) {
     const p = l.price;
     if (state.price === 'off') { if (p !== null) return false; }
     else if (p === null) return false;
@@ -427,7 +445,7 @@ function matches(l) {
     else if (state.price === 'r600' && !(p >= 300 && p < 600)) return false;
     else if (state.price === 'o600' && !(p >= 600)) return false;
   }
-  if (state.flags.size) {
+  if (skip !== 'flags' && state.flags.size) {
     if (state.flags.has('anim') && !(l.stats.animated > 0)) return false;
     if (state.flags.has('wtr') && !l.flags.wtr) return false;
     if (state.flags.has('rec') && !l.flags.receipts) return false;
@@ -471,6 +489,12 @@ function render() {
   const featVis = !!(feat && matches(feat));
   const total = fRest.length + (featVis ? 1 : 0);
   $('count').textContent = total + (total === 1 ? ' listing' : ' listings');
+  /* CF-30: facet counts update on every render — the zero-result early
+     return below used to skip them, so the sidebar froze mid-filter */
+  themeCounts();
+  priceCounts();
+  rankCounts();
+  flagCounts();
   if (total === 0) {
     feature.hidden = true;
     feature.innerHTML = '';
@@ -502,10 +526,6 @@ function render() {
     const l = bySlug[el.getAttribute('data-slug')];
     if (l) setThemeVars(el, l.theme);
   });
-  themeCounts();
-  priceCounts();
-  rankCounts();
-  flagCounts();
   applyView();
 }
 
@@ -795,7 +815,14 @@ function closeQV() {
 
 // ── wiring ────────────────────────────────────────────────────────
 function wire() {
-  $('q').addEventListener('input', e => { state.q = e.target.value; render(); });
+  /* CF-29: debounce — every keystroke used to re-render the featured tile,
+     the whole grid, the list and all facet counts */
+  let qTimer = null;
+  $('q').addEventListener('input', e => {
+    state.q = e.target.value;
+    clearTimeout(qTimer);
+    qTimer = setTimeout(render, 140);
+  });
   document.querySelectorAll('#fTheme input').forEach(cb => {
     cb.addEventListener('change', () => {
       if (cb.checked) state.themes.add(cb.value); else state.themes.delete(cb.value);
@@ -959,3 +986,4 @@ applyStyle();
 load();
 
 initDisclaimerCollapse();
+initStatusDismiss();
