@@ -164,19 +164,22 @@ function renderListing(listing) {
       const placeHint = () => {
         const live = [...document.querySelectorAll('.pcard')].find((el) => el.getBoundingClientRect().width > 0);
         if (live) {
-          // overlay the player card. this math is verified correct - do not alter it.
+          // overlay the player card by living inside its box — no coordinate
+          // math, so every zoom level and layout mode stays correct
+          const box = live;
+          if (hint.parentElement !== box) box.appendChild(hint);
           hint.dataset.where = 'desktop';
           hint.classList.remove('is-inline');
-          const r = live.getBoundingClientRect();
-          const host2 = live.offsetParent || live.parentElement;
-          hint.style.left = (r.left - host2.getBoundingClientRect().left + r.width / 2) + 'px';
-          hint.style.top = (r.top - host2.getBoundingClientRect().top + r.height / 2) + 'px';
+          hint.classList.add('in-box');
+          hint.style.left = '';
+          hint.style.top = '';
         } else if (mcardShown()) {
           // #stage is display:none on mobile, so the button must move out of it. It must be a
           // SIBLING of #mcard, never a child: renderMobile() runs straight after this function
           // and does mcard.innerHTML = MOBILE_SKELETON, which would destroy a child.
           if (hint.dataset.where !== 'mobile') {
             hint.classList.add('is-inline');
+            hint.classList.remove('in-box');
             hint.style.left = '';
             hint.style.top = '';
             mcard.insertAdjacentElement('afterend', hint);
@@ -187,6 +190,7 @@ function renderListing(listing) {
           // to sit on, so stop floating on stale absolute coordinates and flow inline instead.
           hint.dataset.where = 'inline';
           hint.classList.add('is-inline');
+          hint.classList.remove('in-box');
           hint.style.left = '';
           hint.style.top = '';
         }
@@ -727,7 +731,7 @@ if (!slug) {
     renderMobile(listing);
     currentListing = listing;
     viewMode = new URLSearchParams(location.search).get('view');
-    if (viewMode && !['m1', 'm2', 'native'].includes(viewMode)) viewMode = null;
+    if (viewMode && !['m1', 'm2', 'm3', 'native'].includes(viewMode)) viewMode = null;
     viewRefresh(listing);
     totalViews = Number(listing.views) || 0;
     /* CF-11/CF-12: structured price, seller, status — from columns the

@@ -1054,7 +1054,7 @@ function refreshLayout() {
   const mode = state.layout === 'auto' ? resolveLayout(payload) : state.layout;
   applyLayout(CF.$('card'), payload, mode, 1, { editable: true });
   /* CF-06: the resolved mode is stated, not implied by the export label */
-  const MODE_NAMES = { m1: 'TILES', m2: 'SHOWCASE' };
+  const MODE_NAMES = { m1: 'TILES', m2: 'SHOWCASE', m3: 'CLASSIC' };
   const badge = CF.$('layoutBadge');
   const auto = state.layout === 'auto';
   badge.textContent = auto ? 'AUTO → ' + MODE_NAMES[mode] : MODE_NAMES[mode];
@@ -1090,7 +1090,7 @@ CF.$('layoutSel').addEventListener('change', () => {
   state.layout = CF.$('layoutSel').value;
   refreshLayout();
   /* CF-06: layout changes finally say what they did */
-  const NAMES = { m1: 'TILES', m2: 'SHOWCASE' };
+  const NAMES = { m1: 'TILES', m2: 'SHOWCASE', m3: 'CLASSIC' };
   const mode = state.layout === 'auto' ? resolveLayout(buildPayload()) : state.layout;
   CF.status(state.layout === 'auto' ? 'Layout: AUTO → ' + NAMES[mode] + '.' : 'Layout: ' + NAMES[mode] + '.', 'info');
 });

@@ -121,7 +121,7 @@ export function countPrems(picks) {
 
 export function resolveLayout(payload) {
   const chosen = payload && payload.layout;
-  if (chosen === 'm1' || chosen === 'm2') return chosen;
+  if (chosen === 'm1' || chosen === 'm2' || chosen === 'm3') return chosen;
   return 'm1'; /* legacy 'm4' payloads and AUTO both land on TILES */
 }
 
@@ -153,7 +153,7 @@ export function renderSlotsM1(panel, skins, opts) {
       skins.forEach((s, i) => slots.appendChild(skinCell(s, i, opts.editable)));
       return;
     }
-    const rows = Math.max(1, Math.floor((H + 6) / 62));
+    const rows = Math.max(1, Math.floor((H + 6) / 80));
     const cap = rows * 2;
     const chip = count > cap;
     const shown = chip ? cap - 1 : Math.min(count, cap);
@@ -203,7 +203,7 @@ export function renderSlotsM2(panel, skins, opts) {
       skins.forEach((s, i) => slots.appendChild(skinCell(s, i, opts.editable)));
       return;
     }
-    const rows = Math.max(1, Math.floor((H + 6) / 62));
+    const rows = Math.max(1, Math.floor((H + 6) / 80));
     const cap = rows * 2;
     const chip = count > cap;
     const shown = chip ? cap - 1 : Math.min(count, cap);
@@ -221,10 +221,29 @@ export function renderSlotsM2(panel, skins, opts) {
   if (count > N) slots.appendChild(moreChip(count - N));
 }
 
+/* CLASSIC: one column per gun type — full-width rows, own space, own scroll */
+function renderSlotsClassic(panel, skins, opts) {
+  const slots = panel.querySelector('.slots');
+  if (!slots) return;
+  resetSlots(slots);
+  const count = skins.length;
+  if (!count) { renderEmpty(slots, panel.dataset.cat); return; }
+  const H = slots.clientHeight;
+  if (opts.showAll) {
+    skins.forEach((s, i) => slots.appendChild(skinCell(s, i, opts.editable)));
+    return;
+  }
+  const cap = Math.max(1, Math.floor((H + 6) / 70));
+  const chip = count > cap;
+  const shown = chip ? cap - 1 : count;
+  for (let i = 0; i < shown; i++) slots.appendChild(skinCell(skins[i], i, opts.editable));
+  if (chip) slots.appendChild(moreChip(count - shown));
+}
+
 // ── orchestrator ──────────────────────────────────────────────────
 export function applyLayout(card, payload, mode, page, opts) {
   opts = opts || {};
-  card.classList.remove('mode-m1', 'mode-m2');
+  card.classList.remove('mode-m1', 'mode-m2', 'mode-m3');
   card.classList.add('mode-' + mode);
   ALL_CATS.forEach(cat => {
     if (cat === 'Flex') return;
@@ -232,6 +251,7 @@ export function applyLayout(card, payload, mode, page, opts) {
     if (!panel) return;
     const skins = pickList(payload, cat);
     if (mode === 'm2') renderSlotsM2(panel, skins, opts);
+    else if (mode === 'm3') renderSlotsClassic(panel, skins, opts);
     else renderSlotsM1(panel, skins, opts);
   });
   return { pages: 1, page: 1 };
