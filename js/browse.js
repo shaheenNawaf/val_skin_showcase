@@ -125,6 +125,7 @@ function normalize(r) {
     code: r.code || '',
     theme: r.theme || 'protocol',
     price: r.price == null ? null : Number(r.price),
+    currency: r.currency || null, /* CF-16: was normalised away, so every price rendered a hardcoded $ */
     negotiable: !!r.negotiable,
     views: Number(r.views) || 0,
     daysAgo: daysAgo(r.updated_at),
@@ -241,9 +242,22 @@ function badgesGrid(l) {
   return b;
 }
 
+/* CF-16: the symbol comes from the listing's own currency column — it was
+   hardcoded '$' while the RPC returned EUR/GBP listings untouched. */
+const CUR_SYMBOL = { USD: '$', EUR: '€', GBP: '£', JPY: '¥' };
+function moneyHTML(l, cls) {
+  if (l.price == null) return '<span class="' + (cls || 'lc-offer') + '">CONTACT FOR PRICE</span>';
+  const sym = CUR_SYMBOL[l.currency] || (l.currency ? esc(l.currency) + ' ' : '$');
+  return '<span class="' + (cls || 'lc-price') + '">' + sym + esc(l.price) + '</span>';
+}
+
 function chipsGrid(l) {
   let c = '<span>' + esc(l.stats.skins) + ' SKINS</span><span>' + esc(l.stats.premium) + ' PREMIUM</span>';
   if (l.stats.animated > 0) c += '<span>' + esc(l.stats.animated) + ' ANIMATED</span>';
+  /* CF-19: WTR and receipts are the buyer's first trust question — they
+     were list-mode-only before */
+  if (l.flags.wtr) c += '<span>WTR</span>';
+  if (l.flags.receipts) c += '<span>RECEIPTS</span>';
   c += '<span>' + esc(l.flags.owner) + ' OWNER</span>';
   return c;
 }
@@ -257,7 +271,10 @@ function chipsList(l) {
 }
 
 function priceHTML(l) {
-  return l.price == null ? '<span class="lc-offer">MAKE OFFER</span>' : '<span class="lc-price">$' + esc(l.price) + '</span>';
+  /* CF-16: negotiable is rendered — a buyer should know the price is soft
+     before they contact anyone. It was normalised and never shown. */
+  const neg = l.negotiable ? '<span class="lc-neg">open to offers</span>' : '';
+  return moneyHTML(l) + neg;
 }
 
 function previewInner(l, style) {
@@ -296,7 +313,11 @@ function cardHTML(l, i) {
   const rn = l.rankNow;
   const rp = l.rankPeak;
   const arctic = l.theme === 'arctic' ? ' data-theme-tile="arctic"' : '';
-  const price = l.price != null ? '<b class="gc-price">$' + esc(l.price) + '</b>' : '<span class="gc-offer">MAKE OFFER</span>';
+  const price = moneyHTML(l, 'gc-price') + (l.negotiable ? '<span class="gc-neg">open to offers</span>' : '');
+  if (l.price == null) { /* moneyHTML already handles the offer case */ }
+  const priceCell = l.price == null
+    ? '<span class="gc-offer">CONTACT FOR PRICE</span>' + (l.negotiable ? '<span class="gc-neg">open to offers</span>' : '')
+    : price;
   return '<button type="button" class="gcard" data-slug="' + esc(l.slug) + '" data-i="' + i + '">'
     + '<div class="gc-preview tt-' + tierFor(l) + '"' + arctic + ' data-imgwrap>'
     + '<span class="gc-badges">' + badgesGrid(l) + '</span>'
@@ -305,11 +326,12 @@ function cardHTML(l, i) {
     + '</div>'
     + '<div class="gc-body">'
     + '<h2>' + esc(l.title) + '</h2>'
+    + '<div class="gc-code">' + esc(l.code) + '</div>'
     + '<div class="gc-ranks">' + rankImg(rn) + '<span>' + esc(rn.name) + '</span><i>·</i><span class="pk">PEAK ' + esc(rp.name) + '</span></div>'
     + '<div class="gc-chips">' + chipsGrid(l) + '</div>'
     + '<div class="gc-seller">' + img(AVATAR_PLACEHOLDER, 'Seller avatar') + '<span>' + esc(l.seller.name) + '</span></div>'
     + '</div>'
-    + '<div class="gc-foot">' + price
+    + '<div class="gc-foot">' + priceCell
     + '<span class="gc-meta">' + esc(l.views) + ' views · ' + esc(agoText(l.daysAgo)) + '</span>'
     + '<span class="gc-go">VIEW →</span>'
     + '</div></button>';
@@ -335,9 +357,10 @@ function featHTML(l) {
   const rp = l.rankPeak;
   const s = l.stats;
   const sk = flattenPicks(l, FEATURE_ORDER).slice(0, 5).map(pickSrcImg).join('');
+  const sym = CUR_SYMBOL[l.currency] || (l.currency ? esc(l.currency) + ' ' : '$');
   const price = l.price != null
-    ? '<b>$' + esc(l.price) + '</b><span>one-time · full access</span>'
-    : '<b class="offer">Make an offer</b><span>seller accepts trades</span>';
+    ? '<b>' + sym + esc(l.price) + (l.negotiable ? '<i>open to offers</i>' : '') + '</b><span>one-time · full access</span>'
+    : '<b class="offer">Contact for price</b><span>' + (l.negotiable ? 'open to offers' : 'seller accepts trades') + '</span>';
   const flags = esc(l.flags.owner + ' OWNER · ' + (l.flags.wtr ? 'WTR' : 'NO-WTR') + ' · ' + (l.flags.receipts ? 'RECEIPTS' : 'NO RECEIPTS'));
   return '<div class="gfeat" data-slug="' + esc(l.slug) + '">'
     + '<div class="gf-preview" data-imgwrap>'
@@ -466,8 +489,10 @@ function render() {
     feature.hidden = true;
     feature.innerHTML = '';
   }
-  grid.innerHTML = fRest.map((l, i) => cardHTML(l, i)).join('') + (total < 12 ? ctaHTML() : '');
-  list.innerHTML = fRest.map(rowHTML).join('');
+  grid.innerHTML = fRest.map((l, i) => cardHTML(l, i)).join('') + (total < 12 ? ctaHTML() : '') + moreBar();
+  list.innerHTML = fRest.map(rowHTML).join('') + moreBar();
+  const lmb = document.getElementById('loadMoreBtn');
+  if (lmb) lmb.addEventListener('click', loadMore);
   document.querySelectorAll('#grid .gcard').forEach(el => {
     const l = bySlug[el.getAttribute('data-slug')];
     if (l) setThemeVars(el, l.theme);
@@ -549,13 +574,19 @@ function buildPulse() {
   listings.forEach(l => { views += l.views; skinsTotal += l.stats.skins; });
   const prices = listings.filter(l => l.price != null).map(l => l.price);
   const avg = prices.length ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0;
+  /* CF-16: the pulse row's average uses the listings' dominant currency
+     instead of a hardcoded $ over mixed-currency data */
+  const curTally = {};
+  listings.filter(l => l.price != null).forEach(l => { curTally[l.currency || 'USD'] = (curTally[l.currency || 'USD'] || 0) + 1; });
+  const domCur = Object.entries(curTally).sort((a, b) => b[1] - a[1])[0]?.[0] || 'USD';
+  const domSym = CUR_SYMBOL[domCur] || domCur + ' ';
   const sellers = {};
   listings.forEach(l => { sellers[l.seller.name] = 1; });
   const cells = [
     { v: listings.length, label: 'LISTINGS', prefix: '' },
     { v: views, label: 'TOTAL VIEWS', prefix: '' },
     { v: skinsTotal, label: 'SKINS TRACKED', prefix: '' },
-    prices.length ? { v: avg, label: 'AVG PRICE', prefix: '$' } : { text: '—', label: 'AVG PRICE' },
+    prices.length ? { v: avg, label: 'AVG PRICE' + (domCur !== 'USD' ? ' (' + domCur + ')' : ''), prefix: domSym } : { text: '—', label: 'AVG PRICE' },
     { v: Object.keys(sellers).length, label: 'SELLERS', prefix: '' }
   ];
   $('pulse').innerHTML = cells.map(c => {
@@ -696,12 +727,13 @@ function fillBar(l, slug) {
   const price = bar.querySelector('.qv-price');
   const offer = bar.querySelector('.qv-offer');
   if (l.price != null) {
-    price.textContent = '$' + l.price;
+    price.textContent = (CUR_SYMBOL[l.currency] || l.currency || '$') + l.price;
     price.hidden = false;
     offer.hidden = true;
   } else {
     price.hidden = true;
     offer.hidden = false;
+    offer.textContent = 'CONTACT FOR PRICE';
   }
   bar.querySelector('.qv-cta').setAttribute('href', 'view.html?slug=' + encodeURIComponent(slug));
   $('qvContact').hidden = true;
@@ -825,7 +857,47 @@ function wire() {
   });
 }
 
+async function loadMore() {
+  if (!hasMore || !supabase) return;
+  const btn = document.getElementById('loadMoreBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
+  try {
+    const rows = await fetchPage(shownCount);
+    rows.map(normalize).forEach(l => {
+      if (!bySlug[l.slug]) { listings.push(l); bySlug[l.slug] = l; }
+    });
+    shownCount = listings.length;
+    render();
+    status(shownCount + ' listings loaded.', 'ok');
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Load more'; }
+    status('Could not load more listings — ' + (e.message || e), 'err');
+  }
+}
+
 // ── data load ─────────────────────────────────────────────────────
+/* CF-18: the RPC caps at p_limit 60 by default and the caller used to pass
+   no arguments — listings past 60 were never fetched, with no indication.
+   Now we page through with p_offset and disclose exactly what is shown. */
+const PAGE_SIZE = 60;
+let shownCount = 0;
+let hasMore = false;
+
+async function fetchPage(offset) {
+  const res = await supabase.rpc('browse_listings_v2', { p_limit: PAGE_SIZE + 1, p_offset: offset });
+  if (res.error) throw res.error;
+  const rows = res.data || [];
+  hasMore = rows.length > PAGE_SIZE;
+  return rows.slice(0, PAGE_SIZE);
+}
+
+function moreBar() {
+  if (!hasMore) return '';
+  return '<div class="morebar">showing ' + shownCount + ' of more'
+    + (hasMore ? ' · <button type="button" class="sbtn2" id="loadMoreBtn">Load more</button>' : '')
+    + '</div>';
+}
+
 async function load() {
   if (!supabase) {
     status('Browse needs Supabase configured — see SETUP.md.', 'err');
@@ -835,9 +907,7 @@ async function load() {
   let data = null;
   let limited = false;
   try {
-    const res = await supabase.rpc('browse_listings_v2');
-    if (res.error) throw res.error;
-    data = res.data || [];
+    data = await fetchPage(0);
   } catch {
     try {
       const res = await supabase.rpc('browse_listings');
@@ -851,6 +921,7 @@ async function load() {
         crank_name: '', prank_name: '', crank_icon: '', prank_icon: '',
         vlogin: '', tag: '', link: '', wtr: '', receipts: '', owner: '', picks_top: {}
       }));
+      hasMore = false;
       limited = true;
     } catch (e2) {
       /* CF-04: a fetch failure must render an error state, not a blank page.
@@ -862,6 +933,7 @@ async function load() {
   }
   listings = data.map(normalize);
   listings.forEach(l => { bySlug[l.slug] = l; });
+  shownCount = listings.length;
   buildPulse();
   countUp();
   if (!listings.length) {
