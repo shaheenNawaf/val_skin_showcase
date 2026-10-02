@@ -48,7 +48,7 @@ body{font-family:var(--font-ui);color:var(--c-ink)}
 /* ── topbar ────────────────────────────────────────────────────── */
 #topbar{position:fixed;top:0;left:0;right:0;min-height:52px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;row-gap:6px;padding:6px 14px;background:var(--c-surface);border-bottom:1px solid var(--c-line);z-index:20;gap:10px}
 .tb-left,.tb-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:6px}
-.logo{font-family:var(--font-display);font-weight:800;font-size:16px;letter-spacing:.18em;color:var(--c-ink)}
+.logo{font-family:var(--font-display);font-weight:800;font-size:16px;letter-spacing:.135em;color:var(--c-ink)}
 .logo::before{content:"";display:inline-block;width:9px;height:15px;background:var(--c-accent);transform:skewX(-20deg);margin-right:9px;vertical-align:-2px}
 #topbar button{background:transparent;border:1px solid var(--c-line-soft);color:var(--c-mut);padding:8px 16px;font:600 11px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;cursor:pointer;
 clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
