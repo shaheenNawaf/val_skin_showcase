@@ -349,7 +349,9 @@ export function resizeToDataUrl(file, max) {
 // ── PNG export ────────────────────────────────────────────────────
 // Remote icon URLs are swapped to data URLs for the capture only, so exported
 // PNGs never taint the canvas and stored payloads stay small.
-export async function exportCard(card) {
+/* Shared capture used by the PNG export and by the publish flow, which
+   uploads the same render as the listing's og:image (CF-20). */
+export async function captureCardBlob(card, type = 'image/png', quality) {
   document.body.classList.add('exporting');
   // wait a frame so the exporting styles apply — with a setTimeout escape
   // because backgrounded tabs never fire requestAnimationFrame
@@ -363,14 +365,21 @@ export async function exportCard(card) {
       if (d) { swaps.push([img, src]); img.src = d; }
     }
     const canvas = await html2canvas(card, { scale: 2, useCORS: true, backgroundColor: null });
-    const a = document.createElement('a');
-    a.download = 'showcase-card-3840x2160.png';
-    a.href = canvas.toDataURL('image/png');
-    a.click();
+    return await new Promise(res => canvas.toBlob(res, type, quality));
   } finally {
     swaps.forEach(([img, src]) => { img.src = src; });
     document.body.classList.remove('exporting');
   }
+}
+
+export async function exportCard(card) {
+  const blob = await captureCardBlob(card, 'image/png');
+  if (!blob) { return; }
+  const a = document.createElement('a');
+  a.download = 'showcase-card-3840x2160.png';
+  a.href = URL.createObjectURL(blob);
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
 
 // ── same-device presence (viewer fallback) ────────────────────────

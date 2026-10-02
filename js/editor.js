@@ -1299,9 +1299,56 @@ document.querySelector('.themes')?.addEventListener('click', e => {
   if (e.target.closest('.swatch')) refreshLayout();
 });
 
+/* CF-21: a publish gate. buildPayload() used to go straight to
+   create_listing — an empty card full of placeholder text published to the
+   public marketplace. Blocking items say exactly what to fix. */
+function publishGate() {
+  const t = state.texts || {};
+  const checks = [];
+  const skins = CF.ALL_CATS.reduce((n, c) => n + (state.picks[c] || []).length, 0);
+  checks.push({
+    ok: skins > 0,
+    label: 'the card has no skins on it',
+    fix: 'add at least one skin so buyers see an inventory',
+  });
+  const titleSet = (t.cname || '').trim() && t.cname !== 'CHANGE NAME';
+  checks.push({
+    ok: !!titleSet,
+    label: 'the card title still says “CHANGE NAME”',
+    fix: 'click the title on the card and type the listing name',
+  });
+  const priceSet = (t.price || '').trim() && t.price !== 'PRICE OFFER';
+  checks.push({
+    ok: !!priceSet,
+    label: 'the price is still the placeholder',
+    fix: 'type an asking price, or something like “offers” in its place',
+  });
+  const link = (t.link || '').trim();
+  checks.push({
+    ok: link.length > 0 && link !== 'https://www.facebook.com/Your.Page.Here',
+    label: 'no contact link is set',
+    fix: 'set a Discord or other contact in the seller box so buyers can reach you',
+  });
+  return {
+    blocking: checks.filter(c => !c.ok),
+    pass: checks.every(c => c.ok),
+  };
+}
+
 async function publishListing() {
   const payload = buildPayload();
   const btn = CF.$('publishBtn');
+
+  /* CF-21: run the gate first — an empty or placeholder card never goes live */
+  const gate = publishGate();
+  if (!gate.pass) {
+    const lines = gate.blocking.map(b => `• ${b.label} — ${b.fix}`).join('\n');
+    CF.status('Publish blocked — ' + gate.blocking.length + ' item' + (gate.blocking.length === 1 ? '' : 's') + ' to fix. Hover this message for exactly what.', 'err');
+    const el = document.getElementById('status');
+    if (el) el.title = lines;
+    return;
+  }
+
   btn.disabled = true;
   CF.status(supabase ? 'Publishing listing…' : 'Publishing (this browser)…');
   try {
@@ -1347,11 +1394,43 @@ async function publishListing() {
     editSlug = slug;
     updateWm();
     btn.textContent = supabase ? 'Update listing' : 'Republish';
+
+    /* CF-20: upload the card render as the listing's share image. The
+       publish link then carries the card into Discord/Facebook embeds
+       instead of a text stub. Best-effort — a failure must not lose the
+       publish. */
+    if (supabase) {
+      try {
+        const blob = await CF.captureCardBlob(card, 'image/jpeg', .82);
+        if (blob) {
+          const { error: upErr } = await supabase.storage
+            .from('listing-images')
+            .upload(slug + '.jpg', blob, { upsert: true, contentType: 'image/jpeg' });
+          if (upErr) CF.status('Published, but the share image failed to upload: ' + (upErr.message || upErr), 'err');
+        }
+      } catch (e) {
+        CF.status('Published, but the share image failed: ' + (e.message || e), 'err');
+      }
+    }
+
     const url = new URL('view.html?slug=' + encodeURIComponent(slug), location.href).href;
     CF.copyText(url);
+    /* CF-23: edit access lives only in this browser's localStorage. Show the
+       recovery key once at first publish so a lost browser doesn't mean a
+       listing that can never be edited or marked sold again. */
+    const firstPublish = !localStorage.getItem('cf-key-shown-' + slug);
+    const key = localStorage.getItem('vc-edit-' + slug) || '';
+    const keyMsg = firstPublish && key
+      ? ' Recovery key (shown once, save it somewhere safe — it is the only way to edit this listing from another browser): ' + key
+      : '';
+    if (firstPublish) localStorage.setItem('cf-key-shown-' + slug, '1');
     CF.status(supabase
-      ? 'Published! Share link copied.'
-      : 'Published for this browser. Link copied — add Supabase keys in js/config.js for public links.', 'ok');
+      ? 'Published! Share link copied.' + keyMsg
+      : 'Published for this browser. Link copied — add Supabase keys in js/config.js for public links.' + keyMsg, 'ok');
+    if (keyMsg) {
+      const el = document.getElementById('status');
+      if (el) el.title = 'Recovery key: ' + key;
+    }
   } catch (e) {
     CF.status('Publish failed: ' + (e.message || e), 'err');
   } finally {
@@ -1373,7 +1452,8 @@ async function loadListingForEdit(slug) {
 }
 
 async function initEditMode() {
-  const slug = new URLSearchParams(location.search).get('edit');
+  const params = new URLSearchParams(location.search);
+  const slug = params.get('edit');
   if (!slug) return;
   const listing = await loadListingForEdit(slug);
   if (!listing) {
@@ -1381,6 +1461,21 @@ async function initEditMode() {
     return;
   }
   editSlug = slug;
+  /* CF-23: recovery-key re-entry. Without the local edit token this browser
+     could load the listing but never update it (update_listing checks the
+     token hash). With a key, the seller regains control from any browser. */
+  if (!localStorage.getItem('vc-edit-' + slug)) {
+    const key = (params.get('key') || '').trim() || (window.prompt(
+      'This listing was published from another browser.\n\n' +
+      'Paste the recovery key you saved when you published it — it is the only way to edit or mark this listing sold from here.'
+    ) || '').trim();
+    if (key) {
+      localStorage.setItem('vc-edit-' + slug, key);
+      CF.status('Recovery key accepted — it will be verified when you publish changes.', 'info');
+    } else {
+      CF.status('Viewing in read-only mode: this browser has no edit key for that listing. Re-open with ?edit=' + slug + '&key=… to edit.', 'err');
+    }
+  }
   const p = listing.payload || {};
   Object.assign(state, {
     showAllCards: p.showAllCards || false,

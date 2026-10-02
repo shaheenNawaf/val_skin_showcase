@@ -651,8 +651,7 @@ if (!slug) {
     wireContact(listing.payload?.texts?.link);
     CF.status('Listing loaded.', 'ok');
 
-    const link = (listing.payload?.texts?.link || '').trim();
-    /* contact wiring moved to wireContact() — the button always renders now */
+    const link = (listing.payload?.texts?.link || '').trim(); /* read by wireContact() */
 
     if (localStorage.getItem('vc-edit-' + slug)) {
       const editBtn = CF.$('editBtn');
