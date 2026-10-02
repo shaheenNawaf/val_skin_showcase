@@ -671,6 +671,18 @@ zoomDockBar.querySelectorAll('button').forEach(b => b.addEventListener('click', 
 }));
 setDockCollapsed(localStorage.getItem('vc-zoomdock-collapsed') === '1');
 
+/* collapsible hero: collapsed keeps title + status + contact only */
+const vhero = CF.$('vhero'), vheroToggle = CF.$('vheroToggle');
+function setHeroCollapsed(collapsed) {
+  vhero.classList.toggle('collapsed', collapsed);
+  vheroToggle.setAttribute('aria-expanded', String(!collapsed));
+  vheroToggle.textContent = collapsed ? '«' : '»';
+  vheroToggle.title = collapsed ? 'Expand header' : 'Collapse header';
+  try { localStorage.setItem('vc-hero-collapsed', collapsed ? '1' : '0'); } catch { /* private mode */ }
+}
+vheroToggle.addEventListener('click', () => setHeroCollapsed(!vhero.classList.contains('collapsed')));
+setHeroCollapsed(localStorage.getItem('vc-hero-collapsed') === '1');
+
 /* CF-33: fill the native layout the moment it actually becomes visible —
    a desktop visit no longer downloads the second set of icons */
 addEventListener('resize', () => {

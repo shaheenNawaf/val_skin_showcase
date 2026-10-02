@@ -195,3 +195,13 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 #viewSwitch button[aria-pressed=true]{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
 #viewBadge{display:inline-flex;align-items:center;gap:7px;cursor:default}
 #viewBadge svg{width:12px;height:12px;flex:none}
+
+/* collapsible hero — collapsed = one slim line: name … status + contact */
+#vheroToggle{background:transparent;border:1px solid var(--c-line);color:var(--c-mut);width:28px;height:28px;
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none;
+  font:700 12px/1 var(--font-ui);
+  clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+#vheroToggle:hover{color:var(--c-ink);border-color:var(--c-mut)}
+#vhero.collapsed{padding:6px 14px}
+#vhero.collapsed .vh-left span{display:none}
+#vhero.collapsed .vh-right{gap:10px}
