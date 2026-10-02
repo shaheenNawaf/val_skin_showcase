@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardForge — Prototype 5 · Legibility &amp; layout fidelity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+.wrap{max-width:1320px}
+
+/* ---------- viewport picker ---------- */
+.vprow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.vp{font:600 11.5px ui-monospace,Menlo,Consolas,monospace;color:var(--c-mut);margin-left:auto}
+
+/* ---------- solution cards ---------- */
+.sols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-bottom:24px}
+.sol{background:var(--c-surface);border:1px solid var(--c-line);padding:16px;display:flex;flex-direction:column;gap:9px;cursor:pointer}
+.sol:hover{border-color:var(--c-mut)}
+.sol[aria-pressed=true]{border-color:var(--c-accent);box-shadow:inset 3px 0 0 var(--c-accent)}
+.sol .k{font:800 10px ui-monospace,Menlo,Consolas,monospace;color:var(--c-accent);letter-spacing:.1em}
+.sol h3{font-family:var(--font-display);font-weight:800;font-size:15px;letter-spacing:.06em;text-transform:uppercase}
+.sol p{font-size:12px;line-height:1.6;color:var(--c-mut);flex:1}
+.sol .trade{font-size:11.5px;line-height:1.55;color:var(--warn);border-top:1px solid var(--c-line-soft);padding-top:9px}
+.sol .trade b{color:var(--ink,#D9DCE0)}
+
+/* ---------- stage ---------- */
+.stagebox{background:var(--c-surface);border:1px solid var(--c-line);padding:14px}
+.stagehead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:11px}
+.zoombar{display:flex;gap:0;border:1px solid var(--c-line);background:var(--c-surface2);margin-left:auto}
+.zoombar button{background:transparent;border:0;border-right:1px solid var(--c-line);color:var(--c-mut);
+  font:700 10px var(--font-ui);letter-spacing:.08em;text-transform:uppercase;padding:7px 11px;cursor:pointer}
+.zoombar button:last-child{border-right:0}
+.zoombar button[aria-pressed=true]{background:var(--c-accent-btn);color:#fff}
+
+.canvasbox{background:#0E151D;border:1px solid var(--c-line);overflow:auto;padding:14px;display:flex;justify-content:center;align-items:flex-start}
+.canvasbox.pan{justify-content:flex-start}
+.canvasbox.q1{overflow:hidden}
+
+/* the card — real design sizes, then scaled */
+.cv{width:1920px;height:1080px;flex:none;transform-origin:top left;position:relative;
+  background:linear-gradient(158deg,#18232F 0%,#0F1923 52%,#141D27 100%);border:1px solid #2E3A46;
+  padding:26px 30px;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:16px;color:#ECE8E1;overflow:hidden}
+.cv-hd{display:flex;align-items:flex-end;gap:14px}
+.cv-hd h4{font-family:var(--font-display);font-weight:800;font-size:30px;letter-spacing:.1em}
+.cv-hd .code{font:700 15px ui-monospace,Menlo,Consolas,monospace;color:#8A99A9;letter-spacing:.14em}
+.cv-hd .who{margin-left:auto;text-align:right}
+.cv-hd .who b{display:block;font-family:var(--font-display);font-weight:800;font-size:26px;letter-spacing:.06em}
+.cv-hd .who span{font:600 14px var(--font-ui);color:#8A99A9;letter-spacing:.14em;text-transform:uppercase}
+.cv-body{display:flex;flex-direction:column;min-height:0}
+.cv-grid{flex:1 1 auto;min-height:0;display:grid;gap:14px;
+  grid-template-columns:1fr 1fr 1.35fr 1fr 1fr .8fr;grid-template-rows:1fr 1fr;
+  grid-template-areas:"side smg rifles sniper mg flex" "side smg rifles sniper mg flex2"}
+.pnl{background:#1F2731;border:1px solid #2E3A46;padding:12px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.pnl>h5{font:600 12px var(--font-ui);letter-spacing:.18em;color:#8A99A9;margin-bottom:10px;flex:none}
+.sk-list{display:flex;flex-direction:column;gap:8px;min-height:0;flex:1}
+.sk{position:relative;min-height:64px;flex:1 1 0;overflow:hidden;background:#16202B;border:1px solid #2A3540}
+.sk img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.sk .tn{position:absolute;left:8px;bottom:5px;font:600 13px var(--font-ui);color:#ECE8E1;
+  text-shadow:0 1px 3px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:92%}
+.sk .lv{position:absolute;top:4px;left:4px;font:700 11px var(--font-ui);color:#FFC45E}
+/* tiny type — the design's smallest sizes */
+.tiny{font:600 9px var(--font-ui);letter-spacing:.14em;color:#8A99A9}
+.cv-ft{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;border-top:1px solid #2E3A46;padding-top:14px}
+.stat{display:flex;flex-direction:column;gap:4px;min-width:0}
+.stat label{font:600 12px var(--font-ui);letter-spacing:.16em;color:#8A99A9;text-transform:uppercase;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat b{font-family:var(--font-display);font-weight:800;font-size:30px;color:#ECE8E1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat .row{display:flex;align-items:center;gap:8px}
+.stat .rline{font:600 11px var(--font-ui);color:#8A99A9;letter-spacing:.1em}
+
+/* legibility overlay (solution B) */
+.hit{position:absolute;border:1px dashed rgba(255,255,255,.34);pointer-events:none}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:11px;font-size:11.5px;color:var(--c-mut)}
+.legend b{display:inline-block;width:11px;height:11px;border:1px solid var(--c-line);margin-right:5px;vertical-align:-1px}
+
+/* ---------- measurement table ---------- */
+.mtab{margin-top:16px;border:1px solid var(--c-line);background:var(--c-surface);overflow-x:auto}
+table.mt{width:100%;border-collapse:collapse;font-size:11.5px}
+table.mt th{font:700 9.5px var(--font-ui);letter-spacing:.13em;text-transform:uppercase;color:var(--c-mut);
+  text-align:left;padding:8px 10px;border-bottom:1px solid var(--c-line);white-space:nowrap}
+table.mt td{padding:7px 10px;border-bottom:1px solid var(--c-line-soft);white-space:nowrap}
+table.mt tr:last-child td{border-bottom:0}
+.px-ok{color:var(--ok);font-weight:700}
+.px-warn{color:var(--warn);font-weight:700}
+.px-bad{color:var(--bad);font-weight:700}
+
+/* ---------- fidelity demo ---------- */
+.fid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fidbox{background:var(--c-surface);border:1px solid var(--c-line);padding:14px}
+.fidbox h4{font:700 10px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut);margin-bottom:9px}
+.fidbox p{font-size:11.5px;line-height:1.6;color:var(--c-mut);margin-top:9px}
+.mosaic{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:4px;height:190px}
+.mosaic.wrong{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));overflow:auto;grid-template-rows:repeat(3,1fr)}
+.mcell{background:#1F2731;border:1px solid #2E3A46;display:flex;align-items:center;justify-content:center;min-height:0;overflow:hidden}
+.mcell img{width:100%;height:100%;object-fit:contain}
+.mosaic-note{font:600 10px ui-monospace,Menlo,Consolas,monospace;color:var(--bad);margin-top:7px}
+
+/* export compare */
+.exp{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.expbox{background:var(--c-bg);border:1px solid var(--c-line);padding:10px}
+.expbox .cv{transform:scale(.29);transform-origin:top left}
+.expbox .h{height:calc(1080px * .29);display:flex;align-items:center;justify-content:center;
+  font:700 10px ui-monospace,Menlo,Consolas,monospace;color:var(--c-mut);position:relative;z-index:1}
+@media (max-width:820px){.fid,.exp{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="pbar">
+  <span class="logo">CARD FORGE</span>
+  <span class="pbar-t">Prototype 5 · Legibility &amp; fidelity</span>
+  <span class="pbar-sp"></span>
+  <a class="btn sm" href="index.html">← Audit hub</a>
+  <a class="btn sm" href="http://localhost:3000/view.html">Compare against the live viewer</a>
+</div>
+
+<main>
+<div class="wrap">
+
+  <span class="eyebrow">Prototype 5 of 5 · Both</span>
+  <h1 class="display">A 1920&nbsp;px card on a<br>390&nbsp;px screen.</h1>
+  <p class="lede">The fitter computes <span class="mono">s = min(max(natural, 0.35), 1)</span>. On a 390&nbsp;px phone that pins the card at <b>0.35</b>, so the design's 9&nbsp;px caption renders at <b>3.1&nbsp;px</b> and the 15&nbsp;px price at <b>5.25&nbsp;px</b>. On a 1366×768 laptop it lands at 0.60 — 5.4&nbsp;px. Nothing in the UI tells the user this is happening. Pick a viewport, then pick a solution.</p>
+
+  <div class="vprow">
+    <span style="font:700 10px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut)">Viewport</span>
+    <div class="seg" id="vpSeg">
+      <button type="button" data-vp="1920x1080" aria-pressed="false">1920×1080</button>
+      <button type="button" data-vp="1600x900" aria-pressed="false">1600×900</button>
+      <button type="button" data-vp="1366x768" aria-pressed="true">1366×768</button>
+      <button type="button" data-vp="1280x720" aria-pressed="false">1280×720</button>
+      <button type="button" data-vp="390x844" aria-pressed="false">Phone 390×844</button>
+      <button type="button" data-vp="844x390" aria-pressed="false">Landscape 844×390</button>
+    </div>
+    <span class="vp" id="vpNote"></span>
+  </div>
+
+  <div class="sols" id="sols">
+    <div class="sol" data-sol="A" aria-pressed="true">
+      <span class="k">SOLUTION A</span>
+      <h3>Keep the floor, add a zoom</h3>
+      <p>The card stays a faithful 0.35× thumbnail, but every viewport gets a real zoom control: <b>Fit</b>, <b>100%</b>, <b>200%</b>, and <b>open full size</b>. The buyer pans by default and can pinch or use the buttons to read anything. Smallest possible change to the rendering path.</p>
+      <div class="trade"><b>Trade-off:</b> the first impression is still a thumbnail. A buyer who never zooms still sees 3&nbsp;px text. Cheap and safe, but it does not fix the screenshot people share.</div>
+    </div>
+    <div class="sol" data-sol="B" aria-pressed="false">
+      <span class="k">SOLUTION B</span>
+      <h3>Overlay the fields that matter</h3>
+      <p>The canvas scales as today. On top of it, the handful of fields a buyer actually reads — <b>title, seller, rank, price, status, skin count</b> — are re-rendered as crisp HTML positioned over their canvas coordinates and sized so they never fall below 12&nbsp;px. Dashed outlines mark where each one came from.</p>
+      <div class="trade"><b>Trade-off:</b> needs a coordinate map per theme, and the overlay must be hidden during export. Most code, but the card keeps its look and becomes readable everywhere.</div>
+    </div>
+    <div class="sol" data-sol="C" aria-pressed="false">
+      <span class="k">SOLUTION C</span>
+      <h3>Raise the design's type floor</h3>
+      <p>No scaling trick at all: bump the smallest sizes in the 1920×1080 design so nothing is authored below 13&nbsp;px, then keep the existing fitter. At 0.35× the smallest text lands at 4.6&nbsp;px instead of 3.1&nbsp;px, and at 0.60× on a laptop it lands at 7.8&nbsp;px instead of 5.4&nbsp;px. It is a real improvement on every screen — but see the table: on a phone it is <i>still red</i>. This one improves the exported PNG, which is the artefact people actually post.</p>
+      <div class="trade"><b>Trade-off:</b> <b>the exported 1920×1080 PNG changes</b>, so every already-published card looks different from its listing image. Needs a re-check of every panel that has to fit a fixed number of slots. And it does not solve the phone case on its own.</div>
+    </div>
+    <div class="sol" data-sol="D" aria-pressed="false">
+      <span class="k">SOLUTION D</span>
+      <h3>Native reflow below 900&nbsp;px</h3>
+      <p>Below 900&nbsp;px the canvas is abandoned entirely and the same data renders as a stacked native page: title and price at real size, then panels as scrollable lists of rows with 16&nbsp;px names. The 1920 canvas is used only where there is room for it.</p>
+      <div class="trade"><b>Trade-off:</b> two rendering paths to keep in sync, and the phone layout stops being a picture of the card. <span style="color:var(--ink,#D9DCE0)">The viewer already has a partial version of this</span> below 700&nbsp;px — it just leaves the phone in the 700–900 band on the canvas.</div>
+    </div>
+  </div>
+
+  <div class="stagebox">
+    <div class="stagehead">
+      <span class="badge accent" id="solName">SOLUTION A</span>
+      <span class="badge" id="scaleBadge">—</span>
+      <div class="zoombar" id="zoomBar">
+        <button type="button" data-z="fit" aria-pressed="true">Fit</button>
+        <button type="button" data-z="1">100%</button>
+        <button type="button" data-z="2">200%</button>
+        <button type="button" data-z="4">400%</button>
+      </div>
+    </div>
+    <div class="canvasbox" id="canvasbox"><div id="cvholder"></div></div>
+    <div class="legend">
+      <span><b style="background:#0E151D"></b>scaled canvas</span>
+      <span><b style="background:#1F2731"></b>panel</span>
+      <span id="legToggle" hidden><b style="background:transparent;border:1px dashed #fff"></b>overlay field</span>
+    </div>
+  </div>
+
+  <h2 class="sec">Rendered type size, measured</h2>
+  <div class="mtab">
+    <table class="mt">
+      <thead><tr>
+        <th>Design size</th><th>Where it appears</th>
+        <th data-col="s0">Today</th><th data-col="sA">A · zoom</th><th data-col="sB">B · overlay</th><th data-col="sC">C · type floor</th><th data-col="sD">D · reflow</th>
+      </tr></thead>
+      <tbody id="mtbody"></tbody>
+    </table>
+  </div>
+  <div class="note warn" style="margin-top:12px">
+    <b>Read this table as the acceptance criterion.</b> Anything under <b>7&nbsp;px</b> is unreadable at arm's length (red), <b>7–9&nbsp;px</b> is only legible if you lean in (amber). The goal is that no <i>field a buyer needs</i> is ever red. Solution A only reaches that if the buyer zooms, which is why it is listed as the cheapest option rather than the best one.
+  </div>
+
+  <h2 class="sec">A second fidelity bug: Catalog renders differently in the editor</h2>
+  <div class="fid">
+    <div class="fidbox">
+      <h4>Viewer — correct</h4>
+      <div class="mosaic" id="mViewer"></div>
+      <p><span class="mono">viewer.css:43</span> defines <span class="mono">.mgrid</span> as the 4×3 Catalog mosaic. This is what a buyer sees.</p>
+    </div>
+    <div class="fidbox">
+      <h4>Editor — different</h4>
+      <div class="mosaic wrong" id="mEditor"></div>
+      <p class="mosaic-note">grid-template-columns: repeat(auto-fill, minmax(180px,1fr)) · overflow: auto · grid-template-rows: repeat(3,1fr) left over</p>
+      <p><span class="mono">shared.css:265</span> defines <span class="mono">.mgrid</span> as the mosaic, but <span class="mono">editor.css:43</span> — loaded after it — redefines the same class as the picker's result grid. The mosaic inherits auto-fill columns and a scrolling overflow, and keeps an orphaned <span class="mono">grid-template-rows:repeat(3,1fr)</span>. So the seller previews Catalog in a different arrangement from the one the buyer gets.</p>
+    </div>
+  </div>
+  <div class="note" style="margin-top:12px">
+    <b>Fix:</b> rename one of them. The mosaic should not be called <span class="mono">.mgrid</span> at all — <span class="mono">.spread-mosaic</span> costs one selector change in <span class="mono">layouts.js</span>, <span class="mono">shared.css</span> and <span class="mono">viewer.css</span> and removes the collision permanently.
+  </div>
+
+  <h2 class="sec">A third: the preview is not what gets exported</h2>
+  <div class="exp">
+    <div class="expbox">
+      <h4>What the seller sees while editing</h4>
+      <div class="cv" id="cvA"></div>
+      <div class="h">+ Add buttons visible · slots measured with them present</div>
+    </div>
+    <div class="expbox">
+      <h4>What <span class="mono">exportCard()</span> actually captures</h4>
+      <div style="position:relative;overflow:hidden">
+        <div class="cv exporting" id="cvB"></div>
+        <div class="h">body.exporting hides <span class="mono">.add</span> — after the grid was measured</div>
+      </div>
+    </div>
+  </div>
+  <div class="note warn" style="margin-top:12px">
+    <b>Consequence.</b> <span class="mono">renderSlotsM1/M2</span> computes <span class="mono">cols</span>, <span class="mono">visRows</span> and the overflow count from <span class="mono">slots.clientHeight</span> <i>before</i> <span class="mono">exportCard()</span> adds <span class="mono">body.exporting</span>. That class hides the <span class="mono">+ Add</span> button sitting at the bottom of every panel, so the PNG has more room than the layout assumed — and the <span class="mono">+N MORE</span> chip can be pushed out of the clipped <span class="mono">.panel</span>. The seller sees one arrangement, the buyer gets another.
+    <br><br><b>Fix:</b> measure once with the chrome already hidden, or better — never hide <span class="mono">.add</span>; render it as <span class="mono">visibility:hidden</span> during export so layout and capture agree.
+  </div>
+
+  <h2 class="sec">Recommendation</h2>
+  <div class="grid2">
+    <div class="panel">
+      <h4>What I would ship first</h4>
+      <ul class="stack tight" style="color:var(--c-mut);font-size:12.5px;line-height:1.65">
+        <li>• <b>A</b> immediately — the zoom bar is ~15 lines and removes the worst case without touching the design. It only works if the buyer zooms.</li>
+        <li>• <b>C</b> as a design pass — the only option that improves the exported PNG, which is the artefact people actually post. It still leaves phones red on its own.</li>
+        <li>• <b>B</b> is the only option where <i>no</i> buyer-critical field is ever below 16&nbsp;px, at any viewport. Biggest win, biggest job.</li>
+        <li>• <b>D</b> last, and only if you want phones to be a first-class buyer surface — the viewer already has a partial version of it below 700&nbsp;px.</li>
+        <li>• The honest answer for phones is <b>B + D together</b>: native rows on a phone, overlay fields on a laptop.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h4>Independent of the choice above</h4>
+      <ul class="stack tight" style="color:var(--c-mut);font-size:12.5px;line-height:1.65">
+        <li>• Rename <span class="mono">.mgrid</span> → <span class="mono">.spread-mosaic</span>. One selector, kills the editor/viewer mismatch.</li>
+        <li>• Switch export-time hiding from <span class="mono">display:none</span> to <span class="mono">visibility:hidden</span> so preview and PNG agree.</li>
+        <li>• Show the current scale somewhere honest, e.g. a discreet “viewing at 42% — click to zoom” affordance.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:26px">
+    <a class="btn primary" href="index.html">← Back to audit hub</a>
+  </div>
+
+</div>
+</main>
+
+<script>
+const BASE='https://media.valorant-api.com/weaponskins/';
+const IC={
+  a:'30388628-42f0-606c-82c0-73ad43de997f',b:'980fa063-436e-e51f-c38d-70a5b93a0f1c',
+  c:'e5490f71-455b-74ad-f762-f5a876d4dff9',d:'18609205-4edb-5966-cff8-0fba0230ba1e',
+  e:'9bf19b77-4b33-7203-9f2c-16932970622f',f:'b9ee2457-481c-6776-3f5b-0ca8e8f90c89',
+  g:'c7261be6-47d2-ef86-82f4-6a844e45d33c',h:'25a7f0f2-4bce-7e45-b4b0-ca9264f5dfcc',
+  i:'6460edbf-458d-bf61-7519-519305ba5da2',j:'e86bf7e4-4dd3-fbee-533b-fa875344bbaf',
+  k:'bbf8ffb9-49c0-75c0-cc7d-8f8f03a4bd36',l:'e86bf7e4-4dd3-fbee-533b-fa875344bbaf',
+  m:'e100dff1-4cf5-54ec-aa65-6fadbc22973b',n:'89be9866-4807-6235-2a95-499cd23828df',
+  o:'b450a73d-431e-56b7-5b7f-67bddd38ee66'
+};
+const NM={a:'Reaver Vandal',b:'Spectrum Phantom',c:'RGX 11z Pro Vandal',d:'Elderflame Vandal',
+  e:'Champions Vandal',f:'Prime Vandal',g:'Reaver Ghost',h:'Glitchpop Phantom',
+  i:'Magepunk Sheriff',j:'Ion Phantom',k:'Ion Operator',l:'Araxys Phantom',
+  m:'Prime Axe',n:'Altitude Odin',o:'Prelude to Chaos Operator'};
+const PANELS=[
+ {a:'side',l:'SIDEARMS',k:['d','i','j']},
+ {a:'smg',l:'SMGS',k:['f','n','l']},
+ {a:'rifles',l:'RIFLES',k:['a','b','j','e','h','f']},
+ {a:'sniper',l:'SNIPER RIFLES',k:['k','o']},
+ {a:'mg',l:'MACHINE GUNS',k:['c','n']},
+ {a:'flex',l:'BUDDIES & FLEX',k:['m']}
+];
+function thumb(u,name){
+  return '<img src="'+BASE+u+'/displayicon.png" alt="'+name+'" loading="lazy"'+
+    ' onerror="var s=this.nextElementSibling;this.remove();if(s)s.style.display=\'block\'">'+
+    '<span style="display:none;font:600 10px var(--font-ui);color:#8A99A9;padding:8px;text-align:center">'+name+'</span>';
+}
+function skHTML(k){
+  return '<div class="sk">'+
+    '<img src="'+BASE+IC[k]+'/displayicon.png" alt="'+NM[k]+'"'+
+    ' onerror="var s=this.nextElementSibling;this.remove();if(s)s.style.display=\'block\'">'+
+    '<span style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;'+
+    'font:600 13px var(--font-ui);color:#8A99A9;text-align:center;padding:6px">'+NM[k]+'</span>'+
+    '<span class="lv">LV 2</span><span class="tn">'+NM[k]+'</span></div>';
+}
+function pnlHTML(p,noAdd){
+  return '<div class="pnl" style="grid-area:'+p.a+'"><h5>'+p.l+'</h5><div class="sk-list">'+
+    p.k.map(skHTML).join('')+'</div>'+
+    (noAdd?'':'<button class="addb" style="margin-top:8px;flex:none;width:100%;background:transparent;border:1px dashed #48515B;color:#8A99A9;font:700 13px var(--font-ui);letter-spacing:.14em;padding:8px;cursor:pointer">+ Add ('+p.k.length+')</button>')+
+    '</div>';
+}
+function cardHTML(typeFloor,noAdd){
+  const t = typeFloor?'13px':'9px';
+  return '<div class="cv" style="--tiny:'+t+'"><div class="cv-hd"><h4>CHANGE NAME</h4><span class="code">K486</span>'+
+    '<span class="who"><b>IMMORTAL 3</b><span class="tiny" style="font-size:'+(typeFloor?'15px':'11px')+'">PEAK RANK · WTR · RECEIPTS</span></span></div>'+
+    '<div class="cv-body"><div class="cv-grid">'+PANELS.map(p=>pnlHTML(p,noAdd)).join('')+'</div></div>'+
+    '<div class="cv-ft">'+
+      '<div class="stat"><label>Premium</label><b>24</b></div>'+
+      '<div class="stat"><label>Limited</label><b>11</b></div>'+
+      '<div class="stat"><label>Skins</label><b>62</b><span class="rline" style="font-size:'+(typeFloor?'14px':'11px')+'">auto</span></div>'+
+      '<div class="stat"><label>Price</label><b style="font-size:'+(typeFloor?'32px':'30px')+'">$340</b></div>'+
+      '<div class="stat"><label>Premier</label><b style="font-size:'+(typeFloor?'22px':'30px')+'">UNLINKED</b></div>'+
+      '<div class="stat"><label>Status</label><b style="font-size:'+(typeFloor?'22px':'30px')+'">AVAILABLE</b></div>'+
+    '</div></div>';
+}
+
+const $=s=>document.querySelector(s);
+
+/* ---------------- viewport math ---------------- */
+const TOOBAR={1920:52,1600:86,1440:86,1366:86,1280:124,1024:124,900:124,844:88,390:88};
+function natural(vp){
+  const [w,h]=vp.split('x').map(Number);
+  const tbh=TOOBAR[w]||86;
+  const availW=w-16, availH=h-tbh-34;
+  return Math.min(availW/1920, availH/1080);
+}
+const floorNow = s => Math.min(Math.max(s,0.35),1);
+
+/* solution C's type floor: authored minimum becomes 13px instead of 9px.
+   Everything authored below 13px is bumped; the rest is unchanged, so the
+   smallest rendered size at scale s is 13*s rather than 9*s. */
+const tinyNow=9, tinyC=13;
+
+/* solution D: below 900px wide the layout stops being a canvas at all. */
+function solD(vp){
+  const w=+vp.split('x')[0];
+  if(w>=900) return {s:floorNow(natural(vp)),native:false};
+  return {s:1,native:true,designMin:16};
+}
+
+let vp='1366x768', sol='A', zoom='fit';
+
+function designMinFor(solKey,vpx){
+  if(solKey==='D' && solD(vpx).native) return 16;
+  if(solKey==='C') return tinyC;
+  if(solKey==='B') return 16; // overlay fields never go below 16px
+  return tinyNow;
+}
+function scaleFor(solKey,vpx){
+  if(solKey==='D') return solD(vpx).s;
+  return floorNow(natural(vpx));
+}
+
+function render(){
+  const box=$('#canvasbox'), holder=$('#cvholder');
+  const nat=natural(vp), s0=floorNow(nat);
+  const s=scaleFor(sol,vp);
+  const d=solD(vp);
+
+  /* native reflow path */
+  if(d.native && sol==='D'){
+    holder.innerHTML='<div style="width:100%;max-width:520px;display:flex;flex-direction:column;gap:12px">'+
+      '<div style="border:1px solid #2E3A46;background:#16202B;padding:14px">'+
+        '<div style="font:800 22px Manrope,sans-serif;letter-spacing:.06em;color:#ECE8E1">Full Vandal collection</div>'+
+        '<div style="font:600 11px ui-monospace,Menlo,monospace;color:#8A99A9;letter-spacing:.12em;margin-top:3px">K486 · swifty</div>'+
+        '<div style="display:flex;align-items:baseline;gap:8px;margin-top:9px">'+
+          '<span style="font:700 17px ui-monospace,Menlo,monospace;color:#8A99A9">$</span>'+
+          '<span style="font:800 30px Manrope,sans-serif;color:#ECE8E1;line-height:1">340</span>'+
+          '<span class="badge bad" style="margin-left:auto">Sold</span></div>'+
+      '</div>'+
+      PANELS.map(p=>'<div style="border:1px solid #2E3A46;background:#16202B;padding:12px">'+
+        '<div style="font:600 11px Inter,sans-serif;letter-spacing:.18em;color:#8A99A9;margin-bottom:8px">'+p.l+'</div>'+
+        p.k.map(k=>'<div style="display:flex;align-items:center;gap:11px;padding:8px 0;border-top:1px solid #232E39">'+
+          '<img src="'+BASE+IC[k]+'/displayicon.png" alt="'+NM[k]+'" style="width:56px;height:34px;object-fit:contain;flex:none">'+
+          '<span style="font:500 16px Inter,sans-serif;color:#ECE8E1">'+NM[k]+'</span>'+
+          '<span style="font:700 11px Inter,sans-serif;color:#FFC45E;margin-left:auto">LV 2</span></div>').join('')+
+        '</div>').join('')+
+      '<div style="display:flex;gap:8px;position:sticky;bottom:0;padding-top:4px">'+
+        '<button class="btn sm primary" style="flex:1;justify-content:center">Contact seller</button>'+
+        '<button class="btn sm" style="flex:1;justify-content:center">Copy link</button></div>'+
+      '</div>';
+    box.className='canvasbox';
+    $('#scaleBadge').textContent='native layout · no canvas scale';
+    $('#vpNote').innerHTML=vp+' · natural '+nat.toFixed(3)+' → today’s floor '+s0.toFixed(2);
+    $('#solName').textContent='SOLUTION D · native reflow';
+    zoomBar(true);
+    legend(false);
+    table();
+    return;
+  }
+
+  const typeFloor = sol==='C';
+  let eff = zoom==='fit' ? s : (+zoom);
+  const maxS = zoom==='fit' ? 1 : +zoom;
+  holder.innerHTML=cardHTML(typeFloor,false);
+  const cv=holder.querySelector('.cv');
+  cv.style.transform='scale('+eff+')';
+  holder.style.width=(1920*eff)+'px';
+  holder.style.height=(1080*eff)+'px';
+
+  box.className='canvasbox '+(eff>s?'pan':'')+' '+((zoom!=='fit'&&eff>1)?'q1':'');
+  $('#scaleBadge').textContent='viewing at '+(eff*100).toFixed(0)+'%  ('+(zoom==='fit'?'fit':'manual')+')';
+  $('#vpNote').innerHTML=vp+' · natural '+nat.toFixed(3)+' → today’s floor '+s0.toFixed(2)+
+    (s0>nat?' <span style="color:var(--bad)">· pinned above the floor</span>':'');
+  $('#solName').textContent='SOLUTION '+sol;
+  zoomBar(false);
+
+  /* overlay (solution B) */
+  legend(sol==='B');
+  if(sol==='B') overlay(cv,eff); else cv.querySelectorAll('.hit').forEach(n=>n.remove());
+
+  table();
+}
+
+function zoomBar(hidden){
+  $('#zoomBar').style.visibility=hidden?'hidden':'visible';
+}
+
+/* Solution B: crisp HTML over the scaled canvas, never below 16px. */
+function overlay(cv,eff){
+  cv.querySelectorAll('.hit').forEach(n=>n.remove());
+  const mk=(x,y,w,h,html)=>{
+    const d=document.createElement('div');
+    d.className='hit';
+    d.style.cssText='left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+h+'px';
+    d.innerHTML=html;
+    cv.appendChild(d);
+    /* size the text in design units so it lands >=16px after scaling */
+    const inner=d.querySelector('*');
+    if(inner) inner.style.fontSize=Math.max(14,16/eff)+'px';
+  };
+  mk(30,26,420,44,'<span style="font:800 34px Manrope,sans-serif;letter-spacing:.1em;color:#ECE8E1">CHANGE NAME</span>');
+  mk(1178,20,712,52,'<span style="display:block;text-align:right;font:800 28px Manrope,sans-serif;color:#ECE8E1;letter-spacing:.06em">IMMORTAL 3</span>'+
+    '<span style="display:block;text-align:right;font:600 15px Inter,sans-serif;color:#8A99A9;letter-spacing:.14em">PEAK RANK · WTR · RECEIPTS</span>');
+  mk(30,1004,150,52,'<span style="font:600 15px Inter,sans-serif;letter-spacing:.16em;color:#8A99A9">PREMIUM</span>'+
+    '<span style="display:block;font:800 32px Manrope,sans-serif;color:#ECE8E1">24</span>');
+  mk(360,1004,150,52,'<span style="font:600 15px Inter,sans-serif;letter-spacing:.16em;color:#8A99A9">LIMITED</span>'+
+    '<span style="display:block;font:800 32px Manrope,sans-serif;color:#ECE8E1">11</span>');
+  mk(690,1004,150,52,'<span style="font:600 15px Inter,sans-serif;letter-spacing:.16em;color:#8A99A9">SKINS</span>'+
+    '<span style="display:block;font:800 32px Manrope,sans-serif;color:#ECE8E1">62</span>');
+  mk(1020,1004,300,52,'<span style="font:600 15px Inter,sans-serif;letter-spacing:.16em;color:#8A99A9">PRICE</span>'+
+    '<span style="display:block;font:800 34px Manrope,sans-serif;color:#ECE8E1">$340</span>');
+  mk(1350,1004,270,52,'<span style="font:600 15px Inter,sans-serif;letter-spacing:.16em;color:#8A99A9">PREMIER</span>'+
+    '<span style="display:block;font:800 24px Manrope,sans-serif;color:#ECE8E1">UNLINKED</span>');
+  mk(1650,1004,240,52,'<span style="font:600 15px Inter,sans-serif;letter-spacing:.16em;color:#8A99A9">STATUS</span>'+
+    '<span style="display:block;font:800 24px Manrope,sans-serif;color:#ECE8E1">AVAILABLE</span>');
+}
+function legend(on){ $('#legToggle').hidden=!on; }
+
+/* ---------------- measurement table ---------------- */
+const FIELDS=[
+  ['Panel label','12px','RIFLES / SNIPER RIFLES headers',1],
+  ['Skin name','13px','the name under each tile',1],
+  ['Footer label','12px','PREMIUM / LIMITED / SKINS',1],
+  ['Footer value','30px','24 / 11 / 62',1],
+  ['Watermark caption','9px','the "change name" hint',0],
+  ['Price (card)','15px','$340 inside the canvas',1]
+];
+function cls(px){
+  if(px===null) return '';
+  return px<7?'px-bad':(px<9?'px-warn':'px-ok');
+}
+function table(){
+  const nat=natural(vp), s0=floorNow(nat);
+  const sA=s0;                                    // A: same scale, user may zoom to 1/2/4
+  const sB=scaleFor('B',vp);
+  const sC=scaleFor('C',vp);
+  const sD=solD(vp);
+  const body=$('#mtbody');
+  body.innerHTML=FIELDS.map(([label,size,where,crit])=>{
+    const n=parseFloat(size);
+    /* B lifts the buyer-critical fields to a 16px minimum regardless of scale */
+    const b = crit ? Math.max(16, n*sB) : n*sB;
+    /* C raises the authored minimum to 13px, so nothing renders below 13*s */
+    const c = Math.max(tinyC, n) * sC;
+    return '<tr'+(crit?'':' style="opacity:.62"')+'><td><b>'+label+'</b> <span style="color:var(--c-mut)">'+n+'px</span>'+
+      (crit?'<span class="badge ok" style="margin-left:7px;font-size:8px">buyer-critical</span>'
+           :'<span class="badge" style="margin-left:7px;font-size:8px">decorative</span>')+
+      '</td><td style="color:var(--c-mut)">'+where+'</td>'+
+      '<td class="'+cls(n*s0)+'">'+(n*s0).toFixed(1)+'px</td>'+
+      '<td class="'+cls(n*sA)+'">'+(n*sA).toFixed(1)+'px'+(n*sA<7&&crit?' <span style="color:var(--c-mut)">or '+Math.max(16,n)+'px @200%</span>':'')+'</td>'+
+      '<td class="'+cls(b)+'">'+b.toFixed(1)+'px</td>'+
+      '<td class="'+cls(c)+'">'+c.toFixed(1)+'px</td>'+
+      '<td class="'+(sD.native?'px-ok':cls(n*sD.s))+'">'+(sD.native?'16px native':(n*sD.s).toFixed(1)+'px')+'</td></tr>';
+  }).join('');
+}
+
+/* ---------------- wire ---------------- */
+document.querySelectorAll('#vpSeg button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#vpSeg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  vp=b.dataset.vp; zoom='fit';
+  document.querySelectorAll('#zoomBar button').forEach(z=>z.setAttribute('aria-pressed',String(z.dataset.z==='fit')));
+  render();
+}));
+document.querySelectorAll('#sols .sol').forEach(el=>el.addEventListener('click',()=>{
+  document.querySelectorAll('#sols .sol').forEach(x=>x.setAttribute('aria-pressed',String(x===el)));
+  sol=el.dataset.sol; zoom='fit';
+  document.querySelectorAll('#zoomBar button').forEach(z=>z.setAttribute('aria-pressed',String(z.dataset.z==='fit')));
+  render();
+}));
+document.querySelectorAll('#zoomBar button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#zoomBar button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  zoom=b.dataset.z; render();
+}));
+
+/* fidelity demos */
+const MOS=['a','b','c','d','e','f','g','h','i','j','k','m'];
+document.getElementById('mViewer').innerHTML=MOS.map(k=>'<div class="mcell"><img src="'+BASE+IC[k]+'/displayicon.png" alt="'+NM[k]+'"></div>').join('');
+document.getElementById('mEditor').innerHTML=MOS.map(k=>'<div class="mcell"><img src="'+BASE+IC[k]+'/displayicon.png" alt="'+NM[k]+'"></div>').join('');
+document.getElementById('cvA').innerHTML=cardHTML(false,false).replace(/class="cv"/,'class="cv"');
+document.getElementById('cvB').innerHTML=cardHTML(false,true).replace(/class="cv"/,'class="cv exporting"');
+
+render();
+</script>
+</body>
+</html>

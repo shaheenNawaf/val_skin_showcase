@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardForge — Prototype 1 · Editor chrome (P0 occlusion fix)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+/* ============================ page frame ============================ */
+.vpbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 16px;background:var(--c-bg);border-bottom:1px solid var(--c-line);position:sticky;top:0;z-index:50}
+.vpbar .lab{font:700 10px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut)}
+.vpbar input[type=range]{width:220px;accent-color:var(--c-accent)}
+.vpval{font:600 11px ui-monospace,Menlo,Consolas,monospace;color:var(--ok);min-width:74px}
+.vpshell{border-left:1px solid var(--c-line);border-right:1px solid var(--c-line);margin:0 auto;position:relative}
+
+/* ============================ the simulated app ============================ */
+.app{position:relative;background:var(--c-bg);overflow:hidden}
+.app *{box-sizing:border-box}
+
+/* ---- CURRENT (broken) chrome ---- */
+.cur-top{position:fixed;inset:0 0 auto 0;z-index:20;background:var(--c-surface);border-bottom:1px solid var(--c-line);
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px;padding:6px 14px}
+.cur-tb{display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:6px}
+.cur-chk{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--c-mut);margin:10px 0 0}
+.cur-chk input{width:13px;height:13px;accent-color:var(--c-accent)}
+.cur-tierbar{background:var(--c-surface);border-bottom:1px solid var(--c-line);padding:64px 14px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cur-tierbar .cap{display:flex;align-items:center;gap:6px;font:600 10px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--c-mut)}
+.cur-tierbar input[type=number]{width:58px;background:var(--c-surface2);border:1px solid var(--c-line);color:var(--c-ink);
+  font:600 11px var(--font-ui);padding:5px 6px}
+.cur-stage{position:absolute;inset:var(--chrome-h) 0 0 0;overflow:auto;
+  background:radial-gradient(1200px 680px at 50% 42%,#131B24,var(--c-bg) 72%)}
+.cur-cardwrap{padding:14px 12px 40px;display:flex;justify-content:center}
+
+/* ---- PROPOSED chrome ---- */
+.chrome{position:sticky;top:0;z-index:20;background:var(--c-surface);border-bottom:1px solid var(--c-line)}
+.chrome-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;row-gap:8px;padding:8px 14px;min-height:52px}
+.chrome-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;row-gap:6px}
+.chrome-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap;row-gap:6px;padding:8px 14px;
+  background:var(--c-surface2);border-top:1px solid var(--c-line-soft)}
+.chrome-filter[hidden]{display:none}
+.stage{position:absolute;inset:var(--chrome-h) 0 0 0;overflow:auto;background:radial-gradient(1200px 680px at 50% 42%,#131B24,var(--c-bg) 72%)}
+.stagewrap{padding:14px 12px 48px;display:flex;justify-content:center;flex-direction:column;align-items:center;gap:12px}
+
+/* ============================ card schematic ============================ */
+.card{position:relative;width:1920px;height:1080px;transform-origin:top left;flex:none;
+  background:linear-gradient(160deg,#16202B,#0F1923 55%,#131C26);border:1px solid #2E3A46;padding:26px 30px;
+  display:grid;grid-template-rows:auto 1fr auto;gap:16px}
+.card-hd{display:flex;align-items:flex-end;gap:14px}
+.card-hd h4{font-family:var(--font-display);font-weight:800;font-size:30px;letter-spacing:.1em;color:#ECE8E1}
+.card-hd .code{font:700 15px ui-monospace,Menlo,Consolas,monospace;color:#8A99A9;letter-spacing:.14em}
+.card-hd .who{margin-left:auto;text-align:right}
+.card-hd .who b{display:block;font:800 26px var(--font-display);color:#ECE8E1;letter-spacing:.06em}
+.card-hd .who span{font:600 14px var(--font-ui);color:#8A99A9;letter-spacing:.14em;text-transform:uppercase}
+.card-grid{display:grid;gap:14px;min-height:0;
+  grid-template-columns:1fr 1fr 1.35fr 1fr 1fr .8fr;
+  grid-template-rows:1fr 1fr;
+  grid-template-areas:"side smg rifles sniper mg flex" "side smg rifles sniper mg flex2"}
+.pnl{background:#1F2731;border:1px solid #2E3A46;padding:12px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.pnl > h5{font:700 15px var(--font-ui);letter-spacing:.18em;color:#8A99A9;margin-bottom:10px;flex:none}
+.pnl .skins{display:flex;flex-direction:column;gap:8px;min-height:0;flex:1}
+.sk{display:flex;align-items:center;gap:10px;min-height:64px;flex:1 1 0;background:#16202B;border:1px solid #2A3540;position:relative;overflow:hidden}
+.sk img{position:absolute;inset:0;object-fit:contain}
+.sk.tiled{min-height:0;flex:1 1 0}
+.sk .tname{position:absolute;left:8px;bottom:5px;font:600 13px var(--font-ui);color:#ECE8E1;text-shadow:0 1px 3px #000;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:92%}
+.sk .rm{position:absolute;top:4px;right:4px;width:22px;height:22px;background:rgba(10,14,19,.82);color:#fff;
+  border:1px solid #3A4653;font:700 13px var(--font-ui);display:none;align-items:center;justify-content:center;cursor:pointer}
+.sk:hover .rm{display:flex}
+.sk .lv{position:absolute;top:4px;left:4px;font:700 11px var(--font-ui);color:#FFC45E}
+.jchip{display:flex;align-items:center;justify-content:center;flex:none;height:40px;background:#2A3540;
+  border:1px dashed #48515B;color:#ECE8E1;font:700 13px var(--font-ui);letter-spacing:.1em}
+button.jchip{cursor:pointer}
+.addrow{margin-top:8px;flex:none}
+.addbtn{width:100%;background:transparent;border:1px dashed #48515B;color:#8A99A9;font:700 13px var(--font-ui);
+  letter-spacing:.14em;text-transform:uppercase;padding:8px;cursor:pointer}
+.addbtn:hover{color:#ECE8E1;border-color:#8A99A9}
+.card-ft{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;border-top:1px solid #2E3A46;padding-top:14px}
+.stat{display:flex;flex-direction:column;gap:4px}
+.stat label{font:600 12px var(--font-ui);letter-spacing:.16em;color:#8A99A9;text-transform:uppercase}
+.stat b{font-family:var(--font-display);font-weight:800;font-size:34px;color:#ECE8E1}
+.auto{align-self:flex-start;margin-left:auto;background:transparent;border:1px solid #48515B;color:#8A99A9;
+  font:700 11px var(--font-ui);letter-spacing:.1em;padding:3px 7px;cursor:pointer}
+
+/* ============================ readouts ============================ */
+.readout{display:flex;gap:14px;flex-wrap:wrap;font:600 11px ui-monospace,Menlo,Consolas,monospace;color:var(--c-mut);padding:8px 16px;
+  background:var(--c-surface);border-top:1px solid var(--c-line)}
+.readout b{color:var(--ok);font-weight:700}
+.readout b.bad{color:var(--bad)}
+.readout b.warn{color:var(--warn)}
+
+.hittest{margin-top:10px;font:600 11.5px ui-monospace,Menlo,Consolas,monospace;color:var(--c-ink);max-height:230px;overflow:auto;
+  border:1px solid var(--c-line-soft);background:var(--c-bg);padding:10px}
+.hittest div{padding:2px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+.hittest .free{color:var(--ok)}
+.hittest .blocked{color:var(--bad)}
+.hittest .sel{color:var(--warn)}
+
+.outline .chrome,.outline .cur-tierbar{outline:3px solid #00FF88;outline-offset:-3px}
+.outline .stage,.outline .cur-stage{outline:3px solid #FF8A00;outline-offset:-3px}
+
+.vp-note{font:600 11px var(--font-ui);color:var(--c-mut);letter-spacing:.04em}
+</style>
+</head>
+<body>
+
+<!-- ============ viewport simulator ============ -->
+<div class="vpbar">
+  <span class="lab">Simulated viewport</span>
+  <input type="range" id="vpw" min="360" max="1920" step="10" value="1440">
+  <span class="vpval" id="vpval">1440 × 900</span>
+  <button class="btn xs" data-vp="1920">1920</button>
+  <button class="btn xs" data-vp="1600">1600</button>
+  <button class="btn xs" data-vp="1440">1440</button>
+  <button class="btn xs" data-vp="1280">1280</button>
+  <button class="btn xs" data-vp="390">Phone 390</button>
+  <span class="lab" style="margin-left:14px">Design</span>
+  <div class="seg" id="designSeg">
+    <button type="button" data-design="current" aria-pressed="true">TODAY (broken)</button>
+    <button type="button" data-design="proposed" aria-pressed="false">PROPOSED</button>
+  </div>
+  <button class="btn xs" id="outlineBtn" aria-pressed="false">Outline layers</button>
+  <button class="btn xs" id="hittestBtn">Run hit test</button>
+</div>
+
+<div class="vpbar" style="position:static;border-bottom:0;border-top:1px solid var(--c-line);background:var(--c-surface)">
+  <span class="lab">Try the fixes</span>
+  <button class="btn xs" id="demoLayoutNote">Toast: AUTO resolved layout</button>
+  <button class="btn xs" id="demoToast">Toast: raised from inside the picker</button>
+  <span class="vp-note">— toasts now paint above the modal veil (z 90 vs 50), so “already on the card” is finally visible.</span>
+</div>
+
+<!-- ============ simulated app ============ -->
+<div class="vpshell">
+<div class="app" id="app" style="--chrome-h:86px">
+  <div id="toastHost" style="position:absolute;left:0;right:0;bottom:0;height:0;z-index:90;pointer-events:none"></div>
+
+  <!-- ---------- CURRENT ---------- -->
+  <div id="curWrap">
+    <div class="cur-top" id="curTop">
+      <div class="cur-tb">
+        <span class="logo" style="font-size:14px">CARD FORGE</span>
+        <span class="badge">theme</span>
+        <select class="btn sm" aria-label="Card layout"><option>AUTO</option><option>TILES</option><option>SHOWCASE</option><option>CATALOG</option></select>
+      </div>
+      <div class="cur-tb">
+        <button class="btn sm">Browse listings</button>
+        <button class="btn sm">Import account</button>
+        <button class="btn sm primary">Export PNG</button>
+        <button class="btn sm">Save</button>
+        <label class="cur-chk"><input type="checkbox"> Show my full player-card collection on the published page</label>
+        <button class="btn sm">Load</button>
+        <button class="btn sm">Copy post text</button>
+        <button class="btn sm primary">Publish listing</button>
+      </div>
+    </div>
+    <div class="cur-tierbar" id="curTierbar">
+      <span class="badge">Show</span>
+      <span class="btn xs" style="cursor:default">Premium only</span>
+      <span class="btn xs" style="cursor:default">Premium + Limited</span>
+      <span class="btn xs" style="cursor:default">Limited only</span>
+      <span class="btn xs" style="cursor:default">Everything</span>
+      <span class="btn xs" style="cursor:default">Animated only</span>
+      <span class="badge">| tiers</span>
+      <span class="chip" aria-pressed="true" data-hk="t1"><i class="dot" style="background:var(--t-select)"></i>Select</span>
+      <span class="chip" aria-pressed="true" data-hk="t2"><i class="dot" style="background:var(--t-deluxe)"></i>Semi-prem</span>
+      <span class="chip" aria-pressed="true" data-hk="t3"><i class="dot" style="background:var(--t-premium)"></i>Premium</span>
+      <span class="chip" aria-pressed="true" data-hk="t4"><i class="dot" style="background:var(--t-ultra)"></i>Limited</span>
+      <span class="chip" aria-pressed="true" data-hk="t5"><i class="dot" style="background:var(--t-exclusive)"></i>Melee</span>
+      <span class="chip" aria-pressed="true" data-hk="t6"><i class="dot" style="background:var(--c-accent)"></i>Animated</span>
+      <label class="cap">Max per category <input type="number" min="1" max="40" value="8"></label>
+      <button class="btn sm" data-hk="apply">Apply</button>
+      <button class="btn sm" data-hk="reset">Reset</button>
+      <span class="badge" data-hk="count">Showing 48 of 62 skins</span>
+    </div>
+    <div class="cur-stage" id="curStage">
+      <div class="cur-cardwrap" id="curCardwrap"></div>
+    </div>
+  </div>
+
+  <!-- ---------- PROPOSED ---------- -->
+  <div id="proWrap" hidden>
+    <div class="chrome" id="chrome">
+      <div class="chrome-top">
+        <span class="logo">CARD FORGE</span>
+
+        <div class="seg" id="layoutSeg" role="group" aria-label="Card layout">
+          <button type="button" data-mode="auto" aria-pressed="true">Auto</button>
+          <button type="button" data-mode="m1" aria-pressed="false">Tiles</button>
+          <button type="button" data-mode="m2" aria-pressed="false">Showcase</button>
+          <button type="button" data-mode="m4" aria-pressed="false">Catalog</button>
+        </div>
+        <span class="badge" id="resolvedBadge">—</span>
+
+        <span id="pageNav" hidden class="row tight">
+          <button class="btn sm" id="pgPrev" aria-label="Previous page">‹</button>
+          <span class="badge" id="pgLbl">Page 1/2</span>
+          <button class="btn sm" id="pgNext" aria-label="Next page">›</button>
+        </span>
+
+        <div class="chrome-right">
+          <button class="btn sm" id="btnRefine" aria-expanded="false" aria-controls="filterRow">Refine</button>
+          <button class="btn sm" id="btnSave">Save</button>
+          <button class="btn sm" id="btnExport">Export</button>
+          <button class="btn sm primary" id="btnPublish">Publish…</button>
+          <div class="row tight">
+            <button class="btn sm" id="moreBtn" aria-expanded="false" aria-haspopup="true" aria-controls="moreMenu">More ▾</button>
+            <div id="moreMenu" hidden class="panel notch" style="position:absolute;right:14px;top:52px;z-index:30;min-width:230px;padding:6px"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chrome-filter" id="filterRow" hidden>
+        <span class="badge">Tiers</span>
+        <span class="chip" aria-pressed="true"><i class="dot" style="background:var(--t-select)"></i>Select</span>
+        <span class="chip" aria-pressed="true"><i class="dot" style="background:var(--t-deluxe)"></i>Deluxe</span>
+        <span class="chip" aria-pressed="true"><i class="dot" style="background:var(--t-premium)"></i>Premium</span>
+        <span class="chip" aria-pressed="true"><i class="dot" style="background:var(--t-ultra)"></i>Ultra</span>
+        <span class="chip" aria-pressed="true"><i class="dot" style="background:var(--t-exclusive)"></i>Knives</span>
+        <span class="chip" aria-pressed="true"><i class="dot" style="background:var(--c-accent)"></i>Animated</span>
+        <label class="badge" style="cursor:pointer;gap:7px">Max / category
+          <input type="number" min="1" max="40" value="8" style="width:52px;background:var(--c-bg);border:1px solid var(--c-line);color:var(--c-ink);padding:3px 5px">
+        </label>
+        <button class="btn sm primary" id="btnApply">Preview change</button>
+        <button class="btn sm" id="btnUndo">Undo</button>
+        <span class="badge" style="margin-left:auto;border:0;color:var(--c-ink)" id="filterCount">62 skins on card · nothing changed yet</span>
+      </div>
+    </div>
+
+    <div class="stage" id="stage">
+      <div class="stagewrap" id="stageCard"></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ============ measurements ============ -->
+<div class="readout">
+  <span>chrome h: <b id="mChrome">—</b></span>
+  <span>topbar h: <b id="mTop">—</b></span>
+  <span>card scale: <b id="mScale">—</b></span>
+  <span>body top: <b id="mBodyTop">—</b></span>
+  <span id="mVerdict">—</span>
+</div>
+
+<div style="background:var(--c-surface);border-bottom:1px solid var(--c-line);padding:14px 16px">
+  <div class="row" style="justify-content:space-between;margin-bottom:8px">
+    <h4 style="font:700 11px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut)">Occlusion proof</h4>
+    <span class="badge">document.elementFromPoint()</span>
+  </div>
+  <div class="hittest" id="hitOut">Press “Run hit test” above.</div>
+  <p class="small" style="margin-top:8px">The proof the audit could not produce on staging: every control in the tier row is individually hit-tested at its own centre, and whatever the browser returns on top is named.</p>
+</div>
+
+<main>
+<div class="wrap">
+
+  <span class="eyebrow">Prototype 1 of 5 · Editor</span>
+  <h1 class="display">The tier toolbar is behind the card.<br>Here is the fix.</h1>
+  <p class="lede">On <b>staging today</b> the entire tier filter — presets, chips, cap, Apply, Reset — is painted underneath the opaque card stage. I proved it with <span class="mono">document.elementFromPoint()</span> and with a screenshot: not one of its 14 controls is reachable. Toggle <b>Outline layers</b> and press <b>Run hit test</b> to reproduce the proof, then switch to <b>PROPOSED</b> to see the same controls working.</p>
+
+  <div class="grid2" style="margin-top:22px">
+    <div class="note bad" style="border-left-color:var(--bad)">
+      <b>Root cause.</b> <span class="k">.tierbar</span> is a static in-flow block. <span class="k">#stage</span> is <span class="k">position:fixed; inset:var(--tbh) 0 0 0</span> with an opaque background, and <span class="k">--tbh</span> is measured from the topbar alone. Positioned elements paint after in-flow blocks, so the stage covers the toolbar's whole band. Its hard-coded <span class="k">margin:64px</span> cannot escape a fixed sibling.
+    </div>
+    <div class="note ok">
+      <b>Fix.</b> One measured chrome stack. The filter row lives <i>inside</i> the sticky chrome, <span class="k">--chrome-h</span> is the measured height of that whole stack, and the stage starts below it. Nothing in the filter row can be occluded because it is inside the element being measured. Rows collapse on demand so the chrome costs 52&nbsp;px by default.
+    </div>
+  </div>
+
+  <h2 class="sec">Also fixed here</h2>
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Was</th><th>Now</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>8 buttons + a 62-character checkbox inline</td><td>4 buttons + a <b>More</b> menu; publish settings move into a Publish dialog</td><td>Chrome was 86 / 124 / 185&nbsp;px tall depending on width — 22% of a phone screen</td></tr>
+      <tr><td>A bare <span class="mono">AUTO</span> select that silently resolves</td><td>Segmented control + a resolved badge: <span class="mono">Auto → Catalog</span></td><td>Nothing told the user which layout they got, or why</td></tr>
+      <tr><td>Export button silently becomes <span class="mono">EXPORT ZIP</span></td><td>Badge explains it: <span class="mono">Catalog exports a ZIP of every page</span></td><td>Label change with no explanation reads as a bug</td></tr>
+      <tr><td><span class="mono">+N MORE</span> chip looks clickable, does nothing</td><td>It's a real button in the editor too, and Catalog keeps its Add controls</td><td>Inert affordance; Catalog removed all <span class="mono">+ Add</span> buttons</td></tr>
+      <tr><td>Toasts under the picker modal (z 40 vs 50)</td><td>Toast layer is 90, above every modal</td><td>"Already on the card" was invisible</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2 class="sec">What to check</h2>
+  <ol style="padding-left:20px;color:var(--c-mut);font-size:13.5px;line-height:1.9;max-width:80ch">
+    <li>Leave it on <b>TODAY</b>, press <b>Run hit test</b> → every tier control reports <span class="mono">BLOCKED</span>.</li>
+    <li>Switch to <b>PROPOSED</b>, press it again → all <span class="mono">FREE</span>. Same controls, same card.</li>
+    <li>Drag the viewport slider to <b>390</b> in both designs and compare chrome height in the readout.</li>
+    <li>Click <b>Refine</b> — the filter row expands <i>inside</i> the chrome and the stage shrinks rather than covering it.</li>
+    <li>Click <b>Auto</b> with the card above threshold and watch the resolved badge + export button explain themselves.</li>
+  </ol>
+
+  <div class="row" style="margin-top:26px">
+    <a class="btn primary" href="index.html">← Back to audit hub</a>
+    <a class="btn" href="http://localhost:3000/index.html">Compare against the live editor</a>
+  </div>
+
+</div>
+</main>
+
+<script>
+/* ---------------- mock art (from prototypes/mock-data.js) ---------------- */
+const SKINS = {
+  'reaver-vandal':'premium','prime-vandal':'premium','spectrum-phantom':'ultra','glitchpop-phantom':'ultra',
+  'elderflame-vandal':'exclusive','ion-phantom':'premium','singularity-sheriff':'ultra','prelude-phantom':'ultra',
+  'champs-vandal':'ultra','nebula-phantom':'premium','magepunk-sheriff':'premium','rgx-vandal':'ultra',
+  'reaver-sheriff':'premium','prime-axe':'ultra','doomwing-odin':'select','altitude-odin':'deluxe',
+  'ion-operator':'premium','elderflame-operator':'exclusive','reaver-operator':'premium',
+  'silvanus-stinger':'deluxe','convex-spectre':'select','infinity-spectre':'deluxe','ion-vandal':'premium',
+  'spectrum-bulldog':'ultra','reaver-ghost':'premium'
+};
+const BASE = 'https://media.valorant-api.com/weaponskins/';
+const ICON = {
+  'reaver-vandal':'30388628-42f0-606c-82c0-73ad43de997f','prime-vandal':'b9ee2457-481c-6776-3f5b-0ca8e8f90c89',
+  'spectrum-phantom':'980fa063-436e-e51f-c38d-70a5b93a0f1c','glitchpop-phantom':'25a7f0f2-4bce-7e45-b4b0-ca9264f5dfcc',
+  'elderflame-vandal':'18609205-4edb-5966-cff8-0fba0230ba1e','ion-phantom':'e86bf7e4-4dd3-fbee-533b-fa875344bbaf',
+  'singularity-sheriff':'bfd9e773-4376-1f6a-98f2-dc93f0c0607c','prelude-phantom':'ad2c5365-4147-23da-afaa-08b9bfb3817b',
+  'champs-vandal':'9bf19b77-4b33-7203-9f2c-16932970622f','nebula-phantom':'e5490f71-455b-74ad-f762-f5a876d4dff9',
+  'magepunk-sheriff':'6460edbf-458d-bf61-7519-519305ba5da2','rgx-vandal':'e5490f71-455b-74ad-f762-f5a876d4dff9',
+  'reaver-sheriff':'c7261be6-47d2-ef86-82f4-6a844e45d33c','prime-axe':'e100dff1-4cf5-54ec-aa65-6fadbc22973b',
+  'doomwing-odin':'729f0ef1-4c70-dc39-3fe0-9d887a320070','altitude-odin':'89be9866-4807-6235-2a95-499cd23828df',
+  'ion-operator':'bbf8ffb9-49c0-75c0-cc7d-8f8f03a4bd36','elderflame-operator':'d722313d-43cb-b38d-7841-75880a3ed2cb',
+  'reaver-operator':'aecab890-43b7-d719-06bc-9295e3d116dc','silvanus-stinger':'847fe9da-45cc-21d4-0138-7aa4d8b31d8e',
+  'convex-spectre':'c8a5ba23-4f0d-c7de-8e2f-c184e2fc27ba','infinity-spectre':'53ab2a6a-46c5-32b9-e045-6781e677d7ff',
+  'ion-vandal':'9bf19b77-4b33-7203-9f2c-16932970622f','spectrum-bulldog':'e86bf7e4-4dd3-fbee-533b-fa875344bbaf',
+  'reaver-ghost':'c7261be6-47d2-ef86-82f4-6a844e45d33c'
+};
+const NAMES = {
+  'reaver-vandal':'Reaver Vandal','prime-vandal':'Prime Vandal','spectrum-phantom':'Spectrum Phantom',
+  'glitchpop-phantom':'Glitchpop Phantom','elderflame-vandal':'Elderflame Vandal','ion-phantom':'Ion Phantom',
+  'singularity-sheriff':'Singularity Sheriff','prelude-phantom':'Prelude to Chaos Phantom',
+  'champs-vandal':'Champions 2021 Vandal','nebula-phantom':'RGX 11z Pro Vandal','magepunk-sheriff':'Magepunk Sheriff',
+  'rgx-vandal':'RGX 11z Pro Vandal','reaver-sheriff':'Reaver Ghost','prime-axe':'Prime Axe',
+  'doomwing-odin':'Doom Wing Odin','altitude-odin':'Altitude Odin','ion-operator':'Ion Operator',
+  'elderflame-operator':'Elderflame Operator','reaver-operator':'Reaver Operator',
+  'silvanus-stinger':'Silvanus Stinger','convex-spectre':'Convex Spectre','infinity-spectre':'Infinity Spectre',
+  'ion-vandal':'Ion Vandal','spectrum-bulldog':'Spectrum Bulldog','reaver-ghost':'Reaver Ghost'
+};
+const img = k => BASE + ICON[k] + '/displayicon.png';
+const nm  = k => NAMES[k] || k;
+
+const PANELS = [
+  {area:'side',   label:'SIDEARMS',      ks:['elderflame-vandal','reaver-sheriff','ion-vandal']},
+  {area:'smg',    label:'SMGS',          ks:['prime-vandal','doomwing-odin','silvanus-stinger']},
+  {area:'rifles', label:'RIFLES',        ks:['prime-vandal','ion-phantom','nebula-phantom','spectrum-phantom','glitchpop-phantom','magepunk-sheriff','ion-vandal','prelude-phantom','champs-vandal','reaver-ghost','glitchpop-phantom','nebula-phantom']},
+  {area:'sniper', label:'SNIPER RIFLES', ks:['ion-operator','elderflame-operator','reaver-operator']},
+  {area:'mg',     label:'MACHINE GUNS',  ks:['doomwing-odin','altitude-odin']},
+  {area:'flex',   label:'BUDDIES & FLEX',ks:[]}
+];
+
+/* ---------------- card renderer ---------------- */
+function skinCell(k, cls){
+  return '<div class="sk '+cls+'" title="'+nm(k)+'">'+
+         '<img src="'+img(k)+'" alt="'+nm(k)+'" loading="lazy"'+
+         ' onerror="var s=this.nextElementSibling;this.style.display=\'none\';if(s)s.style.display=\'flex\'">'+
+         '<span style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;'+
+         'font:600 13px var(--font-ui);color:#8A99A9;padding:6px;text-align:center">'+nm(k)+'</span>'+
+         '<span class="lv">LV 2</span><span class="tname">'+nm(k)+'</span>'+
+         '<button class="rm" aria-label="Remove '+nm(k)+'">×</button></div>';
+}
+function panel(p, mode, page){
+  let body;
+  if(mode==='m2'){
+    body = p.ks.slice(0,3).map(k=>skinCell(k,'named')).join('');
+    if(p.ks.length>3) body += '<button class="jchip" data-goto="m4">+'+(p.ks.length-3)+' MORE — FULL CATALOG</button>';
+  } else {
+    const tiles = p.ks.map(k=>skinCell(k,'tiled')).join('');
+    body = tiles + (p.ks.length>4 ? '<button class="jchip" data-goto="m4">+'+(p.ks.length-4)+' MORE</button>' : '');
+  }
+  return '<div class="pnl" style="grid-area:'+p.area+'"><h5>'+p.label+'</h5><div class="skins">'+body+'</div>'+
+         '<div class="addrow"><button class="addbtn">+ Add ('+p.ks.length+')</button></div></div>';
+}
+function card(mode, page){
+  const isM4 = mode==='m4';
+  const grid = isM4 ? '' : '<div class="card-grid">'+PANELS.map(p=>panel(p,mode,page)).join('')+'</div>';
+  const spread = isM4
+    ? '<div style="display:flex;gap:14px;min-height:0;overflow:hidden">'+
+        PANELS.concat([{area:'flex2',label:'BUDDIES & FLEX',ks:['prime-axe','convex-spectre','infinity-spectre']}])
+        .map(p=>'<div class="pnl" style="flex:1;min-width:0"><h5>'+p.label+'</h5><div class="skins">'+
+                p.ks.map(k=>skinCell(k,'tiled')).join('')+'</div></div>').join('')+
+      '</div>'
+    : '';
+  return '<div class="card" id="theCard">'+
+    '<div class="card-hd"><h4>CHANGE NAME</h4><span class="code">K486</span>'+
+      '<div class="who"><b>IMMORTAL 3</b><span>PEAK RANK · WTR · RECEIPTS</span></div></div>'+
+    (grid||spread)+
+    '<div class="card-ft">'+
+      '<div class="stat"><label>Premium</label><b>24</b></div>'+
+      '<div class="stat"><label>Limited</label><b>11</b></div>'+
+      '<div class="stat"><label>Skins</label><b>62</b><button class="auto" title="Recount">auto</button></div>'+
+      '<div class="stat"><label>Price</label><b>PRICE OFFER</b></div>'+
+      '<div class="stat"><label>Premier</label><b>UNLINKED</b></div>'+
+      '<div class="stat"><label>Status</label><b>AVAILABLE</b></div>'+
+    '</div></div>';
+}
+
+/* ---------------- state ---------------- */
+const S = { design:'current', vpw:1440, vph:900, mode:'auto', page:1, skins:62 };
+const RESOLVE = s => (s.skins>=20||s.skins>=50) ? 'm4' : 'm1';
+const resolved = () => S.mode==='auto' ? RESOLVE(S) : S.mode;
+const pagesFor = m => m==='m4' ? 2 : 1;
+
+const $ = s => document.querySelector(s);
+const app = $('#app'), curTop=$('#curTop'), curTierbar=$('#curTierbar'), curStage=$('#curStage'), curCardwrap=$('#curCardwrap');
+const chrome=$('#chrome'), topbar=$('.chrome-top'), filterRow=$('#filterRow'), stage=$('#stage'), stageCard=$('#stageCard');
+
+/* ---------------- viewport simulation ---------------- */
+function applyVp(){
+  app.style.width = S.vpw+'px';
+  app.style.height = S.vph+'px';
+  $('#vpval').textContent = S.vpw+' × '+S.vph;
+  renderAll(); measure();
+}
+document.querySelectorAll('[data-vp]').forEach(b=>b.addEventListener('click',()=>{
+  const w=+b.dataset.vp;
+  S.vpw=w; S.vph = w<600?844 : (w<=1280?720:900);
+  $('#vpw').value=w; applyVp();
+}));
+$('#vpw').addEventListener('input',e=>{S.vpw=+e.target.value; S.vph = S.vpw<600?844:(S.vpw<=1280?720:900); applyVp();});
+
+/* ---------------- design toggle ---------------- */
+function setDesign(d){
+  S.design=d;
+  $('#curWrap').hidden = d!=='current';
+  $('#proWrap').hidden  = d!=='proposed';
+  document.querySelectorAll('#designSeg button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.design===d)));
+  renderAll(); measure();
+}
+document.querySelectorAll('#designSeg button').forEach(b=>b.addEventListener('click',()=>setDesign(b.dataset.design)));
+
+/* ---------------- render ---------------- */
+function renderAll(){
+  const m = resolved();
+  if(S.design==='current'){
+    curCardwrap.innerHTML = card(m, S.page);
+    curTop.style.setProperty('--x','');
+  } else {
+    stageCard.innerHTML = card(m, S.page);
+    document.querySelectorAll('#layoutSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===S.mode)));
+    const pages = pagesFor(m);
+    const auto = S.mode==='auto';
+    $('#resolvedBadge').textContent = auto ? 'Auto → '+(m==='m4'?'Catalog':'Tiles') : (m==='m4'?'Catalog · 2 pages':'Tiles');
+    $('#resolvedBadge').className = 'badge'+(auto?' accent':'');
+    $('#resolvedBadge').title = auto
+      ? 'AUTO picked Catalog: 62 skins (≥50) and 24 premium (≥20). Catalog exports a ZIP of all 2 pages, not a single PNG.'
+      : 'Layout set manually.';
+    const nav=$('#pageNav'); nav.hidden = m!=='m4';
+    $('#pgLbl').textContent='Page '+S.page+'/'+pages;
+    $('#pgPrev').disabled = S.page<=1; $('#pgNext').disabled = S.page>=pages;
+    const ex=$('#btnExport');
+    ex.textContent = m==='m4' ? 'Export ZIP' : 'Export PNG';
+    ex.title = m==='m4' ? 'Catalog mode exports one ZIP containing every page at full resolution.' : 'Exports the current view as a single 1920×1080 PNG.';
+    $('#btnPublish').title = m==='m4' ? 'Opens publish options: slug, title, showAllCards, listing status.' : '';
+  }
+}
+function fitCard(){
+  const holder = S.design==='current' ? curCardwrap : stageCard;
+  const stageEl = S.design==='current' ? curStage : stage;
+  const el = holder.querySelector('#theCard');
+  if(!el) return null;
+  const availW = stageEl.clientWidth - 28;
+  const availH = stageEl.clientHeight - 28;
+  const nat = Math.min(availW/1920, availH/1080);
+  const s = Math.min(Math.max(nat,0.35),1);
+  el.style.transform='scale('+s+')';
+  /* the holder is the scaled box; the 1920px canvas is pinned to its top-left
+     so it scales in place instead of overflowing a flex-centred row */
+  holder.style.position='relative';
+  holder.style.overflow='hidden';
+  holder.style.width  = Math.round(1920*s)+'px';
+  holder.style.height = Math.round(1080*s)+'px';
+  el.style.position='absolute';
+  el.style.top='0';
+  el.style.left='0';
+  return s;
+}
+
+/* ---------------- measure the chrome (the actual fix) ---------------- */
+function measure(){
+  let chromeH, topH, s;
+  if(S.design==='current'){
+    topH = curTop.offsetHeight;
+    /* what the live app does: --tbh is measured from the topbar ONLY */
+    chromeH = topH;
+    app.style.setProperty('--chrome-h', chromeH+'px');
+    s = fitCard();
+    const tb=$('#curTierbar').getBoundingClientRect();
+    $('#mBodyTop').textContent = 'stage starts y='+Math.round(curStage.getBoundingClientRect().top-top2abs());
+    $('#mVerdict').innerHTML = 'tierbar band y='+Math.round(tb.top)+'–'+Math.round(tb.bottom)+
+      ' · <b class="bad">fully inside the stage → occluded</b>';
+  } else {
+    chromeH = chrome.offsetHeight;
+    topH = topbar.offsetHeight;
+    app.style.setProperty('--chrome-h', chromeH+'px');
+    s = fitCard();
+    $('#mBodyTop').textContent = 'stage starts y='+Math.round(stage.getBoundingClientRect().top-top2abs());
+    const rows = [];
+    if(!filterRow.hidden) rows.push('filter row visible (+'+(chromeH-topH)+'px)');
+    rows.push('stage inset = var(--chrome-h) = '+chromeH+'px');
+    $('#mVerdict').innerHTML = '<b class="ok">measured, not guessed</b> · '+rows.join(' · ');
+  }
+  $('#mChrome').textContent = chromeH+'px';
+  $('#mChrome').className = S.design==='current' ? 'bad' : '';
+  $('#mTop').textContent = topH+'px';
+  $('#mScale').textContent = s? s.toFixed(3)+'  (9px → '+(9*s).toFixed(1)+'px)' : '—';
+  $('#mScale').className = s && s*9 < 7 ? 'bad' : (s && s*9 < 9 ? 'warn' : '');
+}
+function top2abs(){ return S.design==='current' ? curTop.getBoundingClientRect().top : topbar.getBoundingClientRect().top; }
+
+/* ---------------- hit test: prove it ---------------- */
+function hitTest(){
+  const proposed = S.design==='proposed';
+  const list = proposed
+    ? [...filterRow.querySelectorAll('.chip, input, button')]
+    : [...curTierbar.querySelectorAll('[data-hk]')];
+  const stageEl = proposed ? stage : curStage;
+  const out = ['Hit test — asking the browser what is on top at the centre of each control:',''];
+
+  if(proposed && filterRow.hidden){
+    out.push('<span class="sel">  SKIPPED  the filter row is collapsed in PROPOSED — that is the point: it costs 0 px until you ask for it.</span>');
+    out.push('<span class="sel">           Press “Refine” in the chrome, then run this again to hit-test the expanded row.</span>');
+    document.getElementById('hitOut').innerHTML = out.join('<br>');
+    return;
+  }
+  let blocked=0;
+  list.forEach(el=>{
+    const r = el.getBoundingClientRect();
+    if(r.width<2||r.height<2){ return; }
+    const hit = document.elementFromPoint(r.left+r.width/2, r.top+r.height/2);
+    const isSelf = el===hit || el.contains(hit) || (hit&&hit.contains(el));
+    const label = (el.dataset.hk||el.textContent||el.tagName).trim().slice(0,26);
+    if(isSelf){ out.push('<span class="free">  FREE     '+label.padEnd(26)+'</span> → &lt;'+(hit.tagName.toLowerCase())+'&gt; (itself)'); }
+    else { blocked++; out.push('<span class="blocked">  BLOCKED  '+label.padEnd(26)+'</span> → &lt;'+(hit?hit.tagName.toLowerCase():'null')+
+      (hit&&hit.id?'#'+hit.id:'')+(hit&&hit.className?'.'+String(hit.className).split(' ')[0]:'')+'&gt;'); }
+  });
+  out.push('');
+  out.push(blocked===0
+    ? '<span class="free">RESULT: 0 of '+list.length+' tested controls are occluded. Every one is clickable.</span>'
+    : '<span class="blocked">RESULT: '+blocked+' of '+list.length+' tested controls are occluded by the card stage.</span>');
+  document.getElementById('hitOut').innerHTML = out.join('<br>');
+}
+$('#hittestBtn').addEventListener('click',hitTest);
+
+/* ---------------- chrome interactions ---------------- */
+document.querySelectorAll('#layoutSeg button').forEach(b=>b.addEventListener('click',()=>{
+  S.mode=b.dataset.mode; S.page=1; renderAll(); measure();
+  if(S.skins>=20||S.skins>=50){
+    $('#filterCount').textContent = S.skins+' skins on card · '+S.skins+' premium · '+(S.mode==='auto'?'AUTO picked Catalog':'manual Catalog')+
+      ' · exports a ZIP of '+pagesFor(resolved())+' pages';
+  }
+}));
+$('#pgPrev').addEventListener('click',()=>{ if(S.page>1){S.page--; renderAll();} });
+$('#pgNext').addEventListener('click',()=>{ if(S.page<pagesFor(resolved())){S.page++; renderAll();} });
+$('#btnRefine').addEventListener('click',e=>{
+  const open = filterRow.hidden;
+  filterRow.hidden=!open;
+  e.currentTarget.setAttribute('aria-expanded',String(open));
+  e.currentTarget.textContent = open?'Refine ▲':'Refine';
+  measure();
+});
+$('#btnApply').addEventListener('click',()=>{
+  $('#filterCount').textContent='Preview: would keep 31 of 62 skins. Nothing is applied until you confirm →';
+});
+$('#btnUndo').addEventListener('click',()=>{
+  $('#filterCount').textContent=S.skins+' skins on card · nothing changed yet';
+});
+
+/* More menu */
+const MORE=[
+  ['Browse listings','Open the marketplace in a new tab'],
+  ['Import account','Pull skins, rank, buddies and cards from Riot'],
+  ['Load draft','Restore a saved draft from this browser'],
+  ['Copy post text','Caption for Discord / Reddit'],
+  ['Export PNG…','More export options']
+];
+const moreBtn=$('#moreBtn'), moreMenu=$('#moreMenu');
+MORE.forEach(([label,hint])=>{
+  const b=document.createElement('button');
+  b.className='btn sm wide'; b.style.justifyContent='flex-start'; b.style.border='0';
+  b.textContent=label; b.title=hint;
+  b.addEventListener('click',()=>{ moreMenu.hidden=true; moreBtn.setAttribute('aria-expanded','false'); moreBtn.textContent='More ▾'; });
+  moreMenu.appendChild(b);
+});
+moreBtn.addEventListener('click',()=>{
+  const open=moreMenu.hidden;
+  moreMenu.hidden=!open; moreBtn.setAttribute('aria-expanded',String(open));
+  moreBtn.textContent = open?'More ▲':'More ▾';
+  if(open){ const r=moreBtn.getBoundingClientRect(); moreMenu.style.top=(r.bottom - top2abs()+6)+'px'; }
+});
+
+/* toasts: the fix for "toasts painted behind the picker modal (z 40 vs 50)" */
+let toastN=0;
+function toast(msg,kind){
+  const host=$('#toastHost');
+  const t=document.createElement('div');
+  t.dataset.kind=kind||'info'; t.textContent=msg;
+  t.style.cssText='position:absolute;left:50%;transform:translateX(-50%);bottom:'+(14+toastN*44)+'px;z-index:90;'+
+    'background:#1B232D;border:1px solid #222C37;padding:10px 16px;font:600 12px var(--font-ui);max-width:88%;'+
+    'box-shadow:0 10px 30px rgba(0,0,0,.6)';
+  host.appendChild(t);
+  toastN++; setTimeout(()=>{t.remove(); toastN--;},4200);
+}
+$('#demoToast').addEventListener('click',()=>toast('Reaver Vandal is already on the card.','info'));
+$('#demoLayoutNote').addEventListener('click',()=>{
+  S.skins = 62; S.mode='auto'; renderAll();
+  toast('AUTO → Catalog · 62 skins, 24 premium · exports a ZIP of 2 pages','info');
+});
+
+/* ---------------- boot ---------------- */
+let outlining=false;
+$('#outlineBtn').addEventListener('click',e=>{
+  outlining=!outlining;
+  app.classList.toggle('outline',outlining);
+  e.currentTarget.setAttribute('aria-pressed',String(outlining));
+  e.currentTarget.textContent = outlining?'Outline on':'Outline layers';
+});
+
+window.addEventListener('resize',()=>{ renderAll(); measure(); });
+
+$('#hitOut').innerHTML='Press “Run hit test” above.';
+applyVp();
+</script>
+</body>
+</html>

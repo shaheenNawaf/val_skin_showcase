@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardForge — Prototype 2 · Buyer page (price, status, contact)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+/* ---------- device frame ---------- */
+.frames{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start}
+.frames.stacked{grid-template-columns:1fr;gap:20px;max-width:1000px}
+@media (max-width:1080px){.frames{grid-template-columns:1fr}}
+.frame{border:1px solid var(--c-line);background:var(--c-bg);position:relative;min-width:0}
+.frame-cap{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 12px;background:var(--c-surface);
+  border-bottom:1px solid var(--c-line);font:700 10px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut)}
+.frame-cap .tag{margin-left:auto}
+.viewport{position:relative;overflow:hidden;background:var(--c-bg)}
+.frame[data-w=phone]{width:390px;margin:0 auto}
+.frame[data-w=phone] .frames{grid-template-columns:1fr}
+
+/* ---------- shared page furniture (miniature of the real thing) ---------- */
+.pg{font-size:11px;color:var(--c-ink)}
+.pg-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;background:var(--c-surface);
+  border-bottom:1px solid var(--c-line)}
+.pg-bar .logo{font-size:10px;letter-spacing:.14em}
+.pg-bar .logo::before{width:6px;height:10px;margin-right:6px}
+.pg-body{background:#0E141B}
+.pg-disc{position:absolute;left:0;right:0;bottom:0;padding:6px 10px;background:var(--c-veil);backdrop-filter:blur(4px);
+  text-align:center;font-size:9px;color:var(--c-mut);border-top:1px solid var(--c-line-soft)}
+
+/* ---------- CURRENT buyer page (defects made visible) ---------- */
+.cur-stage{position:absolute;inset:34px 0 0;background:radial-gradient(900px 500px at 50% 42%,#131B24,#0B0F14 72%);
+  overflow:hidden;display:flex;align-items:center;justify-content:center}
+.fitbox{position:relative;overflow:hidden;flex:none}
+.fitbox > .cur-canvas{position:absolute;top:0;left:0;transform-origin:top left}
+.cur-canvas{width:1920px;height:1080px;
+  background:linear-gradient(160deg,#16202B,#0F1923 55%,#131C26);border:1px solid #2E3A46;padding:22px 26px;
+  display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:14px}
+/* the middle row must actually get the height, or every panel collapses */
+.cv-body{display:flex;flex-direction:column;min-height:0;gap:10px}
+.cv-body > .cur-grid{flex:1 1 auto;min-height:0}
+.cv-body > .cv-row{flex:1 1 auto;min-height:0;display:flex;gap:12px}
+.pv-canvas{grid-template-rows:auto minmax(0,1fr) auto}
+.cur-hd{display:flex;align-items:flex-end;gap:12px}
+.cur-hd h4{font-family:var(--font-display);font-weight:800;font-size:26px;color:#ECE8E1;letter-spacing:.08em}
+.cur-hd .code{font:700 13px ui-monospace,Menlo,Consolas,monospace;color:#8A99A9}
+.cur-hd .who{margin-left:auto;text-align:right}
+.cur-hd .who b{display:block;font-family:var(--font-display);font-weight:800;font-size:22px;color:#ECE8E1}
+.cur-hd .who span{font-size:11px;color:#8A99A9;letter-spacing:.12em}
+.cur-grid{display:grid;grid-template-columns:1fr 1fr 1.3fr 1fr 1fr .8fr;gap:12px;min-height:0}
+.cp{background:#1F2731;border:1px solid #2E3A46;padding:10px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.cp h5{font-size:12px;letter-spacing:.16em;color:#8A99A9;margin-bottom:8px;flex:none}
+.cp .sk{position:relative;flex:1 1 0;min-height:0;background:#16202B;border:1px solid #2A3540;overflow:hidden;margin-bottom:6px}
+.cp .sk img{position:absolute;inset:0;object-fit:contain;width:100%;height:100%}
+.cur-ft{border-top:1px solid #2E3A46;padding-top:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.cstat label{display:block;font-size:10px;letter-spacing:.16em;color:#8A99A9;text-transform:uppercase}
+.cstat b{font-family:var(--font-display);font-weight:800;font-size:28px;color:#ECE8E1}
+/* the defect: price/status live here, inside the scaled canvas, at canvas scale */
+.defect{position:absolute;outline:2px dashed var(--bad);outline-offset:3px}
+.defect::after{content:attr(data-note);position:absolute;right:4px;top:3px;
+  background:var(--bad);color:#fff;font:700 8.5px var(--font-ui);letter-spacing:.06em;padding:2px 5px;white-space:nowrap}
+.defect.on::after{display:block}
+
+/* ---------- PROPOSED buyer page ---------- */
+.pv{background:#0E141B;display:flex;flex-direction:column;min-height:100%}
+.pv-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;background:var(--c-surface);
+  border-bottom:1px solid var(--c-line);position:sticky;top:0;z-index:5}
+.pv-bar .logo{font-size:10px;letter-spacing:.14em}
+.pv-bar .logo::before{width:6px;height:10px;margin-right:6px}
+.pv-bar .sp{margin-left:auto}
+
+.pv-hero{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start;
+  padding:12px 14px;background:var(--c-surface2);border-bottom:1px solid var(--c-line)}
+.pv-title{font-family:var(--font-display);font-weight:800;font-size:15px;line-height:1.2;color:#fff;letter-spacing:.01em}
+.pv-sub{margin-top:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:10px;color:var(--c-mut)}
+.pv-price{text-align:right}
+.pv-price .amt{font-family:var(--font-display);font-weight:800;font-size:26px;line-height:1;color:#fff;letter-spacing:-.01em}
+.pv-price .amt.offer{font-size:15px;color:var(--c-accent)}
+.pv-price .cur{font-size:11px;color:var(--c-mut);margin-top:3px}
+.pv-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;margin-top:9px}
+.pv-actions .btn{font-size:9.5px;padding:7px 10px;letter-spacing:.08em}
+
+.pv-stage{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 10px 20px;overflow:auto}
+.pv-zoombar{display:flex;align-items:center;gap:6px;width:100%;max-width:520px;justify-content:space-between}
+.pv-zoombar .lbl{font:700 9px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--c-mut)}
+.pv-canvas{position:relative;background:linear-gradient(160deg,#16202B,#0F1923 55%,#131C26);border:1px solid #2E3A46;
+  padding:22px 26px;display:grid;grid-template-rows:auto 1fr auto;gap:14px;transform-origin:top left;flex:none}
+.pv-canvas .cp .sk{margin-bottom:6px}
+
+/* buyer-facing meta strip BELOW the canvas, at page scale (not canvas scale) */
+.pv-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:1px;width:100%;max-width:520px;
+  background:var(--c-line);border:1px solid var(--c-line)}
+.pv-meta div{background:var(--c-surface);padding:8px 10px}
+.pv-meta dt{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--c-mut);margin:0}
+.pv-meta dd{margin:3px 0 0;font-size:11px;font-weight:600;color:var(--c-ink);line-height:1.3}
+
+/* ---------- mobile action bar (fixes "price truncated on a phone") ---------- */
+.pv-actbar{position:sticky;bottom:0;z-index:6;display:flex;align-items:center;gap:8px;padding:9px 10px;
+  background:var(--c-surface);border-top:1px solid var(--c-line)}
+.pv-actbar .amt{font-family:var(--font-display);font-weight:800;font-size:17px;color:#fff;line-height:1}
+.pv-actbar .amt.offer{font-size:12px;color:var(--c-accent)}
+.pv-actbar .meta{font-size:9px;color:var(--c-mut);margin-top:2px}
+.pv-actbar .sp{margin-left:auto;display:flex;gap:6px}
+
+/* ---------- status demo switcher ---------- */
+.statussim{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.statuscard{background:var(--c-surface);border:1px solid var(--c-line);padding:14px;display:flex;flex-direction:column;gap:9px}
+.statuscard.sold .pv-price .amt{color:var(--c-mut);text-decoration:line-through}
+.statuscard.pending{opacity:.92}
+</style>
+</head>
+<body>
+
+<div class="pbar">
+  <span class="logo">CARD FORGE</span>
+  <span class="pbar-t">Prototype 2 · Buyer page</span>
+  <a class="btn sm pbar-sp" href="index.html">← Audit hub</a>
+  <a class="btn sm" href="http://localhost:3000/view.html?slug=5tiexm6">Live buyer page</a>
+</div>
+
+<main>
+<div class="wrap">
+
+  <span class="eyebrow">Prototype 2 of 5 · The revenue path</span>
+  <h1 class="display">The buyer cannot tell what it costs,<br>or whether it is even for sale.</h1>
+  <p class="lede">The database already stores <span class="mono">price</span>, <span class="mono">currency</span>, <span class="mono">negotiable</span> and <span class="mono">status</span> for every listing — the viewer fetches all four and then reads none of them. The price a buyer sees is seller free text, painted 15&nbsp;px inside a canvas that gets scaled down to <b>0.35</b> on a phone. That is roughly <b>5&nbsp;px</b> tall, and on a landscape phone there is no native layout to fall back to. A sold listing looks identical to an available one.</p>
+  <p class="small" style="margin-top:10px">Frames below are live DOM, scaled to fit the page — the <b>Today</b> frames reproduce the real fitter's 0.35 floor, so you can see the same shrink that a real buyer gets.</p>
+
+  <div class="statussim">
+    <span class="badge">Try the three listing states:</span>
+    <div class="seg" id="statusSeg">
+      <button type="button" data-st="available" aria-pressed="true">Available</button>
+      <button type="button" data-st="pending" aria-pressed="false">Pending</button>
+      <button type="button" data-st="sold" aria-pressed="false">Sold</button>
+    </div>
+    <button class="btn sm" id="noLinkBtn" aria-pressed="false">Simulate: seller set no valid link</button>
+  </div>
+
+  <div class="frames stacked">
+
+    <!-- ============ TODAY ============ -->
+    <div class="frame" data-w="desktop" id="frameCur">
+      <div class="frame-cap">Today · desktop <span class="tag badge bad">buyer sees a scaled canvas + 2 buttons, price buried inside it</span></div>
+      <div class="viewport" style="height:640px">
+        <div class="pg-bar">
+          <span class="logo">CARD FORGE</span>
+          <span class="badge" id="curBadge">1 viewing now</span>
+          <span class="badge">Tiles</span>
+          <button class="btn xs">Contact seller</button>
+          <button class="btn xs">Copy link</button>
+          <button class="btn xs">Browse listings</button>
+        </div>
+        <div class="cur-stage">
+          <div class="fitbox" id="fitCurBox"><div class="cur-canvas" id="curCanvas"></div></div>
+        </div>
+        <div class="pg-disc">Not affiliated with Riot Games. Prototype — mock listing.</div>
+      </div>
+    </div>
+
+    <!-- ============ PROPOSED ============ -->
+    <div class="frame" data-w="desktop" id="framePro">
+      <div class="frame-cap">Proposed · desktop <span class="tag badge ok">price, status, seller and actions at page scale, above a zoomable preview</span></div>
+      <div class="viewport" style="height:640px">
+        <div class="pv" id="pv">
+          <div class="pv-bar">
+            <span class="logo">CARD FORGE</span>
+            <span class="badge" id="proBadge">1 viewing now · 45 views</span>
+            <span class="sp"></span>
+            <div class="seg" id="proLayout">
+              <button type="button" data-m="m1" aria-pressed="true">Tiles</button>
+              <button type="button" data-m="m2" aria-pressed="false">Showcase</button>
+              <button type="button" data-m="m4" aria-pressed="false">Catalog</button>
+            </div>
+            <button class="btn xs" id="proCopy">Copy link</button>
+          </div>
+
+          <div class="pv-hero">
+            <div>
+              <div class="pv-title" id="proTitle">Immortal 3 · 62 skins · WTR + receipts</div>
+              <div class="pv-sub">
+                <span class="badge" id="proStatus">Available</span>
+                <span id="proSeller">Seller: @vlogin · code K486</span>
+              </div>
+            </div>
+            <div class="pv-price">
+              <div class="amt" id="proAmt">$480</div>
+              <div class="cur" id="proCur">USD · negotiable</div>
+              <div class="pv-actions">
+                <button class="btn primary" id="proContact">Contact seller</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pv-stage" id="proStage">
+            <div class="pv-zoombar">
+              <span class="lbl">Card preview</span>
+              <span class="row tight">
+                <button class="btn xs" data-zoom="fit">Fit</button>
+                <button class="btn xs" data-zoom="1">100%</button>
+                <button class="btn xs" data-zoom="2">200%</button>
+                <button class="btn xs" data-zoom="full">Open full 1920×1080</button>
+              </span>
+            </div>
+            <div id="proCanvasBox"></div>
+            <dl class="pv-meta">
+              <div><dt>Rank</dt><dd>Immortal 3 · peak radiant</dd></div>
+              <div><dt>Access</dt><dd>Full — with tracked receipts</dd></div>
+              <div><dt>Owner</dt><dd>0th owner</dd></div>
+              <div><dt>Skins</dt><dd>62 (24 premium · 11 limited)</dd></div>
+              <div><dt>Premier</dt><dd>Unlinked</dd></div>
+              <div><dt>Updated</dt><dd>2 Jun 2026</dd></div>
+            </dl>
+          </div>
+
+          <div class="pv-actbar">
+            <div>
+              <div class="amt" id="mobAmt">$480</div>
+              <div class="meta" id="mobMeta">USD · negotiable</div>
+            </div>
+            <span class="sp"></span>
+            <button class="btn primary sm" id="mobContact">Contact seller</button>
+          </div>
+        </div>
+        <div class="pg-disc">Not affiliated with Riot Games. Prototype — mock listing.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ phone comparison ============ -->
+  <h2 class="sec">The same page on a 390 px phone</h2>
+  <div class="frames">
+    <div class="frame" data-w="phone">
+      <div class="frame-cap">Today · 390 × 844</div>
+      <div class="viewport" style="height:600px">
+        <div class="pg-bar">
+          <span class="logo">CARD FORGE</span>
+          <button class="btn xs">Contact seller</button>
+        </div>
+        <div class="cur-stage" style="inset:30px 0 0">
+          <div class="fitbox" id="fitCurBoxPhone"><div class="cur-canvas" id="curCanvasPhone"></div></div>
+        </div>
+        <div class="pg-disc">Prototype — mock listing.</div>
+      </div>
+    </div>
+
+    <div class="frame" data-w="phone">
+      <div class="frame-cap">Proposed · 390 × 844 <span class="tag badge ok">native layout, price pinned</span></div>
+      <div class="viewport" style="height:600px">
+        <div class="pv" id="pvPhone">
+          <div class="pv-bar">
+            <span class="logo">CARD FORGE</span>
+            <span class="sp"></span>
+            <button class="btn xs">Copy link</button>
+          </div>
+          <div class="pv-hero" style="grid-template-columns:1fr">
+            <div>
+              <div class="pv-title" id="proTitlePhone">Immortal 3 · 62 skins</div>
+              <div class="pv-sub">
+                <span class="badge" id="proStatusPhone">Available</span>
+                <span>@vlogin · K486</span>
+              </div>
+            </div>
+            <div class="pv-price" style="text-align:left">
+              <div class="amt" id="proAmtPhone">$480</div>
+              <div class="cur" id="proCurPhone">USD · negotiable</div>
+              <div class="pv-actions" style="justify-content:flex-start">
+                <button class="btn primary" id="proContactPhone">Contact seller</button>
+              </div>
+            </div>
+          </div>
+          <div class="pv-stage" id="proStagePhone">
+            <div id="proCanvasBoxPhone"></div>
+            <dl class="pv-meta">
+              <div><dt>Rank</dt><dd>Immortal 3</dd></div>
+              <div><dt>Access</dt><dd>Full + receipts</dd></div>
+              <div><dt>Owner</dt><dd>0th owner</dd></div>
+              <div><dt>Skins</dt><dd>62</dd></div>
+              <div><dt>Premier</dt><dd>Unlinked</dd></div>
+              <div><dt>Updated</dt><dd>2 Jun 2026</dd></div>
+            </dl>
+          </div>
+          <div class="pv-actbar">
+            <div>
+              <div class="amt" id="mobAmtPhone">$480</div>
+              <div class="meta" id="mobMetaPhone">USD · negotiable</div>
+            </div>
+            <span class="sp"></span>
+            <button class="btn primary sm" id="mobContactPhone">Contact seller</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec">What changed, and what it costs</h2>
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Problem on staging</th><th>Proposed</th><th>Effort</th></tr></thead>
+    <tbody>
+      <tr><td>Price is seller free text at canvas scale — ~5&nbsp;px on a phone</td><td>Structured <span class="mono">price</span>/<span class="mono">currency</span>/<span class="mono">negotiable</span> in a hero row at page scale, repeated in a sticky mobile action bar</td><td>S — the columns already exist; read them</td></tr>
+      <tr><td><span class="mono">status</span> fetched, never checked — a sold card looks live</td><td>Status badge in the hero; sold cards dim the price and strike it through, and the contact button relabels to <span class="mono">Sold — no longer available</span></td><td>S</td></tr>
+      <tr><td>No contact path at all unless the seller's free-text URL is valid http(s)</td><td>Contact always renders; if the link is invalid the button opens a seller-contact prompt instead of vanishing</td><td>S</td></tr>
+      <tr><td><span class="mono">#viewSwitch</span> and the catalog pager disappear below 700&nbsp;px</td><td>Layout switch and pager live in the sticky bar at every width</td><td>S</td></tr>
+      <tr><td>Price sits in one of three equal <span class="mono">flex:0</span> spans — the most ellipsis-prone element on the page</td><td>Price owns its own row and is never truncated</td><td>S</td></tr>
+      <tr><td>0.35 scale floor with no zoom — a phone buyer cannot read anything</td><td>Fit / 100% / 200% / open-full control, plus the native stacked layout under 700&nbsp;px</td><td>M</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note" style="margin-top:20px">
+    <b>One action, not two.</b> There is no make-an-offer flow and no messages or orders table in the schema, so <i>Contact seller</i> is the only buyer action. That is also the honest state: an offer button with nowhere to send the offer is worse than no offer button. The one thing that <i>does</i> need fixing is that contact currently disappears entirely when the seller's free-text URL is not valid http(s) — it should always render and fall back to a contact prompt.
+  </div>
+
+  <div class="row" style="margin-top:26px">
+    <a class="btn primary" href="index.html">← Back to audit hub</a>
+    <a class="btn" href="editor-chrome.html">Prototype 1 · Editor chrome</a>
+  </div>
+
+</div>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const ICON = {
+  'elderflame-vandal':'18609205-4edb-5966-cff8-0fba0230ba1e','reaver-sheriff':'c7261be6-47d2-ef86-82f4-6a844e45d33c',
+  'ion-vandal':'596ce51d-40e3-dc21-b02d-b08d070a7883','prime-vandal':'b9ee2457-481c-6776-3f5b-0ca8e8f90c89',
+  'doomwing-odin':'729f0ef1-4c70-dc39-3fe0-9d887a320070','silvanus-stinger':'847fe9da-45cc-21d4-0138-7aa4d8b31d8e',
+  'ion-phantom':'e86bf7e4-4dd3-fbee-533b-fa875344bbaf','nebula-phantom':'e5490f71-455b-74ad-f762-f5a876d4dff9',
+  'spectrum-phantom':'980fa063-436e-e51f-c38d-70a5b93a0f1c','glitchpop-phantom':'25a7f0f2-4bce-7e45-b4b0-ca9264f5dfcc',
+  'magepunk-sheriff':'6460edbf-458d-bf61-7519-519305ba5da2','ion-operator':'bbf8ffb9-49c0-75c0-cc7d-8f8f03a4bd36',
+  'elderflame-operator':'d722313d-43cb-b38d-7841-75880a3ed2cb','reaver-operator':'aecab890-43b7-d719-06bc-9295e3d116dc',
+  'altitude-odin':'89be9866-4807-6235-2a95-499cd23828df','prime-axe':'e100dff1-4cf5-54ec-aa65-6fadbc22973b',
+  'convex-spectre':'c8a5ba23-4c07-7de8-e2f7-c184e2fc27ba','infinity-spectre':'53ab2a6a-46c5-32b9-e045-6781e677d7ff'
+};
+const BASE='https://media.valorant-api.com/weaponskins/';
+const NAMES={'elderflame-vandal':'Elderflame Vandal','reaver-sheriff':'Reaver Ghost','ion-vandal':'Ion Vandal',
+  'prime-vandal':'Prime Vandal','doomwing-odin':'Doom Wing Odin','silvanus-stinger':'Silvanus Stinger',
+  'ion-phantom':'Ion Phantom','nebula-phantom':'RGX 11z Pro Vandal','spectrum-phantom':'Spectrum Phantom',
+  'glitchpop-phantom':'Glitchpop Phantom','magepunk-sheriff':'Magepunk Sheriff','ion-operator':'Ion Operator',
+  'elderflame-operator':'Elderflame Operator','reaver-operator':'Reaver Operator','altitude-odin':'Altitude Odin',
+  'prime-axe':'Prime Axe','convex-spectre':'Convex Spectre','infinity-spectre':'Infinity Spectre'};
+const img=k=>BASE+ICON[k]+'/displayicon.png', nm=k=>NAMES[k]||k;
+
+const PANELS=[
+  {l:'SIDEARMS',ks:['elderflame-vandal','reaver-sheriff','ion-vandal']},
+  {l:'SMGS',ks:['prime-vandal','doomwing-odin','silvanus-stinger']},
+  {l:'RIFLES',ks:['ion-phantom','nebula-phantom','spectrum-phantom','glitchpop-phantom','magepunk-sheriff']},
+  {l:'SNIPER RIFLES',ks:['ion-operator','elderflame-operator','reaver-operator']},
+  {l:'MACHINE GUNS',ks:['doomwing-odin','altitude-odin']},
+  {l:'BUDDIES & FLEX',ks:['prime-axe']}
+];
+function canvasHTML(mode, page){
+  const isM4 = mode==='m4';
+  const head = '<div class="cur-hd"><h4>CHANGE NAME</h4><span class="code">K486</span>'+
+    '<div class="who"><b>IMMORTAL 3</b><span>PEAK · WTR · RECEIPTS</span></div></div>';
+  let body;
+  if(isM4){
+    body = '<div class="cv-row">'+PANELS.map(p=>
+      '<div class="cp" style="flex:1;min-width:0"><h5>'+p.l+'</h5>'+
+      p.ks.map(k=>'<div class="sk"><img src="'+img(k)+'" alt="'+nm(k)+'"></div>').join('')+
+      '</div>').join('')+'</div>'+
+      '<div style="text-align:center;font-size:12px;color:#8A99A9;flex:none">PAGE '+(page||1)+' / 2</div>';
+  } else if(mode==='m2'){
+    body = '<div class="cur-grid">'+PANELS.map(p=>
+      '<div class="cp"><h5>'+p.l+'</h5>'+
+      p.ks.slice(0,2).map(k=>'<div class="sk" style="flex:0 0 96px"><img src="'+img(k)+'" alt="'+nm(k)+'"></div>').join('')+
+      (p.ks.length>2?'<div style="font-size:11px;color:#ECE8E1;text-align:center;padding:4px">+'+(p.ks.length-2)+' MORE</div>':'')+
+      '</div>').join('')+'</div>';
+  } else {
+    body = '<div class="cur-grid">'+PANELS.map(p=>
+      '<div class="cp"><h5>'+p.l+'</h5>'+
+      p.ks.map(k=>'<div class="sk"><img src="'+img(k)+'" alt="'+nm(k)+'"></div>').join('')+
+      '</div>').join('')+'</div>';
+  }
+  const foot = '<div class="cur-ft">'+
+    '<div class="cstat"><label>Price</label><b data-slot="price">PRICE OFFER</b></div>'+
+    '<div class="cstat"><label>Status</label><b data-slot="status">AVAILABLE</b></div>'+
+    '<div class="cstat"><label>Sk</label><b>62</b></div></div>';
+  return head+'<div class="cv-body">'+body+'</div>'+foot;
+}
+
+/* ---- render current canvases ---- */
+function renderCur(){
+  ['#curCanvas','#curCanvasPhone'].forEach(sel=>{
+    const cv=document.querySelector(sel); if(!cv) return;
+    cv.innerHTML = canvasHTML('m1',1);
+  });
+  fitCur();
+}
+function fitCur(){
+  document.querySelectorAll('.fitbox').forEach(box=>{
+    const cv=box.querySelector('.cur-canvas'); if(!cv) return;
+    const stage=box.closest('.cur-stage'); if(!stage) return;
+    const availW=stage.clientWidth-16, availH=stage.clientHeight-16;
+    const nat=Math.min(availW/1920, availH/1080);
+    /* the same 0.35 floor the live fitter uses — this is the defect being shown */
+    const s=Math.min(Math.max(nat,0.35),1);
+    cv.style.transform='scale('+s+')';
+    box.style.width=Math.round(1920*s)+'px';
+    box.style.height=Math.round(1080*s)+'px';
+    box.dataset.scale=s.toFixed(3);
+  });
+}
+
+/* ---- render proposed canvas + fit/zoom ---- */
+const LISTING={status:'available',price:480,currency:'USD',negotiable:true,link:'https://discord.gg/example'};
+let zoomMode='fit';
+
+function renderPro(){
+  const m = document.querySelector('#proLayout button[aria-pressed=true]');
+  const mode = m? m.dataset.m : 'm1';
+  ['#proCanvasBox','#proCanvasBoxPhone'].forEach(sel=>{
+    const box=document.querySelector(sel); if(!box) return;
+    box.innerHTML='<div class="pv-canvas" style="width:1920px;height:1080px">'+canvasHTML(mode,1)+'</div>';
+    box._cv=box.querySelector('.pv-canvas');
+  });
+  fitPro();
+}
+function fitPro(){
+  [['#proCanvasBox','#proStage'],['#proCanvasBoxPhone','#proStagePhone']].forEach(([b,s])=>{
+    const box=document.querySelector(b), stg=document.querySelector(s);
+    if(!box||!stg||!box._cv) return;
+    const cv=box._cv;
+    const availW=stg.clientWidth-20;
+    const availH=Math.max(stg.clientHeight-90,200);
+    const fit=Math.min(availW/1920, availH/1080);
+    const sc = zoomMode==='fit'?fit : zoomMode==='1'?1 : zoomMode==='2'?2 : fit;
+    cv.style.transform='scale('+sc+')';
+    cv.style.transformOrigin='top left';
+    cv.style.position='absolute';
+    cv.style.top='0'; cv.style.left='0';
+    box.style.position='relative';
+    box.style.overflow='auto';
+    box.style.width='100%';
+    box.style.height=Math.round(1080*sc)+'px';
+    box.style.maxHeight=Math.max(availH,Math.round(1080*sc))+'px';
+    box.style.margin='0 auto';
+    box.dataset.scale=sc.toFixed(3);
+  });
+}
+document.querySelectorAll('[data-zoom]').forEach(b=>b.addEventListener('click',()=>{
+  zoomMode=b.dataset.zoom; fitPro();
+}));
+
+/* ---- status simulation ---- */
+function applyStatus(){
+  const st=LISTING.status;
+  const cfg={
+    available:{txt:'Available',cls:'',amt:'$'+LISTING.price,cur:'USD · negotiable',contact:true,title:'Immortal 3 · 62 skins · WTR + receipts'},
+    pending:{txt:'Pending — sale in progress',cls:'warn',amt:'$'+LISTING.price,cur:'USD · negotiable',contact:true,title:'Immortal 3 · 62 skins · WTR + receipts'},
+    sold:{txt:'Sold',cls:'bad',amt:'$'+LISTING.price,cur:'Sold 2 Jun 2026',contact:false,title:'Immortal 3 · 62 skins — SOLD'}
+  }[st];
+
+  const sels=[['#proStatus','.badge'],['#proStatusPhone','.badge']];
+  sels.forEach(([id])=>{
+    const el=document.querySelector(id); if(!el) return;
+    el.textContent=cfg.txt; el.className='badge '+(cfg.cls==='warn'?'warn':cfg.cls==='bad'?'bad':'ok');
+  });
+  ['#proTitle','#proTitlePhone'].forEach(id=>{const e=document.querySelector(id); if(e)e.textContent=cfg.title;});
+  ['#proAmt','#proAmtPhone','#mobAmt','#mobAmtPhone'].forEach(id=>{const e=document.querySelector(id); if(!e)return;
+    e.textContent=cfg.amt; e.className='amt'+(st==='sold'?' offer':'');});
+  ['#proCur','#proCurPhone','#mobMeta','#mobMetaPhone'].forEach(id=>{const e=document.querySelector(id); if(e)e.textContent=cfg.cur;});
+
+  // Contact is the single buyer action. It relabels per state so a sold
+  // card never presents a live-looking call to action.
+  ['#proContact','#proContactPhone','#mobContact','#mobContactPhone'].forEach(id=>{const e=document.querySelector(id);
+    if(e){ e.disabled=!cfg.contact; e.setAttribute('aria-disabled',String(!cfg.contact));
+      e.textContent = st==='sold' ? 'Sold — no longer available'
+                    : st==='pending' ? 'Contact seller (pending)'
+                    : (id==='#mobContact'||id==='#mobContactPhone') ? 'Contact seller' : 'Contact seller'; }});
+
+  // dim the sold frame
+  const pv=document.querySelector('#pv'); if(pv) pv.style.opacity = st==='sold'?'0.72':'1';
+  const pvp=document.querySelector('#pvPhone'); if(pvp) pvp.style.opacity = st==='sold'?'0.72':'1';
+
+  // current-page defect annotation
+  const curStatus=document.querySelector('#curCanvas [data-slot=status]');
+  const curPrice=document.querySelector('#curCanvas [data-slot=price]');
+  if(curStatus) curStatus.textContent = st==='sold'?'AVAILABLE':(st==='pending'?'AVAILABLE':'AVAILABLE'); // defect: identical
+  if(curPrice) curPrice.textContent = st==='sold'?'PRICE OFFER':(st==='pending'?'PRICE OFFER':'PRICE OFFER');
+}
+document.querySelectorAll('#statusSeg button').forEach(b=>b.addEventListener('click',()=>{
+  LISTING.status=b.dataset.st;
+  document.querySelectorAll('#statusSeg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  applyStatus();
+}));
+$('#noLinkBtn').addEventListener('click',e=>{
+  const on=e.currentTarget.getAttribute('aria-pressed')==='true';
+  e.currentTarget.setAttribute('aria-pressed',String(!on));
+  LISTING.link = on ? 'https://discord.gg/example' : '';
+  const note=document.querySelector('#noLinkNote');
+  if(on){ note&&note.remove(); }
+  else{
+    const n=document.createElement('div');
+    n.id='noLinkNote'; n.className='note warn'; n.style.margin='14px 0 0';
+    n.innerHTML='<b>Proposed, with no valid seller link:</b> <i>Contact seller</i> still renders — it opens a contact prompt instead of vanishing. On staging this is the state where the buyer has <b>no way to reach the seller at all</b>.';
+    document.querySelector('.frames').after(n);
+  }
+});
+
+document.querySelectorAll('#proLayout button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#proLayout button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  renderPro();
+}));
+
+/* defect markers on the "today" canvas */
+function annotateDefects(){
+  const cv=document.querySelector('#curCanvas'); if(!cv) return;
+  cv.querySelectorAll('.defect').forEach(n=>n.remove());
+  const price=cv.querySelector('[data-slot=price]');
+  const status=cv.querySelector('[data-slot=status]');
+  if(price){const d=document.createElement('div'); d.className='defect on'; d.dataset.note='price at canvas scale'; d.style.cssText='inset:auto -14px -14px -14px;height:52px'; price.parentElement.style.position='relative'; price.parentElement.appendChild(d);}
+  if(status){const d=document.createElement('div'); d.className='defect on'; d.dataset.note='status: never checked'; d.style.cssText='inset:auto -14px -14px -14px;height:52px'; status.parentElement.style.position='relative'; status.parentElement.appendChild(d);}
+}
+
+renderCur(); renderPro(); applyStatus(); annotateDefects();
+window.addEventListener('resize',()=>{fitCur();fitPro();});
+
+/* keyboard-ish niceties: copy link feedback */
+['#proCopy','#mobContact'].forEach(id=>{const e=document.querySelector(id); if(e)e.addEventListener('click',()=>{
+  e.textContent='Copied ✓'; setTimeout(()=>{e.textContent = id==='#proCopy'?'Copy link':'Contact';},1400);
+});});
+</script>
+</body>
+</html>

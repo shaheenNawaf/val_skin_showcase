@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardForge — The complete plan · combined prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+.wrap{max-width:1460px}
+body{--sev-bad:#FF5D7B;--sev-warn:#FFC45E}
+
+/* ---------- layout ---------- */
+.planwrap{display:grid;grid-template-columns:216px minmax(0,1fr);gap:26px;align-items:start}
+.sidenav{position:sticky;top:66px;max-height:calc(100vh - 90px);overflow:auto;
+  border:1px solid var(--c-line);background:var(--c-surface);padding:12px}
+.sidenav h4{font:800 10px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--c-mut);margin:4px 6px 10px}
+.sidenav a{display:flex;gap:8px;align-items:center;padding:7px 9px;font:600 11.5px var(--font-ui);
+  color:var(--c-mut);text-decoration:none;border-left:2px solid transparent}
+.sidenav a:hover{color:var(--c-ink)}
+.sidenav a.on{color:var(--c-ink);border-left-color:var(--c-accent);background:var(--c-surface2)}
+.sidenav .n{font:700 10px ui-monospace,Menlo,Consolas,monospace;color:var(--c-mut);min-width:16px}
+.sidenav .prog{margin-top:12px;padding-top:12px;border-top:1px solid var(--c-line-soft)}
+.progbar{height:5px;background:var(--c-line-soft);margin:7px 6px 0}
+.progbar span{display:block;height:100%;background:var(--ok);width:0;transition:width .25s}
+.sidenav .plabel{font:700 10px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--c-mut);padding:0 6px}
+
+/* ---------- phase sections ---------- */
+.phase{margin-top:52px;scroll-margin-top:76px}
+.phase-h{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+  border-bottom:1px solid var(--c-line);padding-bottom:12px}
+.phase-h .pn{font-family:var(--font-display);font-weight:800;font-size:38px;line-height:1;
+  color:transparent;-webkit-text-stroke:1px var(--c-accent)}
+.phase-h h2{font-family:var(--font-display);font-weight:800;font-size:21px;letter-spacing:.06em}
+.phase-h .pm{font:700 10px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut)}
+.phase-why{font-size:13px;line-height:1.65;color:var(--c-mut);margin:14px 0 20px;max-width:88ch}
+
+/* ---------- item rows ---------- */
+.items{border:1px solid var(--c-line);background:var(--c-surface)}
+.item{display:grid;grid-template-columns:34px 58px minmax(0,1fr) 54px 58px;gap:10px;align-items:start;
+  padding:13px 14px;border-bottom:1px solid var(--c-line-soft);cursor:default}
+.item:last-child{border-bottom:0}
+.item:hover{background:color-mix(in srgb,#fff 2%,transparent)}
+.item .acts{display:flex;flex-direction:column;gap:5px}
+.item .abtn{width:26px;height:26px;border:1px solid var(--c-line);background:var(--c-surface2);
+  color:var(--c-mut);font:800 13px var(--font-ui);cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center}
+.item .abtn:hover{border-color:var(--c-mut);color:var(--c-ink)}
+.item .abtn.on-yes{background:var(--ok);border-color:var(--ok);color:#06210F}
+.item .abtn.on-no{background:var(--bad);border-color:var(--bad);color:#fff}
+.item .id{font:800 11px ui-monospace,Menlo,Consolas,monospace;color:var(--c-accent);letter-spacing:.04em;padding-top:5px}
+.item .body b{display:block;font:700 13px var(--font-ui);color:var(--c-ink);line-height:1.35}
+.item .body .prob{display:block;font-size:11.5px;line-height:1.55;color:var(--c-mut);margin-top:3px;max-width:100ch}
+.item .body .prob b{display:inline;font:600 11.5px var(--font-ui);color:var(--c-ink)}
+.item .sev{padding-top:4px;text-align:right}
+.item .eff{padding-top:4px;text-align:right;font:700 10px var(--font-ui);letter-spacing:.08em;color:var(--c-mut);text-transform:uppercase}
+.item.state-yes{border-left:3px solid var(--ok)}
+.item.state-no{border-left:3px solid var(--bad);opacity:.66}
+.item.state-no .body b{text-decoration:line-through}
+
+/* ---------- demo frames ---------- */
+.demo{margin:0 0 30px;border:1px solid var(--c-line)}
+.demo-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--c-surface2);
+  border-bottom:1px solid var(--c-line);padding:9px 14px}
+.demo-h .dt{font:800 10px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut)}
+.demo-h .dl{margin-left:auto;font:600 10px var(--font-ui);color:var(--c-mut)}
+.demo-b{padding:16px;background:var(--c-surface)}
+.b2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.b2>div{min-width:0}
+.framelab{display:flex;gap:8px;align-items:center;margin-bottom:9px}
+.framelab .tag{font:800 9px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;padding:3px 8px}
+.framelab .tag.cur{background:var(--bad);color:#fff}
+.framelab .tag.pro{background:var(--ok);color:#06210F}
+.framelab .cap{font:600 11px var(--font-ui);color:var(--c-mut)}
+
+/* mini app frames */
+.mini{border:1px solid var(--c-line);background:var(--c-bg);overflow:hidden}
+.mini-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--c-surface);
+  border-bottom:1px solid var(--c-line);padding:7px 10px;font:700 9.5px var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--c-mut)}
+.mini-top .mb{border:1px solid var(--c-line);padding:3px 7px;background:var(--c-surface2)}
+.mini-top .mb.pri{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
+.mini-stage{position:relative;height:158px;background:radial-gradient(400px 220px at 50% 40%,#131B24,var(--c-bg) 72%);display:flex;align-items:center;justify-content:center}
+.mini-card{width:210px;height:118px;background:linear-gradient(158deg,#18232F,#0F1923 60%);border:1px solid #2E3A46;
+  display:flex;align-items:center;justify-content:center;font:600 8px var(--font-ui);color:#8A99A9;letter-spacing:.2em}
+.mini-tier{position:relative;display:flex;gap:6px;flex-wrap:wrap;background:var(--c-surface);border-bottom:1px solid var(--c-line);padding:8px 10px}
+.mini-tier .tc{border:1px solid var(--c-line);padding:4px 8px;font:700 9px var(--font-ui);color:var(--c-mut);
+  letter-spacing:.06em;text-transform:uppercase;background:var(--c-surface2)}
+.mini-tier .tc.pri{background:var(--c-accent-btn);color:#fff;border-color:var(--c-accent-btn)}
+.ovl{position:absolute;left:0;right:0;background:repeating-linear-gradient(45deg,rgba(255,93,123,.16) 0 9px,rgba(255,93,123,.05) 9px 18px);border-top:2px solid var(--bad)}
+.ovl .stamp{position:absolute;right:8px;top:8px;background:var(--bad);color:#fff;font:800 9px var(--font-ui);
+  letter-spacing:.1em;padding:4px 8px;text-transform:uppercase}
+
+/* compact buyer bar demo */
+.buybar{border:1px solid var(--c-line);background:var(--c-surface);padding:13px 14px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.buybar .bt{flex:1;min-width:150px}
+.buybar .bt b{display:block;font:800 17px var(--font-display);letter-spacing:.01em;line-height:1.15}
+.buybar .bt i{display:block;font:600 10px ui-monospace,Menlo,Consolas,monospace;font-style:normal;color:var(--c-mut);letter-spacing:.1em;margin-top:3px}
+.buybar .bp{text-align:right}
+.buybar .bp .a{font-family:var(--font-display);font-weight:800;font-size:26px;line-height:1}
+.buybar .bp .a s{color:var(--c-mut)}
+.buybar .bp .c{font:700 9.5px ui-monospace,Menlo,Consolas,monospace;color:var(--c-mut);letter-spacing:.1em}
+.buybar.sold{opacity:.74}
+.stseg{display:inline-flex;border:1px solid var(--c-line);background:var(--c-surface2)}
+.stseg button{background:transparent;border:0;border-right:1px solid var(--c-line);color:var(--c-mut);
+  font:700 10px var(--font-ui);letter-spacing:.08em;text-transform:uppercase;padding:6px 10px;cursor:pointer}
+.stseg button:last-child{border-right:0}
+.stseg button[aria-pressed=true]{background:var(--c-accent-btn);color:#fff}
+
+/* filter demo */
+.fdemo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fdemo .box{border:1px solid var(--c-line);background:var(--c-surface);padding:13px}
+.fdemo h5{font:800 10px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut);margin:0 0 9px}
+.tstub{background:var(--c-surface3);border:1px solid var(--c-line);padding:9px 12px;font:600 11.5px var(--font-ui)}
+.tstub::before{content:"✓ ";color:var(--ok)}
+.tstub.err::before{content:"✕ ";color:var(--bad)}
+
+/* states demo */
+.sdemo{border:1px solid var(--c-line);background:var(--c-bg);padding:14px;min-height:170px;display:flex;flex-direction:column;gap:9px}
+.sdemo .state-chips{display:flex;gap:6px;flex-wrap:wrap}
+.emptybox{border:1px dashed var(--c-line);background:var(--c-surface);padding:18px;text-align:center;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px}
+.emptybox h5{font:800 15px var(--font-display);letter-spacing:.03em;margin:0}
+.emptybox p{font-size:11.5px;color:var(--c-mut);line-height:1.5;margin:0;max-width:40ch}
+
+/* legibility options */
+.lopts{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:11px}
+.lopt{background:var(--c-surface);border:1px solid var(--c-line);padding:13px;display:flex;flex-direction:column;gap:7px;cursor:pointer;position:relative}
+.lopt:hover{border-color:var(--c-mut)}
+.lopt[aria-pressed=true]{border-color:var(--c-accent);box-shadow:inset 3px 0 0 var(--c-accent)}
+.lopt .lk{font:800 10px ui-monospace,Menlo,Consolas,monospace;color:var(--c-accent);letter-spacing:.08em}
+.lopt h5{font:800 12px var(--font-display);letter-spacing:.05em;text-transform:uppercase;margin:0}
+.lopt p{font-size:11px;line-height:1.5;color:var(--c-mut);margin:0;flex:1}
+.lopt .lt{font-size:10.5px;line-height:1.45;color:var(--warn);border-top:1px solid var(--c-line-soft);padding-top:7px;margin:0}
+
+/* discord */
+.dc{background:#313338;border:1px solid var(--c-line);padding:13px 14px;border-radius:6px}
+.dc-embed{max-width:430px;background:#2B2D31;border-left:4px solid #5865F2;border-radius:4px;padding:9px 12px 10px}
+.dc-embed.pro{border-left-color:#FF4655}
+.dc-embed .e-name{font:600 10.5px var(--font-ui);color:#B5BAC1;display:flex;align-items:center;gap:5px}
+.dc-embed .e-name::before{content:"";width:15px;height:15px;background:#FF4655;display:inline-block;
+  clip-path:polygon(3px 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%,0 3px)}
+.dc-embed.empty .e-name{color:#80848E}
+.dc-embed .e-title{font:600 13.5px/1.3 var(--font-ui);color:#00A8FC;margin-top:5px}
+.dc-embed.empty .e-title{color:#80848E}
+.dc-embed .e-desc{font:400 12px/1.4 var(--font-ui);color:#B5BAC1;margin-top:3px}
+.dc-embed .e-img{display:block;margin-top:8px;border-radius:4px;overflow:hidden;border:1px solid #1E1F22}
+.dc-embed .e-foot{display:flex;align-items:center;gap:6px;margin-top:8px;font:500 10px var(--font-ui);color:#949CF7}
+.dc-embed .e-foot::before{content:"";width:15px;height:15px;border-radius:50%;background:#0F1923;border:1px solid #3F4147}
+.tabs-demo{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.tabchip{display:flex;align-items:center;gap:7px;background:var(--c-surface2);border:1px solid var(--c-line);padding:6px 10px;max-width:280px}
+.tabchip .fav{width:11px;height:11px;background:var(--c-accent);flex:none;
+  clip-path:polygon(2px 0,100% 0,100% calc(100% - 2px),calc(100% - 2px) 100%,0 100%,0 2px)}
+.tabchip .t{flex:1;min-width:0;font:600 11px var(--font-ui);color:var(--c-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* publish gate demo */
+.gate-demo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.gate-demo>div{border:1px solid var(--c-line);background:var(--c-surface);padding:12px}
+.gck{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--c-line-soft);font-size:11.5px}
+.gck:last-child{border-bottom:0}
+.gck .ico{flex:none;width:15px;height:15px;display:flex;align-items:center;justify-content:center;font:800 10px var(--font-ui);border:1px solid}
+.gck.ok .ico{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent)}
+.gck.bad{color:var(--bad)}
+.gck.bad .ico{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,transparent)}
+.gck .why{display:block;font-size:10.5px;color:var(--c-mut);margin-top:1px}
+
+/* weight */
+.wbars{display:flex;flex-direction:column;gap:9px}
+.wrow{display:grid;grid-template-columns:minmax(120px,1.1fr) minmax(110px,.9fr) 56px;gap:10px;align-items:center;font-size:11.5px}
+.wrow .wl{color:var(--c-mut)}
+.wrow .wl b{color:var(--c-ink);font-weight:700}
+.wrow .kb{font:700 11px ui-monospace,Menlo,Consolas,monospace;text-align:right}
+.wrow .bar{grid-column:1/-1;height:6px;background:var(--c-line-soft)}
+.wrow .bar span{display:block;height:100%}
+.kb-bad{color:var(--bad)} .kb-ok{color:var(--ok)}
+
+/* summary bar */
+.sumbar{position:fixed;bottom:0;left:0;right:0;z-index:60;background:var(--c-surface);
+  border-top:1px solid var(--c-line);padding:10px 18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.sumbar .sy{display:flex;gap:8px;align-items:center;font:700 12px var(--font-ui);color:var(--ok)}
+.sumbar .sn{display:flex;gap:8px;align-items:center;font:700 12px var(--font-ui);color:var(--bad)}
+.sumbar .so{font:600 11px var(--font-ui);color:var(--c-mut)}
+.sumbar .sp{flex:1}
+.sumbar textarea{position:absolute;left:-9999px}
+.sumnote{position:fixed;bottom:54px;right:18px;z-index:60;background:var(--ok);color:#06210F;
+  font:700 11px var(--font-ui);letter-spacing:.06em;padding:8px 13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.sumnote.on{opacity:1}
+
+/* legibility choice block in summary */
+.lchoice{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font:700 11px var(--font-ui);color:var(--c-mut)}
+.lchoice .seg{display:inline-flex;border:1px solid var(--c-line);background:var(--c-surface2)}
+.lchoice .seg button{background:transparent;border:0;border-right:1px solid var(--c-line);color:var(--c-mut);
+  font:700 10px var(--font-ui);padding:5px 9px;cursor:pointer}
+.lchoice .seg button:last-child{border-right:0}
+.lchoice .seg button[aria-pressed=true]{background:var(--c-accent-btn);color:#fff}
+
+/* px table */
+table.pxt{width:100%;border-collapse:collapse;font-size:11px}
+table.pxt th{font:700 9px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--c-mut);
+  text-align:left;padding:6px 8px;border-bottom:1px solid var(--c-line)}
+table.pxt td{padding:5px 8px;border-bottom:1px solid var(--c-line-soft);white-space:nowrap}
+table.pxt tr:last-child td{border-bottom:0}
+.px-ok{color:var(--ok);font-weight:700}.px-bad{color:var(--bad);font-weight:700}.px-warn{color:var(--warn);font-weight:700}
+
+/* full list section */
+.biglist table td{font-size:12px}
+.biglist .itembody b{display:block;font:700 12.5px var(--font-ui)}
+.biglist .itembody span{display:block;font-size:11px;color:var(--c-mut);line-height:1.5;margin-top:2px}
+
+@media (max-width:1000px){
+  .planwrap{grid-template-columns:1fr}
+  .sidenav{position:static;max-height:none;display:flex;flex-wrap:wrap;gap:4px}
+  .sidenav h4,.sidenav .prog{width:100%}
+  .sidenav a{border:1px solid var(--c-line);border-left:2px solid transparent}
+}
+@media (max-width:760px){
+  .item{grid-template-columns:34px minmax(0,1fr);grid-template-rows:auto auto}
+  .item .id{grid-column:2}
+  .item .sev,.item .eff{display:none}
+  .b2,.fdemo,.gate-demo{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="pbar">
+  <span class="logo">CARD FORGE</span>
+  <span class="pbar-t">The complete plan · combined prototype</span>
+  <span class="pbar-sp"></span>
+  <span class="badge">both audits combined</span>
+  <a class="btn sm" href="index.html">← Audit hub</a>
+</div>
+
+<main>
+<div class="wrap">
+<div class="planwrap">
+
+<!-- ===================== SIDENAV ===================== -->
+<aside class="sidenav" id="sidenav">
+  <h4>The plan</h4>
+  <a href="#ph0"><span class="n">0</span> Quick wins</a>
+  <a href="#ph1"><span class="n">1</span> P0 fixes</a>
+  <a href="#ph2"><span class="n">2</span> Editor trust</a>
+  <a href="#ph3"><span class="n">3</span> Buyer path</a>
+  <a href="#ph4"><span class="n">4</span> Marketplace</a>
+  <a href="#ph5"><span class="n">5</span> Share &amp; trust</a>
+  <a href="#ph6"><span class="n">6</span> Performance</a>
+  <a href="#all"><span class="n">≡</span> Every item</a>
+  <div class="prog">
+    <span class="plabel">Your decisions</span>
+    <div class="progbar"><span id="progFill"></span></div>
+    <span class="plabel" id="progTxt" style="margin-top:6px;display:block">0 of 38 decided</span>
+  </div>
+</aside>
+
+<!-- ===================== MAIN ===================== -->
+<div>
+  <span class="eyebrow">Combined plan · both audits · 2 October 2026</span>
+  <h1 class="display">The complete plan.<br>Check it yourself.</h1>
+  <p class="lede">Every finding from both audits, as one implementation plan: 38 items in 7 phases, cheapest and most broken first. Each item has a <b>✓</b> to approve and a <b>✕</b> to skip — your choices are saved in this browser, and the bar at the bottom turns them into a list you can paste back to me. The demos are inline so you never leave this page. Nothing is implemented yet; <span class="mono">staging</span> is untouched.</p>
+
+  <div class="row" style="margin-top:18px">
+    <span class="badge bad">4 P0</span>
+    <span class="badge warn">17 P1</span>
+    <span class="badge">12 P2</span>
+    <span class="badge">5 one-liners</span>
+    <span class="badge ok">✓ = approve · ✕ = skip</span>
+  </div>
+
+  <!-- =================== PHASE 0 =================== -->
+  <section class="phase" id="ph0">
+    <div class="phase-h"><span class="pn">0</span><h2>QUICK WINS</h2><span class="pm">5 items · one line each · zero risk</span></div>
+    <p class="phase-why">Five fixes that are each a single line or selector, all verified in the audits, all independent of everything below. I would fold these into the first commit regardless of what else you approve.</p>
+    <div class="items" data-phase="0"></div>
+    <div class="note ok">
+      <b>Why bundle them:</b> each is too small to justify its own review cycle, but together they kill a layout mismatch (Catalog renders differently in the editor than for the buyer), an export that is not what the seller previewed, placeholder text that stays on screen looking like real data on a failed load, a dead 60% of the featured tile, and an inconsistent robots policy.
+    </div>
+  </section>
+
+  <!-- =================== PHASE 1 =================== -->
+  <section class="phase" id="ph1">
+    <div class="phase-h"><span class="pn">1</span><h2>P0 FIXES</h2><span class="pm">4 items · things that are broken outright</span></div>
+    <p class="phase-why">Four findings where a shipped feature does not work or the interface states something untrue. Each was verified twice, by both audits, independently.</p>
+    <div class="items" data-phase="1"></div>
+
+    <div class="demo">
+      <div class="demo-h"><span class="dt">Demo · CF-01</span><span class="dl">the tier toolbar, today vs proposed — drawn to the measured geometry</span></div>
+      <div class="demo-b">
+        <div class="b2">
+          <div>
+            <div class="framelab"><span class="tag cur">today</span><span class="cap">stage painted over the toolbar — 14 of 14 controls unreachable</span></div>
+            <div class="mini">
+              <div class="mini-top"><span class="mb">CARD FORGE</span><span class="mb">AUTO</span><span class="mb" style="margin-left:auto">EXPORT PNG</span><span class="mb pri">PUBLISH</span></div>
+              <div class="mini-tier">
+                <span class="tc">PREMIUM ONLY</span><span class="tc">LIMITED ONLY</span><span class="tc">EVERYTHING</span>
+                <span class="tc pri">APPLY</span><span class="tc">RESET</span>
+              </div>
+              <div class="mini-stage">
+                <div class="ovl" style="top:-34px;height:34px"><span class="stamp">BLOCKED ×14</span></div>
+                <div class="mini-card">1920 × 1080 CARD</div>
+              </div>
+            </div>
+            <p class="small" style="margin-top:8px">The fixed topbar also overlaps the toolbar's top band — two occluders, not one.</p>
+          </div>
+          <div>
+            <div class="framelab"><span class="tag pro">proposed</span><span class="cap">one measured chrome stack — the stage cannot cover what it measured</span></div>
+            <div class="mini">
+              <div class="mini-top"><span class="mb">CARD FORGE</span><span class="mb">AUTO → TILES</span><span class="mb" style="margin-left:auto">REFINE</span><span class="mb">SAVE</span><span class="mb pri">PUBLISH…</span></div>
+              <div class="mini-tier">
+                <span class="tc">SELECT</span><span class="tc">DELUXE</span><span class="tc">PREMIUM</span><span class="tc">ULTRA</span><span class="tc">KNIVES</span>
+                <span class="tc pri">PREVIEW 0</span><span class="tc">RESTORE 62</span>
+              </div>
+              <div class="mini-stage" style="border-top:2px solid var(--ok)">
+                <div class="mini-card">1920 × 1080 CARD</div>
+              </div>
+            </div>
+            <p class="small" style="margin-top:8px">52&nbsp;px by default, the Refine row expands <i>inside</i> the measured stack, and the hit test returns 0 of 9 blocked.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== PHASE 2 =================== -->
+  <section class="phase" id="ph2">
+    <div class="phase-h"><span class="pn">2</span><h2>EDITOR TRUST</h2><span class="pm">6 items · the seller stops being misled</span></div>
+    <p class="phase-why">Everything where the editor says one thing and does another: AUTO silently resolves, Export becomes a ZIP with no explanation, the +N MORE chip looks clickable and is inert, toasts are painted behind the modal, and two different vocabularies name the same five tiers.</p>
+    <div class="items" data-phase="2"></div>
+
+    <div class="demo">
+      <div class="demo-h"><span class="dt">Demo · CF-02 + CF-03</span><span class="dl">reset with no import, and apply after hand-edits — the two destructive cases</span></div>
+      <div class="demo-b">
+        <div class="fdemo">
+          <div class="box">
+            <h5>Today — reset with no import</h5>
+            <div class="tstub">Tier filter applied — 0 of 12 skins kept (max 8 per category)</div>
+            <p class="small" style="margin-top:9px">The card is now <b style="color:var(--bad)">empty</b>. No confirmation was asked, and the toast says success. The seller's 12 hand-picked skins are gone.</p>
+          </div>
+          <div class="box">
+            <h5>Proposed — reset is gated, apply is previewed</h5>
+            <div class="tstub err">Reset unavailable — nothing was imported, so there is no snapshot to restore from. Your 12 hand-picked skins are safe.</div>
+            <p class="small" style="margin-top:9px">Apply becomes <b>Preview → Confirm</b> with an Undo, and the filter reads the live card, so hand-added skins can never be discarded.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo">
+      <div class="demo-h"><span class="dt">Demo · CF-09</span><span class="dl">one vocabulary — the toolbar adopts the picker's ladder</span></div>
+      <div class="demo-b">
+        <div class="b2">
+          <div>
+            <div class="framelab"><span class="tag cur">today</span><span class="cap">toolbar chips</span></div>
+            <div class="row tight">
+              <span class="chip" aria-pressed="true" style="cursor:default"><i class="dot" style="background:var(--t-select)"></i>Select</span>
+              <span class="chip" aria-pressed="true" style="cursor:default"><i class="dot" style="background:var(--t-deluxe)"></i>Semi-prem</span>
+              <span class="chip" aria-pressed="true" style="cursor:default"><i class="dot" style="background:var(--t-premium)"></i>Premium</span>
+              <span class="chip" aria-pressed="true" style="cursor:default"><i class="dot" style="background:var(--t-ultra)"></i>Limited</span>
+              <span class="chip" aria-pressed="true" style="cursor:default"><i class="dot" style="background:var(--t-exclusive)"></i>Melee</span>
+            </div>
+            <p class="small" style="margin-top:9px">…while the picker one screen away says <b>Exclusive · Ultra · Premium · Deluxe · Select</b>. Same five tiers, two names, and "Melee" is a weapon class.</p>
+          </div>
+          <div>
+            <div class="framelab"><span class="tag pro">proposed</span><span class="cap">picker ladder wins, everywhere</span></div>
+            <div class="row tight">
+              <span class="chip" aria-pressed="true" style="cursor:default"><i class="dot" style="background:var(--t-select)"></i>Select</span>
+              <span class="chip" aria-pressed="true" style="cursor:default"><i class="dot" style="background:var(--t-deluxe)"></i>Deluxe</span>
+              <span class="chip" aria-pressed="true" style="cursor:default"><i class="dot" style="background:var(--t-premium)"></i>Premium</span>
+              <span class="chip" aria-pressed="true" style="cursor:default"><i class="dot" style="background:var(--t-ultra)"></i>Ultra</span>
+              <span class="chip" aria-pressed="true" style="cursor:default"><i class="dot" style="background:var(--t-exclusive)"></i>Knives</span>
+            </div>
+            <p class="small" style="margin-top:9px">Filter keys unchanged — only the labels move. "Limited" and "Melee" retire from the toolbar.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== PHASE 3 =================== -->
+  <section class="phase" id="ph3">
+    <div class="phase-h"><span class="pn">3</span><h2>BUYER PATH</h2><span class="pm">5 items · the revenue page</span></div>
+    <p class="phase-why">Today the buyer gets a scaled canvas and one outbound link. Price, seller, title and status live inside the artwork at canvas scale, while the database's own structured columns for all four are fetched and discarded. <b>Contact seller</b> is the single buyer action — that is settled — so everything here routes to it.</p>
+    <div class="items" data-phase="3"></div>
+
+    <div class="demo">
+      <div class="demo-h"><span class="dt">Demo · CF-11 + CF-12</span><span class="dl">click a state — price, seller and status at page scale, and what sold/pending actually look like</span>
+        <span class="dl stseg" id="stateSeg" style="margin-left:0">
+          <button data-st="available" aria-pressed="true">Available</button>
+          <button data-st="pending" aria-pressed="false">Pending</button>
+          <button data-st="sold" aria-pressed="false">Sold</button>
+        </span>
+      </div>
+      <div class="demo-b">
+        <div class="b2">
+          <div>
+            <div class="framelab"><span class="tag cur">today</span><span class="cap">status fetched, never checked — sold looks live</span></div>
+            <div class="buybar" id="curBuy">
+              <div class="bt"><b>CardForge — Listing Viewer</b><i>price inside the artwork · ~5px on a phone</i></div>
+              <div class="bp"><div class="a" id="curAmt">PRICE OFFER</div><div class="c" id="curCur">status: never read</div></div>
+              <button class="btn sm solid" id="curBtn">Contact seller</button>
+            </div>
+            <p class="small" style="margin-top:8px">Switch the state above — nothing changes on this side. That is the finding.</p>
+          </div>
+          <div>
+            <div class="framelab"><span class="tag pro">proposed</span><span class="cap">structured, from columns that already exist</span></div>
+            <div class="buybar" id="proBuy">
+              <div class="bt"><b>Full Vandal collection</b><i>swifty · K486 · IMMORTAL 3</i></div>
+              <div class="bp"><div class="a" id="proAmt">$340</div><div class="c" id="proCur">USD · open to offers</div></div>
+              <span class="badge" id="proStatus">Available</span>
+              <button class="btn sm primary" id="proBtn">Contact seller</button>
+            </div>
+            <p class="small" style="margin-top:8px">Sold strikes the price and disables the button; pending marks it. The buyer never has to read the artwork.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- legibility decision -->
+    <div class="demo">
+      <div class="demo-h"><span class="dt">Decision · CF-15</span><span class="dl">the one open choice — pick A, B, C or D (goes into your summary)</span></div>
+      <div class="demo-b">
+        <p class="small" style="margin-bottom:12px">The card is a fixed 1920×1080 image scaled to fit, floored at 35%. On a phone the 9px text renders at <b style="color:var(--bad)">3.1px</b>. There is no zoom. These are the four ways out — they stack, so picking more than one is legitimate.</p>
+        <div class="lopts" id="lopts">
+          <div class="lopt" data-l="A" aria-pressed="false" role="button" tabindex="0">
+            <span class="lk">A</span><h5>Add a zoom control</h5>
+            <p>Fit / 100% / 200% / open full size. The card stays a faithful thumbnail.</p>
+            <p class="lt">~15 lines. Only helps if the buyer zooms.</p>
+          </div>
+          <div class="lopt" data-l="B" aria-pressed="false" role="button" tabindex="0">
+            <span class="lk">B</span><h5>Re-draw key text on top</h5>
+            <p>Price, rank, seller, status, count, title as crisp HTML over the canvas — never under 16px.</p>
+            <p class="lt">Most work. The only one where nothing is unreadable.</p>
+          </div>
+          <div class="lopt" data-l="C" aria-pressed="false" role="button" tabindex="0">
+            <span class="lk">C</span><h5>Design bigger text in</h5>
+            <p>Nothing authored below 13px. Laptops go 5.4px → 7.8px, and the exported PNG improves.</p>
+            <p class="lt">Phones still 4.5px. Old listings look different.</p>
+          </div>
+          <div class="lopt" data-l="D" aria-pressed="false" role="button" tabindex="0">
+            <span class="lk">D</span><h5>Go native on phones</h5>
+            <p>Below 900px, an ordinary mobile page — title and price at real size, 16px rows.</p>
+            <p class="lt">Two paths to maintain. Laptops untouched.</p>
+          </div>
+        </div>
+        <div class="tscroll" style="margin-top:14px">
+          <table class="pxt">
+            <thead><tr><th>Field</th><th>Today · 1366 laptop</th><th>Today · 390 phone</th><th>B at either</th><th>C at either</th></tr></thead>
+            <tbody>
+              <tr><td>Panel label (12px)</td><td class="px-warn">7.2px</td><td class="px-bad">4.2px</td><td class="px-ok">16.0px</td><td>7.8px / 4.5px</td></tr>
+              <tr><td>Skin name (13px)</td><td class="px-warn">7.8px</td><td class="px-bad">4.5px</td><td class="px-ok">16.0px</td><td>7.8px / 4.5px</td></tr>
+              <tr><td>Price (15px)</td><td>9.0px</td><td class="px-bad">5.3px</td><td class="px-ok">16.0px</td><td>9.0px / 5.3px</td></tr>
+              <tr><td>Footer value (30px)</td><td class="px-ok">18.0px</td><td>10.5px</td><td class="px-ok">18.0px</td><td class="px-ok">18.0px</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small" style="margin-top:8px">My recommendation: <b>A + C</b> now (cheap, covers laptops), <b>B</b> if the buyer path is where you want to spend. D only if phones become a funded priority.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== PHASE 4 =================== -->
+  <section class="phase" id="ph4">
+    <div class="phase-h"><span class="pn">4</span><h2>MARKETPLACE</h2><span class="pm">4 items · six listings, and no way to tell</span></div>
+    <p class="phase-why">The marketplace fetches price, currency, negotiable, stats and a normalised code from the RPC — then renders none of them. It hardcodes <span class="mono">$</span>, hides the code outside the quick-view, drops WTR and receipts from the grid, caps at 60 rows with no pagination, and on a fetch error renders a blank page.</p>
+    <div class="items" data-phase="4"></div>
+
+    <div class="demo">
+      <div class="demo-h"><span class="dt">Demo · CF-17 + CF-04</span><span class="dl">click a state — zero listings and load failure</span>
+        <span class="dl stseg" id="mpSeg" style="margin-left:0">
+          <button data-ms="zero" aria-pressed="true">0 listings</button>
+          <button data-ms="error" aria-pressed="false">Load failed</button>
+          <button data-ms="few" aria-pressed="false">6 listings</button>
+        </span>
+      </div>
+      <div class="demo-b">
+        <div class="sdemo">
+          <div class="state-chips"><span class="badge" id="mpCount">—</span></div>
+          <div id="mpBody"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo">
+      <div class="demo-h"><span class="dt">Demo · CF-16</span><span class="dl">data the RPC already returns — today discarded, proposed rendered</span></div>
+      <div class="demo-b">
+        <div class="b2">
+          <div>
+            <div class="framelab"><span class="tag cur">today</span><span class="cap">$ hardcoded · code invisible · flags missing</span></div>
+            <div class="buybar">
+              <div class="bt"><b>Melee showcase</b><i>drift · (code hidden)</i></div>
+              <div class="bp"><div class="a">$120</div><div class="c">hardcoded $ — listing is in €</div></div>
+            </div>
+            <p class="small" style="margin-top:8px">A euro listing renders with a dollar sign; the listing code is searchable but invisible; WTR and receipts exist in the payload and appear nowhere in the grid.</p>
+          </div>
+          <div>
+            <div class="framelab"><span class="tag pro">proposed</span><span class="cap">currency, code and trust flags from the columns</span></div>
+            <div class="buybar">
+              <div class="bt"><b>Melee showcase</b><i>drift · K118</i></div>
+              <div class="bp"><div class="a">€120</div><div class="c">EUR · open to offers</div></div>
+              <span class="badge">WTR</span><span class="badge">RECEIPTS</span>
+            </div>
+            <p class="small" style="margin-top:8px">The currency symbol comes from <span class="mono">currency</span>, the code renders under the title, and the two flags a buyer asks about first are on the card.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== PHASE 5 =================== -->
+  <section class="phase" id="ph5">
+    <div class="phase-h"><span class="pn">5</span><h2>SHARE &amp; TRUST</h2><span class="pm">4 items · found by the second audit</span></div>
+    <p class="phase-why">Everything that happens <i>around</i> the pages. The link is the product's acquisition channel — sellers paste it into Discord and Facebook — and it renders as a text-only stub. An empty card can be published. View counts are inflatable. And edit access dies with the browser.</p>
+    <div class="items" data-phase="5"></div>
+
+    <div class="demo">
+      <div class="demo-h"><span class="dt">Demo · CF-20</span><span class="dl">what a buyer sees when the link lands in Discord</span></div>
+      <div class="demo-b">
+        <div class="b2">
+          <div>
+            <div class="framelab"><span class="tag cur">today</span><span class="cap">no og:image anywhere — every listing shares one stub</span></div>
+            <div class="dc">
+              <div class="dc-embed empty">
+                <span class="e-name">CardForge — Listing</span>
+                <span class="e-title">CardForge — Listing</span>
+                <span class="e-desc">Valorant inventory showcase listing published with CardForge.</span>
+                <span class="e-foot">cardforge.net</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="framelab"><span class="tag pro">proposed</span><span class="cap">the card is the embed — same PNG the Export button makes</span></div>
+            <div class="dc">
+              <div class="dc-embed pro">
+                <span class="e-name">CardForge</span>
+                <span class="e-title">Full Vandal collection — $340 · IMMORTAL 3</span>
+                <span class="e-desc">62 skins · 24 premium · WTR + receipts · 0th owner</span>
+                <span class="e-img" id="embedImg"></span>
+                <span class="e-foot">viewing card · code K486</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tabs-demo">
+          <div class="tabchip"><span class="fav"></span><span class="t">CardForge — Listing Viewer</span></div>
+          <div class="tabchip" style="border-color:color-mix(in srgb,var(--ok) 35%,var(--c-line))"><span class="fav"></span><span class="t">Full Vandal collection · $340 — CardForge</span></div>
+        </div>
+        <p class="small" style="margin-top:8px">The tab title, too — <span class="mono">document.title</span> is never set per listing, so ten open listings are ten identical tabs.</p>
+        <div class="note warn" style="margin-top:12px">
+          <b>The honest constraint:</b> crawlers do not run JavaScript, so <span class="mono">og:</span> tags must exist in the served HTML. Two moving parts: a Supabase Storage bucket for the PNG at publish, and a ~20-line Netlify Edge Function to inject per-listing tags. If you would rather skip the edge function, the interim is one static brand image plus the per-listing title — still beats a bare URL.
+        </div>
+      </div>
+    </div>
+
+    <div class="demo">
+      <div class="demo-h"><span class="dt">Demo · CF-21</span><span class="dl">the publish gate — an empty card never goes live</span></div>
+      <div class="demo-b">
+        <div class="gate-demo">
+          <div>
+            <div class="framelab"><span class="tag cur">today</span><span class="cap">unconditional</span></div>
+            <div class="tstub">Published! Share link copied.</div>
+            <p class="small" style="margin-top:8px">Zero skins, every field still reading <span class="mono">CHANGE NAME</span> and <span class="mono">PRICE OFFER</span> — and it is now on the marketplace front page.</p>
+          </div>
+          <div>
+            <div class="framelab"><span class="tag pro">proposed</span><span class="cap">a checklist, not a wall</span></div>
+            <div class="gck ok"><span class="ico">✓</span><span>12 skins placed</span></div>
+            <div class="gck ok"><span class="ico">✓</span><span>Title, code and login filled</span></div>
+            <div class="gck bad"><span class="ico">✕</span><span>Price is still the placeholder<span class="why">type an asking price, or switch to contact-for-price</span></span></div>
+            <div class="gck bad"><span class="ico">✕</span><span>Contact link is empty<span class="why">buyers will have no way to reach you</span></span></div>
+            <div class="row tight" style="margin-top:9px">
+              <button class="btn sm primary" aria-disabled="true" style="cursor:not-allowed;opacity:.55">Publish — 2 items to fix</button>
+              <button class="btn sm solid">Fix the 2 items</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== PHASE 6 =================== -->
+  <section class="phase" id="ph6">
+    <div class="phase-h"><span class="pn">6</span><h2>PERFORMANCE &amp; POLISH</h2><span class="pm">10 items · measured, not estimated</span></div>
+    <p class="phase-why">Everything slow, hover-only, or silently drifting: the editor's 2.07 MB boot, the 209 KB SDK shipped to read one row, keyboard-unreachable affordances, stat counters that go stale after edits, and the rest.</p>
+    <div class="items" data-phase="6"></div>
+
+    <div class="demo">
+      <div class="demo-h"><span class="dt">Demo · CF-24 + CF-25</span><span class="dl">bytes on the wire, measured on this tree</span></div>
+      <div class="demo-b">
+        <div class="b2">
+          <div>
+            <div class="framelab"><span class="tag cur">today</span><span class="cap">editor boot — 2,066 KB before it is usable</span></div>
+            <div class="wbars">
+              <div class="wrow"><span class="wl"><b>catalog_cache</b> — buddies + player cards, loaded eagerly</span><span class="kb kb-bad">1,399 KB</span><div class="bar"><span style="width:100%;background:var(--bad)"></span></div></div>
+              <div class="wrow"><span class="wl"><b>skins</b> — the 1,401-skin picker list</span><span class="kb">388 KB</span><div class="bar"><span style="width:28%"></span></div></div>
+              <div class="wrow"><span class="wl"><b>supabase.js + fonts</b></span><span class="kb">280 KB</span><div class="bar"><span style="width:20%"></span></div></div>
+            </div>
+          </div>
+          <div>
+            <div class="framelab"><span class="tag pro">proposed</span><span class="cap">lazy picker data → 789 KB; buyer drops the SDK</span></div>
+            <div class="wbars">
+              <div class="wrow"><span class="wl"><b>buddies + player cards</b> — on first use only</span><span class="kb kb-ok">0 KB at boot</span><div class="bar"><span style="width:0;background:var(--ok)"></span></div></div>
+              <div class="wrow"><span class="wl"><b>skins</b> — still needed for the picker</span><span class="kb">388 KB</span><div class="bar"><span style="width:49%;background:var(--ok)"></span></div></div>
+              <div class="wrow"><span class="wl"><b>buyer page</b> — plain fetch instead of the SDK</span><span class="kb kb-ok">209 KB → ~2 KB</span><div class="bar"><span style="width:2%;background:var(--ok)"></span></div></div>
+            </div>
+            <p class="small" style="margin-top:8px">Buddies and player cards are only needed if the seller opens the buddy picker or ticks showAllCards — 1.28 MB fetched for everyone anyway.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== ALL ITEMS =================== -->
+  <section class="phase biglist" id="all">
+    <div class="phase-h"><span class="pn">≡</span><h2>EVERY ITEM</h2><span class="pm">all 38, one list, in approval order</span></div>
+    <p class="phase-why">The same items as above, flattened — for reviewing in one pass. Approvals made in either place are the same decision.</p>
+    <div class="items" data-phase="all"></div>
+  </section>
+
+  <div class="row" style="margin-top:34px">
+    <a class="btn primary" href="index.html">← Back to the audit hub</a>
+    <span class="badge warn">Nothing committed or pushed — staging untouched</span>
+  </div>
+</div>
+</div>
+</div>
+</main>
+
+<!-- ===================== SUMMARY BAR ===================== -->
+<div class="sumbar">
+  <span class="sy"><span id="nYes">0</span> approved</span>
+  <span class="sn"><span id="nNo">0</span> skipped</span>
+  <span class="so" id="nOpen">38 open</span>
+  <span class="sp"></span>
+  <span class="lchoice">Legibility:
+    <span class="seg" id="lseg">
+      <button data-l="A" aria-pressed="false">A</button>
+      <button data-l="B" aria-pressed="false">B</button>
+      <button data-l="C" aria-pressed="false">C</button>
+      <button data-l="D" aria-pressed="false">D</button>
+    </span>
+  </span>
+  <button class="btn primary sm" id="copyBtn">Copy my decisions</button>
+</div>
+<div class="sumnote" id="sumnote">Copied — paste it back to me</div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+
+/* ===================== THE PLAN ===================== */
+const PLAN=[
+/* phase 0 — quick wins */
+{id:'CF-Q1',ph:0,sev:'P2',eff:'1 line',t:'Rename .mgrid to .spread-mosaic',
+ p:'<b>Catalog renders differently in the editor than for the buyer</b> — shared.css:265 defines .mgrid as the 4×3 mosaic, editor.css:43 redefines it as the picker grid. The mosaic inherits auto-fill columns and a scrolling overflow.'},
+{id:'CF-Q2',ph:0,sev:'P1',eff:'1 line',t:'Export hides chrome with visibility, not display',
+ p:'<b>The exported PNG is not what the seller previewed</b> — body.exporting uses display:none, which changes layout AFTER the grid was measured. visibility:hidden keeps the geometry.'},
+{id:'CF-Q3',ph:0,sev:'P1',eff:'1 line',t:'Clear placeholder markup on load failure',
+ p:'<b>K486, DIAMOND 2, PRICE OFFER and a Facebook URL stay on screen looking real</b> when a listing fails to load, in both view.html and browse.html.'},
+{id:'CF-Q4',ph:0,sev:'P1',eff:'1 selector',t:'Wire the featured tile click',
+ p:'<b>~60% of the featured tile is a dead zone</b> — the handler matches .gcard, .arow, .gf-cta only, and .gfeat carries data-slug with nothing listening.'},
+{id:'CF-Q5',ph:0,sev:'P2',eff:'1 meta',t:'Make the robots policy consistent',
+ p:'<b>view.html is noindex, browse.html is not</b> — the marketplace is indexable while its listings are not. Whichever way you want it, choose it on purpose.'},
+/* phase 1 — P0 */
+{id:'CF-01',ph:1,sev:'P0',eff:'M',t:'Move the tier toolbar into one measured chrome stack',
+ p:'<b>14 of 14 controls unreachable</b> — verified twice by both audits. The stage is fixed with an opaque background and --tbh measures the topbar only, so it paints over the toolbar. Two occluders: the topbar covers its top band, the stage covers the rest.'},
+{id:'CF-02',ph:1,sev:'P0',eff:'S',t:'Gate Reset; make it non-destructive',
+ p:'<b>Reset empties the whole card and reports ✓ success</b> when no import exists — it rebuilds from state.owned, which is empty, with no confirmation.'},
+{id:'CF-03',ph:1,sev:'P0',eff:'S',t:'Filter the live card, not a snapshot',
+ p:'<b>Hand-added skins silently vanish on the next Apply</b> — the filter reads an allPicks snapshot taken only at import and never invalidated, then replaces state.picks.'},
+{id:'CF-04',ph:1,sev:'P0',eff:'S',t:'Render a marketplace error state instead of a blank page',
+ p:'<b>A fetch failure returns before render()</b> — count empty, results empty, empty-state still hidden. The buyer sees nothing at all.'},
+/* phase 2 — editor trust */
+{id:'CF-05',ph:2,sev:'P1',eff:'M',t:'Collapse the topbar into an overflow menu',
+ p:'<b>8 buttons plus a 62-character checkbox inline</b> — measured 52px at 1920, 86px at ≤1600, 124px at ≤1280, 185px at 390 (22% of a phone screen). Publish settings move into a dialog.'},
+{id:'CF-06',ph:2,sev:'P1',eff:'S',t:'State what AUTO resolved to, and why Export changed',
+ p:'<b>AUTO silently picks a layout and the only signal is the export button relabelling to EXPORT ZIP</b> — no readout, no explanation, no status message.'},
+{id:'CF-07',ph:2,sev:'P1',eff:'S',t:'Keep Add-skin affordances in Catalog mode',
+ p:'<b>mode-m4 hides .grid entirely</b> — every + Add button and the Flex panel disappear, and the +N MORE chip that remains is an inert span styled as a button.'},
+{id:'CF-08',ph:2,sev:'P1',eff:'1 line',t:'Raise the toast layer above the modal',
+ p:'<b>Toasts painted behind the picker</b> — #status is z-index 40, #modal is 50. "X is already on the card" is invisible under the veil.'},
+{id:'CF-09',ph:2,sev:'P1',eff:'S',t:'Adopt one tier vocabulary — the picker ladder',
+ p:'<b>Two vocabularies for the same five tiers</b> — toolbar says Semi-prem/Limited/Melee, picker says Deluxe/Ultra/Exclusive. "Melee" is a weapon class, not a rarity.'},
+{id:'CF-10',ph:2,sev:'P1',eff:'S',t:'Recompute the filter count live',
+ p:'<b>#tierCount is empty until first Apply, then stale</b> after any manual edit — written only inside the filter, and it says "owned" while counting the snapshot.'},
+/* phase 3 — buyer */
+{id:'CF-11',ph:3,sev:'P1',eff:'M',t:'Put price, seller, title and status in real chrome',
+ p:'<b>All four are fetched from listing_public and never read</b> — the visible price is seller free text at 15px inside a canvas scaled to as low as 0.35 (5.25px on a phone).'},
+{id:'CF-12',ph:3,sev:'P1',eff:'S',t:'Render SOLD and PENDING states',
+ p:'<b>Sold and pending listings look identical to live ones</b> — status is fetched and never checked. Measured on a real sold listing: it still read AVAILABLE.'},
+{id:'CF-13',ph:3,sev:'P1',eff:'S',t:'Contact always renders, with a fallback',
+ p:'<b>If the seller URL is not valid http(s) the buyer has no contact path at all</b> — the button simply never appears. Contact seller is the single buyer action, so it must survive bad input.'},
+{id:'CF-14',ph:3,sev:'P2',eff:'S',t:'Keep the layout switch and pager on mobile',
+ p:'<b>#viewSwitch and the catalog pager are display:none below 700px</b> — a phone buyer cannot change layout or page the catalog.'},
+{id:'CF-15',ph:3,sev:'P0',eff:'S–L',t:'Fix card legibility at scale (pick A / B / C / D)',
+ p:'<b>9px text renders at 3.1px on a phone and 5.4px on a 1366 laptop</b> — the 0.35 floor, with no zoom anywhere. The choice is above; the table shows each option measured.'},
+/* phase 4 — marketplace */
+{id:'CF-16',ph:4,sev:'P1',eff:'S',t:'Render currency, negotiable and the listing code',
+ p:'<b>Every price renders a hardcoded $ while currency is fetched</b> — a euro listing shows a dollar sign. negotiable is normalised and never shown; #code is searchable but visible only inside the quick-view.'},
+{id:'CF-17',ph:4,sev:'P1',eff:'S',t:'An honest empty state, and an error panel',
+ p:'<b>Zero listings hides #empty</b> and relies on a 5-second toast. A deep link to a bad slug bails with zero feedback. Fetch failure is CF-04.'},
+{id:'CF-18',ph:4,sev:'P1',eff:'M',t:'Disclose the 60-row cap, then add an offset',
+ p:'<b>Listings past 60 are never fetched</b> — the RPC defaults to p_limit 60 and the caller passes no arguments. No total shown, no indication more exist.'},
+{id:'CF-19',ph:4,sev:'P1',eff:'S',t:'WTR and receipts on the grid cards',
+ p:'<b>chipsGrid omits both</b> — only list mode and the featured string include them. "Can I actually use this account" is the buyer\u2019s first question.'},
+/* phase 5 — share & trust */
+{id:'CF-20',ph:5,sev:'P1',eff:'M',t:'Per-listing share embeds with the card as og:image',
+ p:'<b>No og:image exists anywhere; og:title is the hardcoded string "CardForge — Listing"</b> on every listing, and document.title never changes. Sellers paste links into Discord — the acquisition channel renders as a text stub. Needs a storage bucket at publish + a ~20-line edge function, or the interim static brand image.'},
+{id:'CF-21',ph:5,sev:'P1',eff:'S',t:'A publish gate — no empty cards go live',
+ p:'<b>buildPayload() → create_listing with nothing between them</b> — the SQL validates slug format and size, not content. A zero-skin card full of placeholder text publishes to the front page.'},
+{id:'CF-22',ph:5,sev:'P1',eff:'S',t:'Make view counts honest',
+ p:'<b>bump_views is security definer, granted to anon, unthrottled</b> — the seller\u2019s own refreshes count and a bot can pump any listing. "101 total views" is front-page social proof and "most viewed" is a gameable sort.'},
+{id:'CF-23',ph:5,sev:'P2',eff:'S',t:'A recovery key for listing edit access',
+ p:'<b>The edit token lives only in localStorage with no warning</b> — lose the browser and the listing can never be edited or marked sold again. A shown-once key, not an account system.'},
+/* phase 6 — performance & polish */
+{id:'CF-24',ph:6,sev:'P1',eff:'S',t:'Lazy-load buddies and player cards',
+ p:'<b>Editor boot is 2,066 KB on the wire; 1,280 KB of it is picker data most sellers never use</b> — buddies (604 KB) and player cards (676 KB) load eagerly for everyone.'},
+{id:'CF-25',ph:6,sev:'P2',eff:'S',t:'Drop the Supabase SDK from the buyer page',
+ p:'<b>209 KB — 57% of the buyer\u2019s total bytes — to read one 1.5 KB row</b>, bump a counter and hold presence. Listing reads are anon-REST; a plain fetch does them in a kilobyte.'},
+{id:'CF-26',ph:6,sev:'P2',eff:'M',t:'Keyboard and screen-reader sweep',
+ p:'<b>Skin remove and skin inspect are hover-only</b> — the desktop inspect cell is a bare span with no role or tabIndex, while mobile correctly gets role="button" tabIndex=0. The player-card overlay labels every image "Player card".'},
+{id:'CF-27',ph:6,sev:'P2',eff:'S',t:'Recount stats on add and remove',
+ p:'<b>PREMIUM / LIMITED / SEMI PREM / ANIMATED drift after manual edits</b> — the recount runs only on filter and boot, not on add or remove. The auto buttons write the DOM, not the saved state.'},
+{id:'CF-28',ph:6,sev:'P2',eff:'S',t:'Persist filter state with the draft',
+ p:'<b>Boot always restores a hardcoded default</b> — tier state is module-level, not in the draft, and the chips render before the draft is restored so they show settings that are not in effect.'},
+{id:'CF-29',ph:6,sev:'P2',eff:'S',t:'Search skin names, debounce the input',
+ p:'<b>The matcher covers title, code, seller and vlogin — not the skins</b> — while every keystroke re-renders featured, grid, list and all facet counts.'},
+{id:'CF-30',ph:6,sev:'P2',eff:'S',t:'Facet counts that reflect the filters',
+ p:'<b>Counts are computed from the unfiltered list</b> — they stay constant as filters change and cannot guide a narrowing decision.'},
+{id:'CF-31',ph:6,sev:'P2',eff:'S',t:'A name fallback for broken skin icons',
+ p:'<b>Failed images are hidden behind a gradient with no alt</b> — no per-skin signal. Confirmed rot: three UUIDs in the repo\u2019s own mock data now 404.'},
+{id:'CF-32',ph:6,sev:'P2',eff:'S',t:'Redesign the toast layer',
+ p:'<b>Only errors persist; everything else auto-fades at 5s</b> — a long error wraps inside a 560px box over the card watermark. Errors should be dismissible, not permanent; successes should not mask the next one.'},
+{id:'CF-33',ph:6,sev:'P2',eff:'S',t:'Stop double-downloading icons on the viewer',
+ p:'<b>renderMobile() runs unconditionally into a hidden container</b> above 700px, and desktop cells emit img with no lazy loading, unlike the other two renderers.'}
+];
+
+/* ===================== STATE ===================== */
+const KEY='cf-plan-decisions';
+const state=JSON.parse(localStorage.getItem(KEY)||'{}'); /* {id:'yes'|'no'} */
+let legChoice=localStorage.getItem(KEY+'-leg')||'';
+function save(){localStorage.setItem(KEY,JSON.stringify(state)); localStorage.setItem(KEY+'-leg',legChoice);}
+
+function rowHTML(it){
+  const st=state[it.id]||'';
+  return '<div class="item state-'+st+'" data-id="'+it.id+'">'+
+    '<div class="acts">'+
+      '<button class="abtn'+(st==='yes'?' on-yes':'')+'" data-a="yes" title="Approve this fix" aria-label="Approve '+it.id+'">✓</button>'+
+      '<button class="abtn'+(st==='no'?' on-no':'')+'" data-a="no" title="Skip this fix" aria-label="Skip '+it.id+'">✕</button>'+
+    '</div>'+
+    '<span class="id">'+it.id+'</span>'+
+    '<div class="body"><b>'+it.t+'</b><span class="prob">'+it.p+'</span></div>'+
+    '<span class="sev"><span class="badge '+(it.sev==='P0'?'bad':it.sev==='P1'?'warn':'')+'">'+it.sev+'</span></span>'+
+    '<span class="eff">'+it.eff+'</span>'+
+  '</div>';
+}
+function renderItems(){
+  $$('.items').forEach(box=>{
+    const ph=box.dataset.phase;
+    const list=ph==='all'?PLAN:PLAN.filter(i=>i.ph===+ph);
+    box.innerHTML=list.map(rowHTML).join('');
+  });
+  /* wire */
+  $$('.item .abtn').forEach(b=>b.addEventListener('click',e=>{
+    e.stopPropagation();
+    const item=b.closest('.item'), id=item.dataset.id, a=b.dataset.a;
+    state[id]=(state[id]===a)?'':a;
+    save(); renderItems(); updateSum();
+  }));
+  updateSum();
+}
+function updateSum(){
+  const yes=Object.values(state).filter(v=>v==='yes').length;
+  const no=Object.values(state).filter(v=>v==='no').length;
+  $('#nYes').textContent=yes; $('#nNo').textContent=no;
+  $('#nOpen').textContent=(PLAN.length-yes-no)+' open';
+  $('#progFill').style.width=(yes/PLAN.length*100)+'%';
+  $('#progTxt').textContent=(yes+no)+' of '+PLAN.length+' decided';
+}
+
+/* ===================== summary copy ===================== */
+function buildSummary(){
+  const yes=PLAN.filter(i=>state[i.id]==='yes').map(i=>i.id);
+  const no=PLAN.filter(i=>state[i.id]==='no').map(i=>i.id);
+  const open=PLAN.filter(i=>!state[i.id]).map(i=>i.id);
+  let s='CardForge plan decisions — '+new Date().toISOString().slice(0,10)+'\n';
+  s+='\nAPPROVED ('+yes.length+'):\n'+(yes.join(', ')||'— none');
+  s+='\n\nSKIPPED ('+no.length+'):\n'+(no.join(', ')||'— none');
+  s+='\n\nSTILL OPEN ('+open.length+'):\n'+(open.join(', ')||'— none');
+  if(legChoice) s+='\n\nLEGIBILITY CHOICE: '+legChoice;
+  else s+='\n\nLEGIBILITY CHOICE: (not picked — required for CF-15)';
+  return s;
+}
+$('#copyBtn').addEventListener('click',async()=>{
+  const txt=buildSummary();
+  let ok=false;
+  try{ await navigator.clipboard.writeText(txt); ok=true; }
+  catch{ const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta);
+    ta.select(); try{ ok=document.execCommand('copy'); }catch{} ta.remove(); }
+  const n=$('#sumnote'); n.classList.toggle('on',true);
+  setTimeout(()=>n.classList.remove('on'),1800);
+  if(!ok) prompt('Copy your decisions:', txt);
+});
+
+/* ===================== legibility choice ===================== */
+function syncLeg(){
+  $$('#lopts .lopt, #lseg button').forEach(el=>{
+    el.setAttribute('aria-pressed',String(el.dataset.l===legChoice));
+  });
+}
+function pickLeg(l){ legChoice=(legChoice===l)?'':l; save(); syncLeg(); }
+$$('#lopts .lopt').forEach(el=>{
+  el.addEventListener('click',()=>pickLeg(el.dataset.l));
+  el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pickLeg(el.dataset.l);}});
+});
+$$('#lseg button').forEach(el=>el.addEventListener('click',()=>pickLeg(el.dataset.l)));
+
+/* ===================== demos ===================== */
+const LISTING={available:{s:'Available',cls:'',amt:'$340',cur:'USD · open to offers',btn:'Contact seller',dis:false},
+  pending:{s:'Pending — sale in progress',cls:'warn',amt:'$340',cur:'USD · open to offers',btn:'Contact seller (pending)',dis:false},
+  sold:{s:'Sold',cls:'bad',amt:'$340',cur:'Sold 2 Jun 2026',btn:'Sold — no longer available',dis:true}};
+$$('#stateSeg button').forEach(b=>b.addEventListener('click',()=>{
+  $$('#stateSeg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  const c=LISTING[b.dataset.st];
+  const pro=$('#proBuy');
+  pro.classList.toggle('sold',b.dataset.st==='sold');
+  $('#proAmt').innerHTML=b.dataset.st==='sold'?'<s>$340</s>':'$340';
+  $('#proCur').textContent=c.cur;
+  const st=$('#proStatus'); st.textContent=c.s; st.className='badge '+(c.cls==='warn'?'warn':c.cls==='bad'?'bad':'ok');
+  const btn=$('#proBtn'); btn.textContent=c.btn; btn.disabled=c.dis;
+  /* today side never changes — that IS the finding */
+}));
+const MP={
+  zero:{count:'0 listings',body:'<div class="emptybox"><h3>No listings yet</h3><p>This is the very first day. The marketplace is empty but not broken — as soon as anyone publishes, their card appears here.</p><button class="btn sm primary">Publish the first card</button></div>'},
+  error:{count:'offline',body:'<div class="emptybox" style="border-color:color-mix(in srgb,var(--bad) 40%,var(--c-line))"><h3 style="color:var(--bad)">Could not load the marketplace</h3><p>Your drafts are safe — only the listing list failed.</p><button class="btn sm primary">Try again</button></div>'},
+  few:{count:'6 listings',body:'<div class="row tight"><span class="badge ok">6 listings</span><span class="badge">101 total views</span><span class="badge">84 skins tracked</span><span class="badge">— avg price</span></div><p class="small" style="margin-top:8px">AVG PRICE resolves to an em-dash — no price data parses, because every price renders a hardcoded $ and currency is discarded.</p>'}
+};
+$$('#mpSeg button').forEach(b=>b.addEventListener('click',()=>{
+  $$('#mpSeg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  const c=MP[b.dataset.ms];
+  $('#mpCount').textContent=c.count; $('#mpBody').innerHTML=c.body;
+}));
+
+/* ===================== og:image card render ===================== */
+(function(){
+  const box=document.getElementById('embedImg');
+  if(!box) return;
+  const BASE='https://media.valorant-api.com/weaponskins/';
+  const IC={a:'30388628-42f0-606c-82c0-73ad43de997f',b:'980fa063-436e-e51f-c38d-70a5b93a0f1c',
+    c:'e5490f71-455b-74ad-f762-f5a876d4dff9',d:'18609205-4edb-5966-cff8-0fba0230ba1e',
+    e:'9bf19b77-4b33-7203-9f2c-16932970622f',f:'b9ee2457-481c-6776-3f5b-0ca8e8f90c89',
+    g:'c7261be6-47d2-ef86-82f4-6a844e45d33c',h:'25a7f0f2-4bce-7e45-b4b0-ca9264f5dfcc',
+    i:'6460edbf-458d-bf61-7519-519305ba5da2',j:'e86bf7e4-4dd3-fbee-533b-fa875344bbaf',
+    k:'bbf8ffb9-49c0-75c0-cc7d-8f8f03a4bd36',m:'e100dff1-4cf5-54ec-aa65-6fadbc22973b',
+    n:'89be9866-4807-6235-2a95-499cd23828df',o:'b450a73d-431e-56b7-5b7f-67bddd38ee66'};
+  const NM={a:'Reaver Vandal',b:'Spectrum Phantom',c:'RGX 11z Pro Vandal',d:'Elderflame Vandal',
+    e:'Champions Vandal',f:'Prime Vandal',g:'Reaver Ghost',h:'Glitchpop Phantom',
+    i:'Magepunk Sheriff',j:'Ion Phantom',k:'Ion Operator',m:'Prime Axe',n:'Altitude Odin',
+    o:'Prelude to Chaos Operator'};
+  const inner=document.createElement('div');
+  inner.style.cssText='width:480px;max-width:100%;aspect-ratio:16/9;position:relative;'+
+    'background:linear-gradient(158deg,#18232F 0%,#0F1923 52%,#141D27 100%);'+
+    'border:1px solid #2E3A46;overflow:hidden;display:grid;'+
+    'grid-template-rows:auto minmax(0,1fr) auto;gap:4%;padding:4% 4.5%;transform-origin:top left';
+  const hd=document.createElement('div');
+  hd.style.cssText='display:flex;align-items:flex-end;gap:4%';
+  hd.innerHTML='<span style="font:800 min(2.4vw,17px) Manrope,sans-serif;letter-spacing:.08em;color:#ECE8E1">FULL VANDAL COLLECTION</span>'+
+    '<span style="margin-left:auto;text-align:right"><span style="display:block;font:800 min(2.2vw,16px) Manrope,sans-serif;color:#ECE8E1;letter-spacing:.04em">IMMORTAL 3</span>'+
+    '<span style="display:block;font:600 min(1.1vw,8px) Inter,sans-serif;color:#8A99A9;letter-spacing:.12em">PEAK RANK · WTR</span></span>';
+  const body=document.createElement('div');
+  body.style.cssText='display:grid;grid-template-columns:1.1fr 1fr 1fr 1.2fr;gap:3%;min-height:0';
+  const groups=[['RIFLES',['a','b','j','e']],['PHANTOMS',['h','f','i','g']],['OPERATORS',['k','o','n']],['MELEE & MORE',['d','m','c']]];
+  groups.forEach(([label,keys])=>{
+    const p=document.createElement('div');
+    p.style.cssText='background:#1F2731;border:1px solid #2E3A46;display:flex;flex-direction:column;padding:5% 6%;min-height:0';
+    p.innerHTML='<span style="font:600 min(1.1vw,8px) Inter,sans-serif;letter-spacing:.16em;color:#8A99A9;flex:none;margin-bottom:4%">'+label+'</span>';
+    const list=document.createElement('div');
+    list.style.cssText='display:grid;grid-template-rows:repeat(4,1fr);gap:6%;min-height:0;flex:1';
+    keys.forEach(key=>{
+      const s=document.createElement('div');
+      s.style.cssText='position:relative;background:#16202B;border:1px solid #2A3540;min-height:0;overflow:hidden';
+      const img=document.createElement('img');
+      img.src=BASE+IC[key]+'/displayicon.png'; img.alt=NM[key];
+      img.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:8%';
+      img.onerror=()=>{img.remove(); s.style.cssText+=';display:flex;align-items:center;justify-content:center;font:600 8px Inter,sans-serif;color:#8A99A9'; s.textContent=NM[key];};
+      s.appendChild(img); list.appendChild(s);
+    });
+    p.appendChild(list); body.appendChild(p);
+  });
+  const ft=document.createElement('div');
+  ft.style.cssText='display:grid;grid-template-columns:repeat(6,1fr);gap:3%;border-top:1px solid #2E3A46;padding-top:3%';
+  [['PREMIUM','24'],['LIMITED','11'],['SKINS','62'],['PRICE','$340'],['PREMIER','UNLINKED'],['STATUS','AVAILABLE']]
+    .forEach(([l,v])=>{
+      const st=document.createElement('div');
+      st.style.cssText='min-width:0';
+      st.innerHTML='<span style="display:block;font:600 min(1vw,7.5px) Inter,sans-serif;letter-spacing:.14em;color:#8A99A9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+l+'</span>'+
+        '<span style="display:block;font:800 min(1.7vw,13px) Manrope,sans-serif;color:#ECE8E1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+v+'</span>';
+      ft.appendChild(st);
+    });
+  inner.append(hd,body,ft); box.appendChild(inner);
+  function fit(){
+    const w=box.clientWidth; if(!w) return;
+    inner.style.width='480px'; inner.style.transform='scale('+(w/480)+')';
+    box.style.height=(w*9/16)+'px';
+  }
+  requestAnimationFrame(()=>requestAnimationFrame(fit));
+  window.addEventListener('load',fit); window.addEventListener('resize',fit);
+  if(window.ResizeObserver) new ResizeObserver(fit).observe(box);
+})();
+
+/* ===================== sidenav scroll spy ===================== */
+(function(){
+  const links=$$('.sidenav a');
+  const secs=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  function spy(){
+    let cur=secs[0];
+    for(const s of secs){ if(s.getBoundingClientRect().top<120) cur=s; }
+    links.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+cur.id));
+  }
+  window.addEventListener('scroll',spy,{passive:true}); spy();
+})();
+
+renderItems(); syncLeg();
+</script>
+</body>
+</html>

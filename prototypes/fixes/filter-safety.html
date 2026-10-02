@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardForge — Prototype 3 · Filtering that cannot lie to you</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+.wrap{max-width:1280px}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--c-line)}
+.two>section{padding:20px;min-width:0}
+.two>section+section{border-left:1px solid var(--c-line)}
+.two>section h4{font:800 11px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;margin:0 0 4px}
+.two>section p.stitle{font-size:11.5px;color:var(--c-mut);line-height:1.55;margin-bottom:16px}
+
+/* ---- the toolbar under test ---- */
+.toolbar{background:var(--c-surface2);border:1px solid var(--c-line);padding:12px 14px;display:flex;flex-direction:column;gap:11px}
+.tb-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tb-lab{font:700 9.5px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--c-mut);flex:none}
+.tb-count{margin-left:auto;font:700 11px ui-monospace,Menlo,Consolas,monospace;color:var(--c-ink)}
+.tb-count.bad{color:var(--bad)}
+.tb-count.warn{color:var(--warn)}
+.tb-count.ok{color:var(--ok)}
+.divider{width:1px;align-self:stretch;background:var(--c-line);margin:0 3px}
+input[type=number]{width:56px;background:var(--c-surface);border:1px solid var(--c-line);color:var(--c-ink);
+  font:600 11.5px var(--font-ui);padding:6px 7px;text-align:center}
+input[type=number]:focus-visible{outline:none;border-color:var(--c-accent)}
+
+/* ---- category cap matrix ---- */
+.capgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:7px}
+.capcell{background:var(--c-surface);border:1px solid var(--c-line);padding:7px 8px}
+.capcell-h{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
+.capcell-h b{font:700 10px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--c-ink)}
+.capcell-h i{font:700 10px ui-monospace,Menlo,Consolas,monospace;font-style:normal;color:var(--c-mut)}
+.capbar{height:4px;background:var(--c-line-soft);margin-top:7px;position:relative;overflow:hidden}
+.capbar span{position:absolute;inset:0 auto 0 0;background:var(--c-accent)}
+.capbar span.at{background:var(--warn)}
+.capcell input{width:100%;margin-top:7px;padding:4px 6px;font-size:11px}
+
+/* ---- diff / preview table ---- */
+.diff{border:1px solid var(--c-line);background:var(--c-surface);max-height:250px;overflow:auto}
+.diffrow{display:grid;grid-template-columns:16px 1fr 62px 74px;gap:8px;align-items:center;
+  padding:6px 10px;border-bottom:1px solid var(--c-line-soft);font-size:11.5px}
+.diffrow:last-child{border-bottom:0}
+.diffrow.head{position:sticky;top:0;background:var(--c-surface3);font:700 9.5px var(--font-ui);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--c-mut);z-index:1}
+.diffrow img{width:34px;height:20px;object-fit:contain;display:inline-block;vertical-align:-5px;margin-right:7px}
+.diffrow .nm{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.diffrow .cat{color:var(--c-mut);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase}
+.diffrow .mark{font-weight:800;font-size:12px;text-align:center}
+.diffrow.keep .mark{color:var(--ok)}
+.diffrow.drop{opacity:.62}
+.diffrow.drop .mark{color:var(--bad)}
+.diffrow.drop .nm{text-decoration:line-through}
+.diffrow.manual{border-left:2px solid var(--t-deluxe)}
+.diffrow.manual .nm::after{content:" · added by hand";color:var(--t-deluxe);font-size:10px;font-weight:600;text-decoration:none;display:inline}
+
+/* ---- outcome bar ---- */
+.outcome{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 14px;
+  border:1px solid var(--c-line);background:var(--c-surface);font-size:12.5px}
+.outcome .big{font-family:var(--font-display);font-weight:800;font-size:22px;letter-spacing:.02em}
+.outcome.keep-all{border-left:3px solid var(--c-ink)}
+.outcome.keep-some{border-left:3px solid var(--warn)}
+.outcome.blocked{border-left:3px solid var(--bad)}
+.outcome .msg{flex:1;min-width:170px;line-height:1.5}
+.outcome .msg b{display:block;font-size:13px;margin-bottom:2px}
+
+/* ---- vocabulary table ---- */
+.vocab{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--c-line);font-size:12px}
+.vocab>div{padding:9px 12px;border-bottom:1px solid var(--c-line-soft)}
+.vocab .vh{font:700 9.5px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut);
+  background:var(--c-surface2);border-bottom:1px solid var(--c-line)}
+.vocab .vh.a{grid-column:1}
+.vocab .vh.b{grid-column:2;border-left:1px solid var(--c-line-soft)}
+.vocab .b{border-left:1px solid var(--c-line-soft)}
+.vocab s{color:var(--bad);text-decoration-thickness:1px}
+.vocab u{color:var(--ok);text-decoration:none;font-weight:700}
+
+/* ---- scenario buttons ---- */
+.scen{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+.scen .btn[aria-pressed=true]{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
+
+.snap{border:1px solid var(--c-line);background:var(--c-bg);padding:11px 13px;font:600 11.5px ui-monospace,Menlo,Consolas,monospace;
+  color:var(--c-mut);line-height:1.7}
+.snap b{color:var(--ok)}
+.snap .bad{color:var(--bad)}
+.snap .warn{color:var(--warn)}
+@media (max-width:900px){.two{grid-template-columns:1fr}.two>section+section{border-left:0;border-top:1px solid var(--c-line)}}
+</style>
+</head>
+<body>
+
+<div class="pbar">
+  <span class="logo">CARD FORGE</span>
+  <span class="pbar-t">Prototype 3 · Filtering</span>
+  <span class="pbar-sp"></span>
+  <a class="btn sm" href="index.html">← Audit hub</a>
+  <a class="btn sm" href="editor-chrome.html">← Prototype 1</a>
+</div>
+
+<main>
+<div class="wrap">
+
+  <span class="eyebrow">Prototype 3 of 5 · Editor</span>
+  <h1 class="display">A filter that tells you<br>what it is about to do.</h1>
+  <p class="lede">The tier filter shipped with two destructive behaviours the interface hides: <b>Reset</b> rebuilds the card from <span class="mono">state.owned</span>, so with no import it empties the card and still reports <span class="mono">✓ Tier filter applied</span>; and the internal snapshot it filters against is never invalidated, so skins you add by hand afterwards silently vanish on the next Apply — again with a green tick. This is a two-step, preview-first, undoable version. Pick a scenario.</p>
+
+  <div class="scen" id="scenBar">
+    <button class="btn sm" data-scen="normal" aria-pressed="true">Normal — 62 skins, 8 imported</button>
+    <button class="btn sm" data-scen="noimport">No import — 12 skins added by hand</button>
+    <button class="btn sm" data-scen="handedit">After hand-edits — 5 added since last Apply</button>
+    <button class="btn sm" data-scen="reset">Click Reset with no import (the bug)</button>
+    <button class="btn sm" data-scen="cap0">Cap set to 0 / empty / nonsense</button>
+  </div>
+
+  <div class="two">
+    <!-- ============ TODAY ============ -->
+    <section>
+      <h4>Today</h4>
+      <p class="stitle">One click applies immediately and destructively. The only feedback is a toast that fades in 5&nbsp;s and always says success.</p>
+
+      <div class="toolbar">
+        <div class="tb-row">
+          <span class="tb-lab">Show</span>
+          <span class="chip" aria-pressed="false">Premium only</span>
+          <span class="chip" aria-pressed="false">Premium + Limited</span>
+          <span class="chip" aria-pressed="false">Limited only</span>
+          <span class="chip" aria-pressed="false">Everything</span>
+          <span class="chip" aria-pressed="false">Animated only</span>
+        </div>
+        <div class="tb-row">
+          <span class="tb-lab">Tiers</span>
+          <span class="chip" aria-pressed="true"><i class="dot" style="background:var(--t-select)"></i>Select</span>
+          <span class="chip" aria-pressed="true"><i class="dot" style="background:var(--t-deluxe)"></i>Semi-prem</span>
+          <span class="chip" aria-pressed="true"><i class="dot" style="background:var(--t-premium)"></i>Premium</span>
+          <span class="chip" aria-pressed="true"><i class="dot" style="background:var(--t-ultra)"></i>Limited</span>
+          <span class="chip" aria-pressed="true"><i class="dot" style="background:var(--t-exclusive)"></i>Melee</span>
+          <span class="chip" aria-pressed="true"><i class="dot" style="background:var(--c-accent)"></i>Animated</span>
+          <span class="divider"></span>
+          <span class="tb-lab">Max / cat</span><input type="number" id="curCap" min="1" max="40" value="8">
+          <span class="btn sm primary" id="curApply">Apply</span>
+          <span class="btn sm" id="curReset">Reset</span>
+        </div>
+      </div>
+
+      <div id="curOutcome"></div>
+
+      <h4 style="margin-top:20px">Internal state</h4>
+      <div class="snap" id="curSnap"></div>
+    </section>
+
+    <!-- ============ PROPOSED ============ -->
+    <section>
+      <h4>Proposed</h4>
+      <p class="stitle">Nothing changes until you confirm. The filter compares against the <i>live</i> card, so hand-added skins can never be lost, and every outcome is reversible.</p>
+
+      <div class="toolbar">
+        <div class="tb-row">
+          <span class="tb-lab">Quick</span>
+          <span class="chip" aria-pressed="false" data-preset="prem">Premium only</span>
+          <span class="chip" aria-pressed="false" data-preset="premultra">Premium + Ultra</span>
+          <span class="chip" aria-pressed="false" data-preset="ultra">Ultra only</span>
+          <span class="chip" aria-pressed="false" data-preset="all">Everything</span>
+          <span class="chip" aria-pressed="false" data-preset="anim">Animated only</span>
+        </div>
+        <div class="tb-row">
+          <span class="tb-lab">Tiers</span>
+          <span class="chip" aria-pressed="true" data-tier="select"><i class="dot" style="background:var(--t-select)"></i>Select</span>
+          <span class="chip" aria-pressed="true" data-tier="deluxe"><i class="dot" style="background:var(--t-deluxe)"></i>Deluxe</span>
+          <span class="chip" aria-pressed="true" data-tier="premium"><i class="dot" style="background:var(--t-premium)"></i>Premium</span>
+          <span class="chip" aria-pressed="true" data-tier="ultra"><i class="dot" style="background:var(--t-ultra)"></i>Ultra</span>
+          <span class="chip" aria-pressed="true" data-tier="exclusive"><i class="dot" style="background:var(--t-exclusive)"></i>Knives</span>
+          <span class="chip" aria-pressed="true" data-tier="anim"><i class="dot" style="background:var(--c-accent)"></i>Animated</span>
+          <span class="divider"></span>
+          <span class="btn sm solid" id="proMore">Per-category caps ▾</span>
+        </div>
+        <div class="capgrid" id="capGrid" hidden></div>
+        <div class="tb-row">
+          <span class="tb-count" id="proPreview">No change yet</span>
+          <span class="btn sm primary" id="proApply" aria-disabled="true">Apply 0 changes</span>
+          <span class="btn sm" id="proReset">Restore all</span>
+        </div>
+      </div>
+
+      <div id="proOutcome"></div>
+
+      <h4 style="margin-top:20px">What will change</h4>
+      <div class="diff" id="proDiff"></div>
+    </section>
+  </div>
+
+  <h2 class="sec">One vocabulary, not two</h2>
+  <p class="psmall" style="color:var(--c-mut);margin-bottom:14px;font-size:13px;max-width:78ch">Today the toolbar calls them <b>Select · Semi-prem · Premium · Limited · Melee</b> and the picker ladder in the same window calls them <b>Select · Deluxe · Premium · Ultra · Exclusive</b>. Same five tiers, no cross-reference — and <i>Melee</i> is a weapon class, not a rarity. The proposal drops the toolbar's vocabulary entirely and reuses the picker's.</p>
+  <div class="vocab">
+    <div class="vh a">Toolbar today</div><div class="vh b">Proposed (picker ladder wins)</div>
+    <div>Select</div><div class="b">Select</div>
+    <div><s>Semi-prem</s></div><div class="b">Deluxe</div>
+    <div>Premium</div><div class="b">Premium</div>
+    <div><s>Limited</s></div><div class="b">Ultra</div>
+    <div><s>Melee</s> <span style="color:var(--bad);font-size:10px">(= weapon class)</span></div><div class="b">Knives</div>
+  </div>
+
+  <h2 class="sec">Every fix, side by side</h2>
+  <div class="tscroll">
+  <table>
+    <thead><tr><th>Behaviour today</th><th>Proposed</th><th>Severity</th></tr></thead>
+    <tbody>
+      <tr><td>Filter applies the moment you click a chip — no chance to look first</td><td>Chips only build a preview; nothing is written until <b>Apply N changes</b></td><td class="sev sev-P1">P1</td></tr>
+      <tr><td><b>Reset</b> rebuilds from the imported account; with no import the card empties, no confirm, reports <span class="mono">✓ success</span></td><td>Reset is disabled with an inline reason, or restores the pre-filter snapshot. Never reaches zero silently.</td><td class="sev sev-P0">P0</td></tr>
+      <tr><td>Filters a snapshot taken at import time; later hand-adds vanish on the next Apply</td><td>Filters the live card every time — a hand-added skin can never be dropped by a filter</td><td class="sev sev-P0">P0</td></tr>
+      <tr><td><span class="mono">#tierCount</span> is empty until the first Apply, then goes stale after any manual edit</td><td>Recomputed on every change; always populated</td><td class="sev sev-P1">P1</td></tr>
+      <tr><td>Says "of N <b>owned</b> skins" but N comes from the snapshot, not from what you own</td><td>Says exactly what it counted: "31 of 62 skins on your card"</td><td class="sev sev-P1">P1</td></tr>
+      <tr><td>Cap clamps silently: <span class="mono">0</span>, <span class="mono">abc</span> or empty all become 8</td><td>Out-of-range values are corrected in the field with a visible note; the diff always reflects the real cap used</td><td class="sev sev-P2">P2</td></tr>
+      <tr><td>One cap for every category, so a 14-item melee list and a 40-item rifle list are treated alike</td><td>Per-category caps, with the rifle/melee imbalance visible before you commit</td><td class="sev sev-P2">P2</td></tr>
+      <tr><td>No Undo anywhere; recovery means redoing every manual edit</td><td>Undo restores the exact pre-filter state, and stays available until you leave the filter</td><td class="sev sev-P1">P1</td></tr>
+      <tr><td>Filter state is not saved with the draft, so boot always restores a hardcoded default</td><td>Filter state is part of the draft, and the restored chips show what they are</td><td class="sev sev-P2">P2</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2 class="sec">Implementation notes</h2>
+  <div class="grid2">
+    <div class="panel">
+      <h4>What has to change in the code</h4>
+      <ul class="stack tight" style="color:var(--c-mut);font-size:12.5px;line-height:1.6">
+        <li>• Delete the module-level <span class="mono">allPicks</span> snapshot and its three call sites. Filter <span class="mono">state.picks</span> directly.</li>
+        <li>• Split <span class="mono">applyTierFilter()</span> into <span class="mono">computeFilter()</span> (pure, returns the diff) and <span class="mono">commitFilter()</span> (writes).</li>
+        <li>• Keep an <span class="mono">undoStack</span> of the pre-filter <span class="mono">state.picks</span>.</li>
+        <li>• Gate <span class="mono">#tierReset</span> on <span class="mono">state.owned.length</span> with an explanatory disabled state.</li>
+        <li>• Persist tier state in the draft next to <span class="mono">state.layout</span>.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h4>What I did not touch</h4>
+      <ul class="stack tight" style="color:var(--c-mut);font-size:12.5px;line-height:1.6">
+        <li>• The cap semantics stay <i>top N per category, best first</i> — I only made it visible and per-category.</li>
+        <li>• Filter keys <span class="mono">select/deluxe/premium/ultra/exclusive</span> are unchanged; only the labels move.</li>
+        <li>• Nothing is committed to <span class="mono">staging</span> until you say so.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:26px">
+    <a class="btn primary" href="index.html">← Back to audit hub</a>
+    <a class="btn" href="http://localhost:3000/index.html">Compare against the live editor</a>
+  </div>
+
+</div>
+</main>
+
+<script>
+/* ---------------- data ---------------- */
+const BASE='https://media.valorant-api.com/weaponskins/';
+const POOL=[
+  ['Reaver Vandal','premium','30388628-42f0-606c-82c0-73ad43de997f','Rifles'],
+  ['Prime Vandal','premium','b9ee2457-481c-6776-3f5b-0ca8e8f90c89','Rifles'],
+  ['Spectrum Phantom','ultra','980fa063-436e-e51f-c38d-70a5b93a0f1c','Rifles'],
+  ['Glitchpop Phantom','ultra','25a7f0f2-4bce-7e45-b4b0-ca9264f5dfcc','Rifles'],
+  ['Ion Phantom','premium','e86bf7e4-4dd3-fbee-533b-fa875344bbaf','Rifles'],
+  ['Nebula Phantom','premium','c7261be6-47d2-ef86-82f4-6a844e45d33c','Rifles'],
+  ['Champions Vandal','ultra','9bf19b77-4b33-7203-9f2c-16932970622f','Rifles'],
+  ['RGX 11z Pro Vandal','ultra','e5490f71-455b-74ad-f762-f5a876d4dff9','Rifles'],
+  ['Ion Vandal','premium','9bf19b77-4b33-7203-9f2c-16932970622f','Rifles'],
+  ['Reaver Ghost','premium','c7261be6-47d2-ef86-82f4-6a844e45d33c','Rifles'],
+  ['Magepunk Sheriff','premium','6460edbf-458d-bf61-7519-519305ba5da2','Sidearms'],
+  ['Singularity Sheriff','ultra','bfd9e773-4376-1f6a-98f2-dc93f0c0607c','Sidearms'],
+  ['Reaver Sheriff','premium','6460edbf-458d-bf61-7519-519305ba5da2','Sidearms'],
+  ['Prime Axe','ultra','e100dff1-4cf5-54ec-aa65-6fadbc22973b','Melee'],
+  ['Elderflame Vandal','exclusive','18609205-4edb-5966-cff8-0fba0230ba1e','Rifles'],
+  ['Prelude to Chaos Operator','ultra','b450a73d-431e-56b7-5b7f-67bddd38ee66','Snipers'],
+  ['Ion Operator','premium','bbf8ffb9-49c0-75c0-cc7d-8f8f03a4bd36','Snipers'],
+  ['Elderflame Operator','exclusive','d722313d-43cb-b38d-7841-75880a3ed2cb','Snipers'],
+  ['Altitude Odin','deluxe','89be9866-4807-6235-2a95-499cd23828df','Machine Guns'],
+  ['Doom Wing Odin','select','729f0ef1-4c70-dc39-3fe0-9d887a320070','Machine Guns'],
+  ['Silvanus Stinger','deluxe','847fe9da-45cc-21d4-0138-7aa4d8b31d8e','SMGs'],
+  ['Convex Spectre','select','c8a5ba23-4f0d-c7de-8e2f-c184e2fc27ba','SMGs'],
+  ['Infinity Spectre','deluxe','53ab2a6a-46c5-32b9-e045-6781e677d7ff','SMGs'],
+  ['Spectrum Bulldog','ultra','fbe04552-445d-f202-923e-6fbd61b7e2aa','SMGs'],
+  ['Reaver Operator','premium','aecab890-43b7-d719-06bc-9295e3d116dc','Snipers']
+];
+const TIERS=['select','deluxe','premium','ultra','exclusive'];
+
+/* scenarios: card contents, plus what the shipped code would do */
+const SCEN={
+  normal:{
+    label:'62 skins · account imported',
+    onCard:62, manualAfter:0, owned:62,
+    curApply:'48 of 62 kept · max 8 per category',
+    curApplyKind:'ok',
+    curNote:'Works, but you cannot see the 14 it removes, and the snapshot is now frozen.',
+    curSnap:'allPicks  = snapshot taken at import()  → 62 items\nstate.picks = filtered result            → 48 items\nnext Apply re-filters <b>allPicks</b>, not the live card',
+    curSnapWarn:true
+  },
+  noimport:{
+    label:'12 skins · no import, all added by hand',
+    onCard:12, manualAfter:0, owned:0,
+    curApply:'Tier filter applied — 0 of 12 skins kept (max 8 per category)',
+    curApplyKind:'ok',
+    curNote:'state.owned is empty, so the snapshot is empty and the filter empties the card — then reports ✓ success.',
+    curSnap:'allPicks   = snapshot of CF.CATS only  → <b>0 items</b> (nothing was imported)\nstate.picks = filtered result              → 0 items\nstatus      = "✓ Tier filter applied — 0 of 12 kept"',
+    curSnapWarn:true
+  },
+  handedit:{
+    label:'62 skins · 5 added by hand since last Apply',
+    onCard:62, manualAfter:5, owned:62,
+    curApply:'Tier filter applied — 48 of 48 skins kept',
+    curApplyKind:'ok',
+    curNote:'The 5 hand-added skins are not in the snapshot. They are dropped, silently, with a green tick.',
+    curSnap:'allPicks   = snapshot at import()     → 62 items  <span class="warn">(stale)</span>\nhand-added = <b>5 items</b> not in allPicks\nstate.picks = <b>48</b> — the 5 hand-added skins are gone',
+    curSnapWarn:true
+  },
+  reset:{
+    label:'Click Reset with no import',
+    onCard:12, manualAfter:0, owned:0,
+    curApply:'Tier filter applied — 0 of 12 skins kept (max 8 per category)',
+    curApplyKind:'ok',
+    curNote:'Reset rebuilds every category from state.owned, which is empty. No confirm dialog. Card is now blank.',
+    curSnap:'#tierReset handler:\n  for each cat:  state.picks[cat] = owned.filter(...)\n  state.owned.length === 0  →  <b>all categories empty</b>\n  then calls applyTierFilter()  →  kind: <b>"ok"</b>',
+    curSnapWarn:true
+  },
+  cap0:{
+    label:'Cap typed as 0 / empty / "abc"',
+    onCard:62, manualAfter:0, owned:62,
+    curApply:'Tier filter applied — 0 of 62 skins kept (max 8 per category)',
+    curApplyKind:'ok',
+    curNote:'parseInt("abc") || 8 → 8, then the empty cap still filtered 62 skins down to 0. The field silently rewrote itself to 8.',
+    curSnap:'cap = Math.max(1, Math.min(40, parseInt(value) || 8))\n  value "0"      → 8  (0 is falsy, so || 8 wins)\n  value "abc"   → 8\n  value ""      → 8\n  <b>the user is never told the cap changed</b>',
+    curSnapWarn:true
+  }
+};
+
+const PRO={
+  normal:{onCard:62,manualAfter:0,owned:62},
+  noimport:{onCard:12,manualAfter:0,owned:0},
+  handedit:{onCard:62,manualAfter:5,owned:62},
+  reset:{onCard:12,manualAfter:0,owned:0},
+  cap0:{onCard:62,manualAfter:0,owned:62,capTyped:'abc'}
+};
+
+let scen='normal', applied=false, appliedState=null;
+
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+
+/* Valorant retires skins, so icons 404. Staging hides broken images with
+   visibility:hidden + a gradient and no alt — the buyer just sees a gap.
+   This prototype shows the name instead, which is what a buyer can act on. */
+function thumb(u,name){
+  return '<img src="'+BASE+u+'/displayicon.png" alt="'+name+'" loading="lazy"'+
+    ' onerror="var s=this.nextElementSibling;this.remove();if(s)s.style.display=\'inline\'">'+
+    '<span style="display:none;font:600 10px var(--font-ui);color:var(--c-mut)">'+name+'</span>';
+}
+
+/* Build a plausible card list for the scenario */
+function buildCard(sc){
+  const c=SCEN[sc], p=PRO[sc];
+  const items=[], seen={};
+  const push=(s,manual,anim)=>{
+    const n=(seen[s[0]]=(seen[s[0]]||0)+1);
+    items.push({name:n>1?s[0]+' '+n:s[0],base:s[0],tier:s[1],uuid:s[2],cat:s[3],manual:manual,anim:anim});
+  };
+  for(let i=0;i<c.onCard;i++) push(POOL[i%POOL.length],false,i%3===0);
+  for(let i=0;i<c.manualAfter;i++) push(POOL[(i*7+3)%POOL.length],true,false);
+  return items;
+}
+
+/* ---------------- TODAY rendering ---------------- */
+function renderCurrent(){
+  const c=SCEN[scen];
+  $('#curOutcome').innerHTML=
+    '<div class="outcome blocked"><span class="big">✕</span><div class="msg"><b>Card now has '+
+    (scen==='reset'||scen==='noimport'?0:48)+' skins.</b>'+
+    c.curNote+'</div><span class="badge '+(c.curApplyKind==='ok'?'ok':'')+'">'+
+    (c.curApplyKind==='ok'?'reports ✓ ok':'reports error')+'</span></div>'+
+    '<div class="toast-demo" style="margin-top:10px"><div class="toast" data-kind="ok">'+c.curApply+'</div></div>'+
+    '<p class="psmall" style="color:var(--c-mut);font-size:11.5px;margin-top:6px">The toast above fades out in 5&nbsp;s and nothing else on screen changes. This is the entire feedback the user gets.</p>';
+  $('#curSnap').innerHTML=c.curSnap;
+}
+
+/* ---------------- PROPOSED logic ---------------- */
+function activeTiers(){return $$('[data-tier]').filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.tier);}
+function capFor(cat){const i=$('#cap-'+cat.replace(/\W/g,'')); return i?+i.value||8:8;}
+
+function compute(){
+  const p=PRO[scen];
+  let card=applied?appliedState.map(x=>({...x})):buildCard(scen);
+  const tiers=activeTiers(), animOn=tiers.includes('anim');
+  const real=tiers.filter(t=>t!=='anim');
+  const keep=[];
+  const dropped=[];
+  card.forEach(it=>{
+    let ok=real.includes(it.tier) && (!animOn || it.anim);
+    if(ok){
+      const cap=capFor(it.cat);
+      const n=keep.filter(k=>k.cat===it.cat).length;
+      if(n>=cap) ok=false;
+    }
+    (ok?keep:dropped).push(it);
+  });
+  return {keep,dropped,total:card.length};
+}
+
+function renderCapGrid(){
+  const cats=['Rifles','Sidearms','Snipers','Machine Guns','SMGs','Melee'];
+  $('#capGrid').innerHTML=cats.map(c=>{
+    const n=POOL.filter(p=>p[3]===c).length*2;
+    return '<div class="capcell"><div class="capcell-h"><b>'+c+'</b><i>'+n+' owned</i></div>'+
+      '<div class="capbar"><span class="'+(n>8?'at':'')+'" style="width:'+Math.min(100,n/50*100)+'%"></span></div>'+
+      '<input type="number" id="cap-'+c.replace(/\W/g,'')+'" min="1" max="40" value="8" aria-label="Cap for '+c+'"></div>';
+  }).join('');
+  $$('#capGrid input').forEach(i=>i.addEventListener('input',renderProposed));
+}
+
+function renderProposed(){
+  const r=compute();
+  const nChange=r.dropped.length;
+  const total=r.keep.length+r.dropped.length;
+
+  const btn=$('#proApply');
+  btn.setAttribute('aria-disabled',String(nChange===0));
+  btn.textContent = nChange===0?'Apply 0 changes':'Apply '+nChange+' change'+(nChange===1?'':'s');
+  btn.disabled=false;
+
+  const cnt=$('#proPreview');
+  cnt.className='tb-count '+(nChange===0?'ok':(r.keep.length===0?'bad':'warn'));
+  cnt.textContent = nChange===0
+    ? 'No change — all '+total+' skins pass the current filter'
+    : r.keep.length+' of '+total+' skins would remain';
+
+  /* outcome */
+  let oc;
+  if(r.keep.length===0){
+    oc='<div class="outcome blocked"><span class="big">0</span><div class="msg"><b>Nothing would survive this filter.</b>'+
+       'Apply is blocked. Reset the tiers or lower the cap instead — you can never end up with a blank card by accident.</div></div>';
+  } else if(nChange===0){
+    oc='<div class="outcome keep-all"><span class="big">'+r.keep.length+'</span><div class="msg"><b>No change.</b>Every skin on the card already passes. '+
+       (applied?'Your filter is applied.':'Nothing to apply yet.')+'</div></div>';
+  } else {
+    oc='<div class="outcome keep-some"><span class="big">'+r.keep.length+'</span><div class="msg"><b>'+nChange+' skin'+(nChange===1?'':'s')+' would be removed, '+r.keep.length+' kept.</b>'+
+       'The card is untouched until you press Apply. Undo stays available after you do.</div>'+
+       '<span class="badge warn">preview only</span></div>';
+  }
+  if(scen==='reset'||scen==='noimport'){
+    oc+='<div class="outcome blocked" style="margin-top:8px"><span class="big">⛒</span><div class="msg"><b>Reset is unavailable.</b>'+
+       'Nothing was imported, so there is no account snapshot to restore from. Your '+
+       (PRO[scen].onCard)+' hand-picked skins are the only copy and they are safe.</div></div>';
+  }
+  $('#proOutcome').innerHTML=oc;
+
+  /* reset button state */
+  const rs=$('#proReset');
+  if(PRO[scen].owned===0){ rs.disabled=true; rs.textContent='Restore all — no snapshot'; rs.title='Reset needs an imported account. Without one it used to empty the card.'; }
+  else { rs.disabled=false; rs.textContent='Restore all '+PRO[scen].owned; }
+
+  /* diff list */
+  const rows=['<div class="diffrow head"><span></span><span>Skin</span><span>Category</span><span>Outcome</span></div>'];
+  r.keep.forEach(k=>rows.push(
+    '<div class="diffrow keep'+(k.manual?' manual':'')+'"><span class="mark">✓</span>'+
+    '<span class="nm">'+thumb(k.uuid,k.name)+k.name+'</span>'+
+    '<span class="cat">'+k.cat+'</span><span class="cat">kept</span></div>'));
+  r.dropped.forEach(k=>rows.push(
+    '<div class="diffrow drop'+(k.manual?' manual':'')+'"><span class="mark">✕</span>'+
+    '<span class="nm">'+thumb(k.uuid,k.name)+k.name+'</span>'+
+    '<span class="cat">'+k.cat+'</span><span class="cat">removed</span></div>'));
+  $('#proDiff').innerHTML=rows.join('');
+
+  if(scen==='cap0'){
+    cnt.innerHTML='Cap “abc” corrected to <b>8</b> · '+r.keep.length+' of '+total+' skins would remain';
+  }
+}
+
+/* ---------------- events ---------------- */
+$$('#scenBar button').forEach(b=>b.addEventListener('click',()=>{
+  $$('#scenBar button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  scen=b.dataset.scen; applied=false; appliedState=null;
+  if(scen==='cap0'){ /* leave tiers on, show the corrected cap */ }
+  renderCurrent(); renderProposed();
+}));
+$$('[data-tier]').forEach(b=>b.addEventListener('click',()=>{
+  b.setAttribute('aria-pressed',String(b.getAttribute('aria-pressed')!=='true'));
+  $$('[data-preset]').forEach(p=>p.setAttribute('aria-pressed','false'));
+  renderProposed();
+}));
+$$('[data-preset]').forEach(b=>b.addEventListener('click',()=>{
+  const map={prem:['select','deluxe','premium','ultra'],premultra:['premium','ultra'],ultra:['ultra'],all:TIERS,anim:['anim']};
+  const set=map[b.dataset.preset];
+  $$('[data-tier]').forEach(t=>t.setAttribute('aria-pressed',String(set.includes(t.dataset.tier))));
+  $$('[data-preset]').forEach(p=>p.setAttribute('aria-pressed',String(p===b)));
+  renderProposed();
+}));
+$('#curApply').addEventListener('click',renderCurrent);
+$('#curReset').addEventListener('click',()=>{ scen=scen==='reset'?'normal':'reset'; renderCurrent(); renderProposed(); });
+$('#proApply').addEventListener('click',()=>{
+  const r=compute();
+  if(r.keep.length===0) return;
+  appliedState=r.keep; applied=true;
+  $('#proApply').textContent='Applied';
+  renderProposed();
+});
+$('#proReset').addEventListener('click',()=>{
+  applied=false; appliedState=null; renderProposed();
+});
+$('#proMore').addEventListener('click',e=>{
+  const g=$('#capGrid'); g.hidden=!g.hidden;
+  e.currentTarget.textContent=g.hidden?'Per-category caps ▾':'Per-category caps ▴';
+});
+
+renderCapGrid();
+renderCurrent();
+renderProposed();
+</script>
+</body>
+</html>

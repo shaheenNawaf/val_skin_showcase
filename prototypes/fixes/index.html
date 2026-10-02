@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardForge — UI/UX audit · approval prototypes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+.wrap{max-width:1240px}
+
+/* ---------- the one thing that matters ---------- */
+.headline{border:1px solid color-mix(in srgb,var(--bad) 45%,var(--c-line));border-left:4px solid var(--bad);
+  background:var(--c-surface);padding:24px 26px;margin-top:22px}
+.headline .tag{display:inline-block;background:var(--bad);color:#fff;
+  font:800 10px var(--font-ui);letter-spacing:.18em;padding:4px 10px}
+.headline h2{font-family:var(--font-display);font-weight:800;font-size:clamp(22px,3.4vw,32px);
+  letter-spacing:.01em;line-height:1.1;margin:12px 0 10px}
+.headline p{font-size:14px;line-height:1.7;color:var(--c-ink);max-width:82ch}
+.headline code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;
+  background:var(--c-bg);border:1px solid var(--c-line-soft);padding:1px 5px;color:var(--warn)}
+
+/* ---------- prototype cards ---------- */
+.pcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;margin-top:20px}
+.pcard{background:var(--c-surface);border:1px solid var(--c-line);display:flex;flex-direction:column;
+  padding:22px 22px 0;overflow:hidden;position:relative}
+.pcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--pc,#FF4655)}
+.pcard .n{font:800 44px/1 var(--font-display);color:transparent;-webkit-text-stroke:1px var(--pc)}
+.pcard h3{font-family:var(--font-display);font-weight:800;font-size:19px;letter-spacing:.04em;margin:9px 0 3px}
+.pcard .sub{font:700 10px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut)}
+.pcard .desc{font-size:13px;line-height:1.65;color:var(--c-mut);margin:12px 0;flex:1}
+.pcard ul{list-style:none;margin:0 0 14px;display:flex;flex-direction:column;gap:5px}
+.pcard li{font-size:12px;line-height:1.5;color:var(--c-ink);padding-left:17px;position:relative}
+.pcard li::before{content:"▸";position:absolute;left:0;color:var(--pc)}
+.pcard li .sev{position:absolute;right:0;font-weight:800;font-size:9px}
+.pcard .go{display:block;margin:auto -22px 0;padding:13px;text-align:center;background:var(--pc);color:#fff;
+  font:800 11px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;text-decoration:none}
+.pcard .go:hover{filter:brightness(1.12)}
+
+/* ---------- approval ---------- */
+.approve{background:var(--c-surface2);border:1px solid var(--c-line);border-left:3px solid var(--c-accent);
+  padding:22px 26px;margin-top:26px}
+.approve h3{font-family:var(--font-display);font-weight:800;font-size:16px;letter-spacing:.1em;margin-bottom:6px}
+.approve ol{padding-left:20px;margin-top:12px;color:var(--c-mut);font-size:13px;line-height:1.85}
+.approve ol li::marker{color:var(--c-accent);font-weight:800}
+.approve ol li b{color:var(--c-ink)}
+
+.dstate{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--c-line)}
+.dstate button{background:var(--c-surface);border:1px solid var(--c-line);color:var(--c-mut);
+  font:700 10px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;padding:9px 14px;cursor:pointer}
+.dstate button:hover{border-color:var(--c-mut);color:var(--c-ink)}
+.dstate button[aria-pressed=true]{background:var(--ok);border-color:var(--ok);color:#06210F}
+.dstate .out{font:700 11px ui-monospace,Menlo,Consolas,monospace;color:var(--ok);align-self:center;
+  padding:9px 0;letter-spacing:.04em}
+
+/* ---------- findings ---------- */
+.fcount{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:20px}
+.fstat{background:var(--c-surface);border:1px solid var(--c-line);padding:14px 16px}
+.fstat b{display:block;font-family:var(--font-display);font-weight:800;font-size:34px;line-height:1}
+.fstat span{font:700 9.5px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--c-mut)}
+.fstat.p0 b{color:var(--bad)} .fstat.p1 b{color:var(--warn)} .fstat.p2 b{color:var(--c-mut)}
+
+tr.gone td:last-child{white-space:nowrap}
+.fixlink{font:700 10px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;
+  color:#FF7A85;text-decoration:none}
+.fixlink:hover{text-decoration:underline}
+.muted-cell{color:var(--c-mut);font-size:11.5px}
+
+@media (max-width:600px){
+  .headline{padding:18px}
+  .dstate{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<div class="pbar">
+  <span class="logo">CARD FORGE</span>
+  <span class="pbar-t">UI/UX audit · approval prototypes</span>
+  <span class="pbar-sp"></span>
+  <span class="badge" id="branch">branch: staging</span>
+  <a class="btn sm" href="../index.html">Live editor</a>
+  <a class="btn sm" href="../browse.html">Live marketplace</a>
+</div>
+
+<main>
+<div class="wrap">
+
+  <span class="eyebrow">Audit of staging · 2 October 2026</span>
+  <h1 class="display">Six prototypes.<br>One thing that is
+  <span style="color:var(--bad)">completely broken</span>.</h1>
+  <p class="lede">I audited the live <span class="mono">staging</span> branch in a real browser — measured geometry, hit-tested controls, and read every relevant line of <span class="mono">editor.js</span>, <span class="mono">viewer.js</span>, <span class="mono">browse.js</span> and <span class="mono">layouts.js</span>. Nothing has been changed or pushed. Below are the findings and six working prototypes so you can judge each fix before I write a line of production code.</p>
+
+  <a class="lcomb" href="plan.html" style="display:flex;align-items:center;gap:18px;margin-top:22px;padding:20px 24px;background:var(--c-surface2);border:1px solid var(--c-line);border-left:3px solid var(--c-accent);text-decoration:none;color:inherit;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))">
+    <span style="flex:none;font:800 11px 'Manrope',sans-serif;letter-spacing:.18em;color:#fff;background:var(--c-accent-btn);padding:6px 12px;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))">THE PLAN</span>
+    <span style="flex:1;font:400 13px/1.55 'Inter',system-ui,sans-serif;color:var(--c-mut)">Both audits combined into one implementation plan — 38 items in 7 phases, with inline demos of every change and approve/skip toggles that persist. Start here.</span>
+    <span style="flex:none;font:700 12px 'Inter',system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#FF7A85">Open the combined plan →</span>
+  </a>
+
+  <!-- ============ HEADLINE ============ -->
+  <div class="headline">
+    <span class="tag">P0 · SHIPPED AND UNREACHABLE</span>
+    <h2>The tier filter toolbar is behind the card.<br>All 14 of its controls. Completely.</h2>
+    <p>The "one-click tier presets" feature from commits <span class="mono">389432f</span> and <span class="mono">78ed6bf</span> — presets, six tier chips, the per-category cap, Apply, Reset, the count — <b>is not visible and not clickable anywhere in the editor.</b> I proved it three ways: <code>elementFromPoint()</code> hit-testing at each control's centre returns <code>#stage</code>, <code>#card</code> and a panel <code>&lt;h3&gt;</code>; a screenshot with a bright green outline on the toolbar contains no green anywhere; and the card's own skin-remove <code>×</code> buttons are at a lower z-index than the stage, so they work only by accident of stacking.</p>
+    <p style="margin-top:12px">The cause is one line of CSS: <code>.tierbar</code> is a static in-flow block, <code>#stage</code> is <code>position:fixed</code> with an opaque background, and <code>--tbh</code> is measured from the topbar <i>alone</i>. Positioned elements paint after in-flow blocks, so the stage covers the toolbar's band. Its hard-coded <code>margin:64px</code> cannot escape a fixed sibling.</p>
+    <p style="margin-top:12px"><b>This has been live the whole time the feature has existed.</b> It is also why "the tier presets do not seem to work" would be the natural thing for a seller to say and impossible for them to justify — there is nothing to click.</p>
+    <div class="row" style="margin-top:18px">
+      <a class="btn primary" href="editor-chrome.html">Open Prototype 1 →</a>
+      <span class="small" style="color:var(--c-mut);max-width:40ch">Press <b style="color:var(--c-ink)">Run hit test</b> on TODAY, then switch to PROPOSED and press it again.</span>
+    </div>
+  </div>
+
+  <div class="fcount">
+    <div class="fstat p0"><b>4</b><span>P0 — broken or blocking</span></div>
+    <div class="fstat p1"><b>17</b><span>P1 — actively misleading</span></div>
+    <div class="fstat p2"><b>12</b><span>P2 — friction &amp; polish</span></div>
+    <div class="fstat"><b>0</b><span>lines pushed to staging</span></div>
+  </div>
+
+  <!-- ============ SECOND AUDIT ============ -->
+  <h2 class="sec">The second audit — an independent pass, and what it added</h2>
+  <div class="note" style="margin-bottom:18px">
+    <b>Method.</b> A second auditor re-verified the first pass's headline claims from scratch and audited the areas it did not open: the share/SEO surface, the publish and import funnels, the database's integrity guarantees, and the actual bytes on the wire. Every claim below was measured in a browser against this tree or read directly from the cited line — including the ones that turned out to be <b>fine</b>, which is worth saying out loud so nobody hunts for bugs that do not exist.
+  </div>
+  <div class="grid2" style="margin-bottom:6px">
+    <div class="panel">
+      <h4>Re-verified and confirmed</h4>
+      <ul class="stack tight" style="color:var(--c-mut);font-size:12.5px;line-height:1.6">
+        <li>• <b>Tier toolbar occlusion</b> — re-run independently: <b>14 of 14 controls blocked</b>. New detail: <i>two</i> occluders, not one — the fixed topbar covers the toolbar's top band (its bottom edge lands at 120&nbsp;px while the toolbar starts at 64&nbsp;px), and the stage covers the rest.</li>
+        <li>• <b>Reset empties a card and reports success</b>; the stale snapshot eats hand-added skins. Both traced in <span class="mono">editor.js</span>.</li>
+        <li>• <b>Marketplace fetch failure renders blank</b> — the catch returns before <span class="mono">render()</span>.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h4>Checked and found <span style="color:var(--ok)">already correct</span></h4>
+      <ul class="stack tight" style="color:var(--c-mut);font-size:12.5px;line-height:1.6">
+        <li>• Contact opens with <span class="mono">noopener</span> — no tab-nabbing.</li>
+        <li>• Import clears the pasted token and never persists it — the privacy claim holds.</li>
+        <li>• Slug collisions are retried properly on SQLSTATE 23505.</li>
+        <li>• <b>“N viewing now” is real</b> — a Supabase presence channel, not a faked number.</li>
+        <li>• Token-paste error messages are genuinely good.</li>
+        <li>• “Copy post text” produces a sensible template with an honest unpublished-link placeholder.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="note bad" style="border-left-color:var(--bad)">
+    <b>The one the first audit missed entirely.</b> The link is the product's acquisition channel — sellers paste it into Discord and Facebook — and it renders as a text-only stub. No <span class="mono">og:image</span> anywhere in the codebase, a hardcoded <span class="mono">og:title</span> shared by every listing, and no per-listing <span class="mono">document.title</span>. The card PNG the seller just spent an hour perfecting is never attached to its own link. Prototype 6 shows the embed a buyer gets today against what it should be.
+  </div>
+
+  <!-- ============ PROTOTYPES ============ -->
+  <h2 class="sec">The six prototypes</h2>
+  <p class="psmall" style="color:var(--c-mut);font-size:13px;max-width:80ch;margin-bottom:4px">Each one is interactive and self-contained under <span class="mono">prototypes/fixes/</span>. They use the design language already approved for the marketplace prototypes — Manrope for display, Inter for UI, the notched panels, <span class="mono">#FF4655</span> — so what you approve is what ships.</p>
+
+  <div class="pcards">
+
+    <article class="pcard" style="--pc:#FF4655">
+      <span class="n">1</span>
+      <h3>EDITOR CHROME</h3>
+      <span class="sub">The P0 occlusion fix</span>
+      <p class="desc">One measured chrome stack with the filter row inside it, a topbar that stops wrapping, a segmented layout control that says what AUTO resolved to, and toasts that paint above the modal. Includes a live hit-test that reproduces the bug and proves the fix.</p>
+      <ul>
+        <li>Tier toolbar reachable <span class="sev sev-P0">P0</span></li>
+        <li>Topbar 185px → 52px on phones <span class="sev sev-P1">P1</span></li>
+        <li>AUTO's resolved mode is stated <span class="sev sev-P1">P1</span></li>
+        <li>Export ZIP stops being a mystery <span class="sev sev-P1">P1</span></li>
+        <li>Toasts visible over the picker <span class="sev sev-P1">P1</span></li>
+      </ul>
+      <a class="go" href="editor-chrome.html">Open Prototype 1 →</a>
+    </article>
+
+    <article class="pcard" style="--pc:#4aa8ff">
+      <span class="n">2</span>
+      <h3>BUYER PAGE</h3>
+      <span class="sub">The revenue path</span>
+      <p class="desc">The buyer currently gets a scaled canvas and two buttons. Price, seller, listing title and status live inside the artwork at canvas scale, while the DB's own <span class="mono">price</span>, <span class="mono">currency</span>, <span class="mono">negotiable</span> and <span class="mono">status</span> columns are fetched and thrown away. This puts them in the chrome — and shows sold and pending states that do not exist today.</p>
+      <ul>
+        <li>Price, seller and status in real type <span class="sev sev-P0">P0</span></li>
+        <li>SOLD / PENDING states actually render <span class="sev sev-P1">P1</span></li>
+        <li>Contact works without a valid URL <span class="sev sev-P1">P1</span></li>
+        <li>Layout switch survives below 700px <span class="sev sev-P2">P2</span></li>
+        <li>Price stops being the most-clipped line <span class="sev sev-P1">P1</span></li>
+        <li>One buyer action: Contact seller <span class="badge">decided</span></li>
+      </ul>
+      <a class="go" href="buyer-page.html">Open Prototype 2 →</a>
+    </article>
+
+    <article class="pcard" style="--pc:#b44bf0">
+      <span class="n">3</span>
+      <h3>FILTER SAFETY</h3>
+      <span class="sub">The two destructive bugs</span>
+      <p class="desc">Preview-first, undoable filtering. Reset can no longer empty a card and report success. The filter compares against the live card, so hand-added skins can never be silently discarded. And the toolbar stops inventing a second vocabulary for the tiers.</p>
+      <ul>
+        <li>Reset cannot wipe a card silently <span class="sev sev-P0">P0</span></li>
+        <li>Stale snapshot can't eat manual edits <span class="sev sev-P0">P0</span></li>
+        <li>One tier vocabulary, not two <span class="sev sev-P1">P1</span></li>
+        <li>Count is never empty or stale <span class="sev sev-P1">P1</span></li>
+        <li>Undo, and per-category caps <span class="sev sev-P1">P1</span></li>
+      </ul>
+      <a class="go" href="filter-safety.html">Open Prototype 3 →</a>
+    </article>
+
+    <article class="pcard" style="--pc:#ff5d7b">
+      <span class="n">4</span>
+      <h3>MARKETPLACE STATES</h3>
+      <span class="sub">Six listings, no way to tell</span>
+      <p class="desc">Seven states you can switch between. A fetch error currently returns before <span class="mono">render()</span> and leaves a blank page. Zero listings hides the empty state and relies on a 5-second toast. Real currency, the listing code, negotiable, and WTR/receipts actually on the cards.</p>
+      <ul>
+        <li>Error state instead of a blank page <span class="sev sev-P0">P0</span></li>
+        <li>Empty state that explains itself <span class="sev sev-P1">P1</span></li>
+        <li>Currency, code and negotiable shown <span class="sev sev-P1">P1</span></li>
+        <li>Active-filter chips with a count <span class="sev sev-P1">P1</span></li>
+        <li>The 60-row cap is disclosed <span class="sev sev-P1">P1</span></li>
+      </ul>
+      <a class="go" href="marketplace-states.html">Open Prototype 4 →</a>
+    </article>
+
+    <article class="pcard" style="--pc:#ffc45e">
+      <span class="n">5</span>
+      <h3>LEGIBILITY &amp; FIDELITY</h3>
+      <span class="sub">1920px of card on a 390px screen</span>
+      <p class="desc">Four solutions to the scale problem, each with its trade-off and a live measurement table across six viewports. Plus two fidelity bugs: Catalog renders differently in the editor than in the viewer, and the exported PNG is not what the seller previewed.</p>
+      <ul>
+        <li>0.35 floor → 3.1px text on phones <span class="sev sev-P0">P0</span></li>
+        <li>Catalog mismatch editor vs viewer <span class="sev sev-P1">P1</span></li>
+        <li>Export ≠ preview <span class="sev sev-P1">P1</span></li>
+        <li>Decide the type floor, not guess it <span class="sev sev-P1">P1</span></li>
+        <li>Broken icons currently vanish silently <span class="sev sev-P2">P2</span></li>
+      </ul>
+      <a class="go" href="legibility.html">Open Prototype 5 →</a>
+    </article>
+
+  </div>
+
+  <!-- ============ THE ONE OPEN DECISION ============ -->
+  <h2 class="sec">The one open decision: what to do about a 1920px card on a small screen</h2>
+  <p class="psmall" style="color:var(--c-mut);font-size:13px;max-width:82ch;margin-bottom:16px">The card is a fixed 1920&times;1080 canvas that gets scaled to fit. The code floors the scale at <span class="mono">0.35</span>, so on a 390&nbsp;px phone the card renders at 35% and its 9&nbsp;px text becomes <b>3.1&nbsp;px</b>. There is no zoom control anywhere, so a phone buyer simply cannot read the card. On a 1366&times;768 laptop it lands at 60%, which turns 9&nbsp;px into 5.4&nbsp;px. These are the four ways out. <a class="fixlink" href="legibility.html">Prototype 5</a> lets you try each one at six viewports.</p>
+
+  <div class="pcards">
+    <article class="pcard" style="--pc:#4aa8ff">
+      <span class="n">A</span>
+      <h3>ADD A ZOOM CONTROL</h3>
+      <span class="sub">Cheapest. ~15 lines of code.</span>
+      <p class="desc">Leave the card exactly as it is, and add <b>Fit / 100% / 200% / open full size</b> buttons so the buyer can magnify and pan. The card stays a faithful thumbnail by default.</p>
+      <ul>
+        <li><b>Costs:</b> nothing in the design</li>
+        <li><b>Gets you:</b> everything, if the buyer taps zoom</li>
+        <li><b>Leaves:</b> the default view still unreadable</li>
+        <li><b>Effort:</b> hours</li>
+      </ul>
+    </article>
+    <article class="pcard" style="--pc:#b44bf0">
+      <span class="n">B</span>
+      <h3>RE-DRAW THE KEY TEXT ON TOP</h3>
+      <span class="sub">Best result. Most work.</span>
+      <p class="desc">The canvas still scales, but the six fields a buyer actually reads — price, rank, seller, status, skin count, title — are re-rendered as crisp HTML pinned over their canvas coordinates, never smaller than 16&nbsp;px. Everything else stays an image.</p>
+      <ul>
+        <li><b>Costs:</b> a coordinate map per theme; hide the overlay on export</li>
+        <li><b>Gets you:</b> every field readable at every viewport</li>
+        <li><b>Leaves:</b> the skin art still small, which is fine</li>
+        <li><b>Effort:</b> days</li>
+      </ul>
+    </article>
+    <article class="pcard" style="--pc:#ff5d7b">
+      <span class="n">C</span>
+      <h3>DESIGN BIGGER TEXT INTO THE CARD</h3>
+      <span class="sub">Improves the exported PNG too.</span>
+      <p class="desc">Change nothing about scaling. Instead, author nothing below 13&nbsp;px in the 1920&nbsp;px design, so the smallest text is 13&nbsp;px before scaling rather than 9&nbsp;px. On a laptop 5.4&nbsp;px becomes 7.8&nbsp;px.</p>
+      <ul>
+        <li><b>Costs:</b> the exported PNG changes, so old listings look different from their images</li>
+        <li><b>Gets you:</b> better everywhere, and a better artefact to post</li>
+        <li><b>Leaves:</b> phones still at 4.5&nbsp;px — <b>still unreadable</b></li>
+        <li><b>Effort:</b> a day, mostly re-checking panel fits</li>
+      </ul>
+    </article>
+    <article class="pcard" style="--pc:#ffc45e">
+      <span class="n">D</span>
+      <h3>GO NATIVE ON PHONES</h3>
+      <span class="sub">Stop drawing a canvas at all.</span>
+      <p class="desc">Below 900&nbsp;px, throw the canvas away and render the same data as an ordinary mobile page: title and price at real size, then panels as stacked rows with 16&nbsp;px skin names. The 1920 canvas is only used where there is room for it.</p>
+      <ul>
+        <li><b>Costs:</b> two rendering paths to keep in sync</li>
+        <li><b>Gets you:</b> a genuinely good phone experience</li>
+        <li><b>Leaves:</b> the laptop and tablet problem untouched</li>
+        <li><b>Effort:</b> days — the viewer half-exists already below 700&nbsp;px</li>
+      </ul>
+    </article>
+  </div>
+
+  <div class="grid2" style="margin-top:4px">
+    <div class="note">
+      <b>Why I am not just picking one.</b> Each fixes a different thing: A is free, C improves the PNG people actually post, B is the only one that fully solves it, and D is the only one that makes phones first-class. They also stack — A and C together is most of the benefit for about a day's work.
+    </div>
+    <div class="note ok">
+      <b>What I would do.</b> <b>A + C</b> now, because they are cheap, independent, and cover the laptop case properly. Then <b>B</b> if the buyer path is where you want to spend effort, since it is the only option that leaves nothing unreadable. <b>D</b> only if phones are a priority you have decided to fund.
+    </div>
+    <article class="pcard" style="--pc:#3DD68C">
+      <span class="n">6</span>
+      <h3>SHARE, TRUST &amp; WEIGHT</h3>
+      <span class="sub">Outside the pages</span>
+      <p class="desc">Everything the first audit did not open: what a buyer sees when the link lands in Discord (a text stub — no <span class="mono">og:image</span> anywhere), the missing publish gate (an empty card goes live), unthrottled view counts, the 2.07&nbsp;MB editor boot, and the edit key that dies with your browser.</p>
+      <ul>
+        <li>Share embed carries the card image <span class="sev sev-P1">P1</span></li>
+        <li>Empty cards can publish <span class="sev sev-P1">P1</span></li>
+        <li>View counts are inflatable <span class="sev sev-P1">P1</span></li>
+        <li>Editor boot 2.07 MB → 0.79 MB <span class="sev sev-P1">P1</span></li>
+        <li>Listing recovery key <span class="sev sev-P2">P2</span></li>
+      </ul>
+      <a class="go" href="share-trust.html">Open Prototype 6 →</a>
+    </article>
+
+  </div>
+  <div class="approve">
+    <h3>What I need from you</h3>
+    <p class="small" style="color:var(--c-mut);line-height:1.7">These decisions unblock the implementation. Nothing goes to <span class="mono">staging</span> until you tell me to push — the prototypes are static files in <span class="mono">prototypes/fixes/</span> and touch no production code.</p>
+    <ol>
+      <li><b>Legibility — pick one of the four options below.</b> They are described in full, with the trade-off and the measured result, in the next section. This is the only decision blocking the buyer-path work.</li>
+      <li><b>Share embed — yes or no on the two moving parts.</b> A Supabase Storage bucket for the card PNG at publish, and a ~20-line Netlify Edge Function to inject per-listing <span class="mono">og:</span> tags. If you would rather not add the edge function yet, the interim version is one static brand image plus a per-listing title — both beat a bare URL.</li>
+      <li><b>Scope of the first pass.</b> My suggestion is P0 plus the four one-line fidelity fixes from Prototype 5, since they are independent and cheap. Marketplace state work can follow.</li>
+    </ol>
+    <div class="note" style="margin-top:16px">
+      <b>Settled, no longer open:</b> the product name is a separate change for the stakeholder conversation, so nothing here depends on it. And there is <b>no make-an-offer flow</b> — <i>Contact seller</i> is the only buyer action, and I have removed the offer button from every prototype. A listing with no price now reads <span class="mono">CONTACT FOR PRICE</span> and routes to Contact rather than promising an offer that has nowhere to go.
+    </div>
+    <div class="dstate">
+      <button data-p="1">✓ Prototype 1</button>
+      <button data-p="2">✓ Prototype 2</button>
+      <button data-p="3">✓ Prototype 3</button>
+      <button data-p="4">✓ Prototype 4</button>
+      <button data-p="5">✓ Prototype 5</button>
+      <button data-p="6">✓ Prototype 6</button>
+      <span class="out" id="approveOut">0 of 6 marked — this is a local scratch pad, nothing is saved</span>
+    </div>
+  </div>
+
+  <!-- ============ FINDINGS ============ -->
+  <h2 class="sec">Every finding, with evidence</h2>
+  <p class="psmall" style="color:var(--c-mut);font-size:13px;max-width:80ch;margin-bottom:14px">Severity is about consequence, not effort. <b>P0</b> means a user cannot complete a task or is shown something untrue. <b>P1</b> means the interface misleads. <b>P2</b> means friction. Every row was measured in the browser or read directly from the cited line.</p>
+
+  <div class="tscroll">
+  <table>
+    <thead><tr><th style="width:56px">Sev</th><th style="width:32%">Finding</th><th>Evidence</th><th style="width:130px">Where</th></tr></thead>
+    <tbody>
+
+      <tr><td class="sev sev-P0">P0</td>
+        <td><b>Entire tier toolbar is occluded and unclickable</b></td>
+        <td class="muted-cell">Hit-testing each control's centre returns <span class="mono">#stage</span>, <span class="mono">#card</span> or a panel <span class="mono">&lt;h3&gt;</span>. Green-outline screenshot shows nothing. <span class="mono">.tierbar</span> has no position or z-index; <span class="mono">#stage</span> is fixed with an opaque background; <span class="mono">--tbh</span> counts the topbar only.</td>
+        <td><a class="fixlink" href="editor-chrome.html">Prototype 1</a></td></tr>
+
+      <tr><td class="sev sev-P0">P0</td>
+        <td><b>Reset empties the whole card and reports success</b></td>
+        <td class="muted-cell"><span class="mono">#tierReset</span> rebuilds categories from <span class="mono">state.owned</span>, which is empty with no import — no confirm, then <span class="mono">kind:'ok'</span> with "0 of N skins kept".</td>
+        <td><a class="fixlink" href="filter-safety.html">Prototype 3</a></td></tr>
+
+      <tr><td class="sev sev-P0">P0</td>
+        <td><b>Hand-added skins vanish on the next Apply</b></td>
+        <td class="muted-cell">The filter reads a module-level <span class="mono">allPicks</span> snapshot taken only at import and never invalidated, then <b>replaces</b> <span class="mono">state.picks[c]</span>. Anything added after is discarded with a green tick.</td>
+        <td><a class="fixlink" href="filter-safety.html">Prototype 3</a></td></tr>
+
+      <tr><td class="sev sev-P0">P0</td>
+        <td><b>Marketplace fetch failure renders a blank page</b></td>
+        <td class="muted-cell">The catch sets an error toast and <b>returns without calling <span class="mono">render()</span></b>. Count stays empty, results stay empty, and the empty state is still hidden.</td>
+        <td><a class="fixlink" href="marketplace-states.html">Prototype 4</a></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b>Buyer has no price, seller, title or status in real type</b></td>
+        <td class="muted-cell">All four are fetched from <span class="mono">listing_public</span> and never read. The visible price is seller free text at 15&nbsp;px inside a canvas scaled to as low as 0.35 → 5.25&nbsp;px.</td>
+        <td><a class="fixlink" href="buyer-page.html">Prototype 2</a></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b>Sold and pending listings look identical to live ones</b></td>
+        <td class="muted-cell"><span class="mono">listing_public.status</span> is fetched and never checked. No badge exists anywhere. Measured on a real sold listing: it still read AVAILABLE.</td>
+        <td><a class="fixlink" href="buyer-page.html">Prototype 2</a></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b>AUTO silently picks a layout and nobody is told</b></td>
+        <td class="muted-cell"><span class="mono">resolveLayout()</span> returns m4 at ≥20 premium or ≥50 skins. The only signal is the export button relabelling itself to EXPORT ZIP.</td>
+        <td><a class="fixlink" href="editor-chrome.html">Prototype 1</a></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b>In Catalog mode there is no way to add a skin</b></td>
+        <td class="muted-cell"><span class="mono">#card.mode-m4 .grid{display:none}</span> removes every <span class="mono">+ Add</span> button and the Flex panel. The <span class="mono">+N MORE</span> chip that remains is an inert <span class="mono">&lt;span&gt;</span> styled as a button.</td>
+        <td><a class="fixlink" href="editor-chrome.html">Prototype 1</a></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b>Toasts raised inside the picker are painted behind it</b></td>
+        <td class="muted-cell"><span class="mono">#status</span> is z-index 40; <span class="mono">#modal</span> is 50. "X is already on the card" is invisible under the veil.</td>
+        <td><a class="fixlink" href="editor-chrome.html">Prototype 1</a></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b>Topbar wraps to 185px — 22% of a phone screen</b></td>
+        <td class="muted-cell">8 buttons plus a 62-character checkbox in a wrapping flex row. Measured: 52px at 1920, 86px at ≤1600, 124px at ≤1280, 185px at 390.</td>
+        <td><a class="fixlink" href="editor-chrome.html">Prototype 1</a></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b>Two vocabularies for the same five tiers</b></td>
+        <td class="muted-cell">Toolbar says Select/Semi-prem/Premium/Limited/Melee; the picker ladder one screen away says Select/Deluxe/Premium/Ultra/Exclusive. "Melee" is also a weapon class, not a rarity.</td>
+        <td><a class="fixlink" href="filter-safety.html">Prototype 3</a></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b>Catalog renders differently in the editor than for the buyer</b></td>
+        <td class="muted-cell"><span class="mono">shared.css:265</span> defines <span class="mono">.mgrid</span> as the 4×3 mosaic; <span class="mono">editor.css:43</span>, loaded after it, redefines the class as the picker's grid. The mosaic inherits auto-fill columns and a scrolling overflow.</td>
+        <td><a class="fixlink" href="legibility.html">Prototype 5</a></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b>The exported PNG is not what the seller previewed</b></td>
+        <td class="muted-cell"><span class="mono">exportCard()</span> adds <span class="mono">body.exporting</span>, hiding the <span class="mono">+ Add</span> button at each panel's bottom <i>after</i> <span class="mono">renderSlotsM1/M2</span> measured the available height. Preview and capture can disagree.</td>
+        <td><a class="fixlink" href="legibility.html">Prototype 5</a></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b>Placeholder content leaks as real listing data</b></td>
+        <td class="muted-cell"><span class="mono">K486</span>, <span class="mono">DIAMOND 2</span>, <span class="mono">PRICE OFFER</span> and a Facebook URL ship as live markup in <span class="mono">view.html</span> and <span class="mono">browse.html</span>, and stay on screen looking real when a load fails.</td>
+        <td><span class="badge">not prototyped — trivial fix</span></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b>Zero listings hides the empty state</b></td>
+        <td class="muted-cell"><span class="mono">showCtaOnly()</span> hides <span class="mono">#empty</span> and shows only a promo tile. The "No listings yet" toast auto-fades after 5s, leaving an unexplained page.</td>
+        <td><a class="fixlink" href="marketplace-states.html">Prototype 4</a></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b>currency, negotiable and code are fetched and discarded</b></td>
+        <td class="muted-cell">Every price renders a hardcoded <span class="mono">$</span>. The listing code is searchable but visible only inside the quick-view. Measured: AVG PRICE resolves to an em-dash because no price parses.</td>
+        <td><a class="fixlink" href="marketplace-states.html">Prototype 4</a></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b>Listings past 60 are never fetched</b></td>
+        <td class="muted-cell">The RPC defaults to <span class="mono">p_limit 60</span> and the caller passes no arguments. No pagination exists, so the cap is invisible rather than disclosed.</td>
+        <td><a class="fixlink" href="marketplace-states.html">Prototype 4</a></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b>WTR and receipts are grid-invisible</b></td>
+        <td class="muted-cell"><span class="mono">chipsGrid</span> omits them; only list mode and the featured string include them. "Can I actually use this account" is the first question a buyer has.</td>
+        <td><a class="fixlink" href="marketplace-states.html">Prototype 4</a></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b>~60% of the featured tile is a dead zone</b></td>
+        <td class="muted-cell">The click handler matches <span class="mono">.gcard, .arow, .gf-cta</span> only. <span class="mono">.gfeat</span> carries <span class="mono">data-slug</span> and nothing listens, so the artwork area does nothing.</td>
+        <td><span class="badge">not prototyped — one selector</span></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b><span class="mono">#tierCount</span> is empty then wrong</b></td>
+        <td class="muted-cell">Written only inside the filter, so empty until the first Apply and stale after any manual edit. It also says "owned" while counting the snapshot.</td>
+        <td><a class="fixlink" href="filter-safety.html">Prototype 3</a></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b>Publishing claims the link was copied even if it wasn't</b></td>
+        <td class="muted-cell">"Published! Share link copied." is unconditional; the clipboard helper swallows failure and falls back to a <span class="mono">prompt()</span>.</td>
+        <td><span class="badge">not prototyped — trivial fix</span></td></tr>
+
+      <tr><td class="sev sev-P2">P2</td>
+        <td><b>Skin remove and skin inspect are hover-only, and inspect is not keyboard reachable</b></td>
+        <td class="muted-cell">The desktop inspect cell is a bare <span class="mono">&lt;span&gt;</span> with no role or tabindex, while the mobile figure correctly gets <span class="mono">role="button" tabIndex=0</span>.</td>
+        <td><span class="badge">not prototyped — a11y sweep</span></td></tr>
+
+      <tr><td class="sev sev-P2">P2</td>
+        <td><b>Player-card overlay is an unlabelled art wall</b></td>
+        <td class="muted-cell">Every image's <span class="mono">alt</span> and <span class="mono">title</span> is the literal string <span class="mono">'Player card'</span>, so the collection has no accessible names.</td>
+        <td><span class="badge">not prototyped — a11y sweep</span></td></tr>
+
+      <tr><td class="sev sev-P2">P2</td>
+        <td><b>Errors fade out; successes do not get dismissed cleanly</b></td>
+        <td class="muted-cell">Only <span class="mono">kind:'err'</span> persists; everything else auto-fades at 5s. A long error wraps inside a 560px box and lands over the card watermark.</td>
+        <td><span class="badge">not prototyped</span></td></tr>
+
+      <tr><td class="sev sev-P2">P2</td>
+        <td><b>Filter state is never saved with the draft</b></td>
+        <td class="muted-cell">Boot always restores a hardcoded default, and the chips render <i>before</i> the draft is restored — so the toolbar shows settings that are not in effect.</td>
+        <td><a class="fixlink" href="filter-safety.html">Prototype 3</a></td></tr>
+
+      <tr><td class="sev sev-P2">P2</td>
+        <td><b>Card stat counters drift</b></td>
+        <td class="muted-cell">The recount runs on filter and boot but not on add or remove, so PREMIUM / LIMITED / SEMI PREM / ANIMATED go stale after manual edits. The <span class="mono">auto</span> buttons write the DOM, not the saved state.</td>
+        <td><span class="badge">not prototyped — one call site</span></td></tr>
+
+      <tr><td class="sev sev-P2">P2</td>
+        <td><b>"Add all owned (12)" can disagree with what it adds</b></td>
+        <td class="muted-cell">The label counts owned buddies; the handler filters to not-already-on-card before slicing to 12. The numbers can differ and nothing is reported.</td>
+        <td><span class="badge">not prototyped — trivial fix</span></td></tr>
+
+      <tr><td class="sev sev-P2">P2</td>
+        <td><b>The tier ladder's only explanation and only clear control vanish on small screens</b></td>
+        <td class="muted-cell">Below 899px, <span class="mono">.lhead</span>, <span class="mono">.lhint</span> and <span class="mono">#mLadderClear</span> are all <span class="mono">display:none</span> — leaving an unexplained chip row with no way to clear the filter.</td>
+        <td><span class="badge">not prototyped — trivial fix</span></td></tr>
+
+      <tr><td class="sev sev-P2">P2</td>
+        <td><b>Broken skin icons vanish silently</b></td>
+        <td class="muted-cell">Failed images are hidden behind a gradient with no alt and no per-skin signal. Confirmed rot: several skins in the repo's own mock data now 404 on the community API.</td>
+        <td><span class="badge">shown in Prototypes 3 &amp; 4</span></td></tr>
+
+      <tr><td class="sev sev-P2">P2</td>
+        <td><b>Two full sets of skin icons download on the viewer</b></td>
+        <td class="muted-cell">The mobile layout renders unconditionally into a hidden container above 700px, and desktop cells emit <span class="mono">&lt;img&gt;</span> with no lazy loading, unlike the other two renderers.</td>
+        <td><span class="badge">not prototyped</span></td></tr>
+
+      <tr><td class="sev sev-P2">P2</td>
+        <td><b>Filter facets show counts from the unfiltered list</b></td>
+        <td class="muted-cell">Counts are computed once from the full set, so every count stays constant as filters change and cannot guide a narrowing decision.</td>
+        <td><span class="badge">not prototyped</span></td></tr>
+
+      <tr><td class="sev sev-P2">P2</td>
+        <td><b>Search ignores skin names and has no debounce</b></td>
+        <td class="muted-cell">The matcher covers title, code, seller and vlogin only — not the skins themselves — while every keystroke re-renders the feature, grid, list and all facet counts.</td>
+        <td><span class="badge">not prototyped</span></td></tr>
+
+<tr><td class="sev sev-P1">P1</td>
+        <td><b><span class="badge bad" style="margin-right:5px">NEW</span>Share embeds are blind</b></td>
+        <td class="muted-cell">No <span class="mono">og:image</span> exists anywhere in the codebase; <span class="mono">og:title</span> is the hardcoded string “CardForge — Listing” on every listing; <span class="mono">document.title</span> is never set per listing. Sellers paste links into Discord and Facebook — the acquisition channel renders as a text stub. Measured by reading all three page heads.</td>
+        <td><a class="fixlink" href="share-trust.html">Prototype 6</a></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b><span class="badge bad" style="margin-right:5px">NEW</span>An empty card can be published</b></td>
+        <td class="muted-cell"><span class="mono">buildPayload()</span> → <span class="mono">create_listing</span> with nothing between them. The SQL validates slug format, token shape and size — not content. A zero-skin card with <span class="mono">CHANGE NAME</span> / <span class="mono">PRICE OFFER</span> placeholder text goes live on the marketplace front page.</td>
+        <td><a class="fixlink" href="share-trust.html">Prototype 6</a></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b><span class="badge bad" style="margin-right:5px">NEW</span>View counts are unthrottled and self-inflatable</b></td>
+        <td class="muted-cell"><span class="mono">bump_views</span> is <span class="mono">security definer</span>, granted to <span class="mono">anon</span>, and increments on every page load — the seller's own refreshes count, and a bot can pump any listing. “101 total views” is social proof on the front page and “most viewed” is a sort option; both are gameable. Verified in <span class="mono">schema.sql:50</span>.</td>
+        <td><a class="fixlink" href="share-trust.html">Prototype 6</a></td></tr>
+
+      <tr><td class="sev sev-P1">P1</td>
+        <td><b><span class="badge bad" style="margin-right:5px">NEW</span>Editor boot is 2.07 MB — 1.28 MB of it unused by most sellers</b></td>
+        <td class="muted-cell">Measured on the wire: <span class="mono">catalog_cache</span> is 1,399 KB, of which buddies (604 KB) and player cards (676 KB) load eagerly for every seller but are only needed if they open the buddy picker or tick showAllCards. Lazy-loading them cuts boot to 0.79 MB.</td>
+        <td><a class="fixlink" href="share-trust.html">Prototype 6</a></td></tr>
+
+      <tr><td class="sev sev-P2">P2</td>
+        <td><b><span class="badge bad" style="margin-right:5px">NEW</span>The buyer page ships a 209 KB SDK to read one 1.5 KB row</b></td>
+        <td class="muted-cell"><span class="mono">supabase.js</span> is 57% of the buyer's total download (365 KB) to select one listing row, bump a counter and hold presence. Listing reads are anon-REST — a plain <span class="mono">fetch</span> does them in a kilobyte.</td>
+        <td><a class="fixlink" href="share-trust.html">Prototype 6</a></td></tr>
+
+      <tr><td class="sev sev-P2">P2</td>
+        <td><b><span class="badge bad" style="margin-right:5px">NEW</span>Edit access dies with the browser</b></td>
+        <td class="muted-cell">The edit token lives only in <span class="mono">localStorage</span> (<span class="mono">vc-edit-&lt;slug&gt;</span>) with no warning and no backup. Lose the browser and the listing can never be edited or marked sold again. Needs a shown-once recovery key, not an account system.</td>
+        <td><a class="fixlink" href="share-trust.html">Prototype 6</a></td></tr>
+
+      <tr><td class="sev sev-P2">P2</td>
+        <td><b><span class="badge bad" style="margin-right:5px">NEW</span>Robots policy is split</b></td>
+        <td class="muted-cell"><span class="mono">view.html</span> is <span class="mono">noindex</span> but <span class="mono">browse.html</span> has no robots directive at all — the marketplace is indexable while its listings are not. Whichever way you want it, choose it on purpose.</td>
+        <td><span class="badge">one meta tag</span></td></tr>
+
+    </tbody>
+  </table>
+  </div>
+
+  <!-- ============ NOT ADDRESSED ============ -->
+  <h2 class="sec">Deliberately not in these prototypes</h2>
+  <div class="grid2">
+    <div class="note">
+      <b>Contrast and focus, from the September audit.</b> <span class="mono">UIUX-AUDIT.md</span> already covers <span class="mono">#fff</span> on <span class="mono">#FF4655</span> at 3.36:1, Arctic's 1.26–1.68:1 borders, the legal pages at ~103 characters per line, and the 3.06:1 Arctic focus ring. None of that is worse now, and it is a separate pass — I did not want to dilute these five with restyled tokens.
+    </div>
+    <div class="note ok">
+      <b>What I would treat as free wins in the same pass.</b> Four one-liners with real consequences: rename <span class="mono">.mgrid</span>; switch export-time hiding to <span class="mono">visibility:hidden</span>; clear placeholder markup on load failure; and add <span class="mono">.gfeat</span> to the browse click handler. Say the word and I will fold them into the first commit.
+    </div>
+  </div>
+
+  <h2 class="sec">Method, so you can check our work</h2>
+  <div class="panel">
+    <ul class="stack tight" style="color:var(--c-mut);font-size:12.5px;line-height:1.75">
+      <li>• Two independent passes. The first audited the editor, viewer, marketplace and layout engine. The second re-verified the first's headline claims from scratch and audited the surfaces the first did not open: the share/SEO head, the publish and import funnels, the schema's integrity guarantees, and the bytes actually on the wire.</li>
+      <li>• Measured in a real browser against <span class="mono">localhost:3000</span> serving the <span class="mono">staging</span> working tree, at eight viewports from 1920×1080 to 390×844. Network sizes are bytes on the wire, not estimates.</li>
+      <li>• Occlusion proved by <span class="mono">document.elementFromPoint()</span> at each control's own centre — <b>twice, by different auditors, 14 of 14 controls blocked both times</b> — plus a green-outline screenshot analysed by a vision model.</li>
+      <li>• Checked against the live Supabase data, not mocks: <b>6</b> listings and <b>101</b> total views currently exist, and the real slug <span class="mono">5tiexm6</span> was used to inspect the buyer path.</li>
+      <li>• Every line reference was read in this tree, not from memory. The second pass also verified several things are <b>correct</b> — contact <span class="mono">noopener</span>, import token hygiene, slug collision retries, real presence — so nobody hunts for bugs that do not exist.</li>
+      <li>• The repo's own <span class="mono">prototypes/mock-data.js</span> has three skin UUIDs that now 404 and one typo; worked around in the prototypes and <b>left untouched</b>.</li>
+    </ul>
+  </div>
+
+  <div class="row" style="margin-top:30px">
+    <span class="badge warn">Nothing has been committed or pushed</span>
+    <span class="badge">Branch: staging, in sync with origin</span>
+    <span class="badge">Only prototypes/fixes/ is new</span>
+  </div>
+
+</div>
+</main>
+
+<script>
+document.querySelectorAll('.dstate button').forEach(b=>b.addEventListener('click',()=>{
+  b.setAttribute('aria-pressed',String(b.getAttribute('aria-pressed')!=='true'));
+  const n=document.querySelectorAll('.dstate button[aria-pressed=true]').length;
+  const out=document.getElementById('approveOut');
+  out.textContent=n===0 ? '0 of 6 marked — this is a local scratch pad, nothing is saved'
+    : n+' of 6 marked — tell me which and I will start implementing';
+  out.style.color=n?'var(--ok)':'var(--c-mut)';
+}));
+</script>
+</body>
+</html>
