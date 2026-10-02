@@ -203,5 +203,16 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
   clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 #vheroToggle:hover{color:var(--c-ink);border-color:var(--c-mut)}
 #vhero.collapsed{padding:6px 14px}
-#vhero.collapsed .vh-left span{display:none}
+#vhero{transition:padding .25s ease}
+#vhero .vh-left span{max-height:20px;opacity:1;transform:none;overflow:hidden;
+  transition:max-height .25s ease,opacity .2s ease,transform .25s ease,margin-top .25s ease}
+#vhero.collapsed .vh-left span{max-height:0;opacity:0;transform:translateY(-8px);margin-top:0}
+@media (prefers-reduced-motion:reduce){#vhero,#vhero .vh-left span{transition:none}}
 #vhero.collapsed .vh-right{gap:10px}
+
+/* hero controls join the 28px notched control language */
+#vhero .vh-status,#vhero button.primary,#vheroToggle{height:28px;box-sizing:border-box;
+  display:inline-flex;align-items:center;justify-content:center;
+  font:700 9px 'Chakra Petch',sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:0 12px;
+  clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+#vheroToggle{width:28px;padding:0}
