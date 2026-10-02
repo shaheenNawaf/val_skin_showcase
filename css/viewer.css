@@ -157,7 +157,7 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 #viewPageNav button{background:transparent;border:1px solid var(--c-line);color:var(--c-mut);width:24px;height:24px;font:700 13px/1 'Chakra Petch',sans-serif;cursor:pointer}
 #viewPageNav b{font:700 9px 'Chakra Petch',sans-serif;letter-spacing:.12em;color:var(--c-mut)}
 /* CF-14: the layout switch survives on phones. Picking a card view swaps
-   the native layout for the zoomable canvas; SIMPLE returns to native. */
+   the native layout for the zoomable canvas. */
 @media (max-width:700px){
   #mcard{margin:calc(var(--tbh) + 12px) 12px 96px}
   body.canvas-mode #mcard{display:none}

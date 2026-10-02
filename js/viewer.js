@@ -406,23 +406,11 @@ function syncUrl() {
 CF.$('viewSwitch')?.addEventListener('click', e => {
   const btn = e.target.closest('button[data-view]');
   if (!btn) return;
-  /* CF-14: SIMPLE returns to the native mobile layout */
-  if (btn.dataset.view === 'native') {
-    viewMode = null;
-    document.body.classList.remove('canvas-mode');
-    CF.$('nativeBtn').hidden = true;
-    renderMobile(currentListing, true); /* CF-33: fill the native layout on demand */
-    viewRefresh(currentListing);
-    syncUrl();
-    fit();
-    return;
-  }
   viewMode = btn.dataset.view;
   /* CF-14: on a phone, picking a card view swaps the native layout for
      the zoomable canvas — the switch no longer disappears below 700px */
   if (innerWidth <= 700) {
     document.body.classList.add('canvas-mode');
-    CF.$('nativeBtn').hidden = false;
   }
   viewRefresh(currentListing);
   syncUrl();
@@ -691,8 +679,6 @@ addEventListener('resize', () => {
   if (window.getComputedStyle(mcard).display !== 'none') renderMobile(currentListing, true);
 });
 
-/* CF-14: the SIMPLE chip is shown/hidden by the viewSwitch handler above */
-
 const slug = new URLSearchParams(location.search).get('slug');
 if (!slug) {
   CF.status('No listing specified — open a published share link.', 'err');
@@ -732,7 +718,7 @@ if (!slug) {
     renderMobile(listing);
     currentListing = listing;
     viewMode = new URLSearchParams(location.search).get('view');
-    if (viewMode && !['m1', 'm2', 'm3', 'native'].includes(viewMode)) viewMode = null;
+    if (viewMode && !['m1', 'm2', 'm3'].includes(viewMode)) viewMode = null;
     viewRefresh(listing);
     totalViews = Number(listing.views) || 0;
     /* CF-11/CF-12: structured price, seller, status — from columns the
