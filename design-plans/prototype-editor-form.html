@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="protocol">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardForge — Phone Form Mode Prototype (editor)</title>
+<!-- ═══════════════════════════════════════════════════════════════════
+  PROTOTYPE — design-plans review artifact for plan 004. NOT production code.
+  Phone (≤700px) editor form mode: native single-column form editing the
+  same state as the 1920×1080 canvas; PREVIEW toggle swaps to the real
+  card stage in production (mocked here). Loads the REAL listing payload
+  (default slug t63ii96) read-only to populate fields/thumbs/art.
+  Production binding rule (plan 004): every write goes to state AND the
+  card DOM; pickers/modals are the existing ones — this mock shows entry
+  points and phone-legible fields only.
+═══════════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --font-ui:'Inter',system-ui,sans-serif; --font-display:'Manrope','Inter',sans-serif;
+  --notch:8px; --notch-lg:16px;
+  --tier-select:#9ba8b9;--tier-deluxe:#4aa8ff;--tier-premium:#b44bf0;--tier-ultra:#ff5d7b;--tier-exclusive:#ffc45e;
+  --c-bg:#0B0F14;--c-surface:#10161D;--c-surface2:#151C24;--c-line:#222C37;--c-line-soft:#1A222C;
+  --c-ink:#D9DCE0;--c-mut:#8A95A1;--c-accent:#FF4655;--c-accent-btn:#D62839;--c-veil:rgba(6,9,13,.78);
+}
+:root,[data-theme=protocol]{--card1:#1F2731;--card2:#16202B;--panel:#1F2731;--box:#2A3540;--box-hi:#48515B;--line:#2E3A46;--ink:#ECE8E1;--mut:#8A99A9;--accent:#FF4655;--gold:#F2C14E;--red:#FF4655;--warn:#FF7A85;--sheen:rgba(255,255,255,.09);--tint:rgba(255,255,255,.02)}
+[data-theme=holo]{--card1:#0A1E30;--card2:#061523;--panel:#0A1E30;--box:#0F2C44;--box-hi:#314A5E;--line:#164059;--ink:#DFF6FF;--mut:#7E9CB2;--accent:#46F6FF;--gold:#F2C14E;--red:#FF4655;--warn:#7FDBFF;--sheen:rgba(255,255,255,.09);--tint:rgba(255,255,255,.02)}
+[data-theme=reaver]{--card1:#180F2A;--card2:#120B1F;--panel:#180F2A;--box:#241740;--box-hi:#43375B;--line:#37255C;--ink:#EFE9FF;--mut:#9D92BA;--accent:#B44BFF;--gold:#59E3B8;--red:#FF4655;--warn:#C77DFF;--sheen:rgba(255,255,255,.09);--tint:rgba(255,255,255,.02)}
+[data-theme=oni]{--card1:#201114;--card2:#180D10;--panel:#201114;--box:#31191E;--box-hi:#4E393D;--line:#4A2A2C;--ink:#F5E9DC;--mut:#AF9889;--accent:#FF5540;--gold:#E8B14E;--red:#FF5540;--warn:#FF8A7A;--sheen:rgba(255,255,255,.09);--tint:rgba(255,255,255,.02)}
+[data-theme=arctic]{--card1:#F7F4EE;--card2:#ECE8E1;--panel:#F2EEE6;--box:#E0DBD1;--box-hi:#E4E0D7;--line:#8E8676;--ink:#0F1923;--mut:#525D6B;--accent:#C22E3C;--gold:#6E5614;--red:#C22E3C;--warn:#B54250;--sheen:rgba(15,25,35,.05);--tint:rgba(15,25,35,.02)}
+*{box-sizing:border-box;margin:0;padding:0;border-radius:0}
+html{background:#05070A}
+body{font-family:var(--font-ui);color:var(--c-ink);min-height:100vh}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:var(--c-line)}
+button,input,select{font-family:inherit}
+
+/* host: lab + bezel */
+#lab{display:none}
+body.bezel #lab{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:14px 18px;background:#0B0F14;border-bottom:1px solid var(--c-line)}
+#lab .lab-t{font:800 13px var(--font-display);letter-spacing:.14em;text-transform:uppercase}
+#lab .lab-t em{color:var(--c-accent);font-style:normal}
+#lab label{font:600 10px 'Chakra Petch';letter-spacing:.12em;text-transform:uppercase;color:var(--c-mut);display:flex;align-items:center;gap:6px}
+#lab input,#lab select{background:var(--c-surface2);border:1px solid var(--c-line);color:var(--c-ink);font:600 11px 'Chakra Petch';padding:6px 8px}
+#lab button{background:var(--c-accent-btn);border:1px solid var(--c-accent-btn);color:#fff;font:700 11px 'Chakra Petch';letter-spacing:.12em;text-transform:uppercase;padding:7px 14px;cursor:pointer;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
+#metrics{font:500 11px ui-monospace,Consolas,monospace;color:#8A95A1;background:#10161D;border:1px solid var(--c-line);padding:6px 10px;white-space:pre}
+#metrics b{color:#D9DCE0}
+body.bezel{display:flex;flex-direction:column;min-height:100vh}
+body.bezel #bezelWrap{flex:1;display:flex;align-items:center;justify-content:center;gap:28px;padding:26px 16px 40px;flex-wrap:wrap}
+.phone{width:390px;height:844px;flex:none;border:10px solid #17191D;border-radius:38px;overflow:hidden;position:relative;background:var(--c-bg);box-shadow:0 30px 80px -20px rgba(0,0,0,.8),0 0 0 1px #2A2C31}
+.phone::after{content:"";position:absolute;top:8px;left:50%;transform:translateX(-50%);width:110px;height:22px;background:#0A0B0D;border-radius:12px;z-index:99;pointer-events:none}
+#bezelNote{max-width:340px;color:#8A95A1;font:500 12.5px/1.6 var(--font-ui)}
+#bezelNote h2{font:800 15px var(--font-display);color:#D9DCE0;margin-bottom:8px}
+#bezelNote li{margin:0 0 6px 16px}
+#bezelNote kbd{background:#151C24;border:1px solid #222C37;padding:1px 5px;font:600 11px 'Chakra Petch';color:#D9DCE0}
+body:not(.bezel) #bezelWrap{position:fixed;inset:0}
+body:not(.bezel) .phone{width:100%;height:100%;border:none;border-radius:0}
+body:not(.bezel) #bezelNote{display:none}
+
+/* app shell */
+#app{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;background:var(--c-bg)}
+#topbar{flex:none;display:flex;flex-direction:column;gap:5px;padding:6px 12px 7px;background:var(--c-surface);border-bottom:1px solid var(--c-line);z-index:30}
+.tb-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tb-row.actions{justify-content:flex-start}
+.logo{font-family:var(--font-display);font-weight:800;font-size:14px;letter-spacing:.10125em}
+.logo::before{content:"";display:inline-block;width:8px;height:13px;background:var(--c-accent);transform:skewX(-20deg);margin-right:8px;vertical-align:-2px}
+.tb-actions{display:flex;gap:6px;align-items:center;flex-wrap:nowrap}
+.tb-btn{background:transparent;border:1px solid var(--c-line);color:var(--c-mut);min-height:40px;padding:6px 10px;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;display:inline-flex;align-items:center;cursor:pointer;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.tb-btn.primary{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff;font-weight:700}
+.tb-btn.prev{color:var(--c-ink);border-color:var(--c-mut)}
+#content{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+
+/* sticky section-jump nav */
+#fnav{position:sticky;top:0;z-index:8;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:9px 12px 7px;background:var(--c-bg);box-shadow:0 6px 8px -8px rgba(0,0,0,.7)}
+#fnav::-webkit-scrollbar{display:none}
+.fnav-chip{flex:none;background:transparent;border:1px solid var(--c-line);color:var(--c-mut);font:700 9.5px 'Chakra Petch';letter-spacing:.12em;text-transform:uppercase;padding:11px 12px;min-height:40px;cursor:pointer;white-space:nowrap;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.fnav-chip[aria-current=true]{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
+
+/* editing-status hero */
+#fhero{margin:10px 12px 10px;padding:10px 12px;background:linear-gradient(180deg,var(--card1),var(--card2));border:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)))}
+#fhero b{font:800 14px var(--font-display);letter-spacing:.04em;color:var(--ink)}
+#fhero span{font:800 8.5px var(--font-display);letter-spacing:.14em;text-transform:uppercase;padding:4px 7px;border:1px solid var(--line);color:#FFC45E;border-color:rgba(255,196,94,.4)}
+#fhero p{flex:1 0 100%;font:500 11px/1.5 var(--font-ui);color:var(--mut)}
+#fhero p b{font-weight:700;color:var(--c-ink);font-family:var(--font-ui);font-size:11px;letter-spacing:0}
+
+/* sections */
+.fsec{background:var(--panel);border:1px solid var(--line);margin:0 12px 10px;padding:12px;display:flex;flex-direction:column;gap:10px;clip-path:polygon(0 0,calc(100% - var(--notch-lg)) 0,100% var(--notch-lg),100% 100%,var(--notch-lg) 100%,0 calc(100% - var(--notch-lg)))}
+.fsec h2{display:flex;align-items:center;gap:8px;color:var(--mut);font:600 11px var(--font-ui);letter-spacing:.24em;text-transform:uppercase}
+.fsec h2::before{content:"";width:7px;height:11px;background:var(--accent);transform:skewX(-20deg);flex:none}
+.fsec h2 .hn{margin-left:auto;letter-spacing:.08em;font-weight:500}
+.frow{display:flex;flex-direction:column;gap:4px}
+.frow label{font:600 9px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+.finput{width:100%;min-height:44px;background:var(--box);border:1px solid var(--line);color:var(--ink);font:600 15px 'Chakra Petch',sans-serif;letter-spacing:.03em;padding:10px 12px;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.finput:focus{outline:none;border-color:var(--accent)}
+.finput.up{text-transform:uppercase}
+.fgrid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fgrid4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.fhint{font:500 10px var(--font-ui);color:var(--mut);line-height:1.5}
+.fbtn{background:transparent;border:1px solid var(--line);color:var(--c-ink);min-height:44px;padding:8px 12px;font:700 10px 'Chakra Petch';letter-spacing:.14em;text-transform:uppercase;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.fbtn:active{border-color:var(--accent);color:#fff}
+.fbtn.accent{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
+
+/* ranks */
+.franks{display:flex;flex-direction:column;gap:8px}
+.frank{display:flex;align-items:center;gap:10px;background:var(--box);border:1px solid var(--line);padding:8px 10px;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.frank img{width:36px;height:36px;object-fit:contain;flex:none}
+.frank .frl{flex:1;min-width:0}
+.frank label{display:block;font:600 8px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--mut)}
+.frank b{display:block;font:700 14px 'Chakra Petch';color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* stats */
+.fstat{text-align:center;background:var(--tint);border:1px solid var(--line);padding:6px 2px;clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px)}
+.fstat label{display:block;font:600 7.5px var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--mut);white-space:nowrap}
+.fstat input{width:100%;background:transparent;border:none;color:var(--ink);font:800 17px/1.2 'Chakra Petch';text-align:center;padding:2px 0}
+.fstat input:focus{outline:none;color:var(--accent)}
+.fstat.limited label{color:var(--gold)}
+
+/* skins */
+.fcat{border:1px solid var(--line);background:var(--box);padding:8px;clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)))}
+.fcat-h{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.fcat-h b{font:700 11px 'Chakra Petch';letter-spacing:.16em;text-transform:uppercase;color:var(--ink)}
+.fcat-h .cnt{font:600 10px 'Chakra Petch';color:var(--mut);border:1px solid var(--line);padding:1px 6px;background:var(--c-veil)}
+.fcat-h .fbtn{margin-left:auto;min-height:40px;padding:8px 12px}
+.fskin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.fskin{position:relative;display:flex;flex-direction:column;background:radial-gradient(120% 100% at 50% 0%,var(--sheen),transparent 60%),linear-gradient(180deg,var(--box-hi),var(--box));border:1px solid var(--line);border-left:3px solid var(--tier-color,var(--mut));cursor:pointer;overflow:hidden;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))}
+.fskin img{width:100%;height:64px;object-fit:contain;padding:5px 6px 2px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.45))}
+.fskin figcaption{font:500 10px/1.3 'Chakra Petch';color:var(--ink);padding:1px 6px 5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;min-height:31px}
+.fskin .flv{position:absolute;top:4px;right:4px;background:var(--red);color:#fff;font:700 8.5px/1 'Chakra Petch';padding:2px 4px;pointer-events:none;clip-path:polygon(3px 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%,0 3px)}
+.fskin[data-tier=select]{--tier-color:var(--tier-select)}
+.fskin[data-tier=deluxe]{--tier-color:var(--tier-deluxe)}
+.fskin[data-tier=premium]{--tier-color:var(--tier-premium)}
+.fskin[data-tier=ultra]{--tier-color:var(--tier-ultra)}
+.fskin[data-tier=exclusive]{--tier-color:var(--tier-exclusive)}
+.fskin:active{outline:2px solid var(--accent);outline-offset:-2px}
+.fempty{color:var(--mut);font:500 11px var(--font-ui);padding:6px 2px}
+
+/* art */
+.fart-grid{display:flex;gap:10px}
+.fart-tile{flex:none;width:84px;height:84px;position:relative;background:var(--box);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.fart-tile img{width:100%;height:100%;object-fit:cover}
+.fart-tile.pcard img{object-fit:contain;background:var(--box-hi)}
+.fart-tile .tag{position:absolute;bottom:0;left:0;right:0;background:var(--c-veil);color:var(--c-mut);font:600 8px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;text-align:center;padding:3px 2px}
+.fbuddies{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.fbuddy{position:relative;background:var(--box);border:1px solid var(--line);height:56px;display:flex;align-items:center;justify-content:center}
+.fbuddy img{width:100%;height:100%;object-fit:contain}
+.fbuddy .x{position:absolute;top:2px;right:2px;width:18px;height:18px;background:var(--c-veil);border:1px solid var(--line);color:var(--c-ink);font:700 10px/1 'Chakra Petch';display:flex;align-items:center;justify-content:center;cursor:pointer}
+.ftoggle{display:flex;align-items:center;gap:10px;background:var(--box);border:1px solid var(--line);padding:10px 12px;cursor:pointer}
+.ftoggle input{width:20px;height:20px;accent-color:var(--c-accent-btn);flex:none}
+.ftoggle span{font:500 12px/1.4 var(--font-ui);color:var(--c-ink)}
+
+/* look */
+.fthemes{display:flex;gap:8px}
+.fswatch{width:44px;height:32px;border:1px solid var(--line);cursor:pointer;background:var(--sw);clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px)}
+.fswatch[aria-pressed=true]{outline:2px solid var(--accent);outline-offset:1px}
+.flookrow{display:flex;gap:8px;align-items:center}
+.flookrow select{flex:none;min-height:44px;background:var(--box);border:1px solid var(--line);color:var(--c-ink);font:600 11px 'Chakra Petch';letter-spacing:.1em;padding:8px 10px;text-transform:uppercase}
+.fbadge{font:700 9px 'Chakra Petch';letter-spacing:.1em;color:var(--mut);border:1px solid var(--line);padding:6px 8px;background:var(--c-veil);white-space:nowrap}
+
+/* preview pane (mock of the real canvas stage) */
+#peek{display:none;flex:1;min-height:0;position:relative;background:radial-gradient(120% 90% at 50% 0%,#131A22,#0B0F14);align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:20px}
+body.peek #peek{display:flex}
+body.peek #content,body.peek #fnav{display:none}
+.peek-card{width:100%;max-width:340px;aspect-ratio:16/9;border:1px solid var(--line);background:linear-gradient(180deg,var(--card1),var(--card2));position:relative;overflow:hidden;box-shadow:0 24px 60px -18px rgba(0,0,0,.6);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))}
+.peek-cols{position:absolute;inset:14px 16px 26px;display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.peek-col{background:var(--tint);border:1px solid var(--line);display:flex;flex-direction:column;gap:3px;padding:3px;overflow:hidden}
+.peek-col i{display:block;height:9px;background:var(--box);border-left:2px solid var(--tier-color,var(--mut))}
+.peek-note{color:var(--c-mut);font:500 11px/1.6 var(--font-ui);text-align:center;max-width:300px}
+.peek-note b{color:var(--c-ink)}
+
+/* mock variant sheet */
+#sheet{position:absolute;left:0;right:0;bottom:0;z-index:60;background:var(--c-surface);border-top:1px solid var(--c-line);padding:14px 14px 18px;display:flex;flex-direction:column;gap:10px;transform:translateY(110%);transition:transform .22s ease;box-shadow:0 -18px 40px rgba(0,0,0,.5)}
+#sheet.open{transform:translateY(0)}
+#sheet .sh-head{display:flex;align-items:center;gap:10px}
+#sheet .sh-head img{width:80px;height:48px;object-fit:contain;background:var(--c-bg);border:1px solid var(--c-line-soft)}
+#sheet .sh-head b{font:700 14px 'Chakra Petch';color:var(--c-ink)}
+#sheet .sh-head span{display:block;font:600 9px 'Chakra Petch';letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut);margin-top:2px}
+.sh-chips{display:flex;gap:6px;flex-wrap:wrap}
+.sh-chip{border:1px solid var(--c-line);color:var(--c-mut);font:700 10px 'Chakra Petch';padding:7px 11px;cursor:pointer;background:var(--c-surface2)}
+.sh-chip.on{border-color:var(--c-accent);color:var(--c-accent)}
+.sh-actions{display:flex;gap:8px}
+.sh-actions .fbtn{flex:1}
+.sh-actions .fbtn.danger{color:#FF5D7B;border-color:rgba(255,93,123,.4)}
+#toast{position:absolute;left:12px;right:12px;bottom:14px;z-index:70;background:var(--c-surface2);border:1px solid var(--c-line);border-left:3px solid var(--c-accent);color:var(--c-ink);font:500 12px var(--font-ui);padding:11px 13px;opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none}
+#toast.show{opacity:1;transform:translateY(0)}
+#boot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--c-bg);z-index:80;font:600 11px 'Chakra Petch';letter-spacing:.2em;text-transform:uppercase;color:var(--c-mut)}
+#boot[hidden]{display:none}
+</style>
+</head>
+<body>
+<div id="lab">
+  <span class="lab-t">CARD FORGE · <em>FORM MODE PROTOTYPE</em></span>
+  <label>slug <input type="text" id="labSlug" value="t63ii96"></label>
+  <button type="button" id="labLoad">Load</button>
+  <div id="metrics">loading…</div>
+</div>
+<div id="bezelWrap">
+  <div class="phone"><div id="app">
+    <header id="topbar">
+      <div class="tb-row">
+        <span class="logo">cardForge</span>
+        <button class="tb-btn prev" type="button" id="prevBtn">Preview 👁</button>
+      </div>
+      <div class="tb-row actions">
+        <div class="tb-actions">
+          <button class="tb-btn" type="button">Save</button>
+          <button class="tb-btn primary" type="button">Export PNG</button>
+          <button class="tb-btn" type="button">Publish listing</button>
+          <button class="tb-btn" type="button" data-mock="More menu: Browse · Import account · Load draft · Copy post text (unchanged)">More ▾</button>
+        </div>
+      </div>
+    </header>
+    <nav id="fnav" aria-label="Form sections"></nav>
+    <div id="content">
+      <div id="fhero">
+        <b id="fheroTitle">EDITING · K486</b>
+        <span id="fheroStatus">DRAFT</span>
+        <p>Tap any field to edit — changes land on the real card. <b>Preview 👁</b> shows it; Export/Publish capture it.</p>
+      </div>
+      <section class="fsec" id="fsec-identity"><h2>Identity</h2>
+        <div class="fgrid2">
+          <div class="frow"><label for="f-code">Listing code</label><input class="finput up" id="f-code" data-fkey="code" value="K486"></div>
+          <div class="frow"><label for="f-vlogin">Riot ID</label><input class="finput" id="f-vlogin" data-fkey="vlogin" value="RIOT ID"></div>
+        </div>
+        <div class="frow"><label for="f-cname">Display name (buyer sees this)</label><input class="finput" id="f-cname" data-fkey="cname" value="CHANGE NAME"></div>
+        <div class="fgrid2">
+          <div class="frow"><label for="f-tag">Seller tag</label><input class="finput up" id="f-tag" data-fkey="tag" value="FS/FT+ADD"></div>
+          <div class="frow"><label for="f-price">Price line</label><input class="finput up" id="f-price" data-fkey="price" value="PRICE OFFER"></div>
+        </div>
+        <div class="frow"><label for="f-link">Contact link</label><input class="finput" id="f-link" data-fkey="link" value="https://www.facebook.com/Your.Page.Here" inputmode="url"></div>
+      </section>
+
+      <section class="fsec" id="fsec-ranks"><h2>Ranks &amp; level</h2>
+        <div class="franks">
+          <div class="frank"><img id="f-crank-badge" alt=""><span class="frl"><label>Current rank</label><b id="f-crank-name" data-fkey="crank">DIAMOND 2</b></span><button class="fbtn" type="button" data-mock="Opens the EXISTING rank picker">Pick</button></div>
+          <div class="frank"><img id="f-prank-badge" alt=""><span class="frl"><label>Peak rank</label><b id="f-prank-name" data-fkey="prank">IMMORTAL 3</b></span><button class="fbtn" type="button" data-mock="Opens the EXISTING rank picker">Pick</button></div>
+        </div>
+        <div class="fgrid4">
+          <div class="frow"><label for="f-level">Level</label><input class="finput up" id="f-level" data-fkey="level" inputmode="numeric" value="376"></div>
+          <div class="frow"><label for="f-vp">VP</label><input class="finput up" id="f-vp" data-fkey="vp" inputmode="numeric" value="420"></div>
+          <div class="frow"><label for="f-rp">RP</label><input class="finput up" id="f-rp" data-fkey="rp" inputmode="numeric" value="140"></div>
+          <div class="frow"><label for="f-kc">KC</label><input class="finput up" id="f-kc" data-fkey="kc" inputmode="numeric" value="6422"></div>
+        </div>
+      </section>
+
+      <section class="fsec" id="fsec-meta"><h2>Account meta</h2>
+        <div class="fgrid2">
+          <div class="frow"><label for="f-wtr">WTR</label><input class="finput up" id="f-wtr" data-fkey="wtr" value="WTR: YES"></div>
+          <div class="frow"><label for="f-receipts">Receipts</label><input class="finput up" id="f-receipts" data-fkey="receipts" value="RECEIPTS: YES"></div>
+          <div class="frow"><label for="f-owner">Owner</label><input class="finput up" id="f-owner" data-fkey="owner" value="0TH OWNER"></div>
+          <div class="frow"><label for="f-date">Name-change date</label><input class="finput up" id="f-date" data-fkey="date" value="2/6/2026"></div>
+          <div class="frow"><label for="f-cstatus">Change-name status</label><input class="finput up" id="f-cstatus" data-fkey="cstatus" value="NOT READY"></div>
+          <div class="frow"><label for="f-premier">Premier</label><input class="finput up" id="f-premier" data-fkey="premier" value="PREMIER"></div>
+          <div class="frow"><label for="f-vlink">Verification link</label><input class="finput up" id="f-vlink" data-fkey="vlink" value="UNLINKED"></div>
+        </div>
+      </section>
+
+      <section class="fsec" id="fsec-stats"><h2>Stats <span class="hn">auto-counted</span></h2>
+        <div class="fgrid4">
+          <span class="fstat"><label>Premium</label><input data-fkey="prems" inputmode="numeric" value="42"></span>
+          <span class="fstat limited"><label>Limited</label><input data-fkey="limited" inputmode="numeric" value="02"></span>
+          <span class="fstat"><label>Semi prem</label><input data-fkey="semis" inputmode="numeric" value="00"></span>
+          <span class="fstat"><label>Animated</label><input data-fkey="anims" inputmode="numeric" value="00"></span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center"><button class="fbtn" type="button" id="fRecount">Recount from skins</button><span class="fhint">Updates automatically when skins change; manual overrides survive until the next recount.</span></div>
+      </section>
+
+      <section class="fsec" id="fsec-skins"><h2>Skins <span class="hn" id="fskinTotal">—</span></h2>
+        <div id="fskinCats" style="display:flex;flex-direction:column;gap:10px"></div>
+      </section>
+
+      <section class="fsec" id="fsec-art"><h2>Art</h2>
+        <div class="fart-grid">
+          <div class="fart-tile" data-mock="Opens the file picker (existing #fileInput flow)"><img id="fAvatar" alt="Avatar"><span class="tag">Avatar</span></div>
+          <div class="fart-tile pcard" data-mock="Opens the EXISTING player-card picker / upload"><img id="fPcard" alt="Player card"><span class="tag">Player card</span></div>
+          <div class="fart-tile" data-mock="Opens the EXISTING gun-buddy picker"><span style="font:800 24px var(--font-display);color:var(--mut)">+</span><span class="tag">Buddies</span></div>
+        </div>
+        <div class="fbuddies" id="fBuddies"></div>
+        <div class="fhint" id="fOwned"></div>
+        <label class="ftoggle"><input type="checkbox" id="fShowAll" checked><span>Show my full player-card collection on the published page</span></label>
+      </section>
+
+      <section class="fsec" id="fsec-look"><h2>Look</h2>
+        <div class="frow"><label>Card theme</label><div class="fthemes" id="fThemes"></div></div>
+        <div class="flookrow">
+          <select id="fLayout" aria-label="Card layout"><option value="auto">AUTO</option><option value="m1">TILES</option><option value="m2">SHOWCASE</option><option value="m3">CLASSIC</option></select>
+          <span class="fbadge" id="fLayoutBadge">AUTO → TILES</span>
+        </div>
+        <span class="fhint">In production these ARE the real topbar controls (themes / layout select / resolved badge), relocated into the form on phones — same elements, same listeners.</span>
+      </section>
+      <div style="height:14px"></div>
+    </div>
+
+    <div id="peek">
+      <div class="peek-card"><div class="peek-cols" id="peekCols"></div></div>
+      <p class="peek-note"><b>PREVIEW</b> — in production this is the real 1920×1080 canvas (scaled, pannable, exactly today's editor stage). The form keeps the card DOM hydrated underneath, so Export / Publish capture the real thing without ever showing it.</p>
+      <button class="fbtn accent" type="button" id="peekBack">← Back to form</button>
+    </div>
+
+    <div id="sheet">
+      <div class="sh-head"><img id="shImg" alt=""><span><b id="shName"></b><span id="shSub"></span></span></div>
+      <div class="sh-chips" id="shLevels"></div>
+      <div class="sh-actions">
+        <button class="fbtn danger" type="button" data-mock="Removes THIS instance (precise index — existing variant-modal Remove)">Remove</button>
+        <button class="fbtn accent" type="button" id="shDone">Done</button>
+      </div>
+      <span class="fhint">Mock of the EXISTING variant modal (level L1–L5 chips, colorways, video preview, precise remove) — production reuses it unchanged.</span>
+    </div>
+    <div id="toast"></div>
+    <div id="boot">Loading listing…</div>
+  </div></div>
+  <div id="bezelNote">
+    <h2>Phone form mode — what to check</h2>
+    <ul>
+      <li>Editor opens <b>straight into the form</b> at ≤700px (no illegible 0.35× canvas). Every field is a real 44px input, grouped Identity → Ranks → Meta → Stats → Skins → Art → Look.</li>
+      <li>Sticky section-jump chips; every skin category shows a 3-col thumb grid (tier borders, LV badges) with per-cat <b>ADD</b> (opens the existing picker) and thumb tap → variant sheet mock.</li>
+      <li><b>Preview 👁</b> toggles the real canvas stage (mocked here); in production the card DOM stays laid out off-screen so Export PNG / Publish / og:image work byte-identical from form mode.</li>
+      <li>Art tiles reuse the existing upload/picker flows; the collection toggle IS the real relocated checkbox.</li>
+      <li>Look section = the real relocated theme swatches + layout select (try them — themes reskin the form live here).</li>
+      <li>Binding rule (plan 004): each keystroke writes <b>state AND the card DOM</b>, so save/publish capture stays exactly as today. One sync hook after <kbd>renderFromState()</kbd> repopulates the form on import / load draft / edit-link.</li>
+      <li>Data shown is the REAL listing <kbd>t63ii96</kbd> (read-only). Review artifact in <kbd>design-plans/</kbd> — production untouched.</li>
+    </ul>
+  </div>
+</div>
+<script src="../js/config.js"></script>
+<script>
+const SUPABASE_URL = (window.CARDFORGE_CONFIG || {}).SUPABASE_URL;
+const SUPABASE_ANON_KEY = (window.CARDFORGE_CONFIG || {}).SUPABASE_ANON_KEY;
+const ALL_CATS = ['Sidearms','SMGs','Shotguns','Rifles','Sniper Rifles','Machine Guns','Melees','Flex'];
+const THEMES = [['protocol','#1F2731'],['holo','#0A1E30'],['reaver','#180F2A'],['oni','#201114'],['arctic','#ECE8E1']];
+const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const tierKey = t => (String(t || '').toLowerCase().match(/exclusive|ultra|premium|deluxe|select/) || [''])[0];
+
+let state = { slug: new URLSearchParams(location.search).get('slug') || 't63ii96', listing: null };
+$('#labSlug').value = state.slug;
+function hostMode() { return innerWidth <= 700 ? 'phone' : 'bezel'; }
+function applyHost() { document.body.classList.toggle('bezel', hostMode() === 'bezel'); }
+addEventListener('resize', applyHost); applyHost();
+
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2600);
+}
+document.addEventListener('click', e => {
+  const m = e.target.closest('[data-mock]');
+  if (m) { toast('PRODUCTION: ' + m.dataset.mock); e.preventDefault(); }
+});
+
+/* section nav */
+const SECS = [['identity','Identity'],['ranks','Ranks'],['meta','Meta'],['stats','Stats'],['skins','Skins'],['art','Art'],['look','Look']];
+$('#fnav').innerHTML = SECS.map(([id, label]) => `<button type="button" class="fnav-chip" data-sec="${id}">${label}</button>`).join('');
+$('#fnav').addEventListener('click', e => {
+  const ch = e.target.closest('.fnav-chip'); if (!ch) return;
+  document.querySelectorAll('.fnav-chip').forEach(c => c.setAttribute('aria-current', String(c === ch)));
+  $('#fsec-' + ch.dataset.sec).scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+/* themes + layout (mock of relocated real controls) */
+$('#fThemes').innerHTML = THEMES.map(([t, sw]) => `<button type="button" class="fswatch" data-theme="${t}" style="--sw:${sw}" aria-pressed="${t === 'protocol'}" title="${t}"></button>`).join('');
+$('#fThemes').addEventListener('click', e => {
+  const b = e.target.closest('.fswatch'); if (!b) return;
+  document.documentElement.dataset.theme = b.dataset.theme;
+  document.querySelectorAll('.fswatch').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+});
+$('#fLayout').addEventListener('change', () => {
+  const v = $('#fLayout').value;
+  $('#fLayoutBadge').textContent = v === 'auto' ? 'AUTO → TILES' : v.toUpperCase();
+});
+
+/* preview toggle */
+$('#prevBtn').addEventListener('click', () => { document.body.classList.add('peek'); $('#prevBtn').textContent = '← Form'; });
+$('#peekBack').addEventListener('click', () => { document.body.classList.remove('peek'); $('#prevBtn').textContent = 'Preview 👁'; });
+
+/* variant sheet mock */
+function openSheet(s) {
+  $('#shImg').src = s.icon || s.img || '';
+  $('#shName').textContent = s.name || 'Skin';
+  $('#shSub').textContent = [s.weapon, s.tier, s.variant && s.variant.name || 'Standard'].filter(Boolean).join(' · ');
+  const lv = s.level || 1;
+  $('#shLevels').innerHTML = [1,2,3,4,5].slice(0, Math.max(s.maxLevel || lv, lv)).map(n => `<button type="button" class="sh-chip ${n === lv ? 'on' : ''}">L${n}</button>`).join('');
+  $('#sheet').classList.add('open');
+}
+$('#shDone').addEventListener('click', () => $('#sheet').classList.remove('open'));
+$('#sheet').addEventListener('click', e => { if (e.target === $('#sheet')) $('#sheet').classList.remove('open'); });
+
+/* data load */
+async function load() {
+  const boot = $('#boot'); boot.hidden = false; boot.textContent = 'Loading listing…';
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/listing_public?select=*&slug=eq.${encodeURIComponent(state.slug)}`, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } });
+    const rows = await r.json();
+    if (!Array.isArray(rows) || !rows.length) throw new Error('not found: ' + state.slug);
+    state.listing = rows[0];
+    fill();
+    boot.hidden = true;
+  } catch (e) { boot.textContent = 'Could not load — ' + e.message; }
+}
+function fill() {
+  const L = state.listing, p = L.payload || {}, texts = p.texts || {}, picks = p.picks || {}, assets = p.assets || {};
+  document.documentElement.dataset.theme = L.theme || p.theme || 'protocol';
+  document.querySelectorAll('.fswatch').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.theme === document.documentElement.dataset.theme)));
+  document.querySelectorAll('[data-fkey]').forEach(el => {
+    const v = texts[el.dataset.fkey];
+    if (v != null && v !== '') { if (el.tagName === 'INPUT') el.value = v; else el.textContent = v; }
+  });
+  const ranks = p.ranks || {};
+  if (ranks.crank) $('#f-crank-badge').src = ranks.crank;
+  if (ranks.prank) $('#f-prank-badge').src = ranks.prank;
+  $('#fheroTitle').textContent = 'EDITING · ' + (texts.code || state.slug);
+  $('#fheroStatus').textContent = String(L.status || 'draft').toUpperCase();
+  /* skins */
+  let total = 0; let html = '';
+  ALL_CATS.forEach(cat => {
+    const skins = picks[cat] || []; total += skins.length;
+    const thumbs = skins.map((s, i) => {
+      const t = tierKey(s.tier);
+      const nm = s.name || s.weapon || 'Skin';
+      return `<figure class="fskin" data-tier="${t}" data-cat="${esc(cat)}" data-idx="${i}" data-icon="${esc(s.icon || s.img || '')}" data-name="${esc(nm)}" data-weapon="${esc(s.weapon || '')}" data-tiername="${esc(s.tier || '')}" data-level="${s.level || 1}" data-variant="${esc(s.variant && s.variant.name || '')}">
+        ${s.level >= 2 ? `<i class="flv">LV${s.level}</i>` : ''}<img loading="lazy" src="${esc(s.icon || s.img || '')}" alt="${esc(nm)}"><figcaption>${esc(nm)}</figcaption></figure>`;
+    }).join('');
+    html += `<div class="fcat"><div class="fcat-h"><b>${esc(cat === 'Sniper Rifles' ? 'Snipers' : cat)}</b><span class="cnt">${skins.length}</span><button class="fbtn accent" type="button" data-mock="Opens the EXISTING skin picker for ${esc(cat)}">+ Add</button></div>
+      ${skins.length ? `<div class="fskin-grid">${thumbs}</div>` : '<div class="fempty">No skins yet — tap + Add</div>'}</div>`;
+  });
+  $('#fskinCats').innerHTML = html;
+  $('#fskinTotal').textContent = total + ' total';
+  $('#fskinCats').addEventListener('click', e => {
+    const t = e.target.closest('.fskin'); if (!t) return;
+    openSheet({ icon: t.dataset.icon, name: t.dataset.name, weapon: t.dataset.weapon, tier: t.dataset.tiername, level: +t.dataset.level, variant: t.dataset.variant ? { name: t.dataset.variant } : null });
+  });
+  /* art */
+  $('#fAvatar').src = assets.avatar || AVATAR_PLACEHOLDER;
+  if (assets.pcard) $('#fPcard').src = assets.pcard; else $('#fPcard').style.display = 'none';
+  const buddies = (assets.buddies || []).filter(Boolean);
+  $('#fBuddies').innerHTML = buddies.map(u => `<span class="fbuddy"><img loading="lazy" src="${esc(u)}" alt="Gun buddy"><span class="x" data-mock="Removes this buddy (index-precise)">×</span></span>`).join('');
+  const owned = (p.ownedCards || []).length;
+  $('#fOwned').textContent = owned ? `Owned collection: ${owned} player cards (from Riot import) — published with the toggle below.` : 'Owned collection: import your account to attach the full card collection.';
+  $('#fShowAll').checked = !!p.showAllCards;
+  /* peek mini-columns decoration */
+  const cols = ['SIDEARMS','SMGS','SHOTGUNS','RIFLES','SNIPERS','MG'];
+  $('#peekCols').innerHTML = cols.map((c, ci) => `<div class="peek-col" title="${c}">${Array.from({length: 6}, (_, i) => `<i style="--tier-color:${['var(--tier-select)','var(--tier-deluxe)','var(--tier-premium)','var(--tier-exclusive)'][(ci + i) % 4]}"></i>`).join('')}</div>`).join('');
+  /* metrics */
+  const inp = document.querySelector('.finput');
+  $('#metrics').innerHTML = `slug <b>${esc(state.slug)}</b> · skins <b>${total}</b> · sections <b>7</b>\ninput height <b>${inp ? Math.round(inp.getBoundingClientRect().height) : '?'}px</b> (target ≥44) · thumbs <b>3-col</b> · fields <b>${document.querySelectorAll('[data-fkey]').length}</b>\nproduction binds: keystroke → state.texts + card DOM (capture-safe)`;
+}
+$('#fRecount').addEventListener('click', () => toast('PRODUCTION: recountStats() — recomputes all four from state.picks and re-syncs the form'));
+$('#labLoad').addEventListener('click', () => { state.slug = $('#labSlug').value.trim() || state.slug; load(); });
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="protocol">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardForge — Mobile Viewer v2 Prototype (hybrid tabs/mosaic)</title>
+<!-- ═══════════════════════════════════════════════════════════════════
+  PROTOTYPE — design-plans review artifact. NOT production code.
+  Demonstrates MOBILE-AUDIT.md Finding 1 fix (decision D1 hybrid):
+    • total skins > threshold (default 24) → TABBED FRAME:
+      condensed head + category chips + ONE 3-col art-first grid with
+      internal scroll — the page itself never scrolls (desktop's
+      fixed-frame + per-panel-scroll model).
+    • ≤ threshold → DENSE MOSAIC: single flow, sticky category heads,
+      same tiles (~⅓ of today's height).
+  Real data: fetches the live Supabase listing (default slug t63ii96,
+  the 75-skin "k4ze#JTT" used in the audit). ?slug= / ?threshold= /
+  ?mode=tabs|flow|auto supported. On a desktop window the app renders
+  inside a 390×844 phone bezel with lab controls + metrics.
+  Production implementation will reuse the real inspect overlay
+  (.spv-open → openSpv) — here a payload-only mini overlay stands in.
+═══════════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --font-ui:'Inter',system-ui,sans-serif;
+  --font-display:'Manrope','Inter',sans-serif;
+  --notch:8px; --notch-lg:16px;
+  --tier-select:#9ba8b9;--tier-deluxe:#4aa8ff;--tier-premium:#b44bf0;
+  --tier-ultra:#ff5d7b;--tier-exclusive:#ffc45e;
+  --c-bg:#0B0F14; --c-surface:#10161D; --c-surface2:#151C24;
+  --c-line:#222C37; --c-line-soft:#1A222C;
+  --c-ink:#D9DCE0; --c-mut:#8A95A1;
+  --c-accent:#FF4655; --c-accent-btn:#D62839;
+  --c-veil:rgba(6,9,13,.78);
+}
+:root,[data-theme=protocol]{--bg:#0F1923;--card1:#1F2731;--card2:#16202B;--frame:#0B121B;--panel:#1F2731;--box:#2A3540;--box-hi:#48515B;--line:#2E3A46;--ink:#ECE8E1;--mut:#8A99A9;--accent:#FF4655;--gold:#F2C14E;--red:#FF4655;--warn:#FF7A85;
+--sheen:rgba(255,255,255,.09);--sheen-soft:rgba(255,255,255,.06);--tint:rgba(255,255,255,.02);--raise:rgba(255,255,255,.05);--veil:rgba(4,8,14,.72)}
+[data-theme=holo]{--bg:#04101A;--card1:#0A1E30;--card2:#061523;--frame:#02090F;--panel:#0A1E30;--box:#0F2C44;--box-hi:#314A5E;--line:#164059;--ink:#DFF6FF;--mut:#7E9CB2;--accent:#46F6FF;--gold:#F2C14E;--red:#FF4655;
+--sheen:rgba(255,255,255,.09);--sheen-soft:rgba(255,255,255,.06);--tint:rgba(255,255,255,.02);--raise:rgba(255,255,255,.05);--veil:rgba(4,8,14,.72)}
+[data-theme=reaver]{--bg:#0D0A14;--card1:#180F2A;--card2:#120B1F;--frame:#080512;--panel:#180F2A;--box:#241740;--box-hi:#43375B;--line:#37255C;--ink:#EFE9FF;--mut:#9D92BA;--accent:#B44BFF;--gold:#59E3B8;--red:#FF4655;
+--sheen:rgba(255,255,255,.09);--sheen-soft:rgba(255,255,255,.06);--tint:rgba(255,255,255,.02);--raise:rgba(255,255,255,.05);--veil:rgba(4,8,14,.72)}
+[data-theme=oni]{--bg:#120B0B;--card1:#201114;--card2:#180D10;--frame:#0B0607;--panel:#201114;--box:#31191E;--box-hi:#4E393D;--line:#4A2A2C;--ink:#F5E9DC;--mut:#AF9889;--accent:#FF5540;--gold:#E8B14E;--red:#FF5540;
+--sheen:rgba(255,255,255,.09);--sheen-soft:rgba(255,255,255,.06);--tint:rgba(255,255,255,.02);--raise:rgba(255,255,255,.05);--veil:rgba(4,8,14,.72)}
+[data-theme=arctic]{--bg:#DAD5CB;--card1:#F7F4EE;--card2:#ECE8E1;--frame:#B8B2A6;--panel:#F2EEE6;--box:#E0DBD1;--box-hi:#E4E0D7;--line:#8E8676;--ink:#0F1923;--mut:#525D6B;--accent:#C22E3C;--gold:#6E5614;--red:#C22E3C;
+--sheen:rgba(15,25,35,.05);--sheen-soft:rgba(15,25,35,.035);--tint:rgba(15,25,35,.02);--raise:rgba(15,25,35,.04);--veil:rgba(184,178,166,.72)}
+*{box-sizing:border-box;margin:0;padding:0;border-radius:0}
+html{background:#05070A}
+body{font-family:var(--font-ui);color:var(--c-ink);min-height:100vh}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--c-line)}
+button{font-family:inherit}
+
+/* ── host: lab bar + phone bezel (desktop review) ─────────────── */
+#lab{display:none}
+body.bezel #lab{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:14px 18px;background:#0B0F14;border-bottom:1px solid var(--c-line)}
+#lab .lab-t{font:800 13px var(--font-display);letter-spacing:.14em;text-transform:uppercase;color:#D9DCE0}
+#lab .lab-t em{color:var(--c-accent);font-style:normal}
+#lab label{font:600 10px 'Chakra Petch';letter-spacing:.12em;text-transform:uppercase;color:var(--c-mut);display:flex;align-items:center;gap:6px}
+#lab input,#lab select{background:var(--c-surface2);border:1px solid var(--c-line);color:var(--c-ink);font:600 11px 'Chakra Petch';padding:6px 8px;min-width:60px}
+#lab input[type=text]{min-width:110px}
+#lab button{background:var(--c-accent-btn);border:1px solid var(--c-accent-btn);color:#fff;font:700 11px 'Chakra Petch';letter-spacing:.12em;text-transform:uppercase;padding:7px 14px;cursor:pointer;
+  clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+#metrics{font:500 11px ui-monospace,Consolas,monospace;color:#8A95A1;background:#10161D;border:1px solid var(--c-line);padding:6px 10px;white-space:pre}
+#metrics b{color:#D9DCE0}
+body.bezel{display:flex;flex-direction:column;min-height:100vh}
+body.bezel #bezelWrap{flex:1;display:flex;align-items:center;justify-content:center;gap:28px;padding:26px 16px 40px;flex-wrap:wrap}
+.phone{width:390px;height:844px;flex:none;border:10px solid #17191D;border-radius:38px;overflow:hidden;position:relative;background:var(--c-bg);
+  box-shadow:0 30px 80px -20px rgba(0,0,0,.8),0 0 0 1px #2A2C31}
+.phone::after{content:"";position:absolute;top:8px;left:50%;transform:translateX(-50%);width:110px;height:22px;background:#0A0B0D;border-radius:12px;z-index:99;pointer-events:none}
+#bezelNote{max-width:340px;color:#8A95A1;font:500 12.5px/1.6 var(--font-ui)}
+#bezelNote h2{font:800 15px var(--font-display);color:#D9DCE0;letter-spacing:.02em;margin-bottom:8px}
+#bezelNote li{margin:0 0 6px 16px}
+#bezelNote kbd{background:#151C24;border:1px solid #222C37;padding:1px 5px;font:600 11px 'Chakra Petch';color:#D9DCE0}
+body:not(.bezel) #bezelWrap{position:fixed;inset:0}
+body:not(.bezel) .phone{width:100%;height:100%;border:none;border-radius:0}
+body:not(.bezel) #bezelNote{display:none}
+
+/* ── the app (inside .phone) ──────────────────────────────────── */
+#app{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;background:var(--c-bg);color:var(--ink)}
+
+/* topbar: one 52px row */
+#topbar{flex:none;height:52px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 12px;background:var(--c-surface);border-bottom:1px solid var(--c-line);position:relative;z-index:30}
+.logo{font-family:var(--font-display);font-weight:800;font-size:14px;letter-spacing:.135em;color:var(--c-ink);white-space:nowrap}
+.logo::before{content:"";display:inline-block;width:8px;height:13px;background:var(--c-accent);transform:skewX(-20deg);margin-right:8px;vertical-align:-2px}
+.tb-right{display:flex;align-items:center;gap:6px;min-width:0}
+#viewBadge{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--c-line);color:var(--c-mut);padding:4px 9px;font:600 10.5px var(--font-ui);letter-spacing:.06em;white-space:nowrap;
+  clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+#viewBadge svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;flex:none}
+#tbMoreBtn{background:transparent;border:1px solid var(--c-line);color:var(--c-mut);width:32px;height:28px;display:inline-flex;align-items:center;justify-content:center;font:700 13px 'Chakra Petch';cursor:pointer;
+  clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+#tbMore{position:absolute;top:calc(100% + 6px);right:10px;display:flex;flex-direction:column;gap:6px;background:var(--c-surface2);border:1px solid var(--c-line);padding:8px;z-index:40;min-width:190px}
+#tbMore[hidden]{display:none}
+#tbMore button{background:transparent;border:1px solid var(--c-line);color:var(--c-mut);height:40px;display:inline-flex;align-items:center;justify-content:center;font:700 10px 'Chakra Petch';letter-spacing:.14em;text-transform:uppercase;cursor:pointer;
+  clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+#tbMore button:hover{color:var(--c-ink);border-color:var(--c-mut)}
+
+/* scrollable content column */
+#content{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+#app.mode-flow #content{overflow-y:auto;overscroll-behavior:contain}
+
+/* condensed head (merges vhero + mhead + ranks + stats + meta) */
+#head{flex:none;margin:8px 12px 0;background:linear-gradient(180deg,var(--card1),var(--card2));border:1px solid var(--line);padding:8px 10px;display:flex;flex-direction:column;gap:6px;
+  clip-path:polygon(0 0,calc(100% - var(--notch-lg)) 0,100% var(--notch-lg),100% 100%,var(--notch-lg) 100%,0 calc(100% - var(--notch-lg)))}
+.hrow1{display:flex;align-items:center;gap:9px;min-width:0}
+.hcode{font:800 22px/1 'Chakra Petch';letter-spacing:.04em;color:var(--ink);flex:none}
+.hid{min-width:0;flex:1}
+.hid b{display:block;font:800 14px/1.2 var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hid span{display:block;font:600 9px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hstatus{flex:none;font:800 8.5px var(--font-display);letter-spacing:.14em;text-transform:uppercase;padding:4px 7px;border:1px solid var(--line);color:var(--mut)}
+.hstatus.ok{color:#3DD68C;border-color:rgba(61,214,140,.4)}
+.hstatus.warn{color:#FFC45E;border-color:rgba(255,196,94,.4)}
+.hstatus.bad{color:#FF5D7B;border-color:rgba(255,93,123,.4)}
+.hrow2{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);padding-top:6px;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}
+.hrow2::-webkit-scrollbar{display:none}
+.hrank{display:flex;align-items:center;gap:6px;min-width:0;flex:none}
+.hrank img{width:26px;height:26px;object-fit:contain;flex:none}
+.hrank img:not([src]){display:none}
+.hrank .rl{display:flex;flex-direction:column;min-width:0}
+.hrank label{font:600 7.5px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--mut)}
+.hrank b{font:700 12px 'Chakra Petch';letter-spacing:.03em;color:var(--ink);white-space:nowrap}
+.hcur{display:flex;align-items:center;gap:9px;flex:none;margin-left:auto}
+.hlvl{font:600 9.5px 'Chakra Petch';letter-spacing:.12em;color:var(--mut);white-space:nowrap}
+.hlvl b{color:var(--ink);font-size:11.5px;margin-left:3px}
+.hc{display:flex;align-items:center;gap:3px;font:600 11.5px 'Chakra Petch';color:var(--ink);white-space:nowrap}
+.hc i{width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;font:700 8.5px var(--font-ui);font-style:normal;border:1px solid var(--mut);color:var(--mut)}
+.hrow3{display:flex;gap:5px;border-top:1px solid var(--line);padding-top:6px}
+.hstat{flex:1;text-align:center;min-width:0;background:var(--tint);border:1px solid var(--line);padding:3px 2px;
+  clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px)}
+.hstat label{display:block;font:600 7px var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--mut);white-space:nowrap}
+.hstat b{font:800 15px/1.15 'Chakra Petch';color:var(--ink)}
+.hstat.limited label{color:var(--gold)}
+.hrow4{display:flex;flex-wrap:wrap;gap:2px 8px;border-top:1px solid var(--line);padding-top:5px;font:600 9.5px 'Chakra Petch';letter-spacing:.05em;color:var(--mut)}
+.hrow4 .hcur2{color:var(--ink);display:inline-flex;align-items:center;gap:3px}
+.hrow4 .hcur2 i{width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;font:700 8px var(--font-ui);font-style:normal;border:1px solid var(--mut);color:var(--mut)}
+.hrow4 .mwarn{color:var(--warn,var(--red))}
+.hrow4 span{white-space:nowrap}
+
+/* category chip strip (tabs mode) */
+#chips{flex:none;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:9px 12px 7px;-webkit-overflow-scrolling:touch}
+#chips::-webkit-scrollbar{display:none}
+#app.mode-flow #chips{display:none}
+.chip{flex:none;display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--c-line);color:var(--c-mut);font:700 9.5px 'Chakra Petch';letter-spacing:.12em;text-transform:uppercase;padding:8px 11px;cursor:pointer;white-space:nowrap;
+  clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.chip b{font:700 9px 'Chakra Petch';color:var(--mut);border:1px solid var(--c-line);padding:0 4px;background:var(--c-veil)}
+.chip[aria-current=true]{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
+.chip[aria-current=true] b{color:#fff;border-color:rgba(255,255,255,.4);background:rgba(0,0,0,.2)}
+
+/* panels + grids */
+#panelsWrap{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+#app.mode-flow #panelsWrap{overflow:visible;flex:none;min-height:0}
+.mpanel{display:none;padding:0 12px 14px}
+.mpanel.active{display:block}
+#app.mode-flow .mpanel{display:block;margin-bottom:6px}
+.mpanel h3{display:flex;align-items:center;gap:8px;color:var(--mut);font:600 11px var(--font-ui);letter-spacing:.24em;text-transform:uppercase;margin:0 0 8px;padding:7px 2px}
+.mpanel h3::before{content:"";width:7px;height:11px;background:var(--accent);transform:skewX(-20deg);flex:none}
+.mpanel h3 .hn{margin-left:auto;letter-spacing:.08em;color:var(--mut);font-weight:500}
+#app.mode-flow .mpanel h3{position:sticky;top:0;z-index:6;background:var(--c-bg);box-shadow:0 6px 8px -6px rgba(0,0,0,.6)}
+.mgrid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding-bottom:6px}
+
+/* tile: art-first, tier border, LV badge, one-line de-duplicated name */
+.mtile{position:relative;margin:0;display:flex;flex-direction:column;background:radial-gradient(120% 100% at 50% 0%,var(--sheen),transparent 60%),linear-gradient(180deg,var(--box-hi),var(--box));
+  border:1px solid var(--line);border-left:3px solid var(--tier-color,var(--mut));cursor:pointer;overflow:hidden;
+  clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)))}
+.mtile img{width:100%;height:64px;object-fit:contain;padding:5px 6px 2px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.45))}
+.mtile figcaption{font:500 10.5px/1.25 'Chakra Petch';letter-spacing:.01em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:1px 6px 5px}
+.mtile .mlv{position:absolute;top:4px;right:4px;background:var(--red);color:#fff;font:700 8.5px/1 'Chakra Petch';letter-spacing:.05em;padding:2px 4px;pointer-events:none;
+  clip-path:polygon(3px 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%,0 3px)}
+.mtile[data-tier=select]{--tier-color:var(--tier-select)}
+.mtile[data-tier=deluxe]{--tier-color:var(--tier-deluxe)}
+.mtile[data-tier=premium]{--tier-color:var(--tier-premium)}
+.mtile[data-tier=ultra]{--tier-color:var(--tier-ultra)}
+.mtile[data-tier=exclusive]{--tier-color:var(--tier-exclusive)}
+.mtile:active{outline:2px solid var(--accent);outline-offset:-2px}
+
+/* info panel bits */
+.mbuddygrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.mbuddygrid img{width:100%;height:60px;object-fit:contain;background:var(--box);border:1px solid var(--line)}
+.mpcardwrap{position:relative;margin-bottom:12px}
+.mpcard{width:100%;display:block;border:1px solid var(--line)}
+.mseller{display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);padding:12px;
+  clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)))}
+.mavatar{width:44px;height:44px;object-fit:cover;border:1px solid var(--line);flex:none;
+  clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.msellertext{min-width:0}
+.mtag{font:800 14px var(--font-display);letter-spacing:.03em;color:var(--ink)}
+.mlink{color:var(--mut);font-size:12px;word-break:break-all;text-decoration:underline;display:block;margin-top:2px}
+.mstrip{display:flex;justify-content:space-between;gap:10px;color:var(--mut);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;padding:10px 2px 2px}
+.mempty{color:var(--mut);font-size:14px;text-align:center;padding:24px 0}
+
+/* pinned action bar + disclaimer */
+#actbar{flex:none;display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--c-surface);border-top:1px solid var(--c-line);z-index:25}
+#actbar .ma-price{flex:1;min-width:0}
+#actbar .ma-price b{font:800 17px/1 var(--font-display);letter-spacing:0;color:var(--c-ink);white-space:nowrap}
+#actbar .ma-price span{font:700 8.5px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--c-mut);display:block;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#actbar .primary{background:var(--c-accent-btn);border:1px solid var(--c-accent-btn);color:#fff;font:700 10.5px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;padding:12px 13px;cursor:pointer;flex:none;
+  clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+#disc{flex:none;text-align:center;color:var(--c-mut);font-size:9px;line-height:1.4;padding:6px 40px 7px 8px;background:var(--c-veil);position:relative}
+#disc a{color:var(--c-ink)}
+#discTog{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:24px;height:24px;background:var(--c-surface2);border:1px solid var(--c-line);color:var(--c-mut);font:700 12px/1 var(--font-ui);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px)}
+
+/* mini inspect overlay (stand-in for the production spv overlay) */
+#insp{position:absolute;inset:0;background:rgba(4,7,11,.82);backdrop-filter:blur(4px);z-index:60;display:flex;align-items:center;justify-content:center;padding:18px}
+#insp[hidden]{display:none}
+.insp-modal{width:100%;background:var(--c-surface);border:1px solid var(--c-line);padding:16px;position:relative;display:flex;flex-direction:column;gap:12px;
+  clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,var(--notch-lg) 0)}
+.insp-close{position:absolute;top:8px;right:8px;width:30px;height:30px;background:rgba(8,11,15,.65);border:1px solid var(--c-line);color:var(--c-ink);font:700 15px 'Chakra Petch';cursor:pointer}
+.insp-modal img.hero{width:100%;height:150px;object-fit:contain;background:var(--c-bg);border:1px solid var(--c-line-soft)}
+.insp-modal b.nm{font:700 16px 'Chakra Petch';letter-spacing:.03em;color:var(--c-ink);padding-right:34px}
+.insp-modal .sub{font:600 10px 'Chakra Petch';letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut);margin-top:3px}
+.insp-lv{display:flex;gap:6px;flex-wrap:wrap}
+.insp-lv span{border:1px solid var(--c-line);color:var(--c-mut);font:700 10px 'Chakra Petch';padding:5px 9px}
+.insp-lv span.on{border-color:var(--c-accent);color:var(--c-accent)}
+.insp-note{font:500 9px 'Chakra Petch';letter-spacing:.1em;text-transform:uppercase;color:var(--c-mut)}
+
+#boot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--c-bg);z-index:80;font:600 11px 'Chakra Petch';letter-spacing:.2em;text-transform:uppercase;color:var(--c-mut)}
+#boot[hidden]{display:none}
+#boot.err{color:#FF5D7B;flex-direction:column;gap:10px;padding:30px;text-align:center;letter-spacing:.05em;text-transform:none;font-size:13px}
+</style>
+</head>
+<body>
+<div id="lab">
+  <span class="lab-t">CARD FORGE · <em>MOBILE V2 PROTOTYPE</em></span>
+  <label>slug <input type="text" id="labSlug" value="t63ii96"></label>
+  <label>threshold <input type="number" id="labThresh" value="24" min="0" max="500" step="1"></label>
+  <label>mode
+    <select id="labMode"><option value="auto" selected>auto</option><option value="tabs">tabs</option><option value="flow">mosaic</option></select>
+  </label>
+  <label>theme
+    <select id="labTheme"><option value="" selected>listing</option><option>protocol</option><option>holo</option><option>reaver</option><option>oni</option><option>arctic</option></select>
+  </label>
+  <button type="button" id="labLoad">Load</button>
+  <div id="metrics">loading…</div>
+</div>
+<div id="bezelWrap">
+  <div class="phone"><div id="app" class="mode-flow">
+    <header id="topbar">
+      <span class="logo">CARD FORGE</span>
+      <div class="tb-right">
+        <span id="viewBadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/></svg><span id="viewText">—</span></span>
+        <button id="tbMoreBtn" type="button" aria-expanded="false" aria-controls="tbMore" title="More actions">⋯</button>
+      </div>
+      <div id="tbMore" hidden>
+        <button type="button">Browse listings</button>
+        <button type="button">Copy link</button>
+      </div>
+    </header>
+    <div id="content">
+      <section id="head"></section>
+      <nav id="chips" aria-label="Categories"></nav>
+      <div id="panelsWrap"></div>
+    </div>
+    <div id="actbar">
+      <div class="ma-price"><b id="maPrice">—</b><span id="maCur"></span></div>
+      <button class="primary" type="button" id="maContact">Contact seller</button>
+    </div>
+    <div id="disc">CardForge is not affiliated with, endorsed by, or associated with Riot Games. <a href="#">Terms</a> · <a href="#">Privacy</a><button id="discTog" type="button">»</button></div>
+    <div id="insp" hidden></div>
+    <div id="boot">Loading listing…</div>
+  </div></div>
+  <div id="bezelNote">
+    <h2>What you are looking at</h2>
+    <ul>
+      <li><b>Tabbed frame</b> (default for the 75-skin listing): the page itself never scrolls — pick a category chip, the grid scrolls internally, exactly like the desktop card's per-panel scroll. <b>INFO</b> chip holds buddies / player card / seller.</li>
+      <li><b>Dense mosaic</b> (force via <kbd>mode</kbd>, or auto for listings ≤ threshold skins): one flow, 3-col art-first tiles, sticky category headings — ≈⅓ of today's scroll height.</li>
+      <li>Tap any tile → inspect overlay (production uses the existing full overlay with levels, colorways and video).</li>
+      <li>Tier-colored left borders, LV badges, de-duplicated one-line names.</li>
+      <li>Topbar is one 52px row; ⋯ holds Browse / Copy link. Price + Contact stay pinned (CF-11/12).</li>
+      <li>Metrics (top bar): total skins, resolved mode, and <b>screens</b> = scrollable content ÷ visible area. Today's SIMPLE layout measures <b>8.78</b>; the audit target is ≈<b>1</b> (tabs) / ≈<b>2–2.5</b> (mosaic).</li>
+      <li>This is a review artifact in <kbd>design-plans/</kbd> — production code is untouched, desktop/tablet layouts unaffected.</li>
+    </ul>
+  </div>
+</div>
+<script src="../js/config.js"></script>
+<script>
+/* real listing data via the same anon REST read the production viewer uses
+   (credentials come from ../js/config.js — the app's single source of truth;
+   this file must be served over http, e.g. `npm run dev`, not opened as file://) */
+const SUPABASE_URL = (window.CARDFORGE_CONFIG || {}).SUPABASE_URL;
+const SUPABASE_ANON_KEY = (window.CARDFORGE_CONFIG || {}).SUPABASE_ANON_KEY;
+const ALL_CATS = ['Sidearms','SMGs','Shotguns','Rifles','Sniper Rifles','Machine Guns','Melees','Flex'];
+const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>";
+const CUR_SYMBOL = { USD:'$', EUR:'€', GBP:'£', JPY:'¥' };
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const params = new URLSearchParams(location.search);
+let state = {
+  slug: params.get('slug') || 't63ii96',
+  threshold: Number(params.get('threshold') ?? 24),
+  mode: params.get('mode') || 'auto',   // auto | tabs | flow
+  theme: params.get('theme') || '',
+  listing: null, activeCat: null
+};
+$('#labSlug').value = state.slug;
+$('#labThresh').value = state.threshold;
+$('#labMode').value = state.mode;
+
+function hostMode() { return innerWidth <= 700 ? 'phone' : 'bezel'; }
+function applyHost() { document.body.classList.toggle('bezel', hostMode() === 'bezel'); }
+addEventListener('resize', applyHost); applyHost();
+
+async function load() {
+  const boot = $('#boot');
+  boot.hidden = false; boot.classList.remove('err'); boot.textContent = 'Loading listing…';
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/listing_public?select=*&slug=eq.${encodeURIComponent(state.slug)}`,
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } });
+    const rows = await r.json();
+    if (!r.ok || !Array.isArray(rows) || !rows.length) throw new Error(Array.isArray(rows) ? 'Listing not found: ' + state.slug : 'HTTP ' + r.status);
+    state.listing = rows[0];
+    render();
+    boot.hidden = true;
+  } catch (e) {
+    boot.classList.add('err');
+    boot.textContent = 'Could not load “' + state.slug + '” — ' + e.message;
+  }
+}
+
+function money(price, currency) {
+  if (price == null || isNaN(Number(price))) return null;
+  const n = Number(price);
+  const sym = CUR_SYMBOL[currency] || (currency ? currency + ' ' : '$');
+  return { sym, amt: n % 1 ? n.toFixed(2) : n.toLocaleString(), code: currency || '' };
+}
+
+function caption(s) {
+  /* de-duplicated one-line name (weapon is the category context) */
+  let n = s.name || s.weapon || 'Skin';
+  if (s.variant && s.variant.name && !n.includes(s.variant.name)) n += ' · ' + s.variant.name;
+  return n;
+}
+
+function tierKey(t) {
+  /* payload carries display names ("Premium Edition") — normalize to the
+     token key used by --tier-* (select/deluxe/premium/ultra/exclusive) */
+  return (String(t || '').toLowerCase().match(/exclusive|ultra|premium|deluxe|select/) || [''])[0];
+}
+
+function tileHTML(s) {
+  const tier = tierKey(s.tier);
+  const lv = s.level >= 2 ? `<i class="mlv">LV${s.level}</i>` : '';
+  return `<figure class="mtile" data-tier="${esc(tier)}" role="button" tabindex="0" data-skin='${esc(JSON.stringify({ weapon:s.weapon||'', name:s.name||'', tier:s.tier||'', level:s.level||1, variant:s.variant&&s.variant.name||'', icon:s.icon||s.img||'' }))}'>
+    ${lv}<img loading="lazy" src="${esc(s.icon || s.img || '')}" alt="${esc((s.weapon||'') + ' — ' + (s.name||''))}">
+    <figcaption>${esc(caption(s))}</figcaption></figure>`;
+}
+
+function render() {
+  const L = state.listing, p = L.payload || {}, texts = p.texts || {};
+  document.documentElement.dataset.theme = state.theme || L.theme || p.theme || 'protocol';
+  const picks = p.picks || {};
+  const cats = ALL_CATS.filter(c => (picks[c] || []).length);
+  const total = cats.reduce((n, c) => n + picks[c].length, 0);
+  const mode = state.mode === 'tabs' ? 'tabs' : state.mode === 'flow' ? 'flow' : (total > state.threshold ? 'tabs' : 'flow');
+  const app = $('#app');
+  app.classList.toggle('mode-tabs', mode === 'tabs');
+  app.classList.toggle('mode-flow', mode === 'flow');
+
+  /* ── condensed head (identity + status + ranks + level/currencies + stats + meta) ── */
+  const title = (texts.cname && texts.cname !== 'CHANGE NAME' && texts.cname.trim()) || texts.vlogin || ('Listing ' + (L.slug || ''));
+  const st = L.status || 'available';
+  const stCfg = st === 'sold' ? { t:'SOLD', c:'bad' } : st === 'pending' ? { t:'PENDING', c:'warn' } : { t:'AVAILABLE', c:'ok' };
+  const ranks = p.ranks || {};
+  const rankRow = (key, label) => `<span class="hrank">${ranks[key] ? `<img src="${esc(ranks[key])}" alt="">` : ''}<span class="rl"><label>${label}</label><b>${esc(texts[key] || '—')}</b></span></span>`;
+  const meta = (k, warn) => `<span${warn ? ' class="mwarn"' : ''}>${esc(texts[k] || '—')}</span>`;
+  $('#head').innerHTML = `
+    <div class="hrow1">
+      <span class="hcode">${esc(texts.code || '—')}</span>
+      <span class="hid"><b>${esc(title)}</b><span>${esc(texts.vlogin || '')}${texts.vlogin ? ' · ' : ''}${total} skins</span></span>
+      <span class="hstatus ${stCfg.c}">${stCfg.t}</span>
+    </div>
+    <div class="hrow2">
+      ${rankRow('crank','CURRENT')}${rankRow('prank','PEAK')}
+      <span class="hcur">
+        <span class="hlvl">LVL<b>${esc(texts.level || '—')}</b></span>
+      </span>
+    </div>
+    <div class="hrow3">
+      <span class="hstat"><label>Premium</label><b>${esc(texts.prems || '0')}</b></span>
+      <span class="hstat limited"><label>Limited</label><b>${esc(texts.limited || '0')}</b></span>
+      <span class="hstat"><label>Semi prem</label><b>${esc(texts.semis || '0')}</b></span>
+      <span class="hstat"><label>Animated</label><b>${esc(texts.anims || '0')}</b></span>
+    </div>
+    <div class="hrow4"><span class="hcur2"><i>V</i>${esc(texts.vp || '0')}</span><span class="hcur2"><i>R</i>${esc(texts.rp || '0')}</span><span class="hcur2"><i>K</i>${esc(texts.kc || '0')}</span>${meta('wtr')}${meta('receipts')}${meta('owner')}${meta('cname')}${meta('cstatus',true)}${meta('date')}${meta('premier')}${meta('vlink',true)}</div>`;
+
+  /* ── price + contact (pinned bar, CF-11/12 semantics) ── */
+  const m = money(L.price, L.currency);
+  $('#maPrice').innerHTML = m ? (st === 'sold' ? '<s>' + m.sym + m.amt + '</s>' : m.sym + m.amt) : 'CONTACT FOR PRICE';
+  $('#maCur').textContent = [m && m.code, L.negotiable ? 'open to offers' : '', st === 'sold' ? 'sold' : ''].filter(Boolean).join(' · ');
+  const link = String(texts.link || '').trim();
+  const cbtn = $('#maContact');
+  cbtn.textContent = /^https?:\/\//.test(link) ? 'Contact seller' : (link ? 'Copy seller contact' : 'Seller set no contact');
+  cbtn.disabled = !link;
+
+  /* ── panels ── */
+  const assets = p.assets || {};
+  const wrap = $('#panelsWrap');
+  let html = '';
+  if (!cats.length) {
+    html += `<section class="mpanel active" data-cat=""><div class="mempty">No skins in this listing.</div></section>`;
+  }
+  cats.forEach(c => {
+    html += `<section class="mpanel" data-cat="${esc(c)}"><h3>${esc(c)}<span class="hn">${picks[c].length}</span></h3><div class="mgrid3">${picks[c].map(tileHTML).join('')}</div></section>`;
+  });
+  /* INFO panel: buddies, player card, seller, strip */
+  const buddies = (assets.buddies || []).filter(Boolean);
+  const owned = p.ownedCards || [];
+  html += `<section class="mpanel" data-cat="Info">
+    <h3>Info<span class="hn">${[buddies.length ? buddies.length + ' buddies' : '', owned.length ? owned.length + ' cards' : ''].filter(Boolean).join(' · ') || 'seller'}</span></h3>
+    ${buddies.length ? `<div class="mbuddygrid">${buddies.map(u => `<img loading="lazy" src="${esc(u)}" alt="Gun buddy">`).join('')}</div>` : ''}
+    ${assets.pcard ? `<div class="mpcardwrap"><img class="mpcard" src="${esc(assets.pcard)}" alt="Player card">${owned.length ? `<div style="text-align:center;margin-top:6px"><button type="button" style="background:transparent;border:1px solid var(--line);color:var(--ink);font:700 10px 'Chakra Petch';letter-spacing:.14em;text-transform:uppercase;padding:8px 12px;cursor:pointer">View all ${owned.length} player cards</button></div>` : ''}</div>` : ''}
+    <div class="mseller"><img class="mavatar" src="${esc(assets.avatar || AVATAR_PLACEHOLDER)}" alt="Seller avatar"><div class="msellertext"><span class="mtag">${esc(texts.tag || '—')}</span>${link ? `<a class="mlink" href="${/^https?:\/\//.test(link) ? esc(link) : '#'}" rel="noopener">${esc(link)}</a>` : ''}</div></div>
+    <div class="mstrip"><span>Card Forge</span><span>Listing ${esc(L.slug || '')}</span><span>${new Date().toISOString().slice(0,10)}</span></div>
+  </section>`;
+  wrap.innerHTML = html;
+
+  /* ── chips ── */
+  const chips = $('#chips');
+  const chipCats = cats.length ? cats.concat(['Info']) : ['Info'];
+  chips.innerHTML = chipCats.map(c => {
+    const n = c === 'Info' ? '' : `<b>${picks[c].length}</b>`;
+    return `<button type="button" class="chip" data-goto="${esc(c)}" aria-current="false">${esc(c === 'Sniper Rifles' ? 'Snipers' : c)}${n}</button>`;
+  }).join('');
+  const first = cats[0] || 'Info';
+  activate(first);
+
+  /* ── badge + metrics ── */
+  $('#viewText').textContent = `${L.views ?? 0} views`;
+  const scroller = mode === 'tabs' ? wrap : $('#content');
+  requestAnimationFrame(() => {
+    const vis = scroller.clientHeight || 1;
+    const ratio = mode === 'tabs'
+      ? (cats.length ? Math.max(...cats.map(c => { const el = wrap.querySelector(`.mpanel[data-cat="${CSS.escape(c)}"]`); return el ? el.scrollHeight : 0; })) : vis) / vis
+      : scroller.scrollHeight / vis;
+    $('#metrics').innerHTML = `skins <b>${total}</b> · mode <b>${mode === 'tabs' ? 'TABBED FRAME' : 'DENSE MOSAIC'}</b> · cats <b>${cats.length}</b>\nworst-case screens to consume a category: <b>${ratio.toFixed(2)}</b>  (today's SIMPLE layout: <b>8.78</b>)\npage scrolls: <b>${mode === 'tabs' ? 'NO — frame fixed' : 'yes (mosaic flow)'}</b>`;
+  });
+}
+
+function activate(cat) {
+  state.activeCat = cat;
+  const wrap = $('#panelsWrap');
+  wrap.querySelectorAll('.mpanel').forEach(pn => pn.classList.toggle('active', pn.dataset.cat === cat));
+  document.querySelectorAll('#chips .chip').forEach(ch => {
+    const on = ch.dataset.goto === cat;
+    ch.setAttribute('aria-current', String(on));
+    if (on) ch.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+  });
+  wrap.scrollTop = 0;
+}
+
+/* interactions */
+$('#chips').addEventListener('click', e => {
+  const ch = e.target.closest('.chip'); if (ch) activate(ch.dataset.goto);
+});
+$('#panelsWrap').addEventListener('click', e => {
+  const t = e.target.closest('.mtile'); if (!t) return;
+  openInspect(JSON.parse(t.dataset.skin));
+});
+$('#panelsWrap').addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('.mtile')) { e.preventDefault(); openInspect(JSON.parse(e.target.closest('.mtile').dataset.skin)); }
+});
+function openInspect(s) {
+  const el = $('#insp');
+  const lvs = [1,2,3,4,5].slice(0, Math.max(s.level,1)).map(n => `<span class="${n === s.level ? 'on' : ''}">L${n}</span>`).join('');
+  el.innerHTML = `<div class="insp-modal"><button class="insp-close" type="button" aria-label="Close">×</button>
+    <img class="hero" src="${esc(s.icon)}" alt="">
+    <div><b class="nm">${esc(s.name || 'Skin')}</b><div class="sub">${esc([s.weapon, s.tier, s.variant || 'Standard'].filter(Boolean).join(' · '))}</div></div>
+    <div class="insp-lv">${lvs || ''}</div>
+    <div class="insp-note">Prototype stand-in — production opens the existing inspect overlay (levels, colorways, animation video)</div></div>`;
+  el.hidden = false;
+}
+$('#insp').addEventListener('click', e => { if (e.target === $('#insp') || e.target.closest('.insp-close')) $('#insp').hidden = true; });
+addEventListener('keydown', e => { if (e.key === 'Escape') { $('#insp').hidden = true; $('#tbMore').hidden = true; } });
+
+/* topbar ⋯ menu (CF-05 pattern) */
+$('#tbMoreBtn').addEventListener('click', e => {
+  e.stopPropagation();
+  const m = $('#tbMore'); m.hidden = !m.hidden;
+  $('#tbMoreBtn').setAttribute('aria-expanded', String(!m.hidden));
+});
+document.addEventListener('click', e => { if (!e.target.closest('#tbMore') && !e.target.closest('#tbMoreBtn')) { $('#tbMore').hidden = true; $('#tbMoreBtn').setAttribute('aria-expanded','false'); } });
+
+/* lab controls */
+$('#labLoad').addEventListener('click', () => {
+  state.slug = $('#labSlug').value.trim() || state.slug;
+  state.threshold = Number($('#labThresh').value ?? 24);
+  state.mode = $('#labMode').value;
+  state.theme = $('#labTheme').value;
+  load();
+});
+$('#labTheme').addEventListener('change', () => { state.theme = $('#labTheme').value; if (state.listing) render(); });
+$('#labMode').addEventListener('change', () => { state.mode = $('#labMode').value; if (state.listing) render(); });
+
+load();
+</script>
+</body>
+</html>
