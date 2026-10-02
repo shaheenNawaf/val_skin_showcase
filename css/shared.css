@@ -242,14 +242,6 @@ clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100
 #discToggle:hover{color:var(--c-ink);border-color:var(--c-mut)}
 @media (prefers-reduced-motion:reduce){#disclaimer{transition:none}#disclaimer.disc-hidden{transition:none}}
 
-#card .spread{display:none}
-#card.mode-m4 .grid{display:none}
-#card.mode-m4 .spread{display:flex;flex-direction:column;height:100%;min-height:0}
-.jstage{position:relative;flex:1;min-height:0;display:flex;flex-direction:column}
-.jhead{position:absolute;left:0;right:0;display:flex;justify-content:space-between;align-items:center;font-family:Anton,sans-serif;font-size:14px;letter-spacing:.3em;color:var(--mut);text-transform:uppercase}
-.jhead .hc{font:700 12px 'Chakra Petch',sans-serif;letter-spacing:.1em;color:var(--mut)}
-.jhead .hn::before{content:"";display:inline-block;width:7px;height:10px;background:var(--accent);transform:skewX(-20deg);margin-right:9px}
-.jrow{position:absolute;display:flex;gap:8px}
 .skin.tile{flex:1;min-width:0;display:flex;flex-direction:column;border:1px solid var(--line);border-left:3px solid var(--mut);background:radial-gradient(120% 100% at 50% 0%,var(--sheen),transparent 60%),linear-gradient(180deg,var(--box-hi),var(--box));clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)));position:relative;overflow:hidden}
 .skin.tile img{position:static;flex:1;min-height:0;width:auto;height:auto;inset:auto;padding:4px 6px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.5))}
 .skin.tile .tname{display:none;font:500 11px/1.2 'Chakra Petch',sans-serif;color:var(--ink);letter-spacing:.02em;padding:0 6px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -264,9 +256,14 @@ button.jchip:hover{color:var(--ink);border-color:var(--mut)}
 .skin.named img{position:static;inset:auto;width:72px;height:36px;flex:none;padding:0}
 .skin.named .tname{display:block;flex:1;min-width:0;font:500 12px 'Chakra Petch',sans-serif;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mode-m2 .slots{gap:6px}
-.spread-mosaic{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:10px}
-.mcell{min-height:0;display:flex;flex-direction:column;border:1px solid var(--line);background:var(--panel);clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)))}
-.mcellhead{height:24px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 10px;font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.22em;color:var(--mut);text-transform:uppercase;border-bottom:1px solid var(--line)}
-.mcellbody{position:relative;flex:1;min-height:0}
-.mcell.empty{border-style:dashed;align-items:center;justify-content:center;color:var(--mut);font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.2em}
-.jpagefoot{height:26px;flex:none;display:flex;justify-content:space-between;align-items:center;color:var(--mut);font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.16em;text-transform:uppercase;border-top:1px solid var(--line);padding-top:6px}
+/* ── live surfaces (viewer, quick view): categories scroll, never clip ── */
+#card.is-live .slots{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+#card.is-live .slots::-webkit-scrollbar{width:6px}
+#card.is-live .slots::-webkit-scrollbar-thumb{background:var(--line)}
+#card.is-live .slots::-webkit-scrollbar-track{background:transparent}
+#card.is-live .panel[data-cat="Melees"] .slots{overflow-y:hidden;overflow-x:auto;
+  scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+#card.is-live .panel[data-cat="Melees"] .slots::-webkit-scrollbar{width:6px;height:6px}
+#card.is-live .panel[data-cat="Melees"] .slots::-webkit-scrollbar-thumb{background:var(--line)}
+#card.is-live .slots.tiles{align-content:start}

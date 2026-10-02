@@ -80,13 +80,12 @@ To bump the released version, edit `"version"` in `package.json`. To preview the
 
 ## Card layouts (density modes)
 
-Large inventories no longer squish: the card picks a layout per listing.
+- **M1 Tiles (default and the only AUTO result):** category panels; panels flip from rows to tile grids with `+N MORE` chips when rows would get unreadable.
+- **M2 Showcase (optional):** top-N skins per category as named rows, overflow deferred to a `+N MORE` chip.
 
-- **M1 Tiles (default for small/medium):** category panels; panels flip from rows to tile grids with `+N MORE` chips when rows would get unreadable.
-- **M4 Catalog (default for large):** multi-page spread — page 1 is a mosaic overview (category cells sized by share), then justified catalog pages that fill the canvas edge-to-edge. Export produces a **ZIP of one 3840×2160 PNG per page**.
-- **M2 Showcase (optional):** top-N skins per category as named rows, overflow deferred to a chip that jumps to the catalog.
+**Auto rule:** AUTO always resolves to M1. Sellers override per listing via the editor's layout selector (AUTO / TILES / SHOWCASE); the choice is stored in the listing payload. On published listings and in the marketplace quick view, buyers see **every** skin: each category panel scrolls independently (per-category scroll), so nothing is clipped. The exported PNG remains a single 1920×1080 image with capped top-N panels and inert `+N MORE` chips.
 
-**Auto rule:** `premium-tier count >= 20 OR total skins >= 50` → M4, else M1. Sellers override per listing via the editor's layout selector (AUTO / TILES / SHOWCASE / CATALOG); the choice is stored in the listing payload. On published listings, buyers get the seller's default plus a TILES / SHOWCASE / CATALOG switcher and `?view=` / `?page=` URL params.
+The former **M4 Catalog** spread layout (mosaic overview + justified pages + ZIP export) was removed in v1.2.0. Legacy drafts/listings stored with `layout:'m4'` and `?view=m4` deep links fall back to TILES.
 
 Prototypes and measurement history: `prototypes/density.html` (harness) and `UIUX-AUDIT.md`.
 

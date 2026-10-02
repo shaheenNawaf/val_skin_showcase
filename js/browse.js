@@ -68,7 +68,6 @@ function img(src, alt, cls) {
 function pickIcon(p) { return p.icon || p.img || ''; }
 function pickName(p) { return p.name || ''; }
 function pickWeapon(p) { return p.weapon || ''; }
-function pickLevel(p) { return Number(p.level) || 1; }
 function pickAlt(p) { return pickWeapon(p) + ' — ' + pickName(p); }
 
 function catPicks(l, key) {
@@ -639,6 +638,7 @@ function skeleton() {
 }
 
 // ── quick-view modal (REAL card) ──────────────────────────────────
+function pickLevel(p) { return Number(p.level) || 1; }
 function skinCell(s) {
   const lv = pickLevel(s);
   const label = (pickWeapon(s) || '') + ' — ' + (pickName(s) || '') + (lv >= 2 ? ' · LV' + lv : '') + (s.variant ? ' · ' + s.variant.name : '');
@@ -798,6 +798,7 @@ function openQV(slug, opener) {
     return; }
   qvLastFocus = opener || null;
   qv.hidden = false;
+  $('card').classList.add('is-live'); /* live surface: categories scroll instead of clipping */
   document.body.classList.add('modal-open');
   if (qvClose) qvClose.focus();
   fillBar(l, slug);

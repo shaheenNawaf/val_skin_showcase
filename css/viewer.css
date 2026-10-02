@@ -22,14 +22,13 @@
 .vh-status.bad{color:#FF5D7B;border-color:rgba(255,93,123,.4)}
 #vhero.sold{opacity:.74}
 
-/* CF-15 (option A): the zoom bar lives at the top of the stage */
-#zoomBar{position:sticky;top:0;z-index:8;display:flex;align-items:center;gap:7px;flex-wrap:wrap;
-  padding:8px 14px;background:color-mix(in srgb,var(--c-bg) 88%,transparent);backdrop-filter:blur(6px);
-  border-bottom:1px solid var(--c-line-soft)}
-#zoomBar button{background:transparent;border:1px solid var(--c-line);color:var(--c-mut);
-  font:700 9px 'Chakra Petch',sans-serif;letter-spacing:.14em;padding:6px 11px;cursor:pointer}
-#zoomBar button[aria-pressed=true]{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
-#zoomBar #zoomNote{font:600 10px var(--font-ui);letter-spacing:.06em;color:var(--c-mut);margin-left:auto;white-space:nowrap}
+/* CF-11 successor: hero + mobile bar primaries had no matching .primary rule
+   and painted as default white UA buttons — theme them like the topbar's */
+#vhero button.primary,#mactbar button.primary{background:var(--c-accent-btn);border:1px solid var(--c-accent-btn);color:#fff;
+  font:700 11px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;padding:10px 18px;cursor:pointer;
+  clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+#vhero button.primary:hover,#mactbar button.primary:hover{filter:brightness(1.12)}
+#vhero button.primary:disabled,#mactbar button.primary:disabled{opacity:.5;cursor:default;filter:none}
 
 /* CF-11: pinned mobile action bar */
 #mactbar{position:fixed;left:0;right:0;bottom:34px;z-index:25;display:flex;align-items:center;gap:14px;
@@ -168,3 +167,18 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
   body.canvas-mode #mcard{display:none}
   body.canvas-mode #stage{display:block}
 }
+
+/* CF-15 successor: floating zoom overlay — consumes no canvas width */
+#zoomWrap{position:fixed;left:12px;bottom:44px;z-index:22;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+#zoomToggle{background:color-mix(in srgb,var(--c-bg) 88%,transparent);backdrop-filter:blur(6px);
+  border:1px solid var(--c-line);color:var(--c-mut);font:700 9px 'Chakra Petch',sans-serif;
+  letter-spacing:.14em;padding:7px 11px;cursor:pointer}
+#zoomToggle:hover,#zoomToggle[aria-expanded=true]{color:#fff;border-color:var(--c-accent-btn)}
+#zoomMenu{display:flex;flex-direction:column;gap:6px;padding:8px;
+  background:color-mix(in srgb,var(--c-bg) 92%,transparent);backdrop-filter:blur(6px);border:1px solid var(--c-line)}
+#zoomMenu[hidden]{display:none}
+#zoomMenu button{background:transparent;border:1px solid var(--c-line);color:var(--c-mut);
+  font:700 9px 'Chakra Petch',sans-serif;letter-spacing:.14em;padding:6px 11px;cursor:pointer;text-align:left}
+#zoomMenu button[aria-pressed=true]{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
+#zoomMenu #zoomNote{font:600 10px var(--font-ui);letter-spacing:.06em;color:var(--c-mut);white-space:nowrap}
+@media (max-width:700px){#zoomWrap{bottom:96px}}

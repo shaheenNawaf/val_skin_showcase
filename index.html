@@ -23,8 +23,7 @@
 <script type="module" src="js/editor.js"></script>
 </head>
 <body>
-<!-- One fixed chrome stack: topbar + tier toolbar. --tbh measures ALL of it,
-     so the stage can never paint over the toolbar (the P0 occlusion fix). -->
+<!-- One fixed chrome stack: the topbar. --tbh measures ALL of it, so the stage can never paint over it (the P0 occlusion fix). -->
 <div id="chrome">
 <div id="topbar">
   <div class="tb-left">
@@ -37,13 +36,10 @@
       <button class="swatch" data-theme="arctic"  style="--sw:#ECE8E1" title="Arctic"  aria-label="Arctic theme" aria-pressed="false"></button>
     </div>
     <select id="layoutSel" title="Card layout" aria-label="Card layout">
-      <option value="auto">AUTO</option><option value="m1">TILES</option><option value="m2">SHOWCASE</option><option value="m4">CATALOG</option>
+      <option value="auto">AUTO</option><option value="m1">TILES</option><option value="m2">SHOWCASE</option>
     </select>
     <!-- CF-06: state what AUTO resolved to — it was invisible before -->
     <b id="layoutBadge" class="layout-badge" title="">AUTO → TILES</b>
-    <span id="pageNav" hidden><button id="pgPrev" type="button" aria-label="Previous page">‹</button><b id="pgLabel">PAGE 1/1</b><button id="pgNext" type="button" aria-label="Next page">›</button></span>
-    <!-- CF-07: Catalog mode hides every + Add button — this stays reachable -->
-    <button id="m4Add" type="button" hidden>Add skins</button>
   </div>
   <div class="tb-right">
     <!-- CF-05: four actions inline, everything else in the More menu.
@@ -64,17 +60,6 @@
     <span id="status" role="status" aria-live="polite">Loading skin database…</span>
   </div>
 </div>
-
-  <div class="tierbar" role="group" aria-label="Filter and limit which skins the card shows">
-    <span class="tb-label">Show</span>
-    <div class="tb-presets" id="tierPresets" role="group" aria-label="Tier presets"></div>
-    <div class="tb-chips" id="tierChips"></div>
-    <label class="tb-cap" for="tierCap">Max per category</label>
-    <input id="tierCap" class="tb-num" type="number" min="1" max="40" value="8">
-    <button id="tierApply" class="tb-apply" type="button">Apply</button>
-    <button id="tierReset" class="tb-apply" type="button">Reset</button>
-    <span class="tb-count" id="tierCount"></span>
-  </div>
 </div><!-- /#chrome -->
 
 <div id="stage"><div id="sizer"><div id="card">

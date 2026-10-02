@@ -61,7 +61,6 @@ const SPV_LIST = [];
 let spv = null, spvFocus = null;
 let spvMuted = false;
 let viewMode = null;
-let viewPage = 1;
 let currentListing = null;
 
 function updateBadge(nowViewing) {
@@ -383,23 +382,20 @@ function viewRefresh(listing) {
   const payload = listing.payload || {};
   const auto = resolveLayout(payload);
   const mode = viewMode || auto;
-  const r = applyLayout(CF.$('card'), payload, mode, viewPage, { editable: false, gotoCatalog: true });
-  viewPage = Math.min(viewPage, r.pages);
+  applyLayout(CF.$('card'), payload, mode, 1, { editable: false, showAll: true });
   markInspectCells(payload);
   document.querySelectorAll('#viewSwitch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === mode)));
-  const nav = CF.$('viewPageNav');
-  nav.hidden = mode !== 'm4';
-  CF.$('vpgLabel').textContent = 'PAGE ' + viewPage + '/' + r.pages;
-  CF.$('vpgPrev').disabled = viewPage <= 1;
-  CF.$('vpgNext').disabled = viewPage >= r.pages;
+  fit();
+  if (zoomMode == null) {
+    CF.$('zoomNote').textContent = CF.$('stage').scrollHeight > CF.$('stage').clientHeight
+      ? 'fit width — scroll to explore' : 'fit width';
+  }
 }
 
 function syncUrl() {
   const u = new URL(location.href);
   if (viewMode) u.searchParams.set('view', viewMode);
   else u.searchParams.delete('view');
-  if (viewPage > 1) u.searchParams.set('page', String(viewPage));
-  else u.searchParams.delete('page');
   window.history.replaceState(null, '', u);
 }
 
@@ -409,7 +405,6 @@ CF.$('viewSwitch')?.addEventListener('click', e => {
   /* CF-14: SIMPLE returns to the native mobile layout */
   if (btn.dataset.view === 'native') {
     viewMode = null;
-    viewPage = 1;
     document.body.classList.remove('canvas-mode');
     CF.$('nativeBtn').hidden = true;
     renderMobile(currentListing, true); /* CF-33: fill the native layout on demand */
@@ -419,7 +414,6 @@ CF.$('viewSwitch')?.addEventListener('click', e => {
     return;
   }
   viewMode = btn.dataset.view;
-  viewPage = 1;
   /* CF-14: on a phone, picking a card view swaps the native layout for
      the zoomable canvas — the switch no longer disappears below 700px */
   if (innerWidth <= 700) {
@@ -429,24 +423,6 @@ CF.$('viewSwitch')?.addEventListener('click', e => {
   viewRefresh(currentListing);
   syncUrl();
   fit();
-});
-CF.$('vpgPrev')?.addEventListener('click', () => {
-  viewPage--;
-  viewRefresh(currentListing);
-  syncUrl();
-});
-CF.$('vpgNext')?.addEventListener('click', () => {
-  viewPage++;
-  viewRefresh(currentListing);
-  syncUrl();
-});
-card?.addEventListener('click', e => {
-  const g = e.target.closest('[data-goto="m4"]');
-  if (!g) return;
-  viewMode = 'm4';
-  viewPage = 1;
-  viewRefresh(currentListing);
-  syncUrl();
 });
 
 // ── skin inspect overlay (preview-only; never mutates picks/listing) ──
@@ -594,8 +570,10 @@ function startSupabasePresence(slug) {
 /* CF-15 (option A): null = fit to viewport; a number = pinned manual zoom */
 let zoomMode = null;
 const fit = CF.makeFitter({ card, sizer: CF.$('sizer'), topbar: CF.$('vchrome'), stage: CF.$('stage'),
-  getZoom: () => zoomMode });
+  getZoom: () => zoomMode != null ? zoomMode
+    : (card.classList.contains('is-live') ? Math.min((CF.$('stage').clientWidth - 2) / 1920, 1) : null) });
 fit();
+card.classList.add('is-live'); /* live surface: categories scroll instead of clipping */
 CF.initDisclaimerCollapse();
 CF.initStatusDismiss();
 
@@ -673,12 +651,29 @@ function wireContact(link) {
   mob?.addEventListener('click', act);
 }
 
-/* CF-15 (option A): the zoom control */
-document.querySelectorAll('#zoomBar button').forEach(b => b.addEventListener('click', () => {
+/* CF-15 successor: collapsed floating zoom overlay */
+const zoomToggle = CF.$('zoomToggle'), zoomMenu = CF.$('zoomMenu');
+function setZoomMenuOpen(open) {
+  zoomMenu.hidden = !open;
+  zoomToggle.setAttribute('aria-expanded', String(open));
+}
+zoomToggle.addEventListener('click', e => {
+  e.stopPropagation();
+  setZoomMenuOpen(zoomMenu.hidden);
+});
+document.addEventListener('click', e => {
+  if (!zoomMenu.hidden && !zoomMenu.contains(e.target) && e.target !== zoomToggle) setZoomMenuOpen(false);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !zoomMenu.hidden) { setZoomMenuOpen(false); zoomToggle.focus(); }
+});
+zoomMenu.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
   const z = b.dataset.zoom;
   zoomMode = z === 'fit' ? null : Number(z);
-  document.querySelectorAll('#zoomBar button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-  CF.$('zoomNote').textContent = zoomMode == null ? 'fit to viewport' : ('viewing at ' + Math.round(zoomMode * 100) + '% — drag to pan');
+  zoomMenu.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  zoomToggle.textContent = zoomMode == null ? 'FIT' : Math.round(zoomMode * 100) + '%';
+  CF.$('zoomNote').textContent = zoomMode == null ? (card.classList.contains('is-live') ? 'fit width — scroll to explore' : 'fit to viewport') : ('viewing at ' + Math.round(zoomMode * 100) + '% — drag to pan');
+  setZoomMenuOpen(false);
   fit();
 }));
 
@@ -731,8 +726,7 @@ if (!slug) {
     renderMobile(listing);
     currentListing = listing;
     viewMode = new URLSearchParams(location.search).get('view');
-    if (viewMode && !['m1', 'm2', 'm4'].includes(viewMode)) viewMode = null;
-    viewPage = Math.max(1, parseInt(new URLSearchParams(location.search).get('page') || '1', 10) || 1);
+    if (viewMode && !['m1', 'm2', 'native'].includes(viewMode)) viewMode = null;
     viewRefresh(listing);
     totalViews = Number(listing.views) || 0;
     /* CF-11/CF-12: structured price, seller, status — from columns the

@@ -38,8 +38,6 @@ let list = [], currentPool = [], currentCat = null, pickerMode = 'skin', rankRow
 const TIER_RANK = { select: 1, deluxe: 2, premium: 3, ultra: 4, exclusive: 5 };
 let filterWeapon = '', filterTier = '', filterOwned = false, filterAnim = false, tierOnly = false;
 let lastTierCounts = {};
-let tierSel = new Set(['premium', 'ultra']);
-let tierAnim = false;
 let vpMuted = false;
 let pendingUpload = null, editSlug = null, lastFocus = null, exporting = false;
 
@@ -304,7 +302,6 @@ function addSkin(cat, s, chroma) {
   state.picks[cat].push({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: chroma ? chroma.icon : s.icon, ...(chroma ? { level: chroma.unlock || s.maxLevel || 2, variant: { name: chroma.label, icon: chroma.icon } } : (lvl >= 2 ? { level: lvl } : {})) });
   renderPanel(cat, { animateLast: true });
   recountStats();      /* CF-27: counters track manual edits */
-  updateTierCount();   /* CF-10: live count */
   refreshLayout();
 }
 
@@ -599,7 +596,7 @@ CF.$('vpLevel').addEventListener('click', e => {
 CF.$('vRemove').addEventListener('click', () => {
   if (pickerMode !== 'variant') return;
   const arr = state.picks[variantCat];
-  if (arr && arr[variantIdx]) { arr.splice(variantIdx, 1); renderPanel(variantCat); recountStats(); updateTierCount(); }
+  if (arr && arr[variantIdx]) { arr.splice(variantIdx, 1); renderPanel(variantCat); recountStats(); }
   closeModal();
   refreshLayout();
 });
@@ -794,8 +791,6 @@ function applyImport(j) {
       if (l >= 2) p.level = l;
       else if (l === 1) delete p.level;
     }));
-    clearFilterUndo(); /* a fresh import is the new baseline — no stale undo */
-    updateTierCount();
   }
   const ownedSkins = SKIN_BY_ID ? [...new Set(Object.keys(state.ownedLevels))]
     .map(id => SKIN_BY_ID.get(id)).filter(Boolean) : [];
@@ -840,37 +835,6 @@ document.addEventListener('keydown', e => {
   }
 });
 
-const TIER_CHIPS = [
-  { key: 'select', label: 'Select' },
-  { key: 'deluxe', label: 'Deluxe' },
-  { key: 'premium', label: 'Premium' },
-  { key: 'ultra', label: 'Ultra' },
-  { key: 'exclusive', label: 'Knives' },
-];
-const TIER_PRESETS = [
-  { id: 'prems', label: 'Premium only', tiers: ['premium'], anim: false },
-  { id: 'premultra', label: 'Premium + Ultra', tiers: ['premium', 'ultra'], anim: false },
-  { id: 'ultra', label: 'Ultra only', tiers: ['ultra'], anim: false },
-  { id: 'all', label: 'Everything', tiers: ['select', 'deluxe', 'premium', 'ultra', 'exclusive'], anim: false },
-  { id: 'anim', label: 'Animated only', tiers: ['select', 'deluxe', 'premium', 'ultra', 'exclusive'], anim: true },
-];
-function renderTierChips() {
-  const box = CF.$('tierChips');
-  if (!box) return;
-  box.innerHTML = TIER_CHIPS.map(t => `<button type="button" data-tierkey="${t.key}" aria-pressed="${tierSel.has(t.key)}" style="--dot:var(--t-${t.key})"><i class="dot" style="background:var(--t-${t.key})"></i>${t.label}</button>`).join('')
-    + `<button type="button" data-tierkey="anim" aria-pressed="${tierAnim}"><i class="dot" style="background:var(--c-accent)"></i>Animated</button>`;
-}
-function activePresetId() {
-  const cur = [...tierSel].sort().join(',');
-  const hit = TIER_PRESETS.find(p => p.tiers.slice().sort().join(',') === cur && p.anim === tierAnim);
-  return hit ? hit.id : '';
-}
-function renderTierPresets() {
-  const box = CF.$('tierPresets');
-  if (!box) return;
-  const active = activePresetId();
-  box.innerHTML = TIER_PRESETS.map(p => `<button type="button" data-preset="${p.id}" aria-pressed="${active === p.id}">${p.label}</button>`).join('');
-}
 function recountStats() {
   const all = CF.ALL_CATS.flatMap(c => state.picks[c] || []);
   const keyOf = p => CF.tierKey(p.tier);
@@ -887,109 +851,6 @@ function recountStats() {
     if (el) el.textContent = v;
   });
 }
-/* CF-03: the filter reads the LIVE card, never a stale snapshot, so skins
-   added by hand after an import can no longer be silently discarded.
-   filterUndo holds the pre-filter state so Reset is always recoverable. */
-let filterUndo = null;
-function snapshotUndo() {
-  filterUndo = {};
-  CF.ALL_CATS.forEach(c => { filterUndo[c] = (state.picks[c] || []).slice(); });
-  filterUndo['Flex'] = (state.picks['Flex'] || []).slice();
-}
-/* CF-10: live count — recomputed from the card, never empty, never stale */
-function updateTierCount() {
-  const el = CF.$('tierCount');
-  if (!el) return;
-  const onCard = CF.ALL_CATS.reduce((n, c) => n + (state.picks[c] || []).length, 0);
-  if (!filterUndo) { el.textContent = `${onCard} skins on your card`; return; }
-  const pre = CF.ALL_CATS.reduce((n, c) => n + (filterUndo[c] || []).length, 0);
-  el.textContent = `${onCard} shown of ${pre} skins on your card — Reset restores all ${pre}`;
-}
-function applyTierFilter() {
-  const raw = parseInt(CF.$('tierCap').value, 10);
-  const cap = Math.max(1, Math.min(40, raw || 8));
-  if (raw !== cap) CF.$('tierCap').value = String(cap);
-  const total = CF.ALL_CATS.reduce((n, c) => n + (state.picks[c] || []).length, 0);
-  const next = {};
-  let after = 0;
-  CF.CATS.forEach(c => {
-    next[c] = (state.picks[c] || []).filter(p => {
-      if (!tierSel.has(CF.tierKey(p.tier))) return false;
-      if (tierAnim && (p.level || 0) < 2) return false;
-      return true;
-    }).slice(0, cap);
-    after += next[c].length;
-  });
-  if (total > 0 && after === 0) {
-    /* never blank the card with a filter that keeps nothing */
-    updateTierCount();
-    CF.status('Nothing would survive that filter — nothing was changed. Widen the tiers or raise the cap.', 'err');
-    return;
-  }
-  if (!filterUndo) snapshotUndo();
-  CF.CATS.forEach(c => { state.picks[c] = next[c]; });
-  state.picks['Flex'] = state.picks['Flex'] || [];
-  renderAll();
-  recountStats();
-  updateTierCount();
-  CF.status(`Filter applied — ${after} of ${total} skins kept (max ${cap} per category). Reset restores all ${total}.`, 'ok');
-}
-function clearFilterUndo() { filterUndo = null; }
-CF.$('tierChips').addEventListener('click', e => {
-  const b = e.target.closest('button[data-tierkey]');
-  if (!b) return;
-  const k = b.dataset.tierkey;
-  if (k === 'anim') tierAnim = !tierAnim;
-  else if (tierSel.has(k)) tierSel.delete(k);
-  else tierSel.add(k);
-  renderTierChips();
-  renderTierPresets();
-  applyTierFilter();
-});
-CF.$('tierPresets').addEventListener('click', e => {
-  const b = e.target.closest('button[data-preset]');
-  if (!b) return;
-  const p = TIER_PRESETS.find(x => x.id === b.dataset.preset);
-  if (!p) return;
-  tierSel = new Set(p.tiers);
-  tierAnim = p.anim;
-  renderTierChips();
-  renderTierPresets();
-  applyTierFilter();
-});
-CF.$('tierApply').addEventListener('click', applyTierFilter);
-CF.$('tierReset').addEventListener('click', () => {
-  /* CF-02: Reset restores the pre-filter card. With nothing imported and
-     no filter applied it says so — it can never wipe a hand-built card. */
-  if (filterUndo) {
-    CF.ALL_CATS.forEach(c => { state.picks[c] = filterUndo[c] || []; });
-    state.picks['Flex'] = filterUndo['Flex'] || [];
-    filterUndo = null;
-    tierSel = new Set(['premium', 'ultra']);
-    tierAnim = false;
-    renderTierChips();
-    renderTierPresets();
-    renderAll();
-    recountStats();
-    updateTierCount();
-    CF.status('Filter reset — every skin you had is back on the card.', 'ok');
-    return;
-  }
-  const ownedCount = Object.values(state.owned || {}).reduce((n, a) => n + a.length, 0);
-  if (!ownedCount) {
-    CF.status('Reset unavailable — nothing was imported, so there is no snapshot to restore from. Your hand-picked skins are safe.', 'err');
-    return;
-  }
-  CF.ALL_CATS.forEach(c => { state.picks[c] = (state.owned[c] || []).map(id => SKIN_BY_ID.get(id)).filter(Boolean).map(s => ({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon, ...((state.ownedLevels[s.id] || 0) >= 2 ? { level: state.ownedLevels[s.id] } : {}) })); });
-  tierSel = new Set(['premium', 'ultra']);
-  tierAnim = false;
-  renderTierChips();
-  renderTierPresets();
-  renderAll();
-  recountStats();
-  updateTierCount();
-  CF.status('Rebuilt every category from your imported account — Apply to filter it again.', 'info');
-});
 
 // ── card interactions ─────────────────────────────────────────────
 card.addEventListener('click', e => {
@@ -1022,7 +883,6 @@ card.addEventListener('click', e => {
         if (i > -1) arr.splice(i, 1);
         renderPanel(cat);
         recountStats();      /* CF-27 */
-        updateTierCount();   /* CF-10 */
         refreshLayout();
       }
     }, 160);
@@ -1039,15 +899,6 @@ card.addEventListener('click', e => {
   if (rp) { openRankPicker(rp); return; }
   const add = e.target.closest('.add');
   if (add) { openPicker(add.dataset.add); return; }
-  /* CF-07: the +N MORE chips now actually navigate to the catalog view */
-  const goto = e.target.closest('[data-goto="m4"]');
-  if (goto) {
-    state.layout = 'm4';
-    state.page = 1;
-    refreshLayout();
-    CF.status('Showing the full catalog — switch back any time.', 'info');
-    return;
-  }
   const pc = e.target.closest('.pcard');
   if (pc) { openCardPicker(); return; }
   const up = e.target.closest('[data-upload]');
@@ -1089,45 +940,14 @@ CF.$('exportBtn').addEventListener('click', async () => {
   if (exporting) return;
   exporting = true;
   CF.$('exportBtn').disabled = true;
-  const payload = buildPayload();
-  const mode = state.layout === 'auto' ? resolveLayout(payload) : state.layout;
-  if (mode !== 'm4') {
-    CF.status('Rendering 3840×2160 PNG…');
-    try {
-      await CF.exportCard(card);
-      CF.status('PNG exported (3840×2160).', 'ok');
-    } catch (e) {
-      CF.status('Export failed: ' + (e.message || e), 'err');
-    } finally {
-      exporting = false;
-      CF.$('exportBtn').disabled = false;
-      fit();
-    }
-    return;
-  }
-  const pages = CF.$('pgLabel').textContent.split('/')[1] | 0;
-  const files = {};
-  const keep = state.page;
+  buildPayload();
+  CF.status('Rendering 3840×2160 PNG…');
   try {
-    CF.status('Rendering ' + pages + ' pages…');
-    for (let p = 1; p <= pages; p++) {
-      applyLayout(CF.$('card'), payload, 'm4', p, { editable: false });
-      await new Promise(r => setTimeout(r, 60));
-      const canvas = await html2canvas(CF.$('card'), { scale: 2, useCORS: true, backgroundColor: null });
-      const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
-      files['cardforge-page-' + p + '.png'] = new Uint8Array(await blob.arrayBuffer());
-    }
-    const zip = window.fflate.zipSync(files, { level: 6 });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new window.Blob([zip], { type: 'application/zip' }));
-    a.download = 'cardforge-' + (editSlug || 'card') + '-png.zip';
-    a.click(); URL.revokeObjectURL(a.href);
-    CF.status('Exported ' + pages + '-page ZIP.', 'ok');
+    await CF.exportCard(card);
+    CF.status('PNG exported (3840×2160).', 'ok');
   } catch (e) {
     CF.status('Export failed: ' + (e.message || e), 'err');
   } finally {
-    applyLayout(CF.$('card'), payload, 'm4', keep, { editable: true });
-    refreshLayout();
     exporting = false;
     CF.$('exportBtn').disabled = false;
     fit();
@@ -1167,28 +987,10 @@ function updateWm() {
 }
 
 // ── drafts ────────────────────────────────────────────────────────
-function captureTierState() {
-  /* CF-28: the tier filter's selection used to live only in module state —
-     every boot restored a hardcoded default and the chips rendered before
-     the draft was even read, so the toolbar showed settings that were not
-     in effect. Persist it with the draft. */
-  return { sel: [...tierSel], anim: !!tierAnim, cap: parseInt(CF.$('tierCap')?.value, 10) || 8 };
-}
-function applyTierState(t) {
-  if (!t || !Array.isArray(t.sel)) return false;
-  tierSel = new Set(t.sel.filter(k => ['select', 'deluxe', 'premium', 'ultra', 'exclusive'].includes(k)));
-  tierAnim = !!t.anim;
-  const capInput = CF.$('tierCap');
-  if (capInput && t.cap) capInput.value = String(Math.max(1, Math.min(40, t.cap)));
-  renderTierChips();
-  renderTierPresets();
-  return true;
-}
 CF.$('saveBtn').addEventListener('click', () => {
   captureTexts();
   state.theme = document.documentElement.dataset.theme;
   if (CF.$('showAllCards')) state.showAllCards = CF.$('showAllCards').checked;
-  state.tier = captureTierState();
   try {
     CF.writeJSON(DRAFT_KEY, state);
     CF.status('Draft saved.', 'ok');
@@ -1203,20 +1005,17 @@ CF.$('loadBtn').addEventListener('click', () => {
     Object.assign(state, {
       showAllCards: draft.showAllCards || false,
       theme: draft.theme || 'protocol',
-      layout: draft.layout || 'auto',
+      layout: draft.layout === 'm4' ? 'auto' : (draft.layout || 'auto'),
       texts: draft.texts || {},
       ranks: draft.ranks || { crank: null, prank: null },
       picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, draft.picks?.[c] || []])),
       assets: Object.assign({ avatar: null, pcard: null, buddies: [] }, draft.assets),
       owned: draft.owned || {},
-      ownedLevels: draft.ownedLevels || {}, ownedVariants: draft.ownedVariants || [], ownedBuddies: draft.ownedBuddies || [], ownedCards: draft.ownedCards || [],
-      tier: draft.tier || null
+      ownedLevels: draft.ownedLevels || {}, ownedVariants: draft.ownedVariants || [], ownedBuddies: draft.ownedBuddies || [], ownedCards: draft.ownedCards || []
     });
     if (CF.$('showAllCards')) CF.$('showAllCards').checked = !!state.showAllCards;
-    applyTierState(state.tier);   /* CF-28: restore what was actually saved */
     renderFromState();
     refreshLayout();
-    updateTierCount();
     CF.status('Draft loaded.', 'ok');
     return;
   }
@@ -1253,40 +1052,18 @@ function buildPayload() {
 function refreshLayout() {
   const payload = buildPayload();
   const mode = state.layout === 'auto' ? resolveLayout(payload) : state.layout;
-  const r = applyLayout(CF.$('card'), payload, mode, state.page, { editable: true });
-  state.page = Math.min(state.page, r.pages);
-  const nav = CF.$('pageNav');
-  nav.hidden = mode !== 'm4';
-  CF.$('pgLabel').textContent = 'PAGE ' + state.page + '/' + r.pages;
-  CF.$('pgPrev').disabled = state.page <= 1;
-  CF.$('pgNext').disabled = state.page >= r.pages;
+  applyLayout(CF.$('card'), payload, mode, 1, { editable: true });
   /* CF-06: the resolved mode is stated, not implied by the export label */
-  const MODE_NAMES = { m1: 'TILES', m2: 'SHOWCASE', m4: 'CATALOG' };
+  const MODE_NAMES = { m1: 'TILES', m2: 'SHOWCASE' };
   const badge = CF.$('layoutBadge');
   const auto = state.layout === 'auto';
-  badge.textContent = auto ? 'AUTO → ' + MODE_NAMES[mode] : MODE_NAMES[mode] + (mode === 'm4' ? ' · ' + r.pages + (r.pages === 1 ? ' PAGE' : ' PAGES') : '');
-  const skins = CF.ALL_CATS.reduce((n, c) => n + (state.picks[c] || []).length, 0);
-  const prems = CF.ALL_CATS.flatMap(c => state.picks[c] || []).filter(p => ['premium', 'ultra', 'exclusive'].includes(CF.tierKey(p.tier))).length;
-  badge.title = auto
-    ? 'AUTO picked ' + MODE_NAMES[mode] + ' because ' + (mode === 'm4'
-        ? 'the card has ' + skins + ' skins (threshold 50) and ' + prems + ' premium (threshold 20) — a catalog reads better at this size.'
-        : 'the card is under both thresholds (' + skins + ' skins, ' + prems + ' premium).')
-    : 'Layout set manually.';
+  badge.textContent = auto ? 'AUTO → ' + MODE_NAMES[mode] : MODE_NAMES[mode];
+  badge.title = auto ? 'AUTO resolves to TILES — the catalog layout was removed.' : 'Layout set manually.';
   const ex = CF.$('exportBtn');
-  ex.textContent = mode === 'm4' ? 'EXPORT ZIP' : 'EXPORT PNG';
-  ex.title = mode === 'm4'
-    ? 'Catalog mode exports a ZIP containing all ' + r.pages + ' pages at full 1920×1080 resolution — one file per page.'
-    : 'Exports the current view as a single 1920×1080 PNG.';
-  /* CF-07: Catalog mode hides the grid, so keep an Add path in the chrome */
-  CF.$('m4Add').hidden = mode !== 'm4';
+  ex.textContent = 'Export PNG';
+  ex.title = 'Exports the current view as a single 1920×1080 PNG.';
   CF.$('layoutSel').value = state.layout;
 }
-
-CF.$('m4Add').addEventListener('click', () => {
-  /* CF-07: Catalog mode hides the grid and every + Add button in it —
-     this keeps the picker one click away in that mode. */
-  openPicker('Rifles');
-});
 
 /* CF-05: the More menu — outside click and Escape close it */
 (function () {
@@ -1311,22 +1088,11 @@ CF.$('m4Add').addEventListener('click', () => {
 
 CF.$('layoutSel').addEventListener('change', () => {
   state.layout = CF.$('layoutSel').value;
-  state.page = 1;
   refreshLayout();
   /* CF-06: layout changes finally say what they did */
-  const NAMES = { m1: 'TILES', m2: 'SHOWCASE', m4: 'CATALOG' };
+  const NAMES = { m1: 'TILES', m2: 'SHOWCASE' };
   const mode = state.layout === 'auto' ? resolveLayout(buildPayload()) : state.layout;
-  CF.status(state.layout === 'auto'
-    ? 'Layout: AUTO → ' + NAMES[mode] + (mode === 'm4' ? ' — export becomes a ZIP of every page.' : '.')
-    : 'Layout: ' + NAMES[mode] + (mode === 'm4' ? ' — export becomes a ZIP of every page.' : '.'), 'info');
-});
-CF.$('pgPrev').addEventListener('click', () => {
-  state.page -= 1;
-  refreshLayout();
-});
-CF.$('pgNext').addEventListener('click', () => {
-  state.page += 1;
-  refreshLayout();
+  CF.status(state.layout === 'auto' ? 'Layout: AUTO → ' + NAMES[mode] + '.' : 'Layout: ' + NAMES[mode] + '.', 'info');
 });
 document.querySelector('.themes')?.addEventListener('click', e => {
   if (e.target.closest('.swatch')) refreshLayout();
@@ -1513,7 +1279,7 @@ async function initEditMode() {
   Object.assign(state, {
     showAllCards: p.showAllCards || false,
     theme: listing.theme || p.theme || 'protocol',
-    layout: p.layout || 'auto',
+    layout: p.layout === 'm4' ? 'auto' : (p.layout || 'auto'),
     texts: p.texts || {},
     ranks: p.ranks || { crank: null, prank: null },
     picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, p.picks?.[c] || []])),
@@ -1533,10 +1299,7 @@ CF.initThemeSwitch();
 CF.initDisclaimerCollapse();
 CF.initStatusDismiss();
 renderAll();
-renderTierChips();
-renderTierPresets();
 recountStats();
-updateTierCount();
 const fit = CF.makeFitter({ card, sizer: CF.$('sizer'), topbar: CF.$('chrome'), stage: CF.$('stage') });
 fit();
 
@@ -1546,17 +1309,14 @@ const bootDraft = CF.readJSON(DRAFT_KEY, null);
 if (bootDraft) {
   Object.assign(state, {
     theme: bootDraft.theme || 'protocol',
-    layout: bootDraft.layout || 'auto',
+    layout: bootDraft.layout === 'm4' ? 'auto' : (bootDraft.layout || 'auto'),
     texts: bootDraft.texts || {},
     ranks: bootDraft.ranks || { crank: null, prank: null },
     picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, bootDraft.picks?.[c] || []])),
     assets: Object.assign({ avatar: null, pcard: null, buddies: [] }, bootDraft.assets),
     owned: bootDraft.owned || {},
-    ownedLevels: bootDraft.ownedLevels || {}, ownedVariants: bootDraft.ownedVariants || [], ownedBuddies: bootDraft.ownedBuddies || [], ownedCards: bootDraft.ownedCards || [],
-    tier: bootDraft.tier || null
+    ownedLevels: bootDraft.ownedLevels || {}, ownedVariants: bootDraft.ownedVariants || [], ownedBuddies: bootDraft.ownedBuddies || [], ownedCards: bootDraft.ownedCards || []
   });
-  applyTierState(state.tier); /* CF-28: the chips now reflect the saved draft,
-     instead of rendering a default before the draft was ever read */
   renderFromState();
 }
 updateWm();
