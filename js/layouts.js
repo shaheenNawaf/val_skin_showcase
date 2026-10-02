@@ -69,9 +69,10 @@ function namedRow(pick, i, editable) {
   return row;
 }
 
-function makeTile(pick, cat, tall, editable) {
+function makeTile(pick, i, cat, tall, editable) {
   const t = el('span', 'skin tile' + (tall ? ' tall' : ''));
   t.dataset.cat = cat;
+  t.dataset.vp = String(i);
   t.style.borderLeftColor = tierColorOf(pick);
   const label = pickLabel(pick);
   const img = image(pick.icon || pick.img || '', label);
@@ -170,7 +171,7 @@ export function renderSlotsM1(panel, skins, opts) {
     const cols = clamp(2, Math.floor(W / 110), 4);
     slots.classList.add('tiles');
     slots.style.setProperty('--cols', String(cols));
-    skins.forEach((s, i) => slots.appendChild(makeTile(s, cat, false, opts.editable)));
+    skins.forEach((s, i) => slots.appendChild(makeTile(skins[i], i, cat, false, opts.editable)));
     return;
   }
   if (count <= capRows) {
@@ -183,7 +184,7 @@ export function renderSlotsM1(panel, skins, opts) {
   slots.classList.add('tiles');
   slots.style.setProperty('--cols', String(cols));
   const take = Math.min(count, visible);
-  for (let i = 0; i < take; i++) slots.appendChild(makeTile(skins[i], cat, false, opts.editable));
+  for (let i = 0; i < take; i++) slots.appendChild(makeTile(skins[i], i, cat, false, opts.editable));
   if (count > take) slots.appendChild(moreChip(count - take));
 }
 

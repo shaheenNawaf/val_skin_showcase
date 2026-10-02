@@ -439,14 +439,17 @@ function paintSpv() {
   const fallbackIcon = pick.icon || pick.img || '';
 
   if (failed) {
-    CF.$('spvLevels').innerHTML = '<button class="spv-chip" type="button" disabled>Level —</button>';
-    CF.$('spvChromas').innerHTML = '<button class="spv-swatch" type="button" disabled>Variant —</button>';
+    CF.$('spvLevels').innerHTML = '<span class="spv-chip" aria-disabled="true">Level —</span>';
+    CF.$('spvChromas').innerHTML = '<span class="spv-swatch" aria-disabled="true">Variant —</span>';
   } else {
-    CF.$('spvLevels').innerHTML = levels.length > 1
-      ? levels.map((l, i) => `<button class="spv-chip${spv.lv === i + 1 ? ' active' : ''}" type="button" data-lv="${i + 1}">L${i + 1}</button>`).join('')
+    /* viewer is read-only: show only what the listing actually contains */
+    CF.$('spvLevels').innerHTML = levels.length
+      ? `<span class="spv-chip active" aria-current="true">L${spv.lv}</span>`
       : '<span class="spv-cap">Base skin</span>';
-    CF.$('spvChromas').innerHTML = chromas.map((c, i) =>
-      `<button class="spv-swatch${spv.k === i ? ' active' : ''}" type="button" data-ch="${i}" title="${CF.esc(c.label)}"><img loading="lazy" src="${CF.esc(c.sw || c.icon)}" alt=""><b>${CF.esc(c.label)}</b></button>`).join('');
+    const c0 = chromas[spv.k];
+    CF.$('spvChromas').innerHTML = c0
+      ? `<span class="spv-swatch active" aria-current="true" title="${CF.esc(c0.label)}"><img loading="lazy" src="${CF.esc(c0.sw || c0.icon)}" alt=""><b>${CF.esc(c0.label)}</b></span>`
+      : '<span class="spv-swatch active" aria-current="true"><b>Standard</b></span>';
   }
 
   const c = chromas[spv.k];
