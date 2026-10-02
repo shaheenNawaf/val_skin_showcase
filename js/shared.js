@@ -121,14 +121,19 @@ export function initThemeSwitch(persist = true) {
 // The card keeps its 1920×1080 design size and is scaled into a #sizer box.
 // A scale floor keeps the card readable on small screens; #stage scrolls
 // (via margin:auto centering) whenever the floored card overflows.
-export function makeFitter({ card, sizer, topbar, stage, floor = 0.35 }) {
+export function makeFitter({ card, sizer, topbar, stage, floor = 0.35, getZoom }) {
   function fit() {
     const tbh = topbar ? topbar.offsetHeight : 52;
     document.documentElement.style.setProperty('--tbh', tbh + 'px');
     const availW = innerWidth - 16;
     const availH = innerHeight - tbh - 34; // 34px clearance for the disclaimer bar
     const natural = Math.min(availW / DESIGN_W, availH / DESIGN_H);
-    const s = Math.min(Math.max(natural, floor), 1);
+    /* CF-15 (option A): the host page can pin a manual zoom (1, 2, …).
+       Pinned zoom pans; fit stays clamped to the floor like before. */
+    const zoom = getZoom ? getZoom() : null;
+    const s = zoom != null
+      ? Math.min(Math.max(zoom, floor), 4)
+      : Math.min(Math.max(natural, floor), 1);
     sizer.style.width = DESIGN_W * s + 'px';
     sizer.style.height = DESIGN_H * s + 'px';
     card.style.transform = `scale(${s})`;

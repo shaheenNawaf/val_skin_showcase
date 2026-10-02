@@ -323,10 +323,28 @@ function syncUrl() {
 CF.$('viewSwitch')?.addEventListener('click', e => {
   const btn = e.target.closest('button[data-view]');
   if (!btn) return;
+  /* CF-14: SIMPLE returns to the native mobile layout */
+  if (btn.dataset.view === 'native') {
+    viewMode = null;
+    viewPage = 1;
+    document.body.classList.remove('canvas-mode');
+    CF.$('nativeBtn').hidden = true;
+    viewRefresh(currentListing);
+    syncUrl();
+    fit();
+    return;
+  }
   viewMode = btn.dataset.view;
   viewPage = 1;
+  /* CF-14: on a phone, picking a card view swaps the native layout for
+     the zoomable canvas — the switch no longer disappears below 700px */
+  if (innerWidth <= 700) {
+    document.body.classList.add('canvas-mode');
+    CF.$('nativeBtn').hidden = false;
+  }
   viewRefresh(currentListing);
   syncUrl();
+  fit();
 });
 CF.$('vpgPrev')?.addEventListener('click', () => {
   viewPage--;
@@ -490,9 +508,97 @@ function startSupabasePresence(slug) {
 }
 
 // ── boot ──────────────────────────────────────────────────────────
-const fit = CF.makeFitter({ card, sizer: CF.$('sizer'), topbar: CF.$('topbar'), stage: CF.$('stage') });
+/* CF-15 (option A): null = fit to viewport; a number = pinned manual zoom */
+let zoomMode = null;
+const fit = CF.makeFitter({ card, sizer: CF.$('sizer'), topbar: CF.$('vchrome'), stage: CF.$('stage'),
+  getZoom: () => zoomMode });
 fit();
 CF.initDisclaimerCollapse();
+
+/* ── CF-11/CF-12: listing hero — structured price, seller, status ── */
+const CUR_SYMBOL = { USD: '$', EUR: '€', GBP: '£', JPY: '¥' };
+function moneyText(price, currency) {
+  if (price == null || isNaN(Number(price))) return null;
+  const n = Number(price);
+  const sym = CUR_SYMBOL[currency] || (currency ? currency + ' ' : '$');
+  return { sym, amt: n % 1 ? n.toFixed(2) : n.toLocaleString(), code: currency || '' };
+}
+function applyHero(listing) {
+  const t = listing.payload?.texts || {};
+  const hero = CF.$('vhero');
+  const title = (t.cname && t.cname !== 'CHANGE NAME' && t.cname.trim()) || t.vlogin || 'Listing ' + (listing.slug || '');
+  CF.$('vhTitle').textContent = title;
+  document.title = title + (listing.price != null ? ' · ' + (moneyText(listing.price, listing.currency)?.sym || '') + listing.price : '') + ' — CardForge';
+  const bits = [];
+  if (t.code) bits.push(t.code);
+  if (t.crank) bits.push(t.crank);
+  const skins = (listing.payload?.picks ? Object.values(listing.payload.picks).reduce((n, a) => n + (Array.isArray(a) ? a.length : 0), 0) : null);
+  if (skins != null) bits.push(skins + ' skins');
+  CF.$('vhSub').textContent = bits.join(' · ') || '—';
+
+  const m = moneyText(listing.price, listing.currency);
+  const st = listing.status || 'available';
+  const stCfg = st === 'sold' ? { txt: 'SOLD', cls: 'bad' }
+    : st === 'pending' ? { txt: 'PENDING', cls: 'warn' }
+    : { txt: 'AVAILABLE', cls: 'ok' };
+  const vs = CF.$('vhStatus');
+  vs.hidden = false;
+  vs.textContent = stCfg.txt;
+  vs.className = 'vh-status ' + stCfg.cls;
+  hero.classList.toggle('sold', st === 'sold');
+
+  const price = CF.$('vhPrice'), cur = CF.$('vhCur');
+  const strike = st === 'sold' && m;
+  if (m) {
+    price.innerHTML = (strike ? '<s>' : '') + m.sym + m.amt + (strike ? '</s>' : '');
+    cur.textContent = [m.code, listing.negotiable ? 'open to offers' : '', st === 'sold' ? 'sold' : '']
+      .filter(Boolean).join(' · ');
+  } else {
+    price.textContent = 'CONTACT FOR PRICE';
+    cur.textContent = listing.negotiable ? 'open to offers' : '';
+  }
+  /* the pinned mobile action bar mirrors the hero */
+  CF.$('maPrice').innerHTML = price.innerHTML;
+  CF.$('maCur').textContent = cur.textContent;
+  CF.$('mactbar').hidden = false;
+  return st;
+}
+/* CF-13: Contact always renders. A valid URL opens; anything else is
+   copyable text; only a truly empty field disables the button. */
+function wireContact(link) {
+  const btn = CF.$('contactBtn');
+  const mob = CF.$('maContact');
+  const v = (link || '').trim();
+  const valid = /^https?:\/\//.test(v);
+  const nonEmpty = v.length > 0;
+  [btn, mob].forEach(b => {
+    if (!b) return;
+    b.hidden = false;
+    b.disabled = !valid && !nonEmpty;
+    b.textContent = valid ? 'Contact seller' : (nonEmpty ? 'Copy seller contact' : 'Seller set no contact');
+    b.title = valid ? 'Opens the seller\u2019s contact page in a new tab'
+      : nonEmpty ? 'The seller\u2019s contact is not a link — copy it and reach out yourself'
+      : 'This listing has no contact set';
+  });
+  const act = () => {
+    if (valid) { window.open(v, '_blank', 'noopener'); return; }
+    if (nonEmpty) { CF.copyText(v); CF.status('Seller contact copied — ' + v, 'ok'); return; }
+    CF.status('This listing has no contact information.', 'err');
+  };
+  btn?.addEventListener('click', act);
+  mob?.addEventListener('click', act);
+}
+
+/* CF-15 (option A): the zoom control */
+document.querySelectorAll('#zoomBar button').forEach(b => b.addEventListener('click', () => {
+  const z = b.dataset.zoom;
+  zoomMode = z === 'fit' ? null : Number(z);
+  document.querySelectorAll('#zoomBar button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  CF.$('zoomNote').textContent = zoomMode == null ? 'fit to viewport' : ('viewing at ' + Math.round(zoomMode * 100) + '% — drag to pan');
+  fit();
+}));
+
+/* CF-14: the SIMPLE chip is shown/hidden by the viewSwitch handler above */
 
 const slug = new URLSearchParams(location.search).get('slug');
 if (!slug) {
@@ -539,14 +645,14 @@ if (!slug) {
     viewPage = Math.max(1, parseInt(new URLSearchParams(location.search).get('page') || '1', 10) || 1);
     viewRefresh(listing);
     totalViews = Number(listing.views) || 0;
+    /* CF-11/CF-12: structured price, seller, status — from columns the
+       fetch already returned and used to discard */
+    applyHero(listing);
+    wireContact(listing.payload?.texts?.link);
     CF.status('Listing loaded.', 'ok');
 
     const link = (listing.payload?.texts?.link || '').trim();
-    const contactBtn = CF.$('contactBtn');
-    if (/^https?:\/\//.test(link)) {
-      contactBtn.hidden = false;
-      contactBtn.addEventListener('click', () => window.open(link, '_blank', 'noopener'));
-    }
+    /* contact wiring moved to wireContact() — the button always renders now */
 
     if (localStorage.getItem('vc-edit-' + slug)) {
       const editBtn = CF.$('editBtn');
@@ -561,10 +667,15 @@ if (!slug) {
     fit();
     if (supabase) {
       startSupabasePresence(slug);
-      try {
-        const { data, error } = await supabase.rpc('bump_views', { p_slug: slug });
-        if (!error && data != null) totalViews = Number(data);
-      } catch { /* view count is best-effort */ }
+      /* CF-22: the seller's own loads are not "views" — skip the bump when
+         this browser holds the edit token for the listing */
+      const isOwner = !!localStorage.getItem('vc-edit-' + slug);
+      if (!isOwner) {
+        try {
+          const { data, error } = await supabase.rpc('bump_views', { p_slug: slug });
+          if (!error && data != null) totalViews = Number(data);
+        } catch { /* view count is best-effort */ }
+      }
       updateBadge(1);
     } else {
       CF.startLocalPresence(slug, updateBadge);

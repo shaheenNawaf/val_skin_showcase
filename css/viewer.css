@@ -1,5 +1,47 @@
 /* ── CardForge viewer-only styles ──────────────────────────────── */
 
+/* CF-11: measured chrome = topbar + hero. --tbh covers both. */
+#vchrome{position:fixed;top:0;left:0;right:0;z-index:20;background:var(--c-bg);border-bottom:1px solid var(--c-line)}
+#vchrome #topbar{position:static}
+#vhero{display:flex;align-items:center;gap:16px;flex-wrap:wrap;row-gap:8px;padding:10px 14px;
+  background:var(--c-surface);border-top:1px solid var(--c-line-soft)}
+#vhero .vh-left{flex:1;min-width:200px}
+#vhero .vh-left b{display:block;font:800 20px/1.15 var(--font-display);letter-spacing:.01em;color:var(--c-ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46ch}
+#vhero .vh-left span{display:block;font:600 11px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--c-mut);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#vhero .vh-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap;row-gap:6px}
+#vhero .vh-price{text-align:right}
+#vhero .vh-price b{font:800 26px/1 var(--font-display);color:var(--c-ink);white-space:nowrap}
+#vhero .vh-price b s{color:var(--c-mut)}
+#vhero .vh-price span{display:block;font:700 10px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--c-mut);margin-top:3px;white-space:nowrap}
+.vh-status{font:800 10px var(--font-display);letter-spacing:.14em;text-transform:uppercase;padding:5px 9px;
+  border:1px solid var(--c-line);color:var(--c-mut);white-space:nowrap}
+.vh-status.ok{color:#3DD68C;border-color:rgba(61,214,140,.4)}
+.vh-status.warn{color:#FFC45E;border-color:rgba(255,196,94,.4)}
+.vh-status.bad{color:#FF5D7B;border-color:rgba(255,93,123,.4)}
+#vhero.sold{opacity:.74}
+
+/* CF-15 (option A): the zoom bar lives at the top of the stage */
+#zoomBar{position:sticky;top:0;z-index:8;display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  padding:8px 14px;background:color-mix(in srgb,var(--c-bg) 88%,transparent);backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--c-line-soft)}
+#zoomBar button{background:transparent;border:1px solid var(--c-line);color:var(--c-mut);
+  font:700 9px 'Chakra Petch',sans-serif;letter-spacing:.14em;padding:6px 11px;cursor:pointer}
+#zoomBar button[aria-pressed=true]{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
+#zoomBar #zoomNote{font:600 10px var(--font-ui);letter-spacing:.06em;color:var(--c-mut);margin-left:auto;white-space:nowrap}
+
+/* CF-11: pinned mobile action bar */
+#mactbar{position:fixed;left:0;right:0;bottom:34px;z-index:25;display:flex;align-items:center;gap:14px;
+  padding:10px 14px;background:color-mix(in srgb,var(--c-surface) 94%,transparent);
+  border-top:1px solid var(--c-line);backdrop-filter:blur(8px)}
+#mactbar .ma-price{flex:1;min-width:0}
+#mactbar .ma-price b{font:800 22px/1 var(--font-display);color:var(--c-ink);white-space:nowrap}
+#mactbar .ma-price b s{color:var(--c-mut)}
+#mactbar .ma-price span{font:700 9.5px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--c-mut);display:block;margin-top:2px}
+#mactbar[hidden]{display:none}
+@media (min-width:701px){#mactbar{display:none}}
+
 #viewBadge{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--c-line);color:var(--c-mut);padding:6px 14px;font:600 12px var(--font-ui);letter-spacing:.1em;
 clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 #viewBadge[hidden]{display:none}
@@ -119,4 +161,10 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 #viewPageNav[hidden]{display:none}
 #viewPageNav button{background:transparent;border:1px solid var(--c-line);color:var(--c-mut);width:24px;height:24px;font:700 13px/1 'Chakra Petch',sans-serif;cursor:pointer}
 #viewPageNav b{font:700 9px 'Chakra Petch',sans-serif;letter-spacing:.12em;color:var(--c-mut)}
-@media (max-width:700px){#viewSwitch,#viewPageNav{display:none}}
+/* CF-14: the layout switch survives on phones. Picking a card view swaps
+   the native layout for the zoomable canvas; SIMPLE returns to native. */
+@media (max-width:700px){
+  #mcard{margin:calc(var(--tbh) + 12px) 12px 96px}
+  body.canvas-mode #mcard{display:none}
+  body.canvas-mode #stage{display:block}
+}
