@@ -609,19 +609,20 @@ function applyHero(listing) {
   vs.className = 'vh-status ' + stCfg.cls;
   hero.classList.toggle('sold', st === 'sold');
 
-  const price = CF.$('vhPrice'), cur = CF.$('vhCur');
+  /* price lives only in the pinned mobile bar now — the hero shows
+     status + contact and nothing else */
+  let priceHTML = '', curText = '';
   const strike = st === 'sold' && m;
   if (m) {
-    price.innerHTML = (strike ? '<s>' : '') + m.sym + m.amt + (strike ? '</s>' : '');
-    cur.textContent = [m.code, listing.negotiable ? 'open to offers' : '', st === 'sold' ? 'sold' : '']
+    priceHTML = (strike ? '<s>' : '') + m.sym + m.amt + (strike ? '</s>' : '');
+    curText = [m.code, listing.negotiable ? 'open to offers' : '', st === 'sold' ? 'sold' : '']
       .filter(Boolean).join(' · ');
   } else {
-    price.textContent = 'CONTACT FOR PRICE';
-    cur.textContent = listing.negotiable ? 'open to offers' : '';
+    priceHTML = 'CONTACT FOR PRICE';
+    curText = listing.negotiable ? 'open to offers' : '';
   }
-  /* the pinned mobile action bar mirrors the hero */
-  CF.$('maPrice').innerHTML = price.innerHTML;
-  CF.$('maCur').textContent = cur.textContent;
+  CF.$('maPrice').innerHTML = priceHTML;
+  CF.$('maCur').textContent = curText;
   CF.$('mactbar').hidden = false;
   return st;
 }

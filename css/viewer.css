@@ -11,10 +11,6 @@
 #vhero .vh-left span{display:block;font:600 11px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;
   color:var(--c-mut);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #vhero .vh-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap;row-gap:6px}
-#vhero .vh-price{text-align:right}
-#vhero .vh-price b{font:800 26px/1 var(--font-display);color:var(--c-ink);white-space:nowrap}
-#vhero .vh-price b s{color:var(--c-mut)}
-#vhero .vh-price span{display:block;font:700 10px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--c-mut);margin-top:3px;white-space:nowrap}
 .vh-status{font:800 10px var(--font-display);letter-spacing:.14em;text-transform:uppercase;padding:5px 9px;
   border:1px solid var(--c-line);color:var(--c-mut);white-space:nowrap}
 .vh-status.ok{color:#3DD68C;border-color:rgba(61,214,140,.4)}
