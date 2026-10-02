@@ -91,8 +91,10 @@ body.exporting #stage{position:static;overflow:visible;display:block}
 body.exporting #sizer{width:auto!important;height:auto!important;margin:0}
 body.exporting #card{position:relative;transform:none!important}
 
-/* editor-only chrome must never reach the exported PNG */
-body.exporting .auto,body.exporting .pickrank,body.exporting .add{display:none}
+/* editor-only chrome must never reach the exported PNG.
+   visibility (not display) so the grid geometry the slots were measured
+   against survives the capture — the PNG matches the preview. */
+body.exporting .auto,body.exporting .pickrank,body.exporting .add{visibility:hidden}
 body.exporting .hint{visibility:hidden}
 
 [contenteditable]{outline:none;border-bottom:1px dashed var(--accent-dash,rgba(255,70,85,.3))}
@@ -262,7 +264,7 @@ button.jchip:hover{color:var(--ink);border-color:var(--mut)}
 .skin.named img{position:static;inset:auto;width:72px;height:36px;flex:none;padding:0}
 .skin.named .tname{display:block;flex:1;min-width:0;font:500 12px 'Chakra Petch',sans-serif;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mode-m2 .slots{gap:6px}
-.mgrid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:10px}
+.spread-mosaic{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:10px}
 .mcell{min-height:0;display:flex;flex-direction:column;border:1px solid var(--line);background:var(--panel);clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)))}
 .mcellhead{height:24px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 10px;font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.22em;color:var(--mut);text-transform:uppercase;border-bottom:1px solid var(--line)}
 .mcellbody{position:relative;flex:1;min-height:0}

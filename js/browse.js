@@ -683,6 +683,11 @@ async function loadFull(slug) {
     const { data, error } = await supabase.from('listing_public').select('*').eq('slug', slug).maybeSingle();
     if (error) throw error;
     if (!data) {
+      /* blank the placeholder card so a dead deep link never shows fake data */
+      fillCard({ picks: {}, texts: {} }, slug);
+      $('card').dataset.theme = 'protocol';
+      fitCard();
+      $('qvContact').hidden = true;
       status('Could not load full listing.', 'err');
       return;
     }
@@ -768,8 +773,11 @@ function wire() {
   qv.addEventListener('click', e => { if (e.target === qv) closeQV(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !qv.hidden) closeQV(); });
   document.addEventListener('click', e => {
-    const t = e.target.closest('.gcard,.arow,.gf-cta');
+    /* .gfeat (the featured tile wrapper) carries data-slug too — the whole
+       tile is the affordance, not just the bottom button */
+    const t = e.target.closest('.gcard,.arow,.gf-cta,.gfeat');
     if (!t) return;
+    if (t.classList.contains('gfeat') && e.target.closest('button:not(.gf-cta)')) return;
     const slug = t.getAttribute('data-slug');
     if (!slug || !bySlug[slug]) return;
     e.preventDefault();

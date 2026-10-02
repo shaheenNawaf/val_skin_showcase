@@ -230,7 +230,7 @@ function renderMobile(listing) {
     const h = document.createElement('h3');
     h.textContent = cat;
     const g = document.createElement('div');
-    g.className = 'mgrid';
+    g.className = 'spread-mosaic';
     skins.forEach(s => {
       const cell = document.createElement('figure');
       if (s.id) {
@@ -523,6 +523,13 @@ if (!slug) {
 
   if (!listing) {
     CF.status('Listing not found.', 'err');
+    /* the card markup ships with placeholder values (K486, ranks, price).
+       Clear them so a dead link never shows a fake card. */
+    document.querySelectorAll('[data-key]').forEach(el => { el.textContent = '—'; });
+    document.querySelectorAll('[data-m]').forEach(el => { el.textContent = '—'; });
+    document.querySelectorAll('#card img').forEach(img => { img.remove(); });
+    CF.$('viewBadge').hidden = true;
+    CF.$('contactBtn').hidden = true;
   } else {
     renderListing(listing);
     renderMobile(listing);

@@ -61,7 +61,7 @@ button,input,select{font-family:var(--font-ui)}
 #clearAll:hover{color:var(--c-accent);border-color:var(--c-accent)}
 
 #feature{margin:0 0 16px}
-.gfeat{display:grid;grid-template-columns:1.4fr 1fr;background:var(--c-surface);border:1px solid var(--c-line);overflow:hidden;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
+.gfeat{display:grid;grid-template-columns:1.4fr 1fr;background:var(--c-surface);border:1px solid var(--c-line);overflow:hidden;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg));cursor:pointer}
 .gf-preview{position:relative;min-width:0;aspect-ratio:16/9;overflow:hidden;
   background:linear-gradient(160deg,var(--th-bg),var(--th-panel));
   background:

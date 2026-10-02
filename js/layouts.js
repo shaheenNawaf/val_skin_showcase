@@ -320,7 +320,7 @@ function fillMosaicBody(body, cell, W, H) {
 }
 
 function renderMosaic(stage, payload, W, H) {
-  const grid = el('div', 'mgrid');
+  const grid = el('div', 'spread-mosaic');
   stage.appendChild(grid);
   if (countSkins((payload && payload.picks) || {}) === 0) {
     ALL_CATS.forEach(cat => grid.appendChild(el('div', 'mcell empty', cat)));
