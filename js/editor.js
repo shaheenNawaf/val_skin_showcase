@@ -940,17 +940,13 @@ CF.$('exportBtn').addEventListener('click', async () => {
   if (exporting) return;
   exporting = true;
   CF.$('exportBtn').disabled = true;
-  const payload = buildPayload();
-  const mode = state.layout === 'auto' ? resolveLayout(payload) : state.layout;
   CF.status('Rendering 3840×2160 PNG…');
   try {
-    applyLayout(CF.$('card'), payload, mode, 1, { editable: false }); /* capped poster for the capture */
-    await CF.exportCard(card);
-    CF.status('PNG exported (3840×2160) — the poster caps each category; your listing scrolls the rest.', 'ok');
+    await CF.exportCard(card, { full: true });
+    CF.status('PNG exported — 3840×' + (card.dataset.exportHeight ? Math.round(Number(card.dataset.exportHeight) * 2) : 2160) + ', exactly what your preview shows.', 'ok');
   } catch (e) {
     CF.status('Export failed: ' + (e.message || e), 'err');
   } finally {
-    renderAll(); /* restore the scrollable full-inventory preview */
     exporting = false;
     CF.$('exportBtn').disabled = false;
     fit();
@@ -1202,7 +1198,9 @@ async function publishListing() {
        instead of a text stub. Best-effort — a failure must not lose the
        publish. */
     if (supabase) {
+      const pubMode = state.layout === 'auto' ? resolveLayout(payload) : state.layout;
       try {
+        applyLayout(CF.$('card'), payload, pubMode, 1, { editable: false });
         const blob = await CF.captureCardBlob(card, 'image/jpeg', .82);
         if (blob) {
           const { error: upErr } = await supabase.storage
@@ -1212,6 +1210,8 @@ async function publishListing() {
         }
       } catch (e) {
         CF.status('Published, but the share image failed: ' + (e.message || e), 'err');
+      } finally {
+        renderAll();
       }
     }
 

@@ -98,6 +98,11 @@ body.exporting .auto,body.exporting .pickrank,body.exporting .add{visibility:hid
 body.exporting .hint{visibility:hidden}
 body.exporting .more-note{display:none}
 
+/* WYSIWYG capture: unfold the live scroll containers into a tall document */
+body.exporting-full #card.is-live{height:auto;min-height:1080px}
+body.exporting-full #card.is-live .slots{overflow:visible;height:auto}
+body.exporting-full #card.is-live .slots.tiles{align-content:start}
+
 [contenteditable]{outline:none;border-bottom:1px dashed var(--accent-dash,rgba(255,70,85,.3))}
 [contenteditable]:hover{border-bottom-color:var(--accent);cursor:text}
 

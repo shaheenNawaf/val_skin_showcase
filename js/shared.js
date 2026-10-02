@@ -398,32 +398,35 @@ export function resizeToDataUrl(file, max) {
 // PNGs never taint the canvas and stored payloads stay small.
 /* Shared capture used by the PNG export and by the publish flow, which
    uploads the same render as the listing's og:image (CF-20). */
-export async function captureCardBlob(card, type = 'image/png', quality) {
+export async function captureCardBlob(card, type = 'image/png', quality, opts = {}) {
   document.body.classList.add('exporting');
+  if (opts.full) document.body.classList.add('exporting-full');
   // wait a frame so the exporting styles apply — with a setTimeout escape
   // because backgrounded tabs never fire requestAnimationFrame
   await new Promise(r => { requestAnimationFrame(r); setTimeout(r, 120); });
+  if (opts.full) card.dataset.exportHeight = String(card.scrollHeight);
   const swaps = [];
   try {
-    for (const img of card.querySelectorAll('img')) {
-      const src = img.getAttribute('src');
-      if (!src || src.startsWith('data:')) continue;
-      const d = await toDataUrl(src);
-      if (d) { swaps.push([img, src]); img.src = d; }
-    }
+    const imgs = [...card.querySelectorAll('img')].filter(im => { const s = im.getAttribute('src'); return s && !s.startsWith('data:'); });
+    await Promise.all(imgs.map(async im => {
+      const d = await toDataUrl(im.getAttribute('src'));
+      if (d) { swaps.push([im, im.getAttribute('src')]); im.src = d; }
+    }));
     const canvas = await html2canvas(card, { scale: 2, useCORS: true, backgroundColor: null });
     return await new Promise(res => canvas.toBlob(res, type, quality));
   } finally {
     swaps.forEach(([img, src]) => { img.src = src; });
     document.body.classList.remove('exporting');
+    document.body.classList.remove('exporting-full');
   }
 }
 
-export async function exportCard(card) {
-  const blob = await captureCardBlob(card, 'image/png');
+export async function exportCard(card, opts) {
+  const blob = await captureCardBlob(card, 'image/png', undefined, opts);
   if (!blob) { return; }
   const a = document.createElement('a');
-  a.download = 'showcase-card-3840x2160.png';
+  const h = opts && opts.full && card.dataset.exportHeight ? Math.round(Number(card.dataset.exportHeight) * 2) : 2160;
+  a.download = `showcase-card-3840x${h}.png`;
   a.href = URL.createObjectURL(blob);
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
