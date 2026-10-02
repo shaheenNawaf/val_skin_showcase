@@ -123,6 +123,7 @@ function renderFromState() {
   hydrateRanks();
   renderAll();
   hydrateAssets();
+  syncFormFromState(); /* FM: import/draft/edit-mode/boot-restore repopulate the phone form */
 }
 
 function captureTexts() {
@@ -192,15 +193,19 @@ function openPicker(cat) {
   openModal();
 }
 
-function openRankPicker(btn) {
+function openRankPickerForKey(key) {
   pickerMode = 'rank';
-  rankRow = btn.closest('.rankrow');
-  rankKey = btn.dataset.rankpick;
+  rankRow = card.querySelector('.rankrow[data-rank="' + key + '"]');
+  rankKey = key;
   CF.$('mTitle').textContent = 'Select rank';
   modalVis({ filters: false });
   mSearch.value = '';
   renderGrid();
   openModal();
+}
+
+function openRankPicker(btn) {
+  openRankPickerForKey(btn.closest('.rankrow').dataset.rank);
 }
 
 function paintChips() {
@@ -303,6 +308,7 @@ function addSkin(cat, s, chroma) {
   renderPanel(cat, { animateLast: true });
   recountStats();      /* CF-27: counters track manual edits */
   refreshLayout();
+  afterPicksChange(); /* FM: refresh phone form skins + stats */
 }
 
 function applyRank(r) {
@@ -312,6 +318,10 @@ function applyRank(r) {
   const badge = rankRow.querySelector('.rankbadge');
   if (r.icon) badge.src = r.icon;
   else badge.removeAttribute('src');
+  const fn = document.getElementById('f-' + rankKey + '-name'); /* FM: phone form rank label */
+  if (fn) fn.textContent = r.name;
+  const fb = document.getElementById('f-' + rankKey + '-badge');
+  if (fb) { if (r.icon) fb.src = r.icon; else fb.removeAttribute('src'); }
   closeModal();
   refreshLayout();
 }
@@ -431,6 +441,7 @@ function addBuddy(b) {
   img.alt = 'Gun buddy';
   box.appendChild(img);
   refreshLayout();
+  renderFormBuddies(); /* FM: keep phone form buddy grid in sync */
 }
 
 async function openCardPicker() {
@@ -467,6 +478,7 @@ function applyCard(c) {
   pc.querySelector('.hint')?.remove();
   closeModal();
   refreshLayout();
+  syncFormArt(); /* FM: keep the phone form player-card tile in sync */
 }
 
 // ── modal events ──────────────────────────────────────────────────
@@ -517,6 +529,7 @@ CF.$('mAddOwned').addEventListener('click', () => {
   renderPanel(currentCat);
   refreshLayout();
   renderGrid();
+  afterPicksChange(); /* FM: bulk add supplies the missing recount */
 });
 mGrid.addEventListener('click', e => {
   const vd = e.target.closest('.vd');
@@ -557,6 +570,7 @@ CF.$('vLevels').addEventListener('click', e => {
   CF.$('vLevels').querySelectorAll('.chip').forEach(x => x.classList.toggle('active', +x.dataset.lv === (p.level || 1)));
   paintVariantPreview();
   refreshLayout();
+  afterPicksChange(); /* FM: level change updates form tiles + stats */
 });
 CF.$('vChromas').addEventListener('click', e => {
   const b = e.target.closest('.vchroma'); if (!b || pickerMode !== 'variant') return;
@@ -580,6 +594,7 @@ CF.$('vChromas').addEventListener('click', e => {
   CF.$('vLevels').querySelectorAll('.chip').forEach(x => x.classList.toggle('active', +x.dataset.lv === (p.level || 1)));
   paintVariantPreview();
   refreshLayout();
+  afterPicksChange(); /* FM: chroma change updates form tiles + stats */
 });
 CF.$('vpLevel').addEventListener('click', e => {
   const mute = e.target.closest('[data-vp-mute]');
@@ -599,6 +614,7 @@ CF.$('vRemove').addEventListener('click', () => {
   if (arr && arr[variantIdx]) { arr.splice(variantIdx, 1); renderPanel(variantCat); recountStats(); }
   closeModal();
   refreshLayout();
+  afterPicksChange(); /* FM: precise remove updates form tiles + stats */
 });
 CF.$('vDone').addEventListener('click', () => { if (pickerMode === 'variant') closeModal(); refreshLayout(); });
 
@@ -867,6 +883,7 @@ card.addEventListener('click', e => {
     const i = state.assets.buddies.indexOf(buddy.src);
     if (i > -1) state.assets.buddies.splice(i, 1);
     buddy.remove();
+    renderFormBuddies(); /* FM: keep phone form buddy grid in sync */
     return;
   }
   const cbox = e.target.closest('.charms-box');
@@ -884,6 +901,7 @@ card.addEventListener('click', e => {
         renderPanel(cat);
         recountStats();      /* CF-27 */
         refreshLayout();
+        afterPicksChange(); /* FM: card-side removal updates form tiles + stats */
       }
     }, 160);
     return;
@@ -915,11 +933,13 @@ fileInput.addEventListener('change', async e => {
     if (kind === 'avatar') {
       t.src = url;
       state.assets.avatar = url;
+      syncFormArt(); /* FM: phone form avatar preview */
     } else if (kind === 'pcard') {
       t.style.backgroundImage = `url("${url}")`;
       t.querySelector('.hint')?.remove();
       state.assets.pcard = url;
       closeModal();
+      syncFormArt(); /* FM: phone form player-card preview */
     } else {
       t.querySelector('.hint')?.remove();
       const img = new Image();
@@ -927,6 +947,7 @@ fileInput.addEventListener('change', async e => {
       img.alt = 'Gun buddy';
       t.appendChild(img);
       state.assets.buddies.push(url);
+      syncFormArt(); renderFormBuddies(); /* FM: art previews + buddy grid stay current */
     }
   } catch {
     CF.status('Could not read that image.', 'err');
@@ -1084,6 +1105,218 @@ function refreshLayout() {
   });
   menu.querySelectorAll('.mm-item').forEach(i => i.addEventListener('click', () => setOpen(false)));
 })();
+
+/* TT-110 / FM: relocate live topbar nodes (never clone) to fit each width band.
+   >760: tb-left original order (logo→themes→layoutSel→layoutBadge) + pubswitch last in More.
+   701-760: themes prepend + pubswitch last in More; layoutSel/badge stay in tb-left.
+   ≤700: themes→#fThemeSlot, layoutSel→#fLayoutSlot, layoutBadge→#fBadgeSlot, pubswitch→#fPubSlot. */
+const phoneMQ = window.matchMedia('(max-width:760px)');
+const phoneMq700 = window.matchMedia('(max-width:700px)');
+const themesEl = document.querySelector('.themes');
+const tbLeft = document.querySelector('.tb-left');
+const layoutSelEl = CF.$('layoutSel');
+const layoutBadgeEl = CF.$('layoutBadge');
+const pubswitchEl = document.querySelector('.pubswitch');
+const formPrevEl = CF.$('formPrevBtn');
+const moreMenu = CF.$('moreMenu');
+function placeRelocatables() {
+  if (phoneMq700.matches) {
+    CF.$('fThemeSlot').appendChild(themesEl);
+    CF.$('fLayoutSlot').appendChild(layoutSelEl);
+    CF.$('fBadgeSlot').appendChild(layoutBadgeEl);
+    CF.$('fPubSlot').appendChild(pubswitchEl);
+  } else if (phoneMQ.matches) {
+    moreMenu.prepend(themesEl);
+    tbLeft.insertBefore(layoutSelEl, formPrevEl);
+    tbLeft.insertBefore(layoutBadgeEl, formPrevEl);
+    moreMenu.appendChild(pubswitchEl);
+  } else {
+    tbLeft.insertBefore(themesEl, formPrevEl);
+    tbLeft.insertBefore(layoutSelEl, formPrevEl);
+    tbLeft.insertBefore(layoutBadgeEl, formPrevEl);
+    moreMenu.appendChild(pubswitchEl);
+  }
+}
+placeRelocatables();
+phoneMQ.addEventListener('change', placeRelocatables);
+phoneMq700.addEventListener('change', e => {
+  placeRelocatables();
+  if (e.matches) {
+    syncFormFromState(); /* FM: fill the freshly visible form */
+  } else {
+    document.body.classList.remove('stage-peek');
+    if (formPrevEl) formPrevEl.textContent = 'Preview';
+  }
+});
+
+/* FM: phone form mode — sync + renders + delegated wiring */
+function syncFormArt() {
+  const av = document.getElementById('fAvatar');
+  if (av) av.src = state.assets.avatar || AVATAR_PLACEHOLDER;
+  const pc = document.getElementById('fPcard');
+  if (pc) {
+    if (state.assets.pcard) { pc.src = state.assets.pcard; pc.hidden = false; }
+    else pc.hidden = true;
+  }
+}
+
+function syncStatsInputs() {
+  ['prems', 'limited', 'semis', 'anims'].forEach(k => {
+    const el = document.querySelector('#formMode input[data-fkey="' + k + '"]');
+    const b = card.querySelector('b[data-key="' + k + '"]');
+    if (el && b) el.value = b.textContent.trim();
+  });
+}
+
+function renderFormSkins() {
+  if (!phoneMq700.matches) return;
+  const wrap = document.getElementById('fskinCats');
+  if (!wrap) return;
+  let total = 0;
+  wrap.innerHTML = CF.ALL_CATS.map(cat => {
+    const picks = state.picks[cat] || [];
+    total += picks.length;
+    const label = cat === 'Sniper Rifles' ? 'Snipers' : cat;
+    const tiles = picks.map((s, i) => {
+      const tier = (String(s.tier || '').toLowerCase().match(/exclusive|ultra|premium|deluxe|select/) || [''])[0];
+      let cap = s.name || s.weapon || 'Skin';
+      if (s.variant?.name && !cap.includes(s.variant.name)) cap += ' · ' + s.variant.name;
+      const icon = s.icon || s.img || '';
+      const alt = (s.weapon || 'Skin') + ' — ' + (s.name || '');
+      return `<figure class="fskin" data-tier="${CF.esc(tier)}" data-fcat="${CF.esc(cat)}" data-fidx="${i}" role="button" tabindex="0" title="Edit ${CF.esc(String(s.level || 1))}/variant">` +
+        (s.level >= 2 ? `<i class="flv">LV${CF.esc(String(s.level))}</i>` : '') +
+        `<img loading="lazy" src="${CF.esc(icon)}" alt="${CF.esc(alt)}">` +
+        `<figcaption>${CF.esc(cap)}</figcaption></figure>`;
+    }).join('');
+    return `<div class="fcat"><div class="fcat-h"><b>${CF.esc(label)}</b><span class="cnt">${picks.length}</span>` +
+      `<button type="button" class="fbtn accent" data-fadd="${CF.esc(cat)}">+ Add</button></div>` +
+      (picks.length ? `<div class="fskin-grid">${tiles}</div>` : '<div class="fempty">No skins yet — tap + Add</div>') +
+      `</div>`;
+  }).join('');
+  const totalEl = document.getElementById('fskinTotal');
+  if (totalEl) totalEl.textContent = total + ' total';
+}
+
+function renderFormBuddies() {
+  if (!phoneMq700.matches) return;
+  const grid = document.getElementById('fbuddyGrid');
+  if (!grid) return;
+  grid.innerHTML = state.assets.buddies.map((u, i) =>
+    `<span class="fbuddy"><img loading="lazy" src="${CF.esc(u)}" alt="Gun buddy"><span class="x" role="button" tabindex="0" data-fbuddy="${i}" title="Remove buddy">×</span></span>`
+  ).join('');
+}
+
+function syncFormFromState() {
+  document.querySelectorAll('#formMode input[data-fkey]').forEach(el => {
+    const k = el.dataset.fkey;
+    const t = card.querySelector('[data-key="' + k + '"]');
+    el.value = (state.texts[k] != null && state.texts[k] !== '')
+      ? state.texts[k]
+      : (t ? t.textContent : '').trim();
+  });
+  ['crank', 'prank'].forEach(k => {
+    const t = card.querySelector('[data-key="' + k + '"]');
+    const name = (state.texts[k] != null && state.texts[k] !== '')
+      ? state.texts[k]
+      : (t ? t.textContent : '').trim();
+    const nameEl = document.getElementById('f-' + k + '-name');
+    if (nameEl) nameEl.textContent = name;
+    const badgeEl = document.getElementById('f-' + k + '-badge');
+    if (badgeEl) {
+      if (state.ranks[k]) badgeEl.src = state.ranks[k];
+      else badgeEl.removeAttribute('src');
+    }
+  });
+  const codeEl = card.querySelector('[data-key="code"]');
+  const titleEl = document.getElementById('fheroTitle');
+  if (titleEl) titleEl.textContent = 'EDITING · ' + (state.texts.code || (codeEl ? codeEl.textContent.trim() : '') || 'DRAFT');
+  const statusEl = document.getElementById('fheroStatus');
+  if (statusEl) statusEl.textContent = editSlug ? 'PUBLISHED' : 'DRAFT';
+  const ownedEl = document.getElementById('fOwned');
+  if (ownedEl) ownedEl.textContent = state.ownedCards?.length
+    ? 'Owned collection: ' + state.ownedCards.length + ' player cards (from Riot import) — published with the toggle below.'
+    : 'Owned collection: import your account to attach the full card collection.';
+  syncFormArt();
+  renderFormSkins();
+  renderFormBuddies();
+}
+
+function afterPicksChange() {
+  recountStats();
+  if (phoneMq700.matches) { renderFormSkins(); syncStatsInputs(); }
+}
+
+const formMode = CF.$('formMode');
+formMode?.addEventListener('input', e => {
+  const el = e.target.closest('input[data-fkey]');
+  if (!el) return;
+  const k = el.dataset.fkey;
+  const v = el.value;
+  state.texts[k] = v;
+  const t = card.querySelector('[data-key="' + k + '"]');
+  if (t) t.textContent = v;
+  if (k === 'code') {
+    const titleEl = document.getElementById('fheroTitle');
+    if (titleEl) titleEl.textContent = 'EDITING · ' + (v || 'DRAFT');
+  }
+});
+
+const fskinCatsEl = document.getElementById('fskinCats');
+fskinCatsEl?.addEventListener('click', e => {
+  const add = e.target.closest('[data-fadd]');
+  if (add) { openPicker(add.dataset.fadd); return; }
+  const tile = e.target.closest('.fskin');
+  if (tile) openVariantModal(tile.dataset.fcat, +tile.dataset.fidx);
+});
+fskinCatsEl?.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const tile = e.target.closest('.fskin');
+  if (!tile) return;
+  e.preventDefault();
+  openVariantModal(tile.dataset.fcat, +tile.dataset.fidx);
+});
+
+const fbuddyGridEl = document.getElementById('fbuddyGrid');
+fbuddyGridEl?.addEventListener('click', e => {
+  const x = e.target.closest('[data-fbuddy]');
+  if (!x) return;
+  state.assets.buddies.splice(+x.dataset.fbuddy, 1);
+  hydrateAssets();
+  renderFormBuddies();
+});
+
+formMode?.addEventListener('click', e => {
+  const rp = e.target.closest('[data-frankpick]');
+  if (rp) { openRankPickerForKey(rp.dataset.frankpick); return; }
+  const up = e.target.closest('[data-fupload]');
+  if (!up) return;
+  const k = up.dataset.fupload;
+  if (k === 'avatar') { pendingUpload = card.querySelector('.avatar'); CF.$('fileInput').click(); }
+  else if (k === 'pcard') openCardPicker();
+  else if (k === 'charms') openBuddyPicker();
+});
+
+CF.$('fRecount')?.addEventListener('click', () => {
+  recountStats();
+  syncStatsInputs();
+  CF.status('Stats recounted from skins.', 'ok');
+});
+
+formPrevEl?.addEventListener('click', () => {
+  document.body.classList.toggle('stage-peek');
+  const peek = document.body.classList.contains('stage-peek');
+  formPrevEl.textContent = peek ? '← Form' : 'Preview';
+  if (peek) fit();
+  else syncFormFromState();
+});
+
+document.getElementById('fnav')?.addEventListener('click', e => {
+  const chip = e.target.closest('.fnav-chip');
+  if (!chip) return;
+  document.querySelectorAll('#fnav .fnav-chip').forEach(c => c.setAttribute('aria-current', String(c === chip)));
+  const sec = document.getElementById('fsec-' + chip.dataset.sec);
+  if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
 
 CF.$('layoutSel').addEventListener('change', () => {
   state.layout = CF.$('layoutSel').value;
@@ -1324,6 +1557,7 @@ if (bootDraft) {
   renderFromState();
 }
 updateWm();
+syncFormFromState(); /* FM: populate the phone form with defaults when no draft exists */
 
 function bootStatus() {
   CF.status(editSlug

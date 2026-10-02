@@ -40,6 +40,7 @@
     </select>
     <!-- CF-06: state what AUTO resolved to — it was invisible before -->
     <b id="layoutBadge" class="layout-badge" title="">AUTO → TILES</b>
+    <button id="formPrevBtn" type="button" title="Toggle card preview">Preview</button>
   </div>
   <div class="tb-right">
     <!-- CF-05: four actions inline, everything else in the More menu.
@@ -148,6 +149,87 @@
   </div>
   <div class="wstrip"><span>Card Forge</span><span data-wm="slug">Draft — not published</span><span data-wm="stamp"></span></div>
 </div></div></div>
+
+<div id="formMode">
+  <nav id="fnav" aria-label="Form sections">
+    <button type="button" class="fnav-chip" data-sec="identity" aria-current="true">Identity</button>
+    <button type="button" class="fnav-chip" data-sec="ranks">Ranks</button>
+    <button type="button" class="fnav-chip" data-sec="meta">Meta</button>
+    <button type="button" class="fnav-chip" data-sec="stats">Stats</button>
+    <button type="button" class="fnav-chip" data-sec="skins">Skins</button>
+    <button type="button" class="fnav-chip" data-sec="art">Art</button>
+    <button type="button" class="fnav-chip" data-sec="look">Look</button>
+  </nav>
+  <div id="fhero"><b id="fheroTitle">EDITING</b><span id="fheroStatus">DRAFT</span><p>Tap any field to edit — changes land on the real card. <b>Preview</b> shows it; Export/Publish capture it.</p></div>
+
+  <section class="fsec" id="fsec-identity"><h2>Identity</h2>
+    <div class="fgrid2">
+      <div class="frow"><label for="f-code">Listing code</label><input class="finput up" id="f-code" data-fkey="code" value="K486" type="text" autocomplete="off"></div>
+      <div class="frow"><label for="f-vlogin">Riot ID</label><input class="finput" id="f-vlogin" data-fkey="vlogin" value="RIOT ID" type="text" autocomplete="off"></div>
+    </div>
+    <div class="frow"><label for="f-cname">Display name (buyer sees this)</label><input class="finput" id="f-cname" data-fkey="cname" value="CHANGE NAME" type="text" autocomplete="off"></div>
+    <div class="fgrid2">
+      <div class="frow"><label for="f-tag">Seller tag</label><input class="finput up" id="f-tag" data-fkey="tag" value="FS/FT+ADD" type="text" autocomplete="off"></div>
+      <div class="frow"><label for="f-price">Price line</label><input class="finput up" id="f-price" data-fkey="price" value="PRICE OFFER" type="text" autocomplete="off"></div>
+    </div>
+    <div class="frow"><label for="f-link">Contact link</label><input class="finput" id="f-link" data-fkey="link" inputmode="url" value="https://www.facebook.com/Your.Page.Here" type="text" autocomplete="off"></div>
+  </section>
+
+  <section class="fsec" id="fsec-ranks"><h2>Ranks &amp; level</h2>
+    <div class="franks">
+      <div class="frank"><img id="f-crank-badge" alt=""><span class="frl"><label>Current rank</label><b id="f-crank-name" data-fkey="crank">DIAMOND 2</b></span><button class="fbtn" type="button" data-frankpick="crank">Pick</button></div>
+      <div class="frank"><img id="f-prank-badge" alt=""><span class="frl"><label>Peak rank</label><b id="f-prank-name" data-fkey="prank">IMMORTAL 3</b></span><button class="fbtn" type="button" data-frankpick="prank">Pick</button></div>
+    </div>
+    <div class="fgrid4">
+      <div class="frow"><label for="f-level">Level</label><input class="finput up" id="f-level" data-fkey="level" inputmode="numeric" value="376" type="text" autocomplete="off"></div>
+      <div class="frow"><label for="f-vp">VP</label><input class="finput up" id="f-vp" data-fkey="vp" inputmode="numeric" value="420" type="text" autocomplete="off"></div>
+      <div class="frow"><label for="f-rp">RP</label><input class="finput up" id="f-rp" data-fkey="rp" inputmode="numeric" value="140" type="text" autocomplete="off"></div>
+      <div class="frow"><label for="f-kc">KC</label><input class="finput up" id="f-kc" data-fkey="kc" inputmode="numeric" value="6422" type="text" autocomplete="off"></div>
+    </div>
+  </section>
+
+  <section class="fsec" id="fsec-meta"><h2>Account meta</h2>
+    <div class="fgrid2">
+      <div class="frow"><label for="f-wtr">WTR</label><input class="finput up" id="f-wtr" data-fkey="wtr" value="WTR: YES" type="text" autocomplete="off"></div>
+      <div class="frow"><label for="f-receipts">Receipts</label><input class="finput up" id="f-receipts" data-fkey="receipts" value="RECEIPTS: YES" type="text" autocomplete="off"></div>
+      <div class="frow"><label for="f-owner">Owner</label><input class="finput up" id="f-owner" data-fkey="owner" value="0TH OWNER" type="text" autocomplete="off"></div>
+      <div class="frow"><label for="f-date">Name-change date</label><input class="finput up" id="f-date" data-fkey="date" value="2/6/2026" type="text" autocomplete="off"></div>
+      <div class="frow"><label for="f-cstatus">Change-name status</label><input class="finput up" id="f-cstatus" data-fkey="cstatus" value="NOT READY" type="text" autocomplete="off"></div>
+      <div class="frow"><label for="f-premier">Premier</label><input class="finput up" id="f-premier" data-fkey="premier" value="PREMIER" type="text" autocomplete="off"></div>
+      <div class="frow"><label for="f-vlink">Verification link</label><input class="finput up" id="f-vlink" data-fkey="vlink" value="UNLINKED" type="text" autocomplete="off"></div>
+    </div>
+  </section>
+
+  <section class="fsec" id="fsec-stats"><h2>Stats <span class="hn">auto-counted</span></h2>
+    <div class="fgrid4">
+      <span class="fstat"><label>Premium</label><input data-fkey="prems" inputmode="numeric" value="42" type="text" autocomplete="off"></span>
+      <span class="fstat limited"><label>Limited</label><input data-fkey="limited" inputmode="numeric" value="02" type="text" autocomplete="off"></span>
+      <span class="fstat"><label>Semi prem</label><input data-fkey="semis" inputmode="numeric" value="00" type="text" autocomplete="off"></span>
+      <span class="fstat"><label>Animated</label><input data-fkey="anims" inputmode="numeric" value="00" type="text" autocomplete="off"></span>
+    </div>
+    <div class="fbtnrow"><button class="fbtn" type="button" id="fRecount">Recount from skins</button><span class="fhint">Updates automatically when skins change; manual overrides survive until the next recount.</span></div>
+  </section>
+
+  <section class="fsec" id="fsec-skins"><h2>Skins <span class="hn" id="fskinTotal">—</span></h2><div id="fskinCats"></div></section>
+
+  <section class="fsec" id="fsec-art"><h2>Art</h2>
+    <div class="fart-grid">
+      <div class="fart-tile" data-fupload="avatar" role="button" tabindex="0"><img id="fAvatar" alt="Avatar preview"><span class="tag">Avatar</span></div>
+      <div class="fart-tile pcard" data-fupload="pcard" role="button" tabindex="0"><img id="fPcard" alt="Player card preview"><span class="tag">Player card</span></div>
+      <div class="fart-tile" data-fupload="charms" role="button" tabindex="0"><span class="fplus">+</span><span class="tag">Buddies</span></div>
+    </div>
+    <div class="fbuddies" id="fbuddyGrid"></div>
+    <div class="fhint" id="fOwned"></div>
+    <div id="fPubSlot"></div>
+  </section>
+
+  <section class="fsec" id="fsec-look"><h2>Look</h2>
+    <div class="frow"><label>Card theme</label><div id="fThemeSlot"></div></div>
+    <div class="flookrow"><span id="fLayoutSlot"></span><span id="fBadgeSlot"></span></div>
+    <span class="fhint">Themes, layout and the resolved badge are the real topbar controls — relocated here on phones.</span>
+  </section>
+  <div style="height:14px"></div>
+</div>
 
 <div id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
   <div class="mpanel">
