@@ -1027,6 +1027,15 @@ card.addEventListener('click', e => {
   if (rp) { openRankPicker(rp); return; }
   const add = e.target.closest('.add');
   if (add) { openPicker(add.dataset.add); return; }
+  /* CF-07: the +N MORE chips now actually navigate to the catalog view */
+  const goto = e.target.closest('[data-goto="m4"]');
+  if (goto) {
+    state.layout = 'm4';
+    state.page = 1;
+    refreshLayout();
+    CF.status('Showing the full catalog — switch back any time.', 'info');
+    return;
+  }
   const pc = e.target.closest('.pcard');
   if (pc) { openCardPicker(); return; }
   const up = e.target.closest('[data-upload]');
@@ -1218,14 +1227,65 @@ function refreshLayout() {
   CF.$('pgLabel').textContent = 'PAGE ' + state.page + '/' + r.pages;
   CF.$('pgPrev').disabled = state.page <= 1;
   CF.$('pgNext').disabled = state.page >= r.pages;
-  CF.$('exportBtn').textContent = mode === 'm4' ? 'EXPORT ZIP' : 'EXPORT PNG';
+  /* CF-06: the resolved mode is stated, not implied by the export label */
+  const MODE_NAMES = { m1: 'TILES', m2: 'SHOWCASE', m4: 'CATALOG' };
+  const badge = CF.$('layoutBadge');
+  const auto = state.layout === 'auto';
+  badge.textContent = auto ? 'AUTO → ' + MODE_NAMES[mode] : MODE_NAMES[mode] + (mode === 'm4' ? ' · ' + r.pages + (r.pages === 1 ? ' PAGE' : ' PAGES') : '');
+  const skins = CF.ALL_CATS.reduce((n, c) => n + (state.picks[c] || []).length, 0);
+  const prems = CF.ALL_CATS.flatMap(c => state.picks[c] || []).filter(p => ['premium', 'ultra', 'exclusive'].includes(CF.tierKey(p.tier))).length;
+  badge.title = auto
+    ? 'AUTO picked ' + MODE_NAMES[mode] + ' because ' + (mode === 'm4'
+        ? 'the card has ' + skins + ' skins (threshold 50) and ' + prems + ' premium (threshold 20) — a catalog reads better at this size.'
+        : 'the card is under both thresholds (' + skins + ' skins, ' + prems + ' premium).')
+    : 'Layout set manually.';
+  const ex = CF.$('exportBtn');
+  ex.textContent = mode === 'm4' ? 'EXPORT ZIP' : 'EXPORT PNG';
+  ex.title = mode === 'm4'
+    ? 'Catalog mode exports a ZIP containing all ' + r.pages + ' pages at full 1920×1080 resolution — one file per page.'
+    : 'Exports the current view as a single 1920×1080 PNG.';
+  /* CF-07: Catalog mode hides the grid, so keep an Add path in the chrome */
+  CF.$('m4Add').hidden = mode !== 'm4';
   CF.$('layoutSel').value = state.layout;
 }
+
+CF.$('m4Add').addEventListener('click', () => {
+  /* CF-07: Catalog mode hides the grid and every + Add button in it —
+     this keeps the picker one click away in that mode. */
+  openPicker('Rifles');
+});
+
+/* CF-05: the More menu — outside click and Escape close it */
+(function () {
+  const btn = CF.$('moreBtn'), menu = CF.$('moreMenu');
+  function setOpen(open) {
+    menu.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+    btn.textContent = open ? 'More ▴' : 'More ▾';
+  }
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    setOpen(menu.hidden);
+  });
+  document.addEventListener('click', e => {
+    if (!menu.hidden && !menu.contains(e.target) && e.target !== btn) setOpen(false);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !menu.hidden) { setOpen(false); btn.focus(); }
+  });
+  menu.querySelectorAll('.mm-item').forEach(i => i.addEventListener('click', () => setOpen(false)));
+})();
 
 CF.$('layoutSel').addEventListener('change', () => {
   state.layout = CF.$('layoutSel').value;
   state.page = 1;
   refreshLayout();
+  /* CF-06: layout changes finally say what they did */
+  const NAMES = { m1: 'TILES', m2: 'SHOWCASE', m4: 'CATALOG' };
+  const mode = state.layout === 'auto' ? resolveLayout(buildPayload()) : state.layout;
+  CF.status(state.layout === 'auto'
+    ? 'Layout: AUTO → ' + NAMES[mode] + (mode === 'm4' ? ' — export becomes a ZIP of every page.' : '.')
+    : 'Layout: ' + NAMES[mode] + (mode === 'm4' ? ' — export becomes a ZIP of every page.' : '.'), 'info');
 });
 CF.$('pgPrev').addEventListener('click', () => {
   state.page -= 1;

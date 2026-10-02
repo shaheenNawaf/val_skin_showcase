@@ -39,17 +39,28 @@
     <select id="layoutSel" title="Card layout" aria-label="Card layout">
       <option value="auto">AUTO</option><option value="m1">TILES</option><option value="m2">SHOWCASE</option><option value="m4">CATALOG</option>
     </select>
+    <!-- CF-06: state what AUTO resolved to — it was invisible before -->
+    <b id="layoutBadge" class="layout-badge" title="">AUTO → TILES</b>
     <span id="pageNav" hidden><button id="pgPrev" type="button" aria-label="Previous page">‹</button><b id="pgLabel">PAGE 1/1</b><button id="pgNext" type="button" aria-label="Next page">›</button></span>
+    <!-- CF-07: Catalog mode hides every + Add button — this stays reachable -->
+    <button id="m4Add" type="button" hidden>Add skins</button>
   </div>
   <div class="tb-right">
-    <a class="tb-link" href="browse.html">Browse listings</a>
-    <button id="importBtn">Import account</button>
-    <button id="exportBtn" class="primary">Export PNG</button>
+    <!-- CF-05: four actions inline, everything else in the More menu.
+         The old row (8 buttons + a 62-char label) wrapped to 185px on phones. -->
     <button id="saveBtn">Save</button>
-    <label class="pubswitch"><input type="checkbox" id="showAllCards"> Show my full player-card collection on the published page</label>
-    <button id="loadBtn">Load</button>
-    <button id="postBtn">Copy post text</button>
+    <button id="exportBtn" class="primary">Export PNG</button>
     <button id="publishBtn" class="accent">Publish listing</button>
+    <span class="more-wrap">
+      <button id="moreBtn" aria-expanded="false" aria-haspopup="true" aria-controls="moreMenu">More ▾</button>
+      <div id="moreMenu" hidden>
+        <a class="mm-item" href="browse.html">Browse listings</a>
+        <button class="mm-item" id="importBtn" type="button">Import account</button>
+        <button class="mm-item" id="loadBtn" type="button">Load draft</button>
+        <button class="mm-item" id="postBtn" type="button">Copy post text</button>
+        <label class="pubswitch"><input type="checkbox" id="showAllCards"> Show my full player-card collection on the published page</label>
+      </div>
+    </span>
     <span id="status" role="status" aria-live="polite">Loading skin database…</span>
   </div>
 </div>

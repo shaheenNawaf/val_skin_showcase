@@ -60,7 +60,7 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 #topbar button.accent:hover{border-color:var(--c-accent);color:var(--c-accent);background:transparent}
 #topbar a.tb-link{background:transparent;border:1px solid var(--c-line-soft);color:var(--c-mut);padding:8px 16px;font:600 11px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;cursor:pointer;text-decoration:none;display:inline-block}
 #topbar a.tb-link:hover{border-color:var(--c-mut);color:var(--c-ink);background:color-mix(in srgb,#fff 4%,transparent)}
-#status{position:fixed;left:50%;transform:translateX(-50%);bottom:46px;z-index:40;
+#status{position:fixed;left:50%;transform:translateX(-50%);bottom:46px;z-index:90; /* CF-08: above #modal/#importModal (z 50) so picker toasts are visible */
 max-width:min(560px,calc(100vw - 24px));white-space:normal;overflow:visible;text-overflow:clip;
 background:var(--c-surface2);border:1px solid var(--c-line);border-left:3px solid var(--c-mut);
 color:var(--c-ink);font-size:12.5px;letter-spacing:.04em;line-height:1.45;padding:9px 14px;

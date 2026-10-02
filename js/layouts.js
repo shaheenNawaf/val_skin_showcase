@@ -91,7 +91,10 @@ function makeTile(pick, cat, tall, editable) {
 function catalogChip(n, opts, wide) {
   const text = `+${n} MORE — FULL CATALOG`;
   const cls = wide ? 'jchip wide' : 'jchip';
-  if (opts.gotoCatalog) {
+  /* CF-07: the chip is a real button wherever it can actually navigate —
+     the viewer (gotoCatalog) and now the editor (editable) too. It looked
+     clickable before and did nothing. */
+  if (opts.gotoCatalog || opts.editable) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = cls;
@@ -100,6 +103,21 @@ function catalogChip(n, opts, wide) {
     return b;
   }
   return el('span', cls, text);
+}
+
+/* M1's smaller "+N MORE" overflow chip — same rule: a button when the host
+   page can act on it (jumps to the catalog view), inert text otherwise. */
+function moreChip(n, opts) {
+  const text = `+${n} MORE`;
+  if (opts.editable || opts.gotoCatalog) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'jchip';
+    b.dataset.goto = 'm4';
+    b.textContent = text;
+    return b;
+  }
+  return el('span', 'jchip', text);
 }
 
 function resetSlots(slots) {
@@ -403,7 +421,7 @@ export function renderSlotsM1(panel, skins, opts) {
     const chip = count > cols;
     const shown = chip ? cols - 1 : Math.min(count, cols);
     for (let i = 0; i < shown; i++) slots.appendChild(skinCell(skins[i], i, opts.editable));
-    if (chip) slots.appendChild(el('span', 'jchip', `+${count - shown} MORE`));
+    if (chip) slots.appendChild(moreChip(count - shown, opts));
     return;
   }
   const capRows = Math.floor((H + 6) / 40);
@@ -418,7 +436,7 @@ export function renderSlotsM1(panel, skins, opts) {
   slots.style.setProperty('--cols', String(cols));
   const take = Math.min(count, visible);
   for (let i = 0; i < take; i++) slots.appendChild(makeTile(skins[i], cat, false, opts.editable));
-  if (count > take) slots.appendChild(el('span', 'jchip', `+${count - take} MORE`));
+  if (count > take) slots.appendChild(moreChip(count - take, opts));
 }
 
 // ── M2 top-N showcase ─────────────────────────────────────────────
