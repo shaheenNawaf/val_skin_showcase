@@ -165,7 +165,7 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 }
 
 /* CF-15 successor: zoom dock lives in the reserved footer band, right end */
-#zoomDock{position:fixed;right:8px;bottom:4px;z-index:95;display:flex;align-items:center;gap:6px;
+#zoomDock{position:fixed;right:46px;bottom:4px;z-index:95;display:flex;align-items:center;gap:6px;
   background:color-mix(in srgb,var(--c-surface) 92%,transparent);backdrop-filter:blur(6px);
   border:1px solid var(--c-line);padding:3px 6px}
 #zoomDockToggle{background:transparent;border:none;color:var(--c-mut);font:700 10px 'Chakra Petch',sans-serif;
@@ -175,9 +175,12 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 #zoomDockBar button{background:transparent;border:1px solid var(--c-line);color:var(--c-mut);
   font:700 9px 'Chakra Petch',sans-serif;letter-spacing:.14em;padding:4px 9px;cursor:pointer}
 #zoomDockBar button[aria-pressed=true]{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
-#zoomDockBar #zoomNote{font:600 9px var(--font-ui);letter-spacing:.06em;color:var(--c-mut);white-space:nowrap}
+#zoomDockBar #zoomNote{font:600 9px var(--font-ui);letter-spacing:.06em;color:var(--c-mut);white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis}
 #zoomDock.collapsed #zoomDockBar{display:none}
-@media (max-width:700px){#zoomDock{display:none}body.canvas-mode #zoomDock{display:flex}}
-#disclaimer{padding-right:290px}
-body.zdock-collapsed #disclaimer{padding-right:70px}
-@media (max-width:700px){#disclaimer{padding-right:12px}}
+#disclaimer{padding-right:380px}
+body.zdock-collapsed #disclaimer{padding-right:124px}
+@media (max-width:700px){
+  #zoomDock{display:none}
+  body.canvas-mode #zoomDock{display:flex;right:8px;bottom:44px}
+  #disclaimer{padding-right:12px}
+}
