@@ -656,31 +656,30 @@ function wireContact(link) {
   mob?.addEventListener('click', act);
 }
 
-/* CF-15 successor: collapsed floating zoom overlay */
-const zoomToggle = CF.$('zoomToggle'), zoomMenu = CF.$('zoomMenu');
-function setZoomMenuOpen(open) {
-  zoomMenu.hidden = !open;
-  zoomToggle.setAttribute('aria-expanded', String(open));
+/* CF-15 successor: a slim dock in the footer band — dedicated space,
+   never over the canvas; collapses to a tab like the disclaimer does */
+const zoomDock = CF.$('zoomDock'), zoomDockBar = CF.$('zoomDockBar'), zoomDockToggle = CF.$('zoomDockToggle');
+function setDockCollapsed(collapsed) {
+  zoomDock.classList.toggle('collapsed', collapsed);
+  zoomDockToggle.setAttribute('aria-expanded', String(!collapsed));
+  const active = zoomDockBar.querySelector('button[aria-pressed="true"]');
+  zoomDockToggle.textContent = collapsed ? (active ? active.textContent + ' »' : '»') : '«';
+  zoomDockToggle.title = collapsed ? 'Expand zoom controls' : 'Collapse zoom controls';
+  document.body.classList.toggle('zdock-collapsed', collapsed);
+  try { localStorage.setItem('vc-zoomdock-collapsed', collapsed ? '1' : '0'); } catch { /* private mode */ }
 }
-zoomToggle.addEventListener('click', e => {
-  e.stopPropagation();
-  setZoomMenuOpen(zoomMenu.hidden);
-});
-document.addEventListener('click', e => {
-  if (!zoomMenu.hidden && !zoomMenu.contains(e.target) && e.target !== zoomToggle) setZoomMenuOpen(false);
-});
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && !zoomMenu.hidden) { setZoomMenuOpen(false); zoomToggle.focus(); }
-});
-zoomMenu.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+zoomDockToggle.addEventListener('click', () => setDockCollapsed(!zoomDock.classList.contains('collapsed')));
+zoomDockBar.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
   const z = b.dataset.zoom;
   zoomMode = z === 'fit' ? null : Number(z);
-  zoomMenu.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-  zoomToggle.textContent = zoomMode == null ? 'FIT' : Math.round(zoomMode * 100) + '%';
-  CF.$('zoomNote').textContent = zoomMode == null ? (card.classList.contains('is-live') ? 'fit width — scroll to explore' : 'fit to viewport') : ('viewing at ' + Math.round(zoomMode * 100) + '% — drag to pan');
-  setZoomMenuOpen(false);
+  zoomDockBar.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  CF.$('zoomNote').textContent = zoomMode == null
+    ? (CF.$('stage').scrollHeight > CF.$('stage').clientHeight ? 'fit width — scroll to explore' : 'fit width')
+    : ('viewing at ' + Math.round(zoomMode * 100) + '% — drag to pan');
+  if (zoomDock.classList.contains('collapsed')) setDockCollapsed(true); /* refresh tab label */
   fit();
 }));
+setDockCollapsed(localStorage.getItem('vc-zoomdock-collapsed') === '1');
 
 /* CF-33: fill the native layout the moment it actually becomes visible —
    a desktop visit no longer downloads the second set of icons */

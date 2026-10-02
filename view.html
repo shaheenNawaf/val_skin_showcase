@@ -67,17 +67,6 @@
 </div><!-- /#vchrome -->
 
 <div id="stage">
-  <!-- CF-15 successor: zoom lives in a collapsed floating overlay so the
-       canvas keeps its full width -->
-  <div id="zoomWrap">
-    <button id="zoomToggle" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="zoomMenu">FIT</button>
-    <div id="zoomMenu" role="group" aria-label="Card zoom" hidden>
-      <button type="button" data-zoom="fit" aria-pressed="true">Fit</button>
-      <button type="button" data-zoom="1" aria-pressed="false">100%</button>
-      <button type="button" data-zoom="2" aria-pressed="false">200%</button>
-      <span id="zoomNote">fit to viewport</span>
-    </div>
-  </div>
 <div id="sizer"><div id="card">
   <div class="grid">
     <section class="panel" data-cat="Sidearms" style="grid-area:side">
@@ -192,6 +181,15 @@
   </div>
 </div>
 <div id="disclaimer">CardForge is not affiliated with, endorsed by, or associated with Riot Games or any game publisher. All game names, skin names and imagery are trademarks/property of their respective owners. <a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></div>
+<div id="zoomDock">
+  <button id="zoomDockToggle" type="button" aria-expanded="true" aria-controls="zoomDockBar" title="Collapse zoom controls">«</button>
+  <div id="zoomDockBar" role="group" aria-label="Card zoom">
+    <button type="button" data-zoom="fit" aria-pressed="true">FIT</button>
+    <button type="button" data-zoom="1" aria-pressed="false">100%</button>
+    <button type="button" data-zoom="2" aria-pressed="false">200%</button>
+    <span id="zoomNote">fit width</span>
+  </div>
+</div>
 <button id="discToggle" type="button" aria-expanded="true" aria-controls="disclaimer" aria-label="Hide legal notice">«</button>
 </body>
 </html>

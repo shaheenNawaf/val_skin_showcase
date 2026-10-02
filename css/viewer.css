@@ -164,17 +164,20 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
   body.canvas-mode #stage{display:block}
 }
 
-/* CF-15 successor: floating zoom overlay — consumes no canvas width */
-#zoomWrap{position:fixed;left:12px;bottom:44px;z-index:22;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
-#zoomToggle{background:color-mix(in srgb,var(--c-bg) 88%,transparent);backdrop-filter:blur(6px);
-  border:1px solid var(--c-line);color:var(--c-mut);font:700 9px 'Chakra Petch',sans-serif;
-  letter-spacing:.14em;padding:7px 11px;cursor:pointer}
-#zoomToggle:hover,#zoomToggle[aria-expanded=true]{color:#fff;border-color:var(--c-accent-btn)}
-#zoomMenu{display:flex;flex-direction:column;gap:6px;padding:8px;
-  background:color-mix(in srgb,var(--c-bg) 92%,transparent);backdrop-filter:blur(6px);border:1px solid var(--c-line)}
-#zoomMenu[hidden]{display:none}
-#zoomMenu button{background:transparent;border:1px solid var(--c-line);color:var(--c-mut);
-  font:700 9px 'Chakra Petch',sans-serif;letter-spacing:.14em;padding:6px 11px;cursor:pointer;text-align:left}
-#zoomMenu button[aria-pressed=true]{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
-#zoomMenu #zoomNote{font:600 10px var(--font-ui);letter-spacing:.06em;color:var(--c-mut);white-space:nowrap}
-@media (max-width:700px){#zoomWrap{bottom:96px}}
+/* CF-15 successor: zoom dock lives in the reserved footer band, right end */
+#zoomDock{position:fixed;right:8px;bottom:4px;z-index:95;display:flex;align-items:center;gap:6px;
+  background:color-mix(in srgb,var(--c-surface) 92%,transparent);backdrop-filter:blur(6px);
+  border:1px solid var(--c-line);padding:3px 6px}
+#zoomDockToggle{background:transparent;border:none;color:var(--c-mut);font:700 10px 'Chakra Petch',sans-serif;
+  letter-spacing:.08em;cursor:pointer;padding:2px 4px;white-space:nowrap}
+#zoomDockToggle:hover{color:var(--c-ink)}
+#zoomDockBar{display:flex;align-items:center;gap:6px}
+#zoomDockBar button{background:transparent;border:1px solid var(--c-line);color:var(--c-mut);
+  font:700 9px 'Chakra Petch',sans-serif;letter-spacing:.14em;padding:4px 9px;cursor:pointer}
+#zoomDockBar button[aria-pressed=true]{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
+#zoomDockBar #zoomNote{font:600 9px var(--font-ui);letter-spacing:.06em;color:var(--c-mut);white-space:nowrap}
+#zoomDock.collapsed #zoomDockBar{display:none}
+@media (max-width:700px){#zoomDock{display:none}body.canvas-mode #zoomDock{display:flex}}
+#disclaimer{padding-right:290px}
+body.zdock-collapsed #disclaimer{padding-right:70px}
+@media (max-width:700px){#disclaimer{padding-right:12px}}
