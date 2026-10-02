@@ -365,11 +365,11 @@ export async function loadCatalogExtras(supabaseClient) {
 
 // ── images ────────────────────────────────────────────────────────
 export function toDataUrl(u) {
-  return fetch(u).then(r => r.blob()).then(b => new Promise(res => {
+  return fetch(u).then(r => (r.ok ? r.blob() : null)).then(b => (b && b.type.startsWith('image/') ? new Promise(res => {
     const f = new FileReader();
     f.onload = () => res(f.result);
     f.readAsDataURL(b);
-  })).catch(() => null);
+  }) : null)).catch(() => null);
 }
 
 export function resizeToDataUrl(file, max) {
@@ -406,16 +406,23 @@ export async function captureCardBlob(card, type = 'image/png', quality, opts = 
   await new Promise(r => { requestAnimationFrame(r); setTimeout(r, 120); });
   if (opts.full) card.dataset.exportHeight = String(card.scrollHeight);
   const swaps = [];
+  const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
   try {
-    const imgs = [...card.querySelectorAll('img')].filter(im => { const s = im.getAttribute('src'); return s && !s.startsWith('data:'); });
+    const imgs = [...card.querySelectorAll('img')].filter(im => !(im.getAttribute('src') || '').startsWith('data:'));
     await Promise.all(imgs.map(async im => {
-      const d = await toDataUrl(im.getAttribute('src'));
-      if (d) { swaps.push([im, im.getAttribute('src')]); im.src = d; }
+      const src = im.getAttribute('src');
+      const d = src ? await toDataUrl(src) : null;
+      swaps.push([im, src]);
+      im.src = d || BLANK;
     }));
-    const canvas = await html2canvas(card, { scale: 2, useCORS: true, backgroundColor: null });
-    return await new Promise(res => canvas.toBlob(res, type, quality));
+    if (type === 'image/jpeg') {
+      const url = await window.htmlToImage.toJpeg(card, { pixelRatio: 2, quality: quality || .92 });
+      const res = await fetch(url);
+      return await res.blob();
+    }
+    return await window.htmlToImage.toBlob(card, { pixelRatio: 2 });
   } finally {
-    swaps.forEach(([img, src]) => { img.src = src; });
+    swaps.forEach(([img, src]) => { if (src === null) { img.removeAttribute('src'); } else { img.src = src; } });
     document.body.classList.remove('exporting');
     document.body.classList.remove('exporting-full');
   }

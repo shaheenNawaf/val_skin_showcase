@@ -7,7 +7,7 @@ No framework — plain HTML/CSS/JS, staged into `dist/` by a tiny build script a
 ## Features
 
 - **Card editor** (`index.html`): per-category skin picker (data from the community API [valorant-api.com](https://valorant-api.com)) with per-skin level (L1–L5) and color-variant badges — level 2+ marks animated skins, current/peak rank picker, avatar / gun buddies / player card uploads (resized client-side), editable texts, 5 themes, auto-count of premium-tier and animated skins.
-- **PNG export** at 3840×2160 via html2canvas.
+- **PNG export** at 3840×2160 via html-to-image (foreignObject render of computed styles).
 - **Drafts**: save/load the full structured card to localStorage (old `vcard-builder-v1` drafts migrate automatically).
 - **Publishing** (`view.html`): publishes the card as a listing; share links work cross-device when Supabase is configured, per-browser otherwise. Viewers see a live "viewing now" counter (Supabase Realtime, or BroadcastChannel locally), a total-views counter and a contact-seller button. Republish/update works via a locally-stored edit token.
 - **Backend** (optional): Supabase Postgres + RLS + edge function that syncs the skin catalog nightly. See [SETUP.md](SETUP.md).
@@ -25,7 +25,7 @@ js/config.js            Supabase URL + anon key (safe to commit; RLS-protected)
 js/shared.js            Shared helpers (themes, catalog, scaling, export, presence)
 js/editor.js            Editor logic
 js/viewer.js            Viewer logic
-js/vendor/              Vendored html2canvas + supabase-js (no runtime CDNs)
+js/vendor/              Vendored html-to-image + supabase-js (no runtime CDNs)
 scripts/copy-static.mjs Netlify build step: stages everything into dist/
 supabase/schema.sql     Initial schema (listings, skins, RPCs, RLS)
 supabase/migrations/    Incremental changes (run after schema.sql)
