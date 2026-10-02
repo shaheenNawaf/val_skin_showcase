@@ -96,6 +96,7 @@ body.exporting #card{position:relative;transform:none!important}
    against survives the capture — the PNG matches the preview. */
 body.exporting .auto,body.exporting .pickrank,body.exporting .add{visibility:hidden}
 body.exporting .hint{visibility:hidden}
+body.exporting .more-note{display:none}
 
 [contenteditable]{outline:none;border-bottom:1px dashed var(--accent-dash,rgba(255,70,85,.3))}
 [contenteditable]:hover{border-bottom-color:var(--accent);cursor:text}
@@ -252,6 +253,8 @@ clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100
 button.jchip{cursor:pointer}
 button.jchip:hover{color:var(--ink);border-color:var(--mut)}
 .jchip.wide{width:100%;height:40px;flex:none}
+.more-note{font-style:normal}
+.slots.tiles .jchip,.panel[data-cat="Melees"] .slots .jchip{white-space:normal;text-align:center;line-height:1.25;font-size:10px;letter-spacing:.08em;padding:2px 4px}
 .skin.named{flex:none;height:44px;display:flex;align-items:center;gap:10px;padding:0 10px}
 .skin.named img{position:static;inset:auto;width:72px;height:36px;flex:none;padding:0}
 .skin.named .tname{display:block;flex:1;min-width:0;font:500 12px 'Chakra Petch',sans-serif;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

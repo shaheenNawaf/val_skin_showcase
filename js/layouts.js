@@ -85,7 +85,12 @@ function makeTile(pick, cat, tall, editable) {
 /* Overflow note only — the catalog it used to jump to no longer exists.
    Live surfaces scroll instead, so chips appear only in capped exports. */
 function moreChip(n) {
-  return el('span', 'jchip', `+${n} MORE`);
+  const s = el('span', 'jchip');
+  s.textContent = `+${n} MORE`;
+  const note = el('i', 'more-note', ' — scrolls on your listing');
+  s.appendChild(note);
+  s.title = `+${n} more skins — buyers scroll them on the published listing`;
+  return s;
 }
 
 function resetSlots(slots) {
