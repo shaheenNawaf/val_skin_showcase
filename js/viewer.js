@@ -663,9 +663,8 @@ function setDockCollapsed(collapsed) {
   zoomDock.classList.toggle('collapsed', collapsed);
   zoomDockToggle.setAttribute('aria-expanded', String(!collapsed));
   const active = zoomDockBar.querySelector('button[aria-pressed="true"]');
-  zoomDockToggle.textContent = collapsed ? (active ? active.textContent + ' »' : '»') : '«';
+  zoomDockToggle.textContent = collapsed ? (active ? active.textContent : '»') : '«';
   zoomDockToggle.title = collapsed ? 'Expand zoom controls' : 'Collapse zoom controls';
-  document.body.classList.toggle('zdock-collapsed', collapsed);
   try { localStorage.setItem('vc-zoomdock-collapsed', collapsed ? '1' : '0'); } catch { /* private mode */ }
 }
 zoomDockToggle.addEventListener('click', () => setDockCollapsed(!zoomDock.classList.contains('collapsed')));

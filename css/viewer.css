@@ -164,10 +164,13 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
   body.canvas-mode #stage{display:block}
 }
 
-/* CF-15 successor: zoom dock lives in the reserved footer band, right end */
-#zoomDock{position:fixed;right:46px;bottom:4px;z-index:95;display:flex;align-items:center;gap:6px;
-  background:color-mix(in srgb,var(--c-surface) 92%,transparent);backdrop-filter:blur(6px);
-  border:1px solid var(--c-line);padding:3px 6px}
+/* CF-15 successor: zoom dock — corner stack above the disclaimer toggle */
+#zoomDock{position:fixed;right:10px;bottom:44px;z-index:95;display:flex;align-items:center;gap:6px;
+  background:var(--c-surface2);border:1px solid var(--c-line);padding:3px 6px;
+  clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+#zoomDock.collapsed{padding:0;border:none;background:transparent;backdrop-filter:none}
+#zoomDock.collapsed #zoomDockToggle{width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+  font:700 8px/1 'Chakra Petch',sans-serif;letter-spacing:0;padding:0;border:1px solid var(--c-line);background:var(--c-surface2);}
 #zoomDockToggle{background:transparent;border:none;color:var(--c-mut);font:700 10px 'Chakra Petch',sans-serif;
   letter-spacing:.08em;cursor:pointer;padding:2px 4px;white-space:nowrap}
 #zoomDockToggle:hover{color:var(--c-ink)}
@@ -177,10 +180,7 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 #zoomDockBar button[aria-pressed=true]{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
 #zoomDockBar #zoomNote{font:600 9px var(--font-ui);letter-spacing:.06em;color:var(--c-mut);white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis}
 #zoomDock.collapsed #zoomDockBar{display:none}
-#disclaimer{padding-right:380px}
-body.zdock-collapsed #disclaimer{padding-right:124px}
 @media (max-width:700px){
   #zoomDock{display:none}
-  body.canvas-mode #zoomDock{display:flex;right:8px;bottom:44px}
-  #disclaimer{padding-right:12px}
+  body.canvas-mode #zoomDock{display:flex}
 }
