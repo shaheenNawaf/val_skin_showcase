@@ -635,7 +635,7 @@ function applyHero(listing) {
   const hero = CF.$('vhero');
   const title = (t.code && t.code.trim()) || (t.cname && t.cname !== 'CHANGE NAME' && t.cname.trim()) || 'Listing ' + (listing.slug || '');
   CF.$('vhTitle').textContent = title;
-  document.title = title + (listing.price != null ? ' · ' + (moneyText(listing.price, listing.currency)?.sym || '') + listing.price : '') + ' — CardForge';
+  document.title = title + (listing.price != null ? ' · ' + (moneyText(listing.price, listing.currency)?.sym || '') + listing.price : '');
   const bits = [];
   const riot = t.vlogin ? (t.vlogin.includes('#') || !t.tag ? t.vlogin : t.vlogin + '#' + t.tag) : (t.tag || '');
   const ident = riot || ((t.cname && t.cname !== 'CHANGE NAME' && t.cname.trim()) || '');
