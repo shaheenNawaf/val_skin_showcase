@@ -108,10 +108,14 @@ QV-F fix: `openQV` hides stage + clears thumbs before reveal (no stale-card fram
    native `.mcards-btn` ("View all N player cards") from payload data inside `.mpcardwrap`, wired via the delegated `#mcard`
    listener; desktop keeps the in-box hint (verified fresh loads both surfaces, artifacts 25/27). Residual cosmetic note: after a
    no-reload phone→desktop crossing the desktop hint sits inline (visible + functional, not in-box) until refresh.
-4. **Laptop legibility (prior audit P0-2) intentionally untouched.** Card design-time 9–13px text still lands at ~5.7–9.4px
-   effective on 1366×768 / 125%-DPI desktops (`UIUX-AUDIT.md` P0-2). D3 forbade desktop changes; the fix (raising card
-   design font sizes in `css/shared.css`) remains an open desktop-side item. Only the label half improved: the zoom dock
-   now says "min zoom — scroll to explore" / "fit to screen" truthfully instead of always "fit width".
+4. **CLOSED (round 4, 2026-10-03) — Laptop legibility (prior audit P0-2).** User explicitly commissioned the desktop-side
+   pass (overriding D3 for this scoped change): 18 single-token font-size bumps raised the card's design-time floor from
+   10–12px to 12–15px (`css/shared.css` 17 rules + `.pickrank` in `css/editor.css`; plan `design-plans/005-laptop-legibility.md`,
+   commit `0452f92`). Measured: viewer 1366×768 effective text 8.5–10.6px (was 7.1–9.9), editor 1366 8.2–9.5px, 1536×864
+   9.5–11.9px, 1920 regression clean (all overflow probes ok both axes, viewSwitch/zoom dock intact). Vision: 1366 card 7/10
+   "headings, stat labels, watermark readable without zooming"; 1536 page 9/10 healthy; QV modal intact; design-scale card —
+   every bumped zone ok ("BUDDIES & FLEX" 2-line wrap + bottom stage scroll are pre-existing by-design behaviors).
+   Export gate: real `PNG exported — 3840×2156` unchanged. Lint 0/0. Pushed to staging (buildstamp `0452f92`).
 5. **Fixed dials (single-const tunables, not data-validated):** `TAB_THRESHOLD = 24` in `js/viewer.js` (set 0 = every
    listing gets the zero-page-scroll tabbed frame); QV thumbs = 6, tier-ranked exclusive→select, stable payload order,
    no personalization; chip label "Snipers" (panel heading keeps "Sniper Rifles"); mosaic mode (≤24 skins) still scrolls
