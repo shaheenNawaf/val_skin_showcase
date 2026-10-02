@@ -78,8 +78,10 @@
       <div id="empty" class="aempty" hidden>
         <b>No listings match</b>
         <span>Try widening your filters.</span>
-        <button id="clearBtn" type="button">Clear all filters</button>
-      </div>
+        <button id="clearBtn" type="button">Clear all filters</button>      </div>
+      <!-- CF-04/CF-17: rendered error and zero-listing states. A dedicated
+           element so #empty's #clearBtn listener is never clobbered. -->
+      <div id="statebox" class="aempty" hidden></div>
     </div>
   </section>
 </main>

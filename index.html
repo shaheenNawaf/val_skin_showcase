@@ -23,6 +23,9 @@
 <script type="module" src="js/editor.js"></script>
 </head>
 <body>
+<!-- One fixed chrome stack: topbar + tier toolbar. --tbh measures ALL of it,
+     so the stage can never paint over the toolbar (the P0 occlusion fix). -->
+<div id="chrome">
 <div id="topbar">
   <div class="tb-left">
     <span class="logo">CARD FORGE</span>
@@ -61,6 +64,7 @@
     <button id="tierReset" class="tb-apply" type="button">Reset</button>
     <span class="tb-count" id="tierCount"></span>
   </div>
+</div><!-- /#chrome -->
 
 <div id="stage"><div id="sizer"><div id="card">
   <div class="grid">

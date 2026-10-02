@@ -370,7 +370,8 @@ function applyView() {
   const grid = $('grid');
   const list = $('list');
   const empty = $('empty');
-  const zero = !empty.hidden;
+  const statebox = $('statebox');
+  const zero = !empty.hidden || !statebox.hidden;
   grid.hidden = zero || state.view !== 'grid';
   list.hidden = zero || state.view !== 'list';
   $('vGrid').setAttribute('aria-pressed', state.view === 'grid' ? 'true' : 'false');
@@ -443,6 +444,7 @@ function render() {
   const feat = featuredListing();
   const rest = listings.filter(l => l !== feat);
   const fRest = rest.filter(matches).sort(cmp);
+  hideStateBox();
   const featVis = !!(feat && matches(feat));
   const total = fRest.length + (featVis ? 1 : 0);
   $('count').textContent = total + (total === 1 ? ' listing' : ' listings');
@@ -482,14 +484,45 @@ function render() {
   applyView();
 }
 
-function showCtaOnly() {
-  $('count').textContent = '0 listings';
-  $('feature').hidden = true;
-  $('feature').innerHTML = '';
-  $('grid').innerHTML = ctaHTML();
-  $('list').innerHTML = '';
+/* CF-04 + CF-17: failure and emptiness are rendered states, not a blank
+   page or a 5-second toast. #statebox so #empty's #clearBtn survives. */
+function stateBox(html) {
+  const sb = $('statebox');
+  sb.hidden = false;
+  sb.innerHTML = html;
   $('empty').hidden = true;
   applyView();
+  return sb;
+}
+function hideStateBox() { $('statebox').hidden = true; }
+
+function renderError(detail) {
+  $('count').textContent = '—';
+  status('Could not load the marketplace.', 'err');
+  $('feature').hidden = true;
+  $('feature').innerHTML = '';
+  $('grid').innerHTML = '';
+  $('list').innerHTML = '';
+  const sb = stateBox(
+    '<b>Could not load the marketplace</b>' +
+    '<span>The listing service did not answer. Nothing was lost — your cards and drafts live in this browser.</span>' +
+    (detail ? '<code>' + String(detail).slice(0, 140).replace(/[<>]/g, '') + '</code>' : '') +
+    '<span class="sb-actions"><button type="button" class="sbtn primary">Try again</button>' +
+    '<a class="sbtn" href="index.html">Build a card instead</a></span>');
+  sb.querySelector('.primary').addEventListener('click', load);
+}
+
+function showCtaOnly() {  $('count').textContent = '0 listings';
+  $('feature').hidden = true;
+  $('feature').innerHTML = '';
+  $('grid').innerHTML = '';
+  $('list').innerHTML = '';
+  /* CF-17: a persistent empty state that explains itself, not a promo tile
+     plus a toast that fades in 5s and leaves the page unexplained */
+  stateBox(
+    '<b>No listings yet</b>' +
+    '<span>This is the very first day — the marketplace is empty but not broken. The moment anyone publishes, their card appears here.</span>' +
+    '<span class="sb-actions"><a class="sbtn primary" href="index.html">Build the first card</a></span>');
 }
 
 function resetAll() {
@@ -708,7 +741,9 @@ async function loadFull(slug) {
 
 function openQV(slug, opener) {
   const l = bySlug[slug];
-  if (!l) return;
+  if (!l) { /* CF-17: a dead deep link says so instead of doing nothing */ 
+    if (slug) status('That listing is not available — it may have been removed or sold.', 'err');
+    return; }
   qvLastFocus = opener || null;
   qv.hidden = false;
   document.body.classList.add('modal-open');
@@ -817,8 +852,11 @@ async function load() {
         vlogin: '', tag: '', link: '', wtr: '', receipts: '', owner: '', picks_top: {}
       }));
       limited = true;
-    } catch {
-      status('Could not load listings.', 'err');
+    } catch (e2) {
+      /* CF-04: a fetch failure must render an error state, not a blank page.
+         The catch used to return before render() — count empty, results
+         empty, empty-state still hidden. */
+      renderError(e2 && e2.message ? e2.message : 'Could not reach the listings service.');
       return;
     }
   }

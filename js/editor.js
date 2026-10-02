@@ -40,7 +40,6 @@ let filterWeapon = '', filterTier = '', filterOwned = false, filterAnim = false,
 let lastTierCounts = {};
 let tierSel = new Set(['premium', 'ultra']);
 let tierAnim = false;
-let allPicks = null;
 let vpMuted = false;
 let pendingUpload = null, editSlug = null, lastFocus = null, exporting = false;
 
@@ -304,6 +303,8 @@ function addSkin(cat, s, chroma) {
   const lvl = (state.ownedLevels || {})[s.id] || 0;
   state.picks[cat].push({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: chroma ? chroma.icon : s.icon, ...(chroma ? { level: chroma.unlock || s.maxLevel || 2, variant: { name: chroma.label, icon: chroma.icon } } : (lvl >= 2 ? { level: lvl } : {})) });
   renderPanel(cat, { animateLast: true });
+  recountStats();      /* CF-27: counters track manual edits */
+  updateTierCount();   /* CF-10: live count */
   refreshLayout();
 }
 
@@ -590,7 +591,7 @@ CF.$('vpLevel').addEventListener('click', e => {
 CF.$('vRemove').addEventListener('click', () => {
   if (pickerMode !== 'variant') return;
   const arr = state.picks[variantCat];
-  if (arr && arr[variantIdx]) { arr.splice(variantIdx, 1); renderPanel(variantCat); }
+  if (arr && arr[variantIdx]) { arr.splice(variantIdx, 1); renderPanel(variantCat); recountStats(); updateTierCount(); }
   closeModal();
   refreshLayout();
 });
@@ -781,7 +782,8 @@ function applyImport(j) {
       if (l >= 2) p.level = l;
       else if (l === 1) delete p.level;
     }));
-    snapshotPicks();
+    clearFilterUndo(); /* a fresh import is the new baseline — no stale undo */
+    updateTierCount();
   }
   const ownedSkins = SKIN_BY_ID ? [...new Set(Object.keys(state.ownedLevels))]
     .map(id => SKIN_BY_ID.get(id)).filter(Boolean) : [];
@@ -828,15 +830,15 @@ document.addEventListener('keydown', e => {
 
 const TIER_CHIPS = [
   { key: 'select', label: 'Select' },
-  { key: 'deluxe', label: 'Semi-prem' },
+  { key: 'deluxe', label: 'Deluxe' },
   { key: 'premium', label: 'Premium' },
-  { key: 'ultra', label: 'Limited' },
-  { key: 'exclusive', label: 'Melee' },
+  { key: 'ultra', label: 'Ultra' },
+  { key: 'exclusive', label: 'Knives' },
 ];
 const TIER_PRESETS = [
   { id: 'prems', label: 'Premium only', tiers: ['premium'], anim: false },
-  { id: 'premlimited', label: 'Premium + Limited', tiers: ['premium', 'ultra'], anim: false },
-  { id: 'limited', label: 'Limited only', tiers: ['ultra'], anim: false },
+  { id: 'premultra', label: 'Premium + Ultra', tiers: ['premium', 'ultra'], anim: false },
+  { id: 'ultra', label: 'Ultra only', tiers: ['ultra'], anim: false },
   { id: 'all', label: 'Everything', tiers: ['select', 'deluxe', 'premium', 'ultra', 'exclusive'], anim: false },
   { id: 'anim', label: 'Animated only', tiers: ['select', 'deluxe', 'premium', 'ultra', 'exclusive'], anim: true },
 ];
@@ -873,32 +875,54 @@ function recountStats() {
     if (el) el.textContent = v;
   });
 }
-function snapshotPicks() {
-  allPicks = {};
-  CF.CATS.forEach(c => { allPicks[c] = (state.picks[c] || []).slice(); });
+/* CF-03: the filter reads the LIVE card, never a stale snapshot, so skins
+   added by hand after an import can no longer be silently discarded.
+   filterUndo holds the pre-filter state so Reset is always recoverable. */
+let filterUndo = null;
+function snapshotUndo() {
+  filterUndo = {};
+  CF.ALL_CATS.forEach(c => { filterUndo[c] = (state.picks[c] || []).slice(); });
+  filterUndo['Flex'] = (state.picks['Flex'] || []).slice();
+}
+/* CF-10: live count — recomputed from the card, never empty, never stale */
+function updateTierCount() {
+  const el = CF.$('tierCount');
+  if (!el) return;
+  const onCard = CF.ALL_CATS.reduce((n, c) => n + (state.picks[c] || []).length, 0);
+  if (!filterUndo) { el.textContent = `${onCard} skins on your card`; return; }
+  const pre = CF.ALL_CATS.reduce((n, c) => n + (filterUndo[c] || []).length, 0);
+  el.textContent = `${onCard} shown of ${pre} skins on your card — Reset restores all ${pre}`;
 }
 function applyTierFilter() {
-  const cap = Math.max(1, Math.min(40, parseInt(CF.$('tierCap').value, 10) || 8));
-  CF.$('tierCap').value = String(cap);
+  const raw = parseInt(CF.$('tierCap').value, 10);
+  const cap = Math.max(1, Math.min(40, raw || 8));
+  if (raw !== cap) CF.$('tierCap').value = String(cap);
+  const total = CF.ALL_CATS.reduce((n, c) => n + (state.picks[c] || []).length, 0);
+  const next = {};
   let after = 0;
-  if (!allPicks) snapshotPicks();
   CF.CATS.forEach(c => {
-    const picks = allPicks[c] || [];
-    const kept = picks.filter(p => {
+    next[c] = (state.picks[c] || []).filter(p => {
       if (!tierSel.has(CF.tierKey(p.tier))) return false;
       if (tierAnim && (p.level || 0) < 2) return false;
       return true;
     }).slice(0, cap);
-    state.picks[c] = kept;
-    after += kept.length;
+    after += next[c].length;
   });
-  const total = CF.CATS.reduce((n, c) => n + (allPicks[c] || []).length, 0);
+  if (total > 0 && after === 0) {
+    /* never blank the card with a filter that keeps nothing */
+    updateTierCount();
+    CF.status('Nothing would survive that filter — nothing was changed. Widen the tiers or raise the cap.', 'err');
+    return;
+  }
+  if (!filterUndo) snapshotUndo();
+  CF.CATS.forEach(c => { state.picks[c] = next[c]; });
   state.picks['Flex'] = state.picks['Flex'] || [];
   renderAll();
   recountStats();
-  CF.$('tierCount').textContent = `Showing ${after} of ${total} owned skins across ${CF.CATS.length} categories`;
-  CF.status(`Tier filter applied — ${after} of ${total} skins kept (max ${cap} per category).`, 'ok');
+  updateTierCount();
+  CF.status(`Filter applied — ${after} of ${total} skins kept (max ${cap} per category). Reset restores all ${total}.`, 'ok');
 }
+function clearFilterUndo() { filterUndo = null; }
 CF.$('tierChips').addEventListener('click', e => {
   const b = e.target.closest('button[data-tierkey]');
   if (!b) return;
@@ -923,13 +947,36 @@ CF.$('tierPresets').addEventListener('click', e => {
 });
 CF.$('tierApply').addEventListener('click', applyTierFilter);
 CF.$('tierReset').addEventListener('click', () => {
+  /* CF-02: Reset restores the pre-filter card. With nothing imported and
+     no filter applied it says so — it can never wipe a hand-built card. */
+  if (filterUndo) {
+    CF.ALL_CATS.forEach(c => { state.picks[c] = filterUndo[c] || []; });
+    state.picks['Flex'] = filterUndo['Flex'] || [];
+    filterUndo = null;
+    tierSel = new Set(['premium', 'ultra']);
+    tierAnim = false;
+    renderTierChips();
+    renderTierPresets();
+    renderAll();
+    recountStats();
+    updateTierCount();
+    CF.status('Filter reset — every skin you had is back on the card.', 'ok');
+    return;
+  }
+  const ownedCount = Object.values(state.owned || {}).reduce((n, a) => n + a.length, 0);
+  if (!ownedCount) {
+    CF.status('Reset unavailable — nothing was imported, so there is no snapshot to restore from. Your hand-picked skins are safe.', 'err');
+    return;
+  }
   CF.ALL_CATS.forEach(c => { state.picks[c] = (state.owned[c] || []).map(id => SKIN_BY_ID.get(id)).filter(Boolean).map(s => ({ id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon, ...((state.ownedLevels[s.id] || 0) >= 2 ? { level: state.ownedLevels[s.id] } : {}) })); });
   tierSel = new Set(['premium', 'ultra']);
-  snapshotPicks();
   tierAnim = false;
   renderTierChips();
   renderTierPresets();
-  applyTierFilter();
+  renderAll();
+  recountStats();
+  updateTierCount();
+  CF.status('Rebuilt every category from your imported account — Apply to filter it again.', 'info');
 });
 
 // ── card interactions ─────────────────────────────────────────────
@@ -962,6 +1009,8 @@ card.addEventListener('click', e => {
         const i = arr.findIndex(p => p.id === rm.dataset.remove);
         if (i > -1) arr.splice(i, 1);
         renderPanel(cat);
+        recountStats();      /* CF-27 */
+        updateTierCount();   /* CF-10 */
         refreshLayout();
       }
     }, 160);
@@ -1298,7 +1347,8 @@ renderAll();
 renderTierChips();
 renderTierPresets();
 recountStats();
-const fit = CF.makeFitter({ card, sizer: CF.$('sizer'), topbar: CF.$('topbar'), stage: CF.$('stage') });
+updateTierCount();
+const fit = CF.makeFitter({ card, sizer: CF.$('sizer'), topbar: CF.$('chrome'), stage: CF.$('stage') });
 fit();
 
 // a draft saved earlier is restored automatically so a refresh never

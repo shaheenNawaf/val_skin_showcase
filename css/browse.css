@@ -187,6 +187,11 @@ button,input,select{font-family:var(--font-ui)}
 .lc-go{font-size:11px;font-weight:700;letter-spacing:.12em;color:#FF7A85;text-transform:uppercase}
 
 .aempty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:60px 20px;text-align:center;background:var(--c-surface);border:1px solid var(--c-line);clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
+#statebox code{font:600 11px/1.6 ui-monospace,Menlo,Consolas,monospace;background:var(--c-bg);border:1px solid var(--c-line-soft);padding:4px 9px;color:var(--c-accent);max-width:100%;overflow-wrap:anywhere}
+#statebox .sb-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+#statebox .sbtn{border:1px solid var(--c-line);background:transparent;color:var(--c-ink);font:700 11px var(--font-display);letter-spacing:.14em;text-transform:uppercase;padding:12px 22px;cursor:pointer;text-decoration:none;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+#statebox .sbtn.primary{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
+#statebox .sbtn:hover{filter:brightness(1.12)}
 .aempty b{font-family:var(--font-display);font-weight:800;font-size:18px;letter-spacing:0;color:var(--c-ink)}
 .aempty span{font-size:13px;color:var(--c-mut)}
 #clearBtn{background:var(--c-accent-btn);border:1px solid var(--c-accent-btn);color:#fff;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;padding:9px 16px;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}

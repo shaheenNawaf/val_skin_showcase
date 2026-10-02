@@ -142,7 +142,10 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 .mgrid .cardcell b{font-size:11px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .mgrid .cardcell span{font-size:10px;letter-spacing:.14em;text-transform:uppercase}
 .gridcap{margin:8px 0 0;color:var(--c-mut);font:700 10px var(--font-display);letter-spacing:.2em;text-transform:uppercase;text-align:center}
-.tierbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:64px 0 12px;padding:10px 12px;background:var(--c-surface);border:1px solid var(--c-line)}
+.tierbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0;padding:10px 12px;background:var(--c-surface2);border-top:1px solid var(--c-line-soft)}
+#chrome{position:fixed;top:0;left:0;right:0;z-index:20;background:var(--c-surface);border-bottom:1px solid var(--c-line)}
+#chrome #topbar{position:static}
+#chrome{border:0;border-bottom:1px solid var(--c-line)}
 .tb-label{font:700 10px var(--font-display);letter-spacing:.18em;text-transform:uppercase;color:var(--c-mut)}
 .tb-chips{display:flex;gap:6px;flex-wrap:wrap}
 .tb-chips button{border:1px solid var(--c-line);background:transparent;color:var(--c-mut);font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:7px 11px;cursor:pointer;display:flex;align-items:center;gap:6px}
