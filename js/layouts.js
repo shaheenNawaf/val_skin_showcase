@@ -223,7 +223,7 @@ export function renderSlotsM2(panel, skins, opts) {
 }
 
 /* CLASSIC: one column per gun type — full-width rows, own space, own scroll */
-function renderSlotsClassic(panel, skins, opts) {
+export function renderSlotsClassic(panel, skins, opts) {
   const slots = panel.querySelector('.slots');
   if (!slots) return;
   resetSlots(slots);

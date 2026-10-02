@@ -1,6 +1,6 @@
 // CardForge editor — card builder, PNG export, draft storage, listing publish.
 import * as CF from './shared.js';
-import { applyLayout, resolveLayout } from './layouts.js';
+import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -48,20 +48,20 @@ if (hashListing) {
 }
 
 // ── rendering ─────────────────────────────────────────────────────
-function skinCell(s, i) {
-  const label = `${s.weapon} — ${s.name}` + (s.level ? ` · LV${s.level}` : '') + (s.variant ? ` · ${s.variant.name}` : '');
-  return `<span class="skin" data-vp="${i}"><img src="${CF.esc(s.icon)}" alt="${CF.esc(label)}" title="${CF.esc(label)}">` +
-    `${s.level >= 2 ? `<i class="lv">LV${s.level}</i>` : ''}` +
-    `<button class="rm" data-remove="${CF.esc(s.id)}" aria-label="Remove ${CF.esc(s.name)}">×</button></span>`;
-}
-
 function renderPanel(cat, { animateLast = false } = {}) {
   const el = document.querySelector(`.panel[data-cat="${cat}"]`);
   const picks = state.picks[cat];
   const slots = el.querySelector('.slots');
-  slots.innerHTML = picks.length
-    ? picks.map((s, i) => skinCell(s, i)).join('')
-    : '<div class="slotbox empty"><span class="hint">+ add</span></div>';
+  if (!picks.length) {
+    slots.innerHTML = '<div class="slotbox empty"><span class="hint">+ add</span></div>';
+    slots.className = 'slots';
+  } else {
+    const mode = state.layout === 'auto' ? resolveLayout(buildPayload()) : state.layout;
+    const opts = { editable: true, showAll: true };
+    if (mode === 'm2') renderSlotsM2(el, picks, opts);
+    else if (mode === 'm3') renderSlotsClassic(el, picks, opts);
+    else renderSlotsM1(el, picks, opts);
+  }
   const add = el.querySelector('.add');
   if (add) add.textContent = `+ Add (${picks.length})`;
   if (animateLast) {
@@ -940,14 +940,17 @@ CF.$('exportBtn').addEventListener('click', async () => {
   if (exporting) return;
   exporting = true;
   CF.$('exportBtn').disabled = true;
-  buildPayload();
+  const payload = buildPayload();
+  const mode = state.layout === 'auto' ? resolveLayout(payload) : state.layout;
   CF.status('Rendering 3840×2160 PNG…');
   try {
+    applyLayout(CF.$('card'), payload, mode, 1, { editable: false }); /* capped poster for the capture */
     await CF.exportCard(card);
-    CF.status('PNG exported (3840×2160).', 'ok');
+    CF.status('PNG exported (3840×2160) — the poster caps each category; your listing scrolls the rest.', 'ok');
   } catch (e) {
     CF.status('Export failed: ' + (e.message || e), 'err');
   } finally {
+    renderAll(); /* restore the scrollable full-inventory preview */
     exporting = false;
     CF.$('exportBtn').disabled = false;
     fit();
@@ -1052,7 +1055,7 @@ function buildPayload() {
 function refreshLayout() {
   const payload = buildPayload();
   const mode = state.layout === 'auto' ? resolveLayout(payload) : state.layout;
-  applyLayout(CF.$('card'), payload, mode, 1, { editable: true });
+  applyLayout(CF.$('card'), payload, mode, 1, { editable: true, showAll: true });
   /* CF-06: the resolved mode is stated, not implied by the export label */
   const MODE_NAMES = { m1: 'TILES', m2: 'SHOWCASE', m3: 'CLASSIC' };
   const badge = CF.$('layoutBadge');
@@ -1300,6 +1303,7 @@ CF.initDisclaimerCollapse();
 CF.initStatusDismiss();
 renderAll();
 recountStats();
+card.classList.add('is-live'); /* editor preview scrolls like the live surfaces */
 const fit = CF.makeFitter({ card, sizer: CF.$('sizer'), topbar: CF.$('chrome'), stage: CF.$('stage') });
 fit();
 
