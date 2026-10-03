@@ -102,6 +102,7 @@ body.exporting .more-note{display:none}
 body.exporting-full #card.is-live{height:auto;min-height:1080px}
 body.exporting-full #card.is-live .slots{overflow:visible;height:auto}
 body.exporting-full #card.is-live .slots.tiles{align-content:start}
+body.exporting-full #card.is-live .grid{height:auto;grid-template-rows:none}
 
 [contenteditable]{outline:none;border-bottom:1px dashed var(--accent-dash,rgba(255,70,85,.3))}
 [contenteditable]:hover{border-bottom-color:var(--accent);cursor:text}

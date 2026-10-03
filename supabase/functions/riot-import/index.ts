@@ -28,6 +28,7 @@ const CLIENT_PLATFORM =
 // Wallet currency UUIDs (community-documented constants).
 const CUR_VP = "85ad13f7-3d1b-5128-9eb2-7cd8ee0b5741";
 const CUR_RP = "e59aa87c-4cbf-517a-5983-6e81511be9b7";
+const CUR_KC = "85ca954a-41f2-ce94-9b45-8ca3dd39a00d"; // Kingdom Credits (valorant-api.com/v1/currencies)
 
 // Entitlement ItemTypeIDs (community-documented constants).
 const TYPE_SKINS = "e7c63390-eda7-46e0-bb7a-a6abdacd2433";
@@ -249,6 +250,7 @@ Deno.serve(async (req) => {
       const b = j.Balances || {};
       out.vp = b[CUR_VP] ?? 0;
       out.rp = b[CUR_RP] ?? 0;
+      out.kc = b[CUR_KC] ?? 0;
     });
 
     await guard("rank", async () => {

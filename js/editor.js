@@ -750,11 +750,32 @@ CF.$('iRun').addEventListener('click', async () => {
   }
 });
 
+/* Import highlight reel: fill the Flex column with the account's best owned
+   skins (premium+ tiers or animated). Category panels already list every
+   owned skin, so Flex intentionally repeats the standouts — restored per
+   owner report 2026-10-03 (originally removed by d320603). */
+function autoFillFlex() {
+  const TIER_RANK = { exclusive: 3, ultra: 2, premium: 1 };
+  const cand = [];
+  SKIN_BY_ID.forEach(s => {
+    const lvl = state.ownedLevels[s.id] || 0;
+    if (!lvl) return;
+    const prem = TIER_RANK[CF.tierKey(s.tier)] || 0;
+    if (prem || (s.maxLevel || 1) >= 2) cand.push({ s, lvl, prem });
+  });
+  cand.sort((a, b) => b.prem - a.prem || a.s.name.localeCompare(b.s.name));
+  state.picks.Flex = cand.slice(0, 24).map(({ s, lvl }) => ({
+    id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon,
+    ...(lvl >= 2 ? { level: lvl } : {})
+  }));
+}
+
 function applyImport(j) {
   if (j.level != null) state.texts.level = String(j.level);
   if (j.name) state.texts.vlogin = j.tag ? j.name + '#' + j.tag : j.name;
   if (j.vp != null) state.texts.vp = String(j.vp);
   if (j.rp != null) state.texts.rp = String(j.rp);
+  if (j.kc != null) state.texts.kc = String(j.kc);
   if (j.rankTier) {
     const r = CF.rankByFlat(j.rankTier, RANKS);
     if (r && r.name !== 'UNRANKED') { state.texts.crank = r.name; const crankIcon = r.icon || (RANKS.find(x => x.name === r.name) || {}).icon || null; state.ranks.crank = crankIcon; }
@@ -807,6 +828,7 @@ function applyImport(j) {
       if (l >= 2) p.level = l;
       else if (l === 1) delete p.level;
     }));
+    autoFillFlex();
   }
   const ownedSkins = SKIN_BY_ID ? [...new Set(Object.keys(state.ownedLevels))]
     .map(id => SKIN_BY_ID.get(id)).filter(Boolean) : [];
