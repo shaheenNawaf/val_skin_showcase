@@ -1,0 +1,68 @@
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+
+#dwrap{max-width:1120px;margin:0 auto;padding:calc(var(--tbh) + 28px) 20px 96px}
+
+.dhead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.dh-left h1{font:800 26px var(--font-display);letter-spacing:-.01em;color:var(--c-ink)}
+#dsub{display:block;margin-top:4px;font-size:12px;color:var(--c-mut)}
+.dh-right{display:flex;gap:10px;align-items:center}
+
+#dwrap button,.dacts button,#keyBox button,#priceForm button{background:transparent;border:1px solid var(--c-line-soft);color:var(--c-mut);padding:8px 14px;font:600 11px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+#dwrap button:hover,.dacts button:hover,#keyBox button:hover,#priceForm button:hover{border-color:var(--c-mut);color:var(--c-ink);background:color-mix(in srgb,#fff 4%,transparent)}
+#dwrap button:disabled,.dacts button:disabled,#keyBox button:disabled,#priceForm button:disabled{opacity:.45;cursor:default}
+
+#keyBox{background:var(--c-surface2);border:1px solid var(--c-line);padding:14px 16px;margin-bottom:20px;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
+#keyBox p{font-size:12px;color:var(--c-mut);margin-bottom:10px}
+.kb-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+#keyBox input{background:var(--c-bg);border:1px solid var(--c-line);color:var(--c-ink);padding:9px 12px;font:500 12px var(--font-ui);min-width:220px}
+#keyBox input:focus{border-color:var(--c-mut)}
+
+#stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px}
+.stat{background:var(--c-surface2);border:1px solid var(--c-line);padding:14px 16px;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.sv{display:block;font:800 24px var(--font-display);color:var(--c-ink);letter-spacing:-.01em}
+.sl{display:block;margin-top:3px;font:600 10px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--c-mut)}
+
+#tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+#tabs button[aria-selected=true]{border-color:var(--c-accent);color:var(--c-ink)}
+.tc{color:var(--c-mut);font-weight:500}
+
+.drow{display:flex;gap:14px;align-items:flex-start;background:var(--c-surface2);border:1px solid var(--c-line);padding:14px;margin-bottom:10px;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.dthumb{width:64px;height:64px;object-fit:contain;background:var(--c-bg);border:1px solid var(--c-line);flex:none}
+.dinfo{flex:1;min-width:0}
+.dtitle{font:700 15px var(--font-display);color:var(--c-ink);margin-bottom:6px;overflow-wrap:anywhere}
+.dmeta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:11.5px;color:var(--c-mut)}
+.dmeta .sep{opacity:.5}
+.dsub2{margin-top:6px;font-size:11px;color:var(--c-mut);letter-spacing:.04em}
+
+.chip{display:inline-block;padding:3px 8px;font:700 9.5px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;border:1px solid transparent}
+.st-available{color:#3DD68C;border-color:rgba(61,214,140,.4);background:rgba(61,214,140,.08)}
+.st-pending{color:#ffc45e;border-color:rgba(255,196,94,.4);background:rgba(255,196,94,.08)}
+.st-sold{color:#FF6B77;border-color:rgba(255,70,85,.4);background:rgba(255,70,85,.08)}
+.st-archived{color:var(--c-mut);border-color:var(--c-line);background:transparent}
+.st-featured{color:#ffc45e;border-color:rgba(255,196,94,.5);background:rgba(255,196,94,.1)}
+
+.dacts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex:none;max-width:340px}
+#dwrap .dacts button{padding:7px 10px;font-size:10px;letter-spacing:.1em}
+#dwrap .dacts button.danger{color:#FF6B77;border-color:rgba(255,70,85,.35)}
+#dwrap .dacts button.danger:hover{border-color:#FF4655;background:rgba(255,70,85,.08)}
+#dwrap .dacts button.on{border-color:var(--c-accent);color:var(--c-ink)}
+
+#priceForm,.priceForm{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.priceForm input[type=number]{width:110px;background:var(--c-bg);border:1px solid var(--c-line);color:var(--c-ink);padding:7px 10px;font:600 12px var(--font-ui)}
+.priceForm select{background:var(--c-bg);border:1px solid var(--c-line);color:var(--c-ink);padding:7px 8px;font:600 11px var(--font-ui)}
+.priceForm label{display:flex;gap:6px;align-items:center;font-size:11px;color:var(--c-mut);letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+
+#dempty,#derror{text-align:center;padding:56px 20px;border:1px dashed var(--c-line);background:var(--c-surface2)}
+#dempty h2,#derror h2{font:800 18px var(--font-display);color:var(--c-ink);margin-bottom:8px}
+#dempty p,#derror p{font-size:13px;color:var(--c-mut);max-width:480px;margin:0 auto 16px;line-height:1.55}
+#derror{border-color:rgba(255,70,85,.4)}
+#derror h2{color:#FF6B77}
+
+@media (max-width:900px){#stats{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:760px){
+  #dwrap{padding-left:14px;padding-right:14px}
+  .drow{flex-wrap:wrap}
+  .dacts{justify-content:flex-start;max-width:none;width:100%}
+  #stats{grid-template-columns:repeat(2,1fr)}
+  .dhead{align-items:flex-start}
+}

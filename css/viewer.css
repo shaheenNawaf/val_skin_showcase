@@ -290,3 +290,27 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 #topbar #deleteBtn:hover{color:var(--red);border-color:var(--red)}
 #archNote{margin:10px 12px 0;padding:8px 12px;font:600 11px/1.5 'Chakra Petch',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--c-mut);background:var(--c-surface2);border:1px solid var(--c-line);clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 #archNote[hidden]{display:none}
+
+/* ── v1.3: owner price panel + buyer FB post links ───────────────── */
+#priceBox{margin:10px 12px 0;padding:10px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+background:var(--c-surface2);border:1px solid var(--c-line);
+clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+#priceBox[hidden]{display:none}
+#priceBox .pb-label{font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut)}
+#priceBox input[type=number]{width:110px;background:var(--c-bg);border:1px solid var(--c-line);color:var(--c-ink);padding:7px 10px;font:600 12px var(--font-ui)}
+#priceBox select{background:var(--c-bg);border:1px solid var(--c-line);color:var(--c-ink);padding:7px 8px;font:600 11px var(--font-ui)}
+#priceBox #pbNegoWrap{display:flex;gap:6px;align-items:center;font:600 10px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--c-mut);cursor:pointer}
+#priceBox button{background:transparent;border:1px solid var(--c-line-soft);color:var(--c-mut);padding:7px 12px;font:600 10px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;
+clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+#priceBox button:hover{border-color:var(--c-mut);color:var(--c-ink)}
+#priceBox button:disabled{opacity:.45;cursor:default}
+.vh-fb{display:inline-block;background:transparent;border:1px solid var(--c-line-soft);color:var(--c-mut);
+padding:8px 14px;font:600 11px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;text-decoration:none;cursor:pointer;
+clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.vh-fb:hover{border-color:#1877F2;color:#4593FF}
+.vh-fb[hidden]{display:none}
+.ma-fb{display:inline-block;border:1px solid var(--c-line-soft);color:var(--c-mut);background:transparent;
+padding:10px 12px;font:600 10px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;text-decoration:none;
+clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.ma-fb[hidden]{display:none}
+#tbMore button.on{border-color:#ffc45e;color:#ffc45e}

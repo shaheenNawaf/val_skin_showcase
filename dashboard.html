@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="protocol">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardForge — My accounts</title>
+<meta name="description" content="Owner dashboard for CardForge listings.">
+<!-- owner-only utility page; noindex like browse/view -->
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0B0F14">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1923'/%3E%3Cpath d='M10 24 24 10v6l-8 8z' fill='%23FF4655'/%3E%3Cpath d='M8 20l6-6v4l-4 4z' fill='%23FF4655' opacity='.6'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/dashboard.css">
+<script src="js/vendor/supabase.js" defer></script>
+<script src="js/config.js"></script>
+<script type="module" src="js/dashboard.js"></script>
+</head>
+<body>
+<div id="topbar">
+  <div class="tb-left">
+    <span class="logo">cardForge</span>
+  </div>
+  <div class="tb-right">
+    <a class="tb-link" href="browse.html">Marketplace</a>
+    <a class="tb-link" href="index.html">New card</a>
+    <span id="status" role="status" aria-live="polite">Loading your listings…</span>
+  </div>
+</div>
+
+<main id="dwrap">
+  <header class="dhead">
+    <div class="dh-left">
+      <h1>My accounts</h1>
+      <span id="dsub">Listings this browser can manage</span>
+    </div>
+    <div class="dh-right">
+      <button id="keyBtn" type="button">Import recovery key</button>
+      <a class="tb-link" id="soldPageLink" href="sold.html">Sold gallery</a>
+    </div>
+  </header>
+
+  <!-- recovery-key import panel (hidden until keyBtn) -->
+  <div id="keyBox" hidden>
+    <p>Paste a recovery key to manage a listing from this browser. Keys are shown once, at first publish.</p>
+    <div class="kb-row">
+      <label class="sr" for="keySlug">Listing slug</label>
+      <input id="keySlug" type="text" placeholder="slug (from the listing URL)" autocomplete="off" spellcheck="false">
+      <label class="sr" for="keyToken">Recovery key</label>
+      <input id="keyToken" type="text" placeholder="recovery key" autocomplete="off" spellcheck="false">
+      <button id="keySave" type="button">Save</button>
+      <button id="keyCancel" type="button">Cancel</button>
+    </div>
+  </div>
+
+  <section id="stats" aria-label="Sales statistics">
+    <div class="stat"><span class="sv" id="stActive">—</span><span class="sl">On sale</span></div>
+    <div class="stat"><span class="sv" id="stSold">—</span><span class="sl">Sold</span></div>
+    <div class="stat"><span class="sv" id="stViews">—</span><span class="sl">Total views</span></div>
+    <div class="stat"><span class="sv" id="stValue">—</span><span class="sl">Sold value</span></div>
+    <div class="stat"><span class="sv" id="stDays">—</span><span class="sl">Avg days to sell</span></div>
+  </section>
+
+  <nav id="tabs" role="tablist" aria-label="Listing status">
+    <button type="button" role="tab" data-tab="active" aria-selected="true">On sale <span class="tc" data-count="active"></span></button>
+    <button type="button" role="tab" data-tab="sold" aria-selected="false">Sold <span class="tc" data-count="sold"></span></button>
+    <button type="button" role="tab" data-tab="archived" aria-selected="false">Archived <span class="tc" data-count="archived"></span></button>
+  </nav>
+
+  <div id="rows" role="tabpanel" aria-live="polite"></div>
+
+  <div id="dempty" hidden>
+    <h2>No listings here yet</h2>
+    <p>This browser holds no edit keys. Publish a card and its key lands here automatically — or import an existing recovery key.</p>
+    <a class="tb-link" href="index.html">Build a card</a>
+  </div>
+
+  <div id="derror" hidden>
+    <h2>Could not load your listings</h2>
+    <p id="derrorMsg"></p>
+    <button id="retryBtn" type="button">Retry</button>
+  </div>
+</main>
+
+<div id="disclaimer">CardForge is not affiliated with, endorsed by, or associated with Riot Games or any game publisher. All game names, skin names and imagery are trademarks/property of their respective owners. <a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></div>
+</body>
+</html>

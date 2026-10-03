@@ -131,6 +131,7 @@ function normalize(r) {
     price: r.price == null ? null : Number(r.price),
     currency: r.currency || null, /* CF-16: was normalised away, so every price rendered a hardcoded $ */
     negotiable: !!r.negotiable,
+    featured: !!r.featured, /* v1.3: owner-pinned (v3 only; v2 rows default false) */
     views: Number(r.views) || 0,
     daysAgo: daysAgo(r.updated_at),
     rankNow: { name: r.crank_name || 'UNRANKED', icon: r.crank_icon || '', tier: rankTier(r.crank_name) },
@@ -480,6 +481,11 @@ function cmp(a, b) {
 }
 
 function featuredListing() {
+  /* v1.3: the owner's pinned listing wins the feature tile. With nothing
+     pinned (or on the v2 fallback, which has no `featured` column) the
+     most-views heuristic below is unchanged. */
+  const pinned = listings.find(l => l.featured);
+  if (pinned) return pinned;
   let best = null;
   listings.forEach(l => {
     if (!best || l.views > best.views || (l.views === best.views && l.daysAgo < best.daysAgo)) best = l;
@@ -968,7 +974,11 @@ let shownCount = 0;
 let hasMore = false;
 
 async function fetchPage(offset) {
-  const res = await supabase.rpc('browse_listings_v2', { p_limit: PAGE_SIZE + 1, p_offset: offset });
+  /* v1.3: prefer browse_listings_v3 (adds `featured`); if migration 10 is not
+     applied yet the RPC errors — fall back to v2 so browse behaves exactly as
+     before. Same ladder as the v2 -> browse_listings fallback in load(). */
+  let res = await supabase.rpc('browse_listings_v3', { p_limit: PAGE_SIZE + 1, p_offset: offset });
+  if (res.error) res = await supabase.rpc('browse_listings_v2', { p_limit: PAGE_SIZE + 1, p_offset: offset });
   if (res.error) throw res.error;
   const rows = res.data || [];
   hasMore = rows.length > PAGE_SIZE;
@@ -1000,6 +1010,7 @@ async function load() {
         slug: r.slug, title: r.title, code: r.code, theme: r.theme,
         views: r.views, skins: r.skins, updated_at: r.updated_at,
         price: null, negotiable: false,
+        featured: false,
         prems: null, limited: null, anims: null, level: null,
         vp: null, rp: null, kc: null,
         crank_name: '', prank_name: '', crank_icon: '', prank_icon: '',

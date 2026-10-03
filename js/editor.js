@@ -963,7 +963,11 @@ CF.$('exportBtn').addEventListener('click', async () => {
   CF.$('exportBtn').disabled = true;
   CF.status('Rendering 3840×2160 PNG…');
   try {
-    await CF.exportCard(card, { full: true });
+    const qrSlug = editSlug || localStorage.getItem('vc-draft-id');
+    const qrUrl = qrSlug
+      ? new URL('view.html?slug=' + encodeURIComponent(qrSlug), location.href).href
+      : null;
+    await CF.exportCard(card, { full: true, qrUrl });
     CF.status('PNG exported — 3840×' + (card.dataset.exportHeight ? Math.round(Number(card.dataset.exportHeight) * 2) : 2160) + ', exactly what your preview shows.', 'ok');
   } catch (e) {
     CF.status('Export failed: ' + (e.message || e), 'err');

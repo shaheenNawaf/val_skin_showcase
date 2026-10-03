@@ -12,6 +12,16 @@ No framework — plain HTML/CSS/JS, staged into `dist/` by a tiny build script a
 - **Publishing** (`view.html`): publishes the card as a listing; share links work cross-device when Supabase is configured, per-browser otherwise. Viewers see a live "viewing now" counter (Supabase Realtime, or BroadcastChannel locally), a total-views counter and a contact-seller button. Republish/update works via a locally-stored edit token.
 - **Backend** (optional): Supabase Postgres + RLS + edge function that syncs the skin catalog nightly. See [SETUP.md](SETUP.md).
 
+## v1.3 — personal marketplace close-out
+
+- **Owner dashboard** (`dashboard.html`): lists every listing whose recovery key lives in this browser's localStorage, with On sale / Sold / Archived tabs; per-row Open, Edit, Mark sold / Relist, Feature, Bump, Price, Copy FB post, FB link, Copy link, Archive, Delete; header stats On sale / Sold / Total views / Sold value / Avg days to sell; recovery-key import. Reach it from the editor's **More** menu → **My accounts**.
+- **Sold gallery** (`sold.html`): an unlisted past-sales gallery (`noindex`, intentionally not linked from the marketplace) the owner shares as proof of completed sales.
+- **Owner lifecycle** (viewer page, owner mode): Mark sold / Relist, Feature / Unfeature, Bump, inline Price panel (amount + currency USD/EUR/GBP/JPY + OBO), and FB link attach. Buyers see a "See the Facebook post" button when the listing has an FB link.
+- **Facebook tooling**: `fbPostText(row, url)` in `js/shared.js` generates the Facebook group post text, used by Copy FB post.
+- **Browse**: the featured tile prefers the owner-pinned listing (falls back to most-viewed); `js/browse.js` prefers `browse_listings_v3` and falls back to v2/legacy.
+- **QR exports**: full-height PNG exports carry a QR footer strip linking to the live listing; publish share JPEGs intentionally omit it so the og:image aspect stays 3840×2160.
+- **Database** (`supabase/migrations/10_lifecycle.sql`): `sold_at` / `featured_at` / `fb_post_url` columns, `owner_set_listing` + `browse_listings_v3` RPCs, and a rebuilt `listing_public` view. See [SETUP.md](SETUP.md).
+
 ## Project structure
 
 ```

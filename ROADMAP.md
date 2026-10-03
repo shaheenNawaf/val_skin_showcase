@@ -10,6 +10,15 @@
 - Phase 0 artifacts delivered: `schema.sql`, `skin-sync` edge function, `SETUP.md`, `POSITIONING.md`, `CONTRACT_CLAUSES.md`
 - Tier handling hardened (chips built from live data, case-insensitive)
 
+## v1.3 — Personal marketplace close-out ✅ shipped
+- Owner dashboard `dashboard.html` (listings whose recovery key is in this browser's localStorage; On sale / Sold / Archived tabs; Open / Edit / Mark sold–Relist / Feature / Bump / Price / Copy FB post / FB link / Copy link / Archive / Delete; header stats On sale / Sold / Total views / Sold value / Avg days to sell; recovery-key import). Entry point: editor **More** → **My accounts**
+- Unlisted sold gallery `sold.html` (`noindex`, intentionally not linked from the marketplace; shared by the owner as proof)
+- Sold/pending lifecycle, feature pinning, bump-to-top; viewer owner-mode actions + inline price (amount + currency USD/EUR/GBP/JPY + OBO)
+- Facebook post tooling (`fbPostText` in `js/shared.js`, Copy FB post, FB link attach, buyer "See the Facebook post")
+- QR footer strip on full-height PNG exports (publish share JPEGs excluded; og:image stays 3840×2160)
+- `browse_listings_v3` (+ `browse.js` prefers v3, falls back to v2/legacy); featured tile prefers the owner-pinned listing
+- `supabase/migrations/10_lifecycle.sql` — additive `sold_at` / `featured_at` / `fb_post_url`, `owner_set_listing`, `browse_listings_v3`
+
 ---
 
 ## 1. Current State (prototype, single-file)

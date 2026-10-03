@@ -702,11 +702,24 @@ function wireContact(link) {
   mob?.addEventListener('click', act);
 }
 
+/* v1.3: buyer-facing link to the owner's Facebook group post. Renders when
+   fb_post_url is a clean https URL — no owner session needed. */
+function syncFbBtns(listing) {
+  const u = String((listing && listing.fb_post_url) || '').trim();
+  const ok = /^https:\/\//i.test(u);
+  [CF.$('fbPostBtn'), CF.$('maFb')].forEach(b => {
+    if (!b) return;
+    if (ok) { b.href = u; b.hidden = false; } else { b.hidden = true; b.removeAttribute('href'); }
+  });
+}
+
 /* Owner-only lifecycle: archive (soft hide) + hard delete. Buttons exist in
    the DOM hidden; only this browser's edit token can un-hide and use them. */
 function wireOwnerControls(sb, listing, slug) {
   const aBtn = CF.$('archiveBtn');
   const dBtn = CF.$('deleteBtn');
+  const sBtn = CF.$('soldBtn'), fBtn = CF.$('featureBtn'), bmBtn = CF.$('bumpBtn'), pBtn = CF.$('priceBtn'), flBtn = CF.$('fbLinkBtn'), fcBtn = CF.$('fbCopyBtn');
+  const pBox = CF.$('priceBox');
   const note = CF.$('archNote');
   const token = localStorage.getItem('vc-edit-' + slug) || '';
   const sync = () => {
@@ -715,10 +728,23 @@ function wireOwnerControls(sb, listing, slug) {
     aBtn.textContent = listing.archived ? 'Unarchive' : 'Archive';
     note.hidden = !listing.archived;
     if (listing.archived) note.textContent = 'This listing is archived — hidden from the marketplace, still reachable by this link.';
+    [sBtn, fBtn, bmBtn, pBtn, flBtn, fcBtn].forEach(b => { if (b) b.hidden = false; });
+    if (sBtn) sBtn.textContent = listing.status === 'sold' ? 'Relist' : 'Mark sold';
+    if (fBtn) { fBtn.textContent = listing.featured_at ? 'Unfeature' : 'Feature'; fBtn.classList.toggle('on', !!listing.featured_at); }
+    if (flBtn) flBtn.textContent = listing.fb_post_url ? 'FB link \u2713' : 'FB link';
   };
   const deny = e => /42501|token mismatch/i.test(String((e && e.message) || e))
     ? 'This browser’s edit key was rejected for that action.'
     : null;
+  const own = async params => {
+    const h = await CF.hashToken(token);
+    const { error } = await sb.rpc('owner_set_listing', Object.assign({ p_slug: slug, p_edit_token_hash: h }, params));
+    if (error) throw error;
+  };
+  const busy = async (btn, fn) => {
+    btn.disabled = true;
+    try { await fn(); } finally { btn.disabled = false; }
+  };
   aBtn.addEventListener('click', async () => {
     const next = !listing.archived;
     if (!window.confirm(next
@@ -755,6 +781,122 @@ function wireOwnerControls(sb, listing, slug) {
     } catch (e) {
       CF.status(deny(e) || ('Delete failed: ' + ((e && e.message) || e)), 'err');
     } finally { dBtn.disabled = false; }
+  });
+  sBtn.addEventListener('click', async () => {
+    const next = listing.status === 'sold' ? 'available' : 'sold';
+    if (next === 'sold' && !window.confirm('Mark this listing SOLD? It leaves the marketplace immediately. You can relist anytime.')) return;
+    try {
+      await busy(sBtn, async () => {
+        await own({ p_status: next });
+        listing.status = next;
+        listing.sold_at = next === 'sold' ? new Date().toISOString() : null;
+        applyHero(listing);
+        sync();
+        CF.status(next === 'sold' ? 'Marked sold — removed from the marketplace.' : 'Relisted — back on the marketplace.', 'ok');
+      });
+    } catch (e) {
+      CF.status(deny(e) || ('Status change failed: ' + ((e && e.message) || e)), 'err');
+    }
+  });
+  fBtn.addEventListener('click', async () => {
+    const on = !!listing.featured_at;
+    try {
+      await busy(fBtn, async () => {
+        await own({ p_featured: !on });
+        listing.featured_at = on ? null : new Date().toISOString();
+        sync();
+        CF.status(on ? 'Featured pin removed.' : 'Pinned as the featured listing on the marketplace.', 'ok');
+      });
+    } catch (e) {
+      CF.status(deny(e) || ('Feature failed: ' + ((e && e.message) || e)), 'err');
+    }
+  });
+  bmBtn.addEventListener('click', async () => {
+    try {
+      await busy(bmBtn, async () => {
+        await own({});
+        CF.status('Bumped to the top of Newest.', 'ok');
+      });
+    } catch (e) {
+      CF.status(deny(e) || ('Bump failed: ' + ((e && e.message) || e)), 'err');
+    }
+  });
+  if (pBox) {
+    pBtn.addEventListener('click', () => {
+      pBox.hidden = !pBox.hidden;
+      if (!pBox.hidden) {
+        CF.$('pbPrice').value = listing.price == null ? '' : String(Number(listing.price));
+        CF.$('pbCurrency').value = listing.currency || 'USD';
+        CF.$('pbNego').checked = !!listing.negotiable;
+      }
+    });
+    CF.$('pbCancel').addEventListener('click', () => { pBox.hidden = true; });
+    CF.$('pbSave').addEventListener('click', async () => {
+      const v = CF.$('pbPrice').value.trim();
+      if (!v) { CF.status('Enter a price, or use Clear price.', 'err'); return; }
+      const pbSaveEl = CF.$('pbSave');
+      try {
+        await busy(pbSaveEl, async () => {
+          await own({ p_price: Number(v), p_currency: CF.$('pbCurrency').value, p_negotiable: CF.$('pbNego').checked });
+          listing.price = Number(v);
+          listing.currency = CF.$('pbCurrency').value;
+          listing.negotiable = CF.$('pbNego').checked;
+          applyHero(listing);
+          pBox.hidden = true;
+          CF.status('Price saved — the marketplace now shows it.', 'ok');
+        });
+      } catch (e) {
+        CF.status(deny(e) || ('Price save failed: ' + ((e && e.message) || e)), 'err');
+      }
+    });
+    CF.$('pbClear').addEventListener('click', async () => {
+      const pbClearEl = CF.$('pbClear');
+      try {
+        await busy(pbClearEl, async () => {
+          await own({ p_clear_price: true });
+          listing.price = null;
+          listing.currency = null;
+          listing.negotiable = false;
+          applyHero(listing);
+          pBox.hidden = true;
+          CF.status('Price cleared — buyers see CONTACT FOR PRICE.', 'ok');
+        });
+      } catch (e) {
+        CF.status(deny(e) || ('Price clear failed: ' + ((e && e.message) || e)), 'err');
+      }
+    });
+  }
+  flBtn.addEventListener('click', async () => {
+    const u = prompt('Paste the Facebook post URL (https://\u2026):', listing.fb_post_url || '');
+    if (u === null) return;
+    const t = u.trim();
+    try {
+      if (t === '') {
+        await busy(flBtn, async () => {
+          await own({ p_fb_post_url: '' });
+          listing.fb_post_url = null;
+          syncFbBtns(listing);
+          sync();
+          CF.status('FB post link removed.', 'ok');
+        });
+      } else if (!/^https:\/\//i.test(t)) {
+        CF.status('URL must start with https://', 'err');
+      } else {
+        await busy(flBtn, async () => {
+          await own({ p_fb_post_url: t });
+          listing.fb_post_url = t;
+          syncFbBtns(listing);
+          sync();
+          CF.status('FB post link saved — buyers now see a "See the Facebook post" button.', 'ok');
+        });
+      }
+    } catch (e) {
+      CF.status(deny(e) || ('FB link save failed: ' + ((e && e.message) || e)), 'err');
+    }
+  });
+  fcBtn.addEventListener('click', () => {
+    CF.copyText(CF.fbPostText(listing, location.href.split('#')[0]));
+    CF.status('FB post text copied — paste it into your Facebook group.', 'ok');
   });
   sync();
 }
@@ -908,6 +1050,7 @@ if (!slug) {
     /* CF-11/CF-12: structured price, seller, status — from columns the
        fetch already returned and used to discard */
     applyHero(listing);
+    syncFbBtns(listing);
     const archNote = CF.$('archNote');
     archNote.hidden = !listing.archived;
     if (listing.archived) archNote.textContent = 'This listing is archived — hidden from the marketplace, still reachable by this link.';

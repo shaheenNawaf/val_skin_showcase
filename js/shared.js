@@ -396,6 +396,39 @@ export function resizeToDataUrl(file, max) {
 // ── PNG export ────────────────────────────────────────────────────
 // Remote icon URLs are swapped to data URLs for the capture only, so exported
 // PNGs never taint the canvas and stored payloads stay small.
+/* X2: builds the scan-for-live-listing QR footer appended to full-height PNG exports. */
+async function makeQrFoot(url) {
+  try {
+    const mod = await import('./vendor/qrcode-generator.mjs');
+    const qrcode = mod.default || mod.qrcode || mod;
+    const qr = qrcode(0, 'M');
+    qr.addData(String(url));
+    qr.make();
+    const n = qr.getModuleCount();
+    let rects = '';
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        if (qr.isDark(r, c)) rects += '<rect x="' + c + '" y="' + r + '" width="1" height="1"/>';
+      }
+    }
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + n + ' ' + n + '" shape-rendering="crispEdges" style="width:104px;height:104px;display:block"><g fill="#0B0F14">' + rects + '</g></svg>';
+    const escapeHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const escapedUrl = escapeHtml(url);
+    const foot = document.createElement('div');
+    foot.className = 'qrfoot';
+    foot.setAttribute('data-qrfoot', '');
+    foot.style.cssText = 'position:relative;height:132px;margin:4px 0 8px;display:flex;align-items:center;gap:22px;box-sizing:border-box';
+    foot.innerHTML = '<div style="background:#fff;padding:8px;flex:0 0 auto;line-height:0">' + svg + '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px;min-width:0">' +
+        '<div style="font:700 20px Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase">Scan for live listing</div>' +
+        '<div style="font:400 15px Inter,sans-serif;opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:1500px">' + escapedUrl + '</div>' +
+      '</div>';
+    return foot;
+  } catch {
+    return null;
+  }
+}
+
 /* Shared capture used by the PNG export and by the publish flow, which
    uploads the same render as the listing's og:image (CF-20). */
 export async function captureCardBlob(card, type = 'image/png', quality, opts = {}) {
@@ -404,6 +437,27 @@ export async function captureCardBlob(card, type = 'image/png', quality, opts = 
   // wait a frame so the exporting styles apply — with a setTimeout escape
   // because backgrounded tabs never fire requestAnimationFrame
   await new Promise(r => { requestAnimationFrame(r); setTimeout(r, 120); });
+  let qrCleanup = null;
+  if (opts && opts.full && opts.qrUrl) { /* X2: QR footer, full-height PNG exports only */
+    const foot = await makeQrFoot(opts.qrUrl);
+    if (foot) {
+      const ws = card.querySelector('.wstrip');
+      const prevWsBottom = ws ? ws.style.bottom : '';
+      const prevH = card.style.height, prevMinH = card.style.minHeight, prevOv = card.style.overflow;
+      const grown = card.offsetHeight + 140;
+      card.style.height = grown + 'px';
+      card.style.minHeight = grown + 'px';
+      card.style.overflow = 'visible';
+      foot.style.position = 'absolute';
+      foot.style.left = '34px';
+      foot.style.right = '34px';
+      foot.style.bottom = '8px';
+      foot.style.margin = '0';
+      if (ws) ws.style.bottom = (parseFloat(window.getComputedStyle(ws).bottom || '8') + 140) + 'px';
+      card.appendChild(foot);
+      qrCleanup = () => { const f = card.querySelector('[data-qrfoot]'); if (f) f.remove(); if (ws) ws.style.bottom = prevWsBottom; card.style.height = prevH; card.style.minHeight = prevMinH; card.style.overflow = prevOv; };
+    }
+  }
   if (opts.full) card.dataset.exportHeight = String(card.scrollHeight);
   const swaps = [];
   const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
@@ -422,6 +476,7 @@ export async function captureCardBlob(card, type = 'image/png', quality, opts = 
     }
     return await window.htmlToImage.toBlob(card, { pixelRatio: 2 });
   } finally {
+    if (qrCleanup) qrCleanup();
     swaps.forEach(([img, src]) => { if (src === null) { img.removeAttribute('src'); } else { img.src = src; } });
     document.body.classList.remove('exporting');
     document.body.classList.remove('exporting-full');
@@ -463,4 +518,56 @@ export function startLocalPresence(channelId, onTick) {
   addEventListener('beforeunload', () => bc.postMessage({ t: 'bye', s: sid }));
   onTick(peers.size);
   return () => clearInterval(iv);
+}
+
+// ── v1.3: Facebook group post generator ───────────────────────────
+/* Builds paste-ready FB post text for a listing. `row` = a listing_public row
+   (or any object with { slug, payload, price, currency, negotiable }); `url` =
+   absolute listing URL. Pure function — no DOM, no network. Mirrors the card:
+   every value it prints is a value the card itself shows. */
+const FB_SYM = { USD: '$', EUR: '\u20ac', GBP: '\u00a3', JPY: '\u00a5' };
+const fbNum = s => parseInt(String(s == null ? '' : s).replace(/[^0-9]/g, ''), 10) || 0;
+
+export function fbPostText(row, url) {
+  const p = (row && row.payload) || {};
+  const t = p.texts || {};
+  const picks = p.picks || {};
+  const slug = (row && row.slug) || '';
+  const cname = String(t.cname || '').trim();
+  const code = String(t.code || '').trim();
+  const title = (cname && cname !== 'CHANGE NAME') ? cname
+    : (code && code !== 'K486') ? code
+    : slug;
+  const all = Object.values(picks).filter(Array.isArray).flat();
+  const top = all.slice()
+    .sort((a, b) => (Number(b && b.level) || 0) - (Number(a && a.level) || 0))
+    .map(s => s && s.name).filter(Boolean).slice(0, 5);
+  const price = row && row.price != null && row.price !== '' ? Number(row.price) : null;
+  const lines = [];
+  lines.push('\u{1F525} ' + title + ' \u2014 VALORANT ACCOUNT');
+  if (price == null || !isFinite(price)) {
+    lines.push('\u{1F4B0} Price: DM me' + (row && row.negotiable ? ' \u2014 open to offers' : ''));
+  } else {
+    const sym = FB_SYM[row.currency] || (row.currency ? row.currency + ' ' : '$');
+    lines.push('\u{1F4B0} Price: ' + sym + (price % 1 ? price.toFixed(2) : price.toLocaleString('en-US'))
+      + (row.negotiable ? ' (open to offers)' : ' \u2014 firm'));
+  }
+  const crank = String(t.crank || '').trim();
+  const prank = String(t.prank || '').trim();
+  if (crank || prank) lines.push('\u{1F3C5} Rank: ' + (crank || '\u2014') + (prank ? ' \u00b7 Peak ' + prank : ''));
+  const bits = [];
+  if (fbNum(t.prems)) bits.push(fbNum(t.prems) + ' premium skins');
+  if (fbNum(t.anims)) bits.push(fbNum(t.anims) + ' animated');
+  if (fbNum(t.limited)) bits.push(fbNum(t.limited) + ' limited');
+  if (all.length) bits.push(all.length + ' skins total');
+  if (fbNum(t.level)) bits.push('level ' + fbNum(t.level));
+  if (bits.length) lines.push('\u2728 ' + bits.join(' \u00b7 '));
+  if (top.length) lines.push('\u{1F52B} ' + top.join(' \u00b7 '));
+  lines.push('\u{1F517} ' + url);
+  const trust = [];
+  if (/yes/i.test(String(t.wtr || ''))) trust.push('WTR');
+  if (/yes/i.test(String(t.receipts || ''))) trust.push('receipts provided');
+  if (trust.length) lines.push('\u{1F6E1}\uFE0F ' + trust.join(' \u00b7 '));
+  lines.push('\u{1F4E9} DM me here or via the listing link.');
+  return lines.join('\n');
 }

@@ -9,6 +9,13 @@ In the Supabase SQL editor, run:
 1. `supabase/schema.sql` — tables, views, RPCs, RLS.
 2. `supabase/migrations/2_listings_hardening.sql` — validated `create_listing`, token-checked `update_listing`.
 9. `supabase/migrations/9_archive_delete.sql` — archived column, owner-only `set_listing_archived` / `delete_listing` RPCs, marketplace RPCs skip archived rows.
+10. `supabase/migrations/10_lifecycle.sql` — `sold_at` / `featured_at` / `fb_post_url` columns on `public.listings`, `owner_set_listing` (edit-token-hash checked; single-featured; stamps `sold_at` on sold, clears on relist) + `browse_listings_v3` RPCs, rebuilt `listing_public` view (additive, idempotent).
+
+Apply the lifecycle migration to a linked project with:
+
+```bash
+supabase db query --linked --file supabase/migrations/10_lifecycle.sql
+```
 
 ## 2. Point the app at your project
 
