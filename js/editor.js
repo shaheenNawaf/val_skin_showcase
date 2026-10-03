@@ -1492,10 +1492,7 @@ async function publishListing() {
 CF.$('publishBtn').addEventListener('click', publishListing);
 
 // ── v1.3.1: single-seller auth gate ──
-const GATE_DISABLED = true; /* TEMP 2026-10-03: magic-link seller gate switched off for quick testing.
-   Restore (delete this const + the guard line below) before merging staging -> main. */
 async function initAuthGate() {
-  if (GATE_DISABLED) return;
   if (!supabase) return;
   if (new URLSearchParams(location.search).get('edit')) return;
   const gate = CF.$('authGate');
