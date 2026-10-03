@@ -29,7 +29,7 @@ export default async (request: Request, context: any) => {
   let theme = 'protocol';
   try {
     const r = await fetch(
-      `${SB_URL}/rest/v1/listing_public?select=title,price,currency,status,theme&slug=eq.${encodeURIComponent(slug)}`,
+      `${SB_URL}/rest/v1/listing_public?select=code,title,price,currency,status,theme&slug=eq.${encodeURIComponent(slug)}`,
       { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` } },
     );
     if (r.ok) {
@@ -37,7 +37,7 @@ export default async (request: Request, context: any) => {
       const l = Array.isArray(rows) ? rows[0] : null;
       if (l) {
         const sym = l.currency === 'EUR' ? '€' : l.currency === 'GBP' ? '£' : l.currency === 'JPY' ? '¥' : '$';
-        title = `${l.title || 'Listing'}${l.price != null ? ` — ${sym}${l.price}` : ''} · CardForge`;
+        title = `${(l.code && String(l.code).trim()) ? l.code : (l.title || 'Listing')}${l.price != null ? ` — ${sym}${l.price}` : ''}`;
         if (l.status === 'sold') title = `[SOLD] ${title}`;
         description = l.status === 'sold'
           ? 'This listing has been sold.'

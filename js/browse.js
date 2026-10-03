@@ -321,6 +321,14 @@ function previewInner(l, style) {
     + '</div>';
 }
 
+/* The listing ID is the title everywhere; custom name / Riot ID drop to the subline. */
+const entryTitle = l => (l.code && l.code.trim()) || l.title;
+const entrySub = l => {
+  const t = entryTitle(l);
+  if (l.code && l.code.trim() && l.code !== t) return l.code;
+  return (l.title && l.title !== t) ? l.title : (l.vlogin || '');
+};
+
 function cardHTML(l, i) {
   const t = THEME_ACCENTS[l.theme] || THEME_ACCENTS.protocol;
   const rn = l.rankNow;
@@ -338,8 +346,8 @@ function cardHTML(l, i) {
     + previewInner(l, state.style)
     + '</div>'
     + '<div class="gc-body">'
-    + '<h2>' + esc(l.title) + '</h2>'
-    + '<div class="gc-code">' + esc(l.code) + '</div>'
+    + '<h2>' + esc(entryTitle(l)) + '</h2>'
+    + '<div class="gc-code">' + esc(entrySub(l)) + '</div>'
     + '<div class="gc-ranks">' + rankImg(rn) + '<span>' + esc(rn.name) + '</span><i>·</i><span class="pk">PEAK ' + esc(rp.name) + '</span></div>'
     + '<div class="gc-chips">' + chipsGrid(l) + '</div>'
     + '<div class="gc-seller">' + img(AVATAR_PLACEHOLDER, 'Seller avatar') + '<span>' + esc(l.seller.name) + '</span></div>'
@@ -356,7 +364,7 @@ function rowHTML(l) {
   const icons = flattenPicks(l, FEATURE_ORDER).slice(0, 2).map(pickIconWrap).join('');
   return '<button type="button" class="arow" data-slug="' + esc(l.slug) + '">'
     + '<div class="lr-thumb" data-imgwrap><div class="lc-icons">' + icons + '</div></div>'
-    + '<div class="lr-main"><div class="lr-title"><h2>' + esc(l.title) + '</h2><span class="lr-badges">' + badgesGrid(l) + '</span></div></div>'
+    + '<div class="lr-main"><div class="lr-title"><h2>' + esc(entryTitle(l)) + '</h2><span class="lr-badges">' + badgesGrid(l) + '</span></div></div>'
     + '<div class="lr-ranks"><div class="r">' + rankImg(rn) + '<span>' + esc(rn.name) + '</span></div><div class="r">' + rankImg(rp) + '<span class="pk">PEAK ' + esc(rp.name) + '</span></div></div>'
     + '<div class="lr-chips">' + chipsList(l) + '</div>'
     + '<div class="lr-price">' + priceHTML(l) + '<span class="lc-meta">' + esc(l.views) + ' views · ' + esc(agoText(l.daysAgo)) + '</span></div>'
@@ -384,7 +392,7 @@ function featHTML(l) {
     + '</div>'
     + '<div class="gf-info">'
     + '<span class="gf-theme">' + esc(t.label) + '</span>'
-    + '<h2>' + esc(l.title) + '</h2>'
+    + '<h2>' + esc(entryTitle(l)) + '</h2>'
     + '<div class="gf-seller">' + img(AVATAR_PLACEHOLDER, 'Seller avatar') + '<div><b>' + esc(l.seller.name) + '</b><span>' + flags + '</span></div></div>'
     + '<div class="gf-rankrow">' + rankImg(rn) + '<span>' + esc(rn.name) + '</span><i>·</i><span class="m">PEAK ' + esc(rp.name) + '</span></div>'
     + '<div class="gf-price">' + price + '</div>'
@@ -785,8 +793,8 @@ function fitCard() {
 
 function fillBar(l, slug) {
   const bar = qv.querySelector('.qv-bar');
-  bar.querySelector('#qvTitle').textContent = l.title;
-  bar.querySelector('.qv-code').textContent = l.code;
+  bar.querySelector('#qvTitle').textContent = entryTitle(l);
+  bar.querySelector('.qv-code').textContent = entrySub(l);
   bar.querySelector('.qv-meta').textContent = l.views + ' VIEWS · UPDATED ' + agoText(l.daysAgo).toUpperCase() + ' · ' + l.seller.name;
   const price = bar.querySelector('.qv-price');
   const offer = bar.querySelector('.qv-offer');
