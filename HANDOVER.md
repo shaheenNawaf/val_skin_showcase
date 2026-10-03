@@ -80,6 +80,33 @@ gallery) · terms/privacy/404.
 - Drafts live under `vc-draft-id` / draft storage in the editor; the recovery key only
   matters once published.
 
+## 4b. Seller sign-in (magic link)
+
+- **Who can publish**: only emails in the private `seller_emails` table, signed in via
+  a magic link on the editor page. Everyone else is a viewer (the editor shows a
+  sign-in screen; no public "Build a card" links anymore).
+- **One-time Supabase setup** (dashboard only, not possible from the repo):
+  Authentication → URL Configuration → Site URL `https://cardforge.shaheen.works`;
+  Additional redirect URLs: `https://cardforge.shaheen.works/index.html`,
+  `https://staging--cardforge-showcase.netlify.app/index.html`,
+  `http://localhost:3000/index.html`. Optionally disable "Allow new users to sign up"
+  (the allow-list gates publishing either way).
+- **Registering a seller email** (once per seller):
+  `supabase db query --linked -q "insert into public.seller_emails (email) values ('seller@example.com') on conflict do nothing"`
+  — or run it in the Supabase SQL editor. Rotating/removing a seller = delete/insert
+  rows in `seller_emails`; takes effect on their next publish attempt.
+- **Stakeholder onboarding**: open `https://cardforge.shaheen.works/index.html` →
+  enter the seller email → click the magic link in the inbox → editor unlocks (session
+  persists in that browser; sign out via the editor's ⋯ menu). New device/browser:
+  repeat the magic link, then import per-listing recovery keys via the dashboard as
+  before.
+- **SMTP**: magic-link emails use Supabase's built-in SMTP (low hourly limit — fine
+  for one seller); configure custom SMTP under Supabase Auth settings if that ever
+  changes.
+- **Known limitation (pre-existing, unchanged)**: anon can still upload/overwrite
+  `<slug>.jpg` in the `listing-images` storage bucket; proper fix = edge-function
+  upload path validating the edit token.
+
 ## 5. Changing things (dev + deploy)
 
 ```bash

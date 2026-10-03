@@ -22,6 +22,14 @@ No framework — plain HTML/CSS/JS, staged into `dist/` by a tiny build script a
 - **QR exports**: full-height PNG exports carry a QR footer strip linking to the live listing; publish share JPEGs intentionally omit it so the og:image aspect stays 3840×2160.
 - **Database** (`supabase/migrations/10_lifecycle.sql`): `sold_at` / `featured_at` / `fb_post_url` columns, `owner_set_listing` + `browse_listings_v3` RPCs, and a rebuilt `listing_public` view. See [SETUP.md](SETUP.md).
 
+## v1.3.1 — single-seller gate
+
+- **Single-seller gate**: publishing (`create_listing`) now requires a Supabase magic-link session whose email is in the private `seller_emails` allow-list; an `am_i_seller()` probe RPC reports eligibility.
+- **Sign-in screen**: visitors to `index.html` see a sign-in overlay instead of the editor; publishing emails get a magic link, and sign-out lives in the editor's ⋯ menu.
+- **Public build links removed**: the "Build a card" links were removed from browse / terms / privacy / 404.
+- **Recovery-key editing unchanged**: `?edit=<slug>` editing needs no sign-in, and update/delete/archive/owner actions stay per-listing token-gated.
+- **Database** (`supabase/migrations/11_seller_auth.sql`): private `seller_emails` allow-list, `am_i_seller()` probe, and the `create_listing` gate. See [SETUP.md](SETUP.md).
+
 ## Project structure
 
 ```

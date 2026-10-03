@@ -23,6 +23,28 @@
 <script type="module" src="js/editor.js"></script>
 </head>
 <body>
+<div id="authGate" hidden>
+  <div class="ag-panel">
+    <div class="ag-logo">cardForge</div>
+    <h1 class="ag-title">Single-seller marketplace</h1>
+    <div id="agForm">
+      <p class="ag-sub">Cards here are published by the owner only. If that&rsquo;s you, sign in with your seller email &mdash; we&rsquo;ll send a magic link.</p>
+      <label class="ag-label" for="agEmail">Seller email</label>
+      <input id="agEmail" type="email" autocomplete="email" spellcheck="false" placeholder="you@example.com">
+      <button id="agSend" type="button">Email me a sign-in link</button>
+      <p id="agMsg" class="ag-msg" role="status"></p>
+    </div>
+    <div id="agSent" hidden>
+      <p class="ag-sub">Check your inbox &mdash; the sign-in link is on its way. It expires in about an hour.</p>
+      <button id="agBack" type="button">Use a different email</button>
+    </div>
+    <div id="agSigned" hidden>
+      <p class="ag-sub">Signed in as <b id="agWho"></b> &mdash; this account isn&rsquo;t a registered seller.</p>
+      <button id="agOut" type="button">Sign out</button>
+    </div>
+    <a class="ag-browse" href="browse.html">Browse the marketplace &rarr;</a>
+  </div>
+</div>
 <!-- One fixed chrome stack: the topbar. --tbh measures ALL of it, so the stage can never paint over it (the P0 occlusion fix). -->
 <div id="chrome">
 <div id="topbar">
@@ -53,6 +75,7 @@
       <div id="moreMenu" hidden>
         <a class="mm-item" href="browse.html">Browse listings</a>
         <a class="mm-item" href="dashboard.html">My accounts</a>
+        <button class="mm-item" id="signOutBtn" type="button" hidden>Sign out</button>
         <button class="mm-item" id="importBtn" type="button">Import account</button>
         <button class="mm-item" id="loadBtn" type="button">Load draft</button>
         <button class="mm-item" id="postBtn" type="button">Copy post text</button>

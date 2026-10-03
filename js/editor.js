@@ -1406,6 +1406,11 @@ async function publishListing() {
           if (!error) { created = true; break; }
           lastErr = error;
           if (error.code === '23505' || /duplicate|unique|slug/i.test(error.message || '')) slug = CF.randomId(7);
+          else if (/sign-in required|not a registered seller/i.test(error.message || '')) {
+            CF.status('Publishing is restricted to the signed-in seller. Complete sign-in, then publish again.', 'err');
+            initAuthGate();
+            return;
+          }
           else throw error;
         }
         if (!created) throw lastErr || new Error('create_listing failed');
@@ -1477,6 +1482,99 @@ async function publishListing() {
   }
 }
 CF.$('publishBtn').addEventListener('click', publishListing);
+
+// ── v1.3.1: single-seller auth gate ──
+async function initAuthGate() {
+  if (!supabase) return;
+  if (new URLSearchParams(location.search).get('edit')) return;
+  const gate = CF.$('authGate');
+  if (!gate) return;
+  const agForm = CF.$('agForm');
+  const agEmail = CF.$('agEmail');
+  const agSend = CF.$('agSend');
+  const agMsg = CF.$('agMsg');
+  const agSent = CF.$('agSent');
+  const agBack = CF.$('agBack');
+  const agSigned = CF.$('agSigned');
+  const agWho = CF.$('agWho');
+  const agOut = CF.$('agOut');
+  const signOutBtn = CF.$('signOutBtn');
+  if (!agForm || !agEmail || !agSend || !agMsg || !agSent || !agBack || !agSigned || !agWho || !agOut || !signOutBtn) return;
+
+  async function applyGateSession(session) {
+    if (!session) {
+      gate.hidden = false;
+      agForm.hidden = false;
+      agSent.hidden = true;
+      agSigned.hidden = true;
+      return;
+    }
+    let isSeller = false;
+    try {
+      const { data } = await supabase.rpc('am_i_seller');
+      isSeller = data === true;
+    } catch { /* network error -> treat as not-seller */ }
+    if (isSeller) {
+      gate.hidden = true;
+      signOutBtn.hidden = false;
+      return;
+    }
+    gate.hidden = false;
+    agForm.hidden = true;
+    agSent.hidden = true;
+    agSigned.hidden = false;
+    agWho.textContent = (session.user && session.user.email) || 'your account';
+  }
+
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') applyGateSession(session);
+  });
+
+  if (location.search.includes('code=') || location.hash.includes('access_token')) {
+    await Promise.race([
+      new Promise(resolve => { supabase.auth.onAuthStateChange(() => resolve()); }),
+      new Promise(resolve => setTimeout(resolve, 4000))
+    ]);
+  }
+  applyGateSession((await supabase.auth.getSession()).data.session);
+
+  agSend.addEventListener('click', async () => {
+    const email = agEmail.value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      agMsg.textContent = 'Enter a valid email address.';
+      agMsg.className = 'ag-msg err';
+      return;
+    }
+    agSend.disabled = true;
+    agMsg.textContent = '';
+    agMsg.className = 'ag-msg';
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+    agSend.disabled = false;
+    if (error) {
+      agMsg.className = 'ag-msg err';
+      agMsg.textContent = (error.message && /security purposes|rate limit/i.test(error.message))
+        ? 'Too many requests — wait a minute and try again.'
+        : 'Sign-in link failed: ' + error.message;
+      return;
+    }
+    agForm.hidden = true;
+    agSent.hidden = false;
+    agSigned.hidden = true;
+  });
+
+  agBack.addEventListener('click', () => {
+    agForm.hidden = false;
+    agSent.hidden = true;
+    agMsg.textContent = '';
+  });
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    location.reload();
+  };
+  agOut.addEventListener('click', signOut);
+  signOutBtn.addEventListener('click', signOut);
+}
 
 // ── edit mode (?edit=<slug>) ──────────────────────────────────────
 async function loadListingForEdit(slug) {
@@ -1607,3 +1705,5 @@ function ensureBuddyCardData() {
   }
   return extrasPromise;
 }
+
+initAuthGate();

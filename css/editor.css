@@ -272,3 +272,25 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
   #fPubSlot .pubswitch{display:flex;align-items:center;gap:10px;background:var(--box);border:1px solid var(--line);padding:10px 12px;min-height:44px}
   #fPubSlot .pubswitch input{width:20px;height:20px;accent-color:var(--c-accent-btn);flex:none}
 }
+
+/* ── v1.3.1: single-seller sign-in gate ── */
+#authGate{position:fixed;inset:0;z-index:2000;background:rgba(11,15,20,.97);display:flex;align-items:center;justify-content:center;padding:24px}
+#authGate[hidden]{display:none}
+.ag-panel{width:100%;max-width:460px;background:var(--c-surface);border:1px solid var(--c-line);padding:32px 30px 26px;
+  clip-path:polygon(0 0,calc(100% - var(--notch-lg)) 0,100% var(--notch-lg),100% 100%,var(--notch-lg) 100%,0 calc(100% - var(--notch-lg)))}
+.ag-logo{font-family:var(--font-display);font-weight:800;font-size:15px;letter-spacing:.10125em;color:var(--c-ink)}
+.ag-title{font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--c-ink);margin:14px 0 10px}
+.ag-sub{font-size:13px;line-height:1.65;color:var(--c-mut);margin:0 0 18px}
+.ag-label{display:block;text-transform:uppercase;font-size:10px;font-weight:700;letter-spacing:.16em;color:var(--c-mut);margin:0 0 6px}
+#agEmail{width:100%;box-sizing:border-box;background:var(--c-surface2);border:1px solid var(--c-line);color:var(--c-ink);font:14px var(--font-ui);padding:11px 12px;margin-bottom:12px}
+#agEmail:focus{border-color:var(--c-accent);outline:none}
+#agSend,#agBack,#agOut{background:transparent;border:1px solid var(--c-line-soft);color:var(--c-mut);padding:11px 16px;font:700 11px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;cursor:pointer;
+  clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+#agSend{background:var(--c-accent-btn);border-color:transparent;color:#fff}
+#agSend:hover{color:#fff;filter:brightness(1.12)}
+#agSend:disabled{opacity:.5;cursor:default}
+#agBack:hover,#agOut:hover{border-color:var(--c-mut);color:var(--c-ink);background:color-mix(in srgb,#fff 4%,transparent)}
+.ag-msg{font-size:12px;margin:10px 0 0;min-height:16px;color:var(--c-mut)}
+.ag-msg.err{color:#FF6B77}
+.ag-browse{display:inline-block;margin-top:20px;font-size:12px;color:var(--c-mut);text-decoration:none;border-bottom:1px solid transparent}
+.ag-browse:hover{color:var(--c-ink);border-bottom-color:var(--c-line)}

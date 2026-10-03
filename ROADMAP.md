@@ -19,6 +19,12 @@
 - `browse_listings_v3` (+ `browse.js` prefers v3, falls back to v2/legacy); featured tile prefers the owner-pinned listing
 - `supabase/migrations/10_lifecycle.sql` — additive `sold_at` / `featured_at` / `fb_post_url`, `owner_set_listing`, `browse_listings_v3`
 
+## v1.3.1 — Single-seller gate ✅ shipped
+- `create_listing` gated to allow-listed magic-link sessions (private `seller_emails` allow-list)
+- `am_i_seller` probe RPC so the editor can show eligibility
+- Editor sign-in overlay for visitors; sign-out in the editor's ⋯ menu
+- Public "Build a card" links removed from browse / terms / privacy / 404; recovery-key editing unchanged
+
 ---
 
 ## 1. Current State (prototype, single-file)
