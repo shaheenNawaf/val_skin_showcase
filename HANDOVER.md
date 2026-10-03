@@ -150,7 +150,11 @@ shapes). It needs two Netlify env vars: `SUPABASE_URL`, `SUPABASE_ANON_KEY`
 (no border-radius anywhere, chamfered `clip-path` controls, `#status` toasts);
 `captureCardBlob()` in `js/shared.js` is the single choke point for *all* image
 captures (export + publish) — never fork it; vendor libs go in `js/vendor/` with
-their license file (no CDNs at runtime).
+their license file (no CDNs at runtime). Card fonts (Anton, Chakra Petch) must
+stay **same-origin** (`css/fonts.css`): the export inlines `@font-face` by reading
+`cssRules`, which cross-origin sheets block — a CDN font link silently degrades
+every PNG to fallback metrics. Export fidelity is regression-guarded by
+`npm run check:export`.
 
 ## 6. Current state + known follow-ups
 
@@ -163,11 +167,19 @@ QR exports, viewer owner controls. Lint clean, build clean, migration 10 applied
    but the edge function's Supabase lookup returns nothing. Suspected cause: the
    `SUPABASE_ANON_KEY` env var on Netlify is stale. Fix: Netlify → Site settings →
    Environment variables → compare with `js/config.js` → update → redeploy.
-2. **12 benign console errors in the editor during PNG export** — html-to-image
-   probing a cross-origin Google Fonts stylesheet (`Cannot access cssRules`).
-   Pre-existing; captures still succeed.
-3. **Export filename rounding** — full-page QR exports can read e.g. `…x2436.png`
-   while the image is 2440px tall (scrollHeight rounding, pre-existing). Cosmetic.
+2. **PNG export fidelity (was: "12 benign console errors")** — the console errors were
+   never benign: html-to-image could not read the cross-origin Google Fonts
+   `cssRules`, so no `@font-face` reached the export and every glyph fell back to
+   the generic sans (+13 %/+42 % width drift → truncated ranks, wrapped labels).
+   Fixed by plan 006: Anton + Chakra Petch are vendored same-origin
+   (`fonts/`, `css/fonts.css`, regenerate via `scripts/fetch-fonts.mjs`), the
+   capture pins the grid to its live 1080 geometry instead of unfolding it, and
+   failed icon fetches retry once then surface a warning instead of a silent
+   blank. Guarded by `npm run check:export` (5 assertions: font drift < 2 %,
+   geometry identity during capture, blob dims = download name).
+3. **Export filename rounding** — fixed by plan 006: the name now comes from the
+   real raster (`blobDims`), e.g. `showcase-card-3840x2440.png` (1920×1080 card at
+   2× plus the QR band below the crop).
 4. **Not built (roadmap fodder)**: `pending` status button, price-history badge,
    offers/negotiation inbox, an `events` table for real analytics, magic-link auth
    for multi-device ownership. See `ROADMAP.md`.
@@ -183,6 +195,8 @@ QR exports, viewer owner controls. Lint clean, build clean, migration 10 applied
 | DB schema truth | `supabase/migrations/` (latest wins) |
 | FB preview logic | `netlify/edge-functions/listing-meta.ts` |
 | Capture/export + FB post text | `js/shared.js` (`captureCardBlob`, `fbPostText`) |
+| Export fidelity regression harness | `scripts/check-export.mjs` (`npm run check:export`) |
+| Vendored card fonts | `fonts/` + `css/fonts.css` (`scripts/fetch-fonts.mjs`) |
 | Buyer page + owner controls | `js/viewer.js` |
 | Your hub | `js/dashboard.js` |
 | Marketplace (featured tile, filters) | `js/browse.js` |

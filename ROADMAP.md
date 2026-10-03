@@ -25,6 +25,14 @@
 - Editor sign-in overlay for visitors; sign-out in the editor's ⋯ menu
 - Public "Build a card" links removed from browse / terms / privacy / 404; recovery-key editing unchanged
 
+## v1.3.2 — Export PNG fidelity ✅ shipped
+- Card fonts (Anton, Chakra Petch) vendored same-origin (`fonts/` + `css/fonts.css`, regenerate via `scripts/fetch-fonts.mjs`): html-to-image inlines `@font-face` by reading `cssRules`, which cross-origin Google sheets block — exports (and the og:image built from the same capture) rendered in fallback metrics: truncated rank names, wrapped labels
+- Capture pins the skin grid to its live 1080 geometry; the `exporting-full` unfold that re-sized every grid row is gone; QR band now sits below the crop → `showcase-card-3840x2440.png`
+- Download name derived from the real raster (`blobDims`/`pngName`), not `scrollHeight`
+- Icon fetches settle via `decode()` + one retry; failures surface a warning toast instead of a silently blank slot
+- Regression harness `npm run check:export`: 5 theme×layout combos assert font drift <2%, grid geometry identity during capture, and blob dims = filename
+- Evidence + decisions: `design-plans/006-export-png-fidelity.md`
+
 ---
 
 ## 1. Current State (prototype, single-file)

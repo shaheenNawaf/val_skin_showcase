@@ -433,8 +433,8 @@ async function makeQrFoot(url) {
     foot.style.cssText = 'position:relative;height:132px;margin:4px 0 8px;display:flex;align-items:center;gap:22px;box-sizing:border-box';
     foot.innerHTML = '<div style="background:#fff;padding:8px;flex:0 0 auto;line-height:0">' + svg + '</div>' +
       '<div style="display:flex;flex-direction:column;gap:6px;min-width:0">' +
-        '<div style="font:700 20px Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase">Scan for live listing</div>' +
-        '<div style="font:400 15px Inter,sans-serif;opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:1500px">' + escapedUrl + '</div>' +
+        '<div style="font:700 20px \'Chakra Petch\',sans-serif;letter-spacing:.14em;text-transform:uppercase">Scan for live listing</div>' +
+        '<div style="font:400 15px \'Chakra Petch\',sans-serif;opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:1500px">' + escapedUrl + '</div>' +
       '</div>';
     return foot;
   } catch {
@@ -443,45 +443,62 @@ async function makeQrFoot(url) {
 }
 
 /* Shared capture used by the PNG export and by the publish flow, which
-   uploads the same render as the listing's og:image (CF-20). */
+   uploads the same render as the listing's og:image (CF-20).
+   Plan 006 D2: the capture never re-lays-out the card. The grid is pinned to its
+   measured live height so the fr rows resolve to exactly their live pixel values;
+   the only growth is the QR band appended below the 1080 crop. */
 export async function captureCardBlob(card, type = 'image/png', quality, opts = {}) {
   document.body.classList.add('exporting');
-  if (opts.full) document.body.classList.add('exporting-full');
   // wait a frame so the exporting styles apply — with a setTimeout escape
   // because backgrounded tabs never fire requestAnimationFrame
   await new Promise(r => { requestAnimationFrame(r); setTimeout(r, 120); });
   let qrCleanup = null;
-  if (opts && opts.full && opts.qrUrl) { /* X2: QR footer, full-height PNG exports only */
+  if (opts && opts.qrUrl) { /* X2: QR footer, full-height PNG exports only */
     const foot = await makeQrFoot(opts.qrUrl);
     if (foot) {
+      const grid = card.querySelector('.grid');
       const ws = card.querySelector('.wstrip');
+      const prevGridH = grid ? grid.style.height : '';
       const prevWsBottom = ws ? ws.style.bottom : '';
       const prevH = card.style.height, prevMinH = card.style.minHeight, prevOv = card.style.overflow;
-      const grown = card.offsetHeight + 140;
+      const liveGridH = grid ? Math.round(grid.getBoundingClientRect().height) : 0;
+      const grown = DESIGN_H + 140;
       card.style.height = grown + 'px';
       card.style.minHeight = grown + 'px';
       card.style.overflow = 'visible';
+      /* pin the skin grid to the live 1080 geometry — without this the taller card
+         box would stretch the fr rows and the PNG would stop matching the preview */
+      if (grid && liveGridH) grid.style.height = liveGridH + 'px';
       foot.style.position = 'absolute';
       foot.style.left = '34px';
       foot.style.right = '34px';
       foot.style.bottom = '8px';
       foot.style.margin = '0';
-      if (ws) ws.style.bottom = (parseFloat(window.getComputedStyle(ws).bottom || '8') + 140) + 'px';
+      /* watermark strip stays pinned to the 1080 boundary, above the band */
+      if (ws) ws.style.bottom = '148px';
       card.appendChild(foot);
-      qrCleanup = () => { const f = card.querySelector('[data-qrfoot]'); if (f) f.remove(); if (ws) ws.style.bottom = prevWsBottom; card.style.height = prevH; card.style.minHeight = prevMinH; card.style.overflow = prevOv; };
+      qrCleanup = () => { const f = card.querySelector('[data-qrfoot]'); if (f) f.remove(); if (ws) ws.style.bottom = prevWsBottom; if (grid) grid.style.height = prevGridH; card.style.height = prevH; card.style.minHeight = prevMinH; card.style.overflow = prevOv; };
     }
   }
-  if (opts.full) card.dataset.exportHeight = String(card.scrollHeight);
   const swaps = [];
   const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+  let missing = 0;
   try {
     const imgs = [...card.querySelectorAll('img')].filter(im => !(im.getAttribute('src') || '').startsWith('data:'));
     await Promise.all(imgs.map(async im => {
       const src = im.getAttribute('src');
-      const d = src ? await toDataUrl(src) : null;
+      // let the element's own load settle first so a slow icon is not mistaken
+      // for a dead one; the race keeps a hung decode from stalling the export
+      if (src) await Promise.race([im.decode().catch(() => {}), new Promise(r => setTimeout(r, 2500))]);
+      let d = src ? await toDataUrl(src) : null;
+      if (!d && src) d = await toDataUrl(src); /* one retry */
+      if (!d && src) {
+        missing++;
+      }
       swaps.push([im, src]);
       im.src = d || BLANK;
     }));
+    if (missing) status(`${missing} icon${missing > 1 ? 's' : ''} couldn't be loaded — ${missing > 1 ? 'they are' : 'it is'} missing from this PNG.`, 'err');
     if (type === 'image/jpeg') {
       const url = await window.htmlToImage.toJpeg(card, { pixelRatio: 2, quality: quality || .92 });
       const res = await fetch(url);
@@ -492,19 +509,38 @@ export async function captureCardBlob(card, type = 'image/png', quality, opts = 
     if (qrCleanup) qrCleanup();
     swaps.forEach(([img, src]) => { if (src === null) { img.removeAttribute('src'); } else { img.src = src; } });
     document.body.classList.remove('exporting');
-    document.body.classList.remove('exporting-full');
   }
 }
 
+/* True raster size of a produced blob — the download name is derived from this,
+   never from scrollHeight (plan 006, was HANDOVER §6 item 3). */
+export async function blobDims(blob) {
+  if ('createImageBitmap' in window) {
+    const bmp = await window.createImageBitmap(blob);
+    const d = { width: bmp.width, height: bmp.height };
+    bmp.close();
+    return d;
+  }
+  const img = new Image();
+  const url = URL.createObjectURL(blob);
+  try {
+    await new Promise((ok, no) => { img.onload = ok; img.onerror = no; img.src = url; });
+    return { width: img.naturalWidth, height: img.naturalHeight };
+  } finally { URL.revokeObjectURL(url); }
+}
+
+export const pngName = (w, h) => `showcase-card-${w}x${h}.png`;
+
 export async function exportCard(card, opts) {
   const blob = await captureCardBlob(card, 'image/png', undefined, opts);
-  if (!blob) { return; }
+  if (!blob) { return null; }
+  const dims = await blobDims(blob);
   const a = document.createElement('a');
-  const h = opts && opts.full && card.dataset.exportHeight ? Math.round(Number(card.dataset.exportHeight) * 2) : 2160;
-  a.download = `showcase-card-3840x${h}.png`;
+  a.download = pngName(dims.width, dims.height);
   a.href = URL.createObjectURL(blob);
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  return dims;
 }
 
 // ── same-device presence (viewer fallback) ────────────────────────

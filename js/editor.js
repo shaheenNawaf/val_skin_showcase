@@ -967,14 +967,16 @@ CF.$('exportBtn').addEventListener('click', async () => {
   if (exporting) return;
   exporting = true;
   CF.$('exportBtn').disabled = true;
-  CF.status('Rendering 3840×2160 PNG…');
+  CF.status('Rendering PNG — the card at 2× plus the QR band…');
   try {
     const qrSlug = editSlug || localStorage.getItem('vc-draft-id');
     const qrUrl = qrSlug
       ? new URL('view.html?slug=' + encodeURIComponent(qrSlug), location.href).href
       : null;
-    await CF.exportCard(card, { full: true, qrUrl });
-    CF.status('PNG exported — 3840×' + (card.dataset.exportHeight ? Math.round(Number(card.dataset.exportHeight) * 2) : 2160) + ', exactly what your preview shows.', 'ok');
+    const dims = await CF.exportCard(card, { qrUrl });
+    CF.status(dims
+      ? `PNG exported — ${dims.width}×${dims.height}: the 1920×1080 card at 2× plus the QR band, exactly what your preview shows.`
+      : 'PNG exported.', 'ok');
   } catch (e) {
     CF.status('Export failed: ' + (e.message || e), 'err');
   } finally {
@@ -1091,7 +1093,7 @@ function refreshLayout() {
   badge.title = auto ? 'AUTO resolves to TILES — the catalog layout was removed.' : 'Layout set manually.';
   const ex = CF.$('exportBtn');
   ex.textContent = 'Export PNG';
-  ex.title = 'Exports the current view as a single 1920×1080 PNG.';
+  ex.title = 'Exports the card exactly as previewed: 1920×1080 at 2× (3840×2160) plus a QR band below (3840×2440).';
   CF.$('layoutSel').value = state.layout;
 }
 

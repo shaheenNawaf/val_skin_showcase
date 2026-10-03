@@ -2,7 +2,7 @@ import { cpSync, mkdirSync, rmSync, readFileSync, writeFileSync } from 'node:fs'
 import { execSync } from 'node:child_process';
 
 const FILES = ['index.html', 'view.html', 'browse.html', 'dashboard.html', 'sold.html', 'terms.html', 'privacy.html', '404.html'];
-const DIRS = ['css', 'js'];
+const DIRS = ['css', 'js', 'fonts'];
 
 // ── build metadata: Netlify env vars first, git fallback for local builds ──
 function git(args) {

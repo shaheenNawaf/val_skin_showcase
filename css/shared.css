@@ -98,11 +98,11 @@ body.exporting .auto,body.exporting .pickrank,body.exporting .add{visibility:hid
 body.exporting .hint{visibility:hidden}
 body.exporting .more-note{display:none}
 
-/* WYSIWYG capture: unfold the live scroll containers into a tall document */
-body.exporting-full #card.is-live{height:auto;min-height:1080px}
-body.exporting-full #card.is-live .slots{overflow:visible;height:auto}
-body.exporting-full #card.is-live .slots.tiles{align-content:start}
-body.exporting-full #card.is-live .grid{height:auto;grid-template-rows:none}
+/* WYSIWYG capture: the exported PNG is the live 1920×1080 card, never a re-layout.
+   The QR band (captureCardBlob) grows the card box below the crop; the grid is
+   pinned to its live height there so these rows keep their exact pixel values.
+   Plan 006 removed the old `exporting-full` unfold, which re-sized every row to
+   content and produced a second, different layout. */
 
 [contenteditable]{outline:none;border-bottom:1px dashed var(--accent-dash,rgba(255,70,85,.3))}
 [contenteditable]:hover{border-bottom-color:var(--accent);cursor:text}
