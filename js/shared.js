@@ -328,8 +328,21 @@ export async function loadCatalogFromApi(opts) {
 
 export async function loadCatalog(supabaseClient, opts) {
   const cached = await loadCatalogFromCache(supabaseClient, opts);
-  if (cached) return cached;
-  return loadCatalogFromApi(opts);
+  const cat = cached || (await loadCatalogFromApi(opts));
+  /* Flex cosmetics (agent-worn accessories) are not in the Supabase catalog
+     cache, and the API path never needed them until the import grew flexOwned.
+     23 items, public, tiny — attach here so BOTH paths expose them. */
+  if (cat && !(cat.FLEX_BY_ID && cat.FLEX_BY_ID.size)) {
+    try {
+      const fJ = await fetchJSON('https://valorant-api.com/v1/flex?language=en-US');
+      cat.FLEX_BY_ID = new Map((fJ.data || []).map(f => [f.uuid, { uuid: f.uuid, name: f.displayName, icon: f.displayIcon }]));
+      cat.FLEX_LIST = [...cat.FLEX_BY_ID.values()];
+    } catch {
+      cat.FLEX_BY_ID = cat.FLEX_BY_ID || new Map();
+      cat.FLEX_LIST = cat.FLEX_LIST || [];
+    }
+  }
+  return cat;
 }
 
 /* CF-24: buddies (604 KB) and player cards (676 KB) were fetched eagerly at

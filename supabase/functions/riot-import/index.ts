@@ -307,6 +307,31 @@ Deno.serve(async (req) => {
     await guard("buddiesOwned", async () => { out.buddiesOwned = await owned(TYPE_BUDDIES); });
     await guard("cardsOwned", async () => { out.cardsOwned = await owned(TYPE_CARDS); });
     await guard("variantsOwned", async () => { out.variantsOwned = await owned(TYPE_VARIANTS); });
+    await guard("flexOwned", async () => {
+      // Flex = agent-worn accessories (Expressions Wheel). No public ItemTypeID
+      // constant exists, so intersect the bulk entitlements payload with the
+      // public flex catalog (23 items) instead of a per-type call.
+      const flex = await getJSON("https://valorant-api.com/v1/flex").catch(() => null);
+      const flexIds = new Set(((flex as any)?.data || []).map((f: any) => f.uuid as string));
+      if (!flexIds.size) { out.flexOwned = []; return; }
+      const tries: [string, Record<string, string>][] = [
+        [`/store/v1/entitlements/${out.puuid}`, auth],
+        [`/store/v1/entitlements/${out.puuid}`, authNoEnt],
+      ];
+      for (const [p, h] of tries) {
+        try {
+          const j = await getJSON(pd(p), h);
+          const buckets: any[] = j?.EntitlementsByTypes || [];
+          const ids: string[] = [];
+          buckets.forEach((b: any) => (b?.Entitlements || []).forEach((e: any) => ids.push(e.ItemID)));
+          out.flexOwned = ids.filter((id) => flexIds.has(id));
+          return;
+        } catch {
+          // try the next header variant
+        }
+      }
+      out.flexOwned = [];
+    });
   } else {
     out.errors.push("level, rank, wallet and owned items need the entitlements token, and auto-fetching it from your access token failed. Paste one manually in the second field and re-run.");
   }

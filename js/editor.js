@@ -33,6 +33,7 @@ state.layout = 'auto';
 state.page = 1;
 
 let DB = {}, TIERS = [], RANKS = [], BUDDIES = {}, CARDS = {}, SKIN_BY_ID = new Map(), LEVEL_MAP = {}, CHROMA_MAP = {}, BUDDIES_LIST = [], BUDDY_BY_ANY = {}, CARDS_LIST = [];
+let FLEX_BY_ID = new Map();
 let catalogSource = 'api';
 let list = [], currentPool = [], currentCat = null, pickerMode = 'skin', rankRow = null, rankKey = null, variantCat = null, variantIdx = -1;
 const TIER_RANK = { select: 1, deluxe: 2, premium: 3, ultra: 4, exclusive: 5 };
@@ -750,26 +751,6 @@ CF.$('iRun').addEventListener('click', async () => {
   }
 });
 
-/* Import highlight reel: fill the Flex column with the account's best owned
-   skins (premium+ tiers or animated). Category panels already list every
-   owned skin, so Flex intentionally repeats the standouts — restored per
-   owner report 2026-10-03 (originally removed by d320603). */
-function autoFillFlex() {
-  const TIER_RANK = { exclusive: 3, ultra: 2, premium: 1 };
-  const cand = [];
-  SKIN_BY_ID.forEach(s => {
-    const lvl = state.ownedLevels[s.id] || 0;
-    if (!lvl) return;
-    const prem = TIER_RANK[CF.tierKey(s.tier)] || 0;
-    if (prem || (s.maxLevel || 1) >= 2) cand.push({ s, lvl, prem });
-  });
-  cand.sort((a, b) => b.prem - a.prem || a.s.name.localeCompare(b.s.name));
-  state.picks.Flex = cand.slice(0, 24).map(({ s, lvl }) => ({
-    id: s.id, weapon: s.weapon, name: s.name, tier: s.tier, icon: s.icon,
-    ...(lvl >= 2 ? { level: lvl } : {})
-  }));
-}
-
 function applyImport(j) {
   if (j.level != null) state.texts.level = String(j.level);
   if (j.name) state.texts.vlogin = j.tag ? j.name + '#' + j.tag : j.name;
@@ -828,7 +809,6 @@ function applyImport(j) {
       if (l >= 2) p.level = l;
       else if (l === 1) delete p.level;
     }));
-    autoFillFlex();
   }
   const ownedSkins = SKIN_BY_ID ? [...new Set(Object.keys(state.ownedLevels))]
     .map(id => SKIN_BY_ID.get(id)).filter(Boolean) : [];
@@ -854,6 +834,10 @@ function applyImport(j) {
       if (base) set.add(base);
     });
     state.ownedBuddies = [...set];
+  }
+  if (j.flexOwned) {
+    state.picks.Flex = j.flexOwned.map(id => FLEX_BY_ID.get(id)).filter(Boolean)
+      .map(f => ({ id: f.uuid, weapon: 'Flex', name: f.name, tier: '', icon: f.icon }));
   }
   renderFromState();
   updateWm();
@@ -1701,6 +1685,7 @@ initEditMode().finally(async () => {
     DB = catalog.DB; TIERS = catalog.TIERS; RANKS = catalog.RANKS;
     BUDDIES = catalog.BUDDIES; CARDS = catalog.CARDS; CARDS_LIST = catalog.CARDS_LIST || [];
     SKIN_BY_ID = catalog.SKIN_BY_ID; LEVEL_MAP = catalog.LEVEL_MAP; CHROMA_MAP = catalog.CHROMA_MAP;
+    FLEX_BY_ID = catalog.FLEX_BY_ID || new Map();
     BUDDIES_LIST = catalog.BUDDIES_LIST; BUDDY_BY_ANY = catalog.BUDDY_BY_ANY;
     catalogSource = catalog.source || 'api';
   } catch (e) {
