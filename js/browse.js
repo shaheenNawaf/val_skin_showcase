@@ -142,7 +142,7 @@ function normalize(r) {
       wtr: /yes/i.test(r.wtr || ''), receipts: /yes/i.test(r.receipts || ''),
       owner: (r.owner || '').replace(/\s*owner\s*$/i, '') || '—'
     },
-    seller: { name: r.tag || r.vlogin || r.slug },
+    seller: { name: r.tag || ((r.vlogin && r.vlogin !== 'RIOT ID') ? r.vlogin : '') || r.slug },
     vlogin: r.vlogin || '',
     link: (r.link || '').trim(),
     picks: r.picks_top || {}
@@ -326,7 +326,8 @@ const entryTitle = l => (l.code && l.code.trim()) || l.title;
 const entrySub = l => {
   const t = entryTitle(l);
   if (l.code && l.code.trim() && l.code !== t) return l.code;
-  return (l.title && l.title !== t) ? l.title : (l.vlogin || '');
+  const cn = (l.title && l.title !== 'CHANGE NAME' && l.title !== t) ? l.title : '';
+  return cn || ((l.vlogin && l.vlogin !== 'RIOT ID') ? l.vlogin : '');
 };
 
 function cardHTML(l, i) {

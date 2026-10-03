@@ -349,7 +349,8 @@ function renderMobile(listing, force) {
   const mtitle = mcard.querySelector('.mhead2 .mhid b[data-m="cname"]');
   if (mtitle) mtitle.textContent = (texts.code && texts.code.trim()) || (texts.cname && texts.cname !== 'CHANGE NAME' && texts.cname.trim()) || ('Listing ' + (listing.slug || slug));
   const msub = mcard.querySelector('.mhead2 .mhid span[data-m="vlogin"]');
-  const mriot = texts.vlogin ? (texts.vlogin.includes('#') || !texts.tag ? texts.vlogin : texts.vlogin + '#' + texts.tag) : (texts.tag || '');
+  const mvl = (texts.vlogin && texts.vlogin !== 'RIOT ID') ? texts.vlogin : '';
+  const mriot = mvl ? (mvl.includes('#') || !texts.tag ? mvl : mvl + '#' + texts.tag) : (texts.tag || '');
   const mident = mriot || ((texts.cname && texts.cname !== 'CHANGE NAME' && texts.cname.trim()) || '');
   if (msub) msub.textContent = [mident, total + ' skin' + (total === 1 ? '' : 's')].filter(Boolean).join(' · ');
 
@@ -637,7 +638,8 @@ function applyHero(listing) {
   CF.$('vhTitle').textContent = title;
   document.title = title + (listing.price != null ? ' · ' + (moneyText(listing.price, listing.currency)?.sym || '') + listing.price : '');
   const bits = [];
-  const riot = t.vlogin ? (t.vlogin.includes('#') || !t.tag ? t.vlogin : t.vlogin + '#' + t.tag) : (t.tag || '');
+  const vl = (t.vlogin && t.vlogin !== 'RIOT ID') ? t.vlogin : '';
+  const riot = vl ? (vl.includes('#') || !t.tag ? vl : vl + '#' + t.tag) : (t.tag || '');
   const ident = riot || ((t.cname && t.cname !== 'CHANGE NAME' && t.cname.trim()) || '');
   if (ident) bits.push(ident);
   if (t.crank) bits.push(t.crank);
