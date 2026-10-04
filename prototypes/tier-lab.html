@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="protocol">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardForge — Tier Lab · filter / cap / sort</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--font-ui:'Inter',system-ui,sans-serif;--font-display:'Manrope','Inter',sans-serif;--notch:8px;--notch-lg:16px;--c-bg:#0B0F14;--c-surface:#10161D;--c-surface2:#151C24;--c-line:#222C37;--c-line-soft:#1A222C;--c-ink:#D9DCE0;--c-mut:#8A95A1;--c-accent:#FF4655;--c-accent-btn:#D62839;--t-select:#9ba8b9;--t-deluxe:#4aa8ff;--t-premium:#b44bf0;--t-ultra:#ff5d7b;--t-exclusive:#ffc45e}
+*{box-sizing:border-box;margin:0;padding:0;border-radius:0}
+html{background:var(--c-bg);scrollbar-width:thin;scrollbar-color:var(--c-line) transparent}
+body{font-family:var(--font-ui);background:var(--c-bg);color:var(--c-ink)}
+::selection{background:var(--c-accent);color:#fff}
+:focus-visible{box-shadow:inset 0 0 0 2px var(--c-accent)!important}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--c-line)}
+::-webkit-scrollbar-thumb:hover{background:var(--c-accent)}
+
+#hdr{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--c-surface);border-bottom:1px solid var(--c-line)}
+.logo{font-family:var(--font-display);font-weight:800;font-size:15px;letter-spacing:.18em;color:var(--c-ink)}
+.logo::before{content:"";display:inline-block;width:9px;height:15px;background:var(--c-accent);transform:skewX(-20deg);margin-right:9px;vertical-align:-2px}
+.hdr-t{font-weight:700;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--c-mut)}
+
+#toolbar{position:sticky;top:0;z-index:20;background:var(--c-surface);border-bottom:1px solid var(--c-line);padding:10px 20px}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;max-width:1200px;margin:0 auto}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--c-line);background:transparent;color:var(--c-mut);font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:8px 12px;cursor:pointer}
+.chip:hover{color:var(--c-ink);border-color:var(--c-mut)}
+.chip[aria-pressed=true]{background:var(--c-surface2);color:var(--c-ink);border-color:var(--c-line)}
+.dot{width:10px;height:10px;display:inline-block;opacity:.4}
+.chip[aria-pressed=true] .dot{opacity:1}
+.anim-dot{background:var(--c-accent)}
+.fld{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--c-mut);white-space:nowrap}
+.fld input[type=number],.fld select{background:var(--c-surface2);border:1px solid var(--c-line);color:var(--c-ink);font-family:var(--font-ui);font-size:12px;padding:6px 8px}
+.fld input[type=number]{width:64px}
+.readout{margin-left:auto;font-weight:700;font-size:12px;letter-spacing:.04em;color:var(--c-ink);white-space:nowrap}
+.sim{max-width:1200px;margin:12px auto 0;padding:0 20px;font-size:11px;color:var(--c-accent);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+
+main{max-width:1200px;margin:0 auto;padding:16px 20px 80px}
+.sec{font-family:var(--font-display);font-weight:800;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--c-mut);margin:24px 0 12px}
+
+.preview{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:start}
+.col{background:var(--c-surface);border:1px solid var(--c-line);padding:10px}
+.col-h{display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:var(--font-display);font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--c-ink);margin-bottom:8px}
+.badge{font-size:10px;font-weight:700;color:var(--c-mut);border:1px solid var(--c-line);padding:1px 6px}
+.slot{display:flex;align-items:center;gap:8px;width:100%;background:transparent;border:0;border-top:1px solid var(--c-line-soft);color:var(--c-ink);text-align:left;padding:6px 4px;cursor:pointer}
+.slot:hover{background:var(--c-surface2)}
+.slot img{width:34px;height:24px;object-fit:contain;flex:0 0 auto}
+.slot-w{font-size:10px;color:var(--c-mut);text-transform:uppercase;letter-spacing:.06em;flex:0 0 auto}
+.slot-n{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;font-weight:500}
+.lv{font-size:9px;font-weight:700;color:var(--c-accent);border:1px solid var(--c-line);padding:1px 4px;flex:0 0 auto}
+.slot.off{opacity:.4}
+.slot.off .slot-n{text-decoration:line-through}
+.more{font-size:10px;color:var(--c-mut);padding:6px 4px 0;letter-spacing:.06em}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
+.tile{background:var(--c-surface);border:1px solid var(--c-line);border-top:2px solid var(--c-line);padding:12px;display:flex;flex-direction:column;gap:4px}
+.tile-l{font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--c-mut)}
+.tile-v{font-family:var(--font-display);font-weight:800;font-size:24px;color:var(--c-ink)}
+.tile-n{font-size:9px;color:var(--c-mut)}
+.radios{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px}
+.radios label{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--c-mut);cursor:pointer}
+
+.presets{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.preset{background:var(--c-surface);border:1px solid var(--c-line);padding:10px;display:flex;flex-direction:column;gap:8px}
+.preset-h{align-self:flex-start;background:transparent;border:0;padding:0;color:var(--c-ink);font-family:var(--font-display);font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.preset-h:hover{color:var(--c-accent)}
+.preset-grid{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px}
+.pcol{display:flex;flex-direction:column;gap:4px;min-width:0}
+.pcol-h{font-size:9px;color:var(--c-mut);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcell{display:block;background:var(--c-surface2);border:1px solid var(--c-line-soft);aspect-ratio:16/9}
+.pcell img{width:100%;height:100%;object-fit:contain}
+.preset-settings{font-size:9px;color:var(--c-mut);letter-spacing:.06em;text-transform:uppercase}
+.preset-show{font-size:11px;font-weight:700;color:var(--c-ink)}
+
+.importpanel{border:1px solid var(--c-line);background:var(--c-surface);padding:16px;margin-top:24px}
+.modal{display:flex;flex-direction:column;gap:12px;max-width:520px;margin-top:4px}
+.modal textarea{background:var(--c-surface2);border:1px solid var(--c-line);color:var(--c-ink);font-family:var(--font-ui);font-size:12px;padding:10px;min-height:56px;resize:vertical}
+.primary{align-self:flex-start;background:var(--c-accent-btn);border:1px solid var(--c-accent-btn);color:#fff;font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:10px 16px;cursor:pointer}
+.primary:hover{background:var(--c-accent);border-color:var(--c-accent)}
+.muted{font-size:11px;color:var(--c-mut);margin-top:8px}
+
+@media (prefers-reduced-motion:no-preference){
+  .chip,.slot,.preset-h,.primary,.fld input,.fld select{transition:background .18s ease-out,border-color .18s ease-out,color .18s ease-out}
+}
+</style>
+</head>
+<body>
+<header id="hdr">
+  <span class="logo">CARD FORGE</span>
+  <span class="hdr-t">Tier Lab</span>
+</header>
+
+<div id="toolbar">
+  <div class="bar">
+    <div class="chips" id="tierChips">
+      <button class="chip" data-tier="select" aria-pressed="true" type="button"><i class="dot" style="background:var(--t-select)"></i>select</button>
+      <button class="chip" data-tier="deluxe" aria-pressed="true" type="button"><i class="dot" style="background:var(--t-deluxe)"></i>Semi-prem</button>
+      <button class="chip" data-tier="premium" aria-pressed="true" type="button"><i class="dot" style="background:var(--t-premium)"></i>premium</button>
+      <button class="chip" data-tier="ultra" aria-pressed="true" type="button"><i class="dot" style="background:var(--t-ultra)"></i>Limited</button>
+      <button class="chip" data-tier="exclusive" aria-pressed="true" type="button"><i class="dot" style="background:var(--t-exclusive)"></i>Melee/knife</button>
+      <button class="chip" id="animChip" aria-pressed="true" type="button"><i class="dot anim-dot"></i>Animated</button>
+    </div>
+    <label class="fld">Max per category <input id="capInput" type="number" min="1" max="40" value="8" aria-label="Max skins per category"></label>
+    <label class="fld"><input id="noCap" type="checkbox"> no cap</label>
+    <label class="fld">Sort
+      <select id="sortSel" aria-label="Sort order">
+        <option value="tier">tier</option>
+        <option value="anim">anim</option>
+        <option value="name">name</option>
+        <option value="weapon">weapon</option>
+      </select>
+    </label>
+    <span class="readout" id="readout"></span>
+  </div>
+</div>
+<p class="sim" id="simNote"></p>
+
+<main>
+  <section>
+    <h2 class="sec">Live card preview</h2>
+    <div class="preview" id="preview"></div>
+  </section>
+
+  <section>
+    <h2 class="sec">Stat row preview</h2>
+    <div class="tiles" id="statTiles"></div>
+    <div class="radios" id="bpassRadios">
+      <label><input type="radio" name="bpass" value="melee" checked> Melee count</label>
+      <label><input type="radio" name="bpass" value="drop"> Drop</label>
+      <label><input type="radio" name="bpass" value="bp"> Battlepass</label>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="sec">Presets</h2>
+    <div class="presets" id="presets"></div>
+  </section>
+
+  <section class="importpanel">
+    <h2 class="sec">Alternative: choose at import time</h2>
+    <div class="modal">
+      <textarea placeholder="Paste Riot access token…" aria-label="Riot access token"></textarea>
+      <div class="chips" id="modalChips"></div>
+      <label class="fld">Max per category <input id="mCap" type="number" min="1" max="40" value="8" aria-label="Import max skins per category"></label>
+      <button id="insertBtn" class="primary" type="button">Insert 0 skins</button>
+    </div>
+    <p class="muted">Costs a fresh Riot login every time you change it — tokens expire in ~1h.</p>
+  </section>
+</main>
+
+<script type="module">
+import * as CF from '../js/shared.js';
+
+const TIER_ORDER = ['select', 'deluxe', 'premium', 'ultra', 'exclusive'];
+const CAT_TARGETS = {
+  'Sidearms': 84,
+  'SMGs': 16,
+  'Shotguns': 19,
+  'Rifles': 62,
+  'Sniper Rifles': 22,
+  'Machine Guns': 12,
+  'Melees': 24
+};
+
+function makeRng(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+function shuffle(arr, rng) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    const t = a[i];
+    a[i] = a[j];
+    a[j] = t;
+  }
+  return a;
+}
+
+const cat = await CF.loadCatalog(null);
+const DB = cat.DB;
+
+const rawKey = (s) => CF.tierKey(s.tier) || 'select';
+const rng = makeRng(0x51F7A9);
+
+const keysPresent = new Set();
+Object.values(DB).forEach(list => list.forEach(s => {
+  const k = CF.tierKey(s.tier);
+  if (k) keysPresent.add(k);
+}));
+
+const reserved = new Set();
+[...keysPresent].sort().forEach(k => {
+  const pool = [];
+  Object.values(DB).forEach(list => list.forEach(s => {
+    if (CF.tierKey(s.tier) === k) pool.push(s);
+  }));
+  shuffle(pool, rng).slice(0, 3).forEach(s => reserved.add(s.id));
+});
+
+const owned = {};
+CF.CATS.forEach(c => {
+  const pool = DB[c] || [];
+  const target = Math.min(CAT_TARGETS[c] || 0, pool.length);
+  const sh = shuffle(pool, rng);
+  const first = sh.filter(s => reserved.has(s.id));
+  const rest = sh.filter(s => !reserved.has(s.id));
+  owned[c] = first.concat(rest).slice(0, target).map(s => ({ ...s, tierKey: rawKey(s) }));
+});
+
+const flat = [];
+CF.CATS.forEach(c => owned[c].forEach(s => flat.push(s)));
+const animTarget = Math.max(40, Math.round(flat.length * 0.3));
+let animCount = flat.filter(s => (s.maxLevel || 1) >= 2).length;
+for (const s of flat) {
+  if (animCount >= animTarget) break;
+  if ((s.maxLevel || 1) < 2) {
+    s.maxLevel = 2 + Math.floor(rng() * 2);
+    animCount++;
+  }
+}
+const TOTAL = flat.length;
+
+const state = {
+  tiers: new Set(TIER_ORDER),
+  animated: true,
+  cap: 8,
+  noCap: false,
+  sort: 'tier',
+  removed: new Set(),
+  bpass: 'melee',
+  modalTiers: new Set(TIER_ORDER)
+};
+
+const previewEl = document.getElementById('preview');
+const readoutEl = document.getElementById('readout');
+const statTilesEl = document.getElementById('statTiles');
+const presetsEl = document.getElementById('presets');
+const animChipEl = document.getElementById('animChip');
+const capInputEl = document.getElementById('capInput');
+const noCapEl = document.getElementById('noCap');
+const sortSelEl = document.getElementById('sortSel');
+const modalChipsEl = document.getElementById('modalChips');
+const mCapEl = document.getElementById('mCap');
+const insertBtnEl = document.getElementById('insertBtn');
+
+function tierVal(s) { return TIER_ORDER.indexOf(s.tierKey); }
+
+function sortSkins(list, mode) {
+  const a = list.slice();
+  a.sort((x, y) => {
+    if (mode === 'tier') {
+      return (tierVal(y) - tierVal(x))
+        || ((y.maxLevel >= 2 ? 1 : 0) - (x.maxLevel >= 2 ? 1 : 0))
+        || x.name.localeCompare(y.name);
+    }
+    if (mode === 'anim') {
+      return ((y.maxLevel >= 2 ? 1 : 0) - (x.maxLevel >= 2 ? 1 : 0))
+        || (tierVal(y) - tierVal(x))
+        || x.name.localeCompare(y.name);
+    }
+    if (mode === 'name') return x.name.localeCompare(y.name);
+    if (mode === 'weapon') return x.weapon.localeCompare(y.weapon) || x.name.localeCompare(y.name);
+    return 0;
+  });
+  return a;
+}
+
+function filteredByCat(cfg) {
+  const out = {};
+  CF.CATS.forEach(c => {
+    out[c] = sortSkins(owned[c].filter(s => cfg.tiers.has(s.tierKey) && (!cfg.animated || (s.maxLevel || 1) >= 2)), cfg.sort);
+  });
+  return out;
+}
+
+function mainCfg() {
+  return { tiers: state.tiers, animated: state.animated, cap: state.noCap ? Infinity : state.cap, sort: state.sort };
+}
+
+function slotHTML(s) {
+  const off = state.removed.has(s.id);
+  return `<button class="slot${off ? ' off' : ''}" data-id="${CF.esc(s.id)}" type="button" title="${CF.esc(s.name)}">`
+    + `<img src="${CF.esc(s.icon)}" alt="${CF.esc(s.name)}" loading="lazy">`
+    + `<span class="slot-w">${CF.esc(s.weapon)}</span>`
+    + `<span class="slot-n">${CF.esc(s.name)}</span>`
+    + ((s.maxLevel || 1) >= 2 ? `<span class="lv">LV${s.maxLevel}</span>` : '')
+    + `</button>`;
+}
+
+function renderPreview() {
+  const cfg = mainCfg();
+  const full = filteredByCat(cfg);
+  const cap = cfg.cap;
+  previewEl.innerHTML = CF.CATS.map(c => {
+    const rows = cap === Infinity ? full[c] : full[c].slice(0, cap);
+    const live = rows.filter(s => !state.removed.has(s.id)).length;
+    const more = full[c].length - rows.length;
+    return `<div class="col">`
+      + `<h3 class="col-h">${CF.esc(c)} <b class="badge">${live}</b></h3>`
+      + rows.map(slotHTML).join('')
+      + (more > 0 ? `<div class="more">+${more} more</div>` : '')
+      + `</div>`;
+  }).join('');
+}
+
+function renderReadout() {
+  const cfg = mainCfg();
+  const full = filteredByCat(cfg);
+  const cap = cfg.cap;
+  let n = 0;
+  let m = 0;
+  CF.CATS.forEach(c => {
+    const rows = cap === Infinity ? full[c] : full[c].slice(0, cap);
+    const live = rows.filter(s => !state.removed.has(s.id)).length;
+    n += live;
+    if (live > 0) m++;
+  });
+  readoutEl.textContent = `Showing ${n} of ${TOTAL} owned · ${m} across ${CF.CATS.length} categories`;
+}
+
+function visibleFlat() {
+  const cfg = mainCfg();
+  const full = filteredByCat(cfg);
+  const cap = cfg.cap;
+  const out = [];
+  CF.CATS.forEach(c => {
+    const rows = cap === Infinity ? full[c] : full[c].slice(0, cap);
+    rows.forEach(s => { if (!state.removed.has(s.id)) out.push(s); });
+  });
+  return out;
+}
+
+function renderStats() {
+  const v = visibleFlat();
+  const count = k => v.filter(s => s.tierKey === k).length;
+  const tiles = [
+    ['PREMIUM', count('premium')],
+    ['LIMITED', count('ultra')],
+    ['SEMI PREM', count('deluxe')]
+  ];
+  if (state.bpass === 'melee') {
+    tiles.push(['MELEE', count('exclusive')]);
+  } else if (state.bpass === 'bp') {
+    tiles.push(['BATTLEPASS', '—', 'needs valorant-api battlepass map']);
+  }
+  tiles.push(['ANIMATED', v.filter(s => (s.maxLevel || 1) >= 2).length]);
+  statTilesEl.innerHTML = tiles.map(([label, val, note]) =>
+    `<div class="tile"><span class="tile-l">${CF.esc(label)}</span><b class="tile-v">${CF.esc(val)}</b>`
+    + (note ? `<span class="tile-n">${CF.esc(note)}</span>` : '')
+    + `</div>`
+  ).join('');
+}
+
+const PRESETS = [
+  { id: 'A', name: 'A · Showcase', tiers: ['premium', 'ultra'], animated: false, cap: 6, noCap: false, sort: 'tier', label: 'tiers premium+ultra · animated off · cap 6 · sort tier' },
+  { id: 'B', name: 'B · Full inventory', tiers: TIER_ORDER.slice(), animated: true, cap: 6, noCap: true, sort: 'tier', label: 'all tiers · animated on · no cap · sort tier' },
+  { id: 'C', name: 'C · Animated-first', tiers: ['premium', 'ultra'], animated: true, cap: 6, noCap: false, sort: 'anim', label: 'tiers premium+ultra · animated on · cap 6 · sort anim' }
+];
+
+function presetCap(cfg, c) {
+  const full = owned[c].filter(s => cfg.tiers.has(s.tierKey) && (!cfg.animated || (s.maxLevel || 1) >= 2));
+  const sorted = sortSkins(full, cfg.sort);
+  return cfg.cap === Infinity ? sorted : sorted.slice(0, cfg.cap);
+}
+
+function renderPresets() {
+  presetsEl.innerHTML = PRESETS.map(p => {
+    const cfg = { tiers: new Set(p.tiers), animated: p.animated, cap: p.noCap ? Infinity : p.cap, sort: p.sort };
+    let n = 0;
+    const catsWith = [];
+    CF.CATS.forEach(c => {
+      const rows = presetCap(cfg, c).filter(s => !state.removed.has(s.id));
+      n += rows.length;
+      if (rows.length) catsWith.push({ c, rows });
+    });
+    const cols = catsWith.slice(0, 4).map(({ c, rows }) =>
+      `<div class="pcol"><span class="pcol-h">${CF.esc(c)} <b>${rows.length}</b></span>`
+      + rows.slice(0, 3).map(s => `<span class="pcell"><img src="${CF.esc(s.icon)}" alt="${CF.esc(s.name)}" loading="lazy" title="${CF.esc(s.name)}"></span>`).join('')
+      + `</div>`
+    ).join('');
+    return `<article class="preset" data-preset="${p.id}">`
+      + `<button class="preset-h" type="button">${CF.esc(p.name)}</button>`
+      + `<div class="preset-grid">${cols}</div>`
+      + `<p class="preset-settings">${CF.esc(p.label)}</p>`
+      + `<p class="preset-show">showing ${n} of ${TOTAL}</p>`
+      + `</article>`;
+  }).join('');
+}
+
+function renderAll() {
+  renderPreview();
+  renderReadout();
+  renderStats();
+  renderPresets();
+}
+
+function syncControls() {
+  document.querySelectorAll('#tierChips .chip[data-tier]').forEach(b => {
+    b.setAttribute('aria-pressed', String(state.tiers.has(b.dataset.tier)));
+  });
+  animChipEl.setAttribute('aria-pressed', String(state.animated));
+  capInputEl.value = state.cap;
+  noCapEl.checked = state.noCap;
+  sortSelEl.value = state.sort;
+}
+
+function renderModal() {
+  const cap = Math.min(40, Math.max(1, parseInt(mCapEl.value, 10) || 1));
+  let n = 0;
+  CF.CATS.forEach(c => {
+    const k = owned[c].filter(s => state.modalTiers.has(s.tierKey)).length;
+    n += Math.min(k, cap);
+  });
+  insertBtnEl.textContent = `Insert ${n} skins`;
+}
+
+const tierDefs = Array.prototype.slice.call(document.querySelectorAll('#tierChips .chip[data-tier]'))
+  .map(b => ({ tier: b.dataset.tier, label: b.textContent.trim() }));
+modalChipsEl.innerHTML = tierDefs.map(d =>
+  `<button class="chip" data-tier="${d.tier}" aria-pressed="true" type="button"><i class="dot" style="background:var(--t-${d.tier})"></i>${CF.esc(d.label)}</button>`
+).join('');
+
+document.getElementById('tierChips').addEventListener('click', e => {
+  const b = e.target.closest('.chip[data-tier]');
+  if (!b) return;
+  const t = b.dataset.tier;
+  if (state.tiers.has(t)) state.tiers.delete(t);
+  else state.tiers.add(t);
+  b.setAttribute('aria-pressed', String(state.tiers.has(t)));
+  renderAll();
+});
+
+animChipEl.addEventListener('click', () => {
+  state.animated = !state.animated;
+  animChipEl.setAttribute('aria-pressed', String(state.animated));
+  renderAll();
+});
+
+capInputEl.addEventListener('input', () => {
+  state.cap = Math.min(40, Math.max(1, parseInt(capInputEl.value, 10) || 1));
+  renderAll();
+});
+
+noCapEl.addEventListener('change', () => {
+  state.noCap = noCapEl.checked;
+  renderAll();
+});
+
+sortSelEl.addEventListener('change', () => {
+  state.sort = sortSelEl.value;
+  renderAll();
+});
+
+previewEl.addEventListener('click', e => {
+  const b = e.target.closest('.slot');
+  if (!b) return;
+  const id = b.dataset.id;
+  if (state.removed.has(id)) state.removed.delete(id);
+  else state.removed.add(id);
+  renderAll();
+});
+
+document.getElementById('bpassRadios').addEventListener('change', e => {
+  if (e.target.name !== 'bpass') return;
+  state.bpass = e.target.value;
+  renderStats();
+});
+
+presetsEl.addEventListener('click', e => {
+  const h = e.target.closest('.preset-h');
+  if (!h) return;
+  const card = h.closest('.preset');
+  const p = PRESETS.find(x => x.id === card.dataset.preset);
+  if (!p) return;
+  state.tiers = new Set(p.tiers);
+  state.animated = p.animated;
+  state.cap = p.cap;
+  state.noCap = p.noCap;
+  state.sort = p.sort;
+  syncControls();
+  renderAll();
+});
+
+modalChipsEl.addEventListener('click', e => {
+  const b = e.target.closest('.chip[data-tier]');
+  if (!b) return;
+  const t = b.dataset.tier;
+  if (state.modalTiers.has(t)) state.modalTiers.delete(t);
+  else state.modalTiers.add(t);
+  b.setAttribute('aria-pressed', String(state.modalTiers.has(t)));
+  renderModal();
+});
+
+mCapEl.addEventListener('input', renderModal);
+
+document.getElementById('simNote').textContent = `Simulated inventory — ${TOTAL} owned (not your real account)`;
+
+syncControls();
+renderAll();
+renderModal();
+</script>
+</body>
+</html>

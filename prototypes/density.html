@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardForge — Density Lab · 4 layout strategies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --font-ui:'Inter',system-ui,sans-serif;
+  --c-bg:#0B0F14;--c-surface:#10161D;--c-surface2:#151C24;
+  --c-line:#222C37;--c-line-soft:#1A222C;--c-ink:#D9DCE0;--c-mut:#8A95A1;
+  --c-accent:#FF4655;--c-accent-btn:#D62839;--c-veil:rgba(6,9,13,.78);
+}
+*{box-sizing:border-box;margin:0;padding:0;border-radius:0}
+html{background:var(--c-bg);scrollbar-width:thin;scrollbar-color:var(--c-line) transparent}
+body{font-family:var(--font-ui);color:var(--c-ink);min-height:100vh}
+::selection{background:var(--c-accent);color:#fff}
+:focus{outline:none}
+:focus-visible{box-shadow:inset 0 0 0 2px var(--c-accent)!important}
+[hidden]{display:none!important}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--c-line)}
+::-webkit-scrollbar-thumb:hover{background:var(--c-accent)}
+
+#topbar{position:fixed;top:0;left:0;right:0;min-height:52px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px;padding:6px 14px;background:var(--c-surface);border-bottom:1px solid var(--c-line);z-index:20}
+.tb-left,.tb-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:6px}
+.logo{font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:15px;letter-spacing:.2em;color:var(--c-ink)}
+.logo::before{content:"";display:inline-block;width:9px;height:15px;background:var(--c-accent);transform:skewX(-20deg);margin-right:9px;vertical-align:-2px}
+.proto-chip{background:var(--c-accent-btn);color:#fff;font:700 10px 'Chakra Petch',sans-serif;letter-spacing:.16em;padding:4px 10px;text-transform:uppercase;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
+.ctl{display:flex;align-items:center;gap:7px;font:600 10px 'Chakra Petch',sans-serif;letter-spacing:.16em;color:var(--c-mut);text-transform:uppercase}
+.ctl select{background:var(--c-surface2);border:1px solid var(--c-line);color:var(--c-ink);font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:7px 10px;cursor:pointer;clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
+.ctl select:hover{border-color:var(--c-mut)}
+#pager{display:flex;align-items:center;gap:8px}
+#pager button{width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--c-line-soft);color:var(--c-mut);font:700 15px/1 'Chakra Petch',sans-serif;cursor:pointer;clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
+#pager button:hover:not(:disabled){border-color:var(--c-mut);color:var(--c-ink)}
+#pager button:disabled{opacity:.35;cursor:default}
+#pageLabel{font:700 11px 'Chakra Petch',sans-serif;letter-spacing:.18em;color:var(--c-ink);white-space:nowrap}
+#total{font:700 11px 'Chakra Petch',sans-serif;letter-spacing:.18em;color:var(--c-ink);white-space:nowrap;border-left:1px solid var(--c-line);padding-left:12px}
+a.tb-link{border:1px solid var(--c-line-soft);color:var(--c-mut);padding:8px 14px;font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.16em;text-transform:uppercase;text-decoration:none}
+a.tb-link:hover{border-color:var(--c-mut);color:var(--c-ink)}
+
+#stage{position:fixed;inset:52px 0 0 0;display:flex;overflow:auto;background:transparent}
+#sizer{position:relative;flex:none;margin:auto;outline:1px solid var(--c-line);outline-offset:6px;box-shadow:0 24px 70px -18px rgba(0,0,0,.6),0 6px 22px rgba(0,0,0,.35)}
+#card{width:1920px;height:1080px;position:absolute;top:0;left:0;transform-origin:top left;overflow:hidden;padding:24px 34px 28px;color:var(--ink);background:linear-gradient(180deg,var(--card1),var(--card2));border:2px solid var(--line);font-family:'Chakra Petch',sans-serif;clip-path:polygon(0 0,calc(100% - 30px) 0,100% 30px,100% 100%,30px 100%,0 calc(100% - 30px))}
+#card::before{content:"";position:absolute;top:9px;left:9px;width:22px;height:22px;border-top:2px solid var(--accent);border-left:2px solid var(--accent)}
+#card::after{content:"";position:absolute;bottom:9px;right:9px;width:22px;height:22px;border-bottom:2px solid var(--accent);border-right:2px solid var(--accent)}
+
+.grid{display:grid;gap:10px;height:100%;grid-template-columns:218px 270px 1fr 310px 325px 118px;
+grid-template-rows:1fr 1fr 1fr 1.1fr .6fr 300px;
+grid-template-areas:
+"side smg  rifles sniper mg    flex"
+"side smg  rifles sniper mg    flex"
+"side shot rifles sniper bpass flex"
+"side shot rifles melee melee  melee"
+"side shot rifles melee melee  melee"
+"info info info  info  info  info"}
+.panel{overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.panel h3{text-align:center;letter-spacing:.4em;font-size:14px;color:var(--mut);font-weight:600;margin:0 0 6px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.panel h3::before{content:"";display:inline-block;width:7px;height:10px;background:var(--accent);transform:skewX(-20deg);margin-right:9px;vertical-align:-1px}
+.slots{display:flex;flex-direction:column;gap:6px;flex:1;min-height:0;overflow:hidden}
+.panel[data-cat="Melees"] .slots{flex-direction:row}
+.panel[data-cat="Melees"] .skin,.panel[data-cat="Melees"] .slotbox.empty{width:auto;min-width:0}
+
+.skin{position:relative;flex:1 1 0;min-height:0;width:100%;overflow:hidden;border:1px solid var(--line);
+background:radial-gradient(120% 100% at 50% 0%,var(--sheen),transparent 60%),linear-gradient(180deg,var(--box-hi),var(--box));
+box-shadow:inset 0 0 0 1px var(--raise);
+clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)))}
+.skin img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:2px 8px}
+.skin.rowskin{min-height:34px}
+.lv{position:absolute;right:3px;bottom:3px;z-index:2;background:var(--red);color:#fff;font:700 10px/1 'Chakra Petch',sans-serif;letter-spacing:.06em;padding:2px 5px;pointer-events:none}
+
+.slotbox{position:relative;border:1px solid var(--line);overflow:hidden;background:radial-gradient(120% 100% at 50% 0%,var(--sheen-soft),transparent 60%),var(--box)}
+.slotbox.empty{flex:1 1 0;min-height:0;border-style:dashed;background:var(--tint);display:flex;align-items:center;justify-content:center}
+
+.tile{position:relative;overflow:hidden;border:1px solid var(--line);border-left:3px solid var(--line);
+background:radial-gradient(120% 100% at 50% 0%,var(--sheen),transparent 60%),linear-gradient(180deg,var(--box-hi),var(--box))}
+.tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:3px 7px}
+.tile .tname{position:absolute;left:7px;bottom:5px;right:42px;font:600 11px 'Chakra Petch',sans-serif;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.more{display:flex;align-items:center;justify-content:center;text-align:center;border:1px dashed var(--line);color:var(--mut);font:700 12px 'Chakra Petch',sans-serif;letter-spacing:.06em;padding:4px;line-height:1.25}
+.meleemore{flex:1 1 0;min-width:0;height:auto}
+
+.charm{position:relative;height:52px;overflow:hidden;border:1px solid var(--line);border-left:3px solid var(--line);background:radial-gradient(120% 100% at 50% 0%,var(--sheen),transparent 60%),linear-gradient(180deg,var(--box-hi),var(--box))}
+.charm img{width:100%;height:100%;object-fit:contain;padding:2px}
+
+.m2row{position:relative;display:flex;align-items:center;gap:8px;flex:0 0 44px;height:44px;overflow:hidden;padding-right:36px;
+border:1px solid var(--line);border-left:3px solid var(--line);
+background:radial-gradient(120% 100% at 0% 0%,var(--sheen),transparent 60%),linear-gradient(180deg,var(--box-hi),var(--box))}
+.m2row img{height:100%;width:96px;flex:none;object-fit:contain;padding:2px}
+.m2row .nm{flex:1;min-width:0;font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.04em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m2chip{flex:0 0 auto;border:1px dashed var(--line);color:var(--mut);font:700 12px 'Chakra Petch',sans-serif;letter-spacing:.08em;text-align:center;padding:11px 8px;text-transform:uppercase;
+clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)))}
+
+.infoband{display:grid;grid-template-columns:300px 1fr 360px 420px;gap:10px;min-height:0;overflow:hidden}
+.grid>.infoband{grid-area:info}
+.ib{background:var(--panel);border:1px solid var(--line);padding:12px 14px;overflow:hidden;
+clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)))}
+.ib-code{display:flex;flex-direction:column;justify-content:center;gap:8px}
+.code{font-family:'Anton',sans-serif;font-size:52px;letter-spacing:.18em;line-height:1;color:var(--ink)}
+.vlogin{font:600 16px 'Chakra Petch',sans-serif;letter-spacing:.14em;color:var(--mut)}
+.ib-stats{display:flex;flex-direction:column;justify-content:center;gap:12px}
+.counts{display:flex;justify-content:space-between;align-items:flex-end;gap:8px}
+.stat{text-align:center}
+.stat label{display:block;color:var(--mut);font:600 12px 'Chakra Petch',sans-serif;letter-spacing:.16em}
+.stat.limited label{color:var(--gold)}
+.stat b{font-family:'Anton',sans-serif;font-size:26px;letter-spacing:.08em;font-weight:400;color:var(--ink)}
+.mapnote{font:600 10px 'Chakra Petch',sans-serif;letter-spacing:.06em;line-height:1.5;color:var(--mut);border-top:1px solid var(--line);padding-top:9px}
+.ib-rank{display:flex;flex-direction:column;justify-content:center}
+.rankcols{display:flex;gap:10px}
+.rankrow{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;font:700 17px 'Chakra Petch',sans-serif;letter-spacing:.06em;color:var(--ink);text-align:center}
+.rankrow label{color:var(--mut);font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.2em}
+.ib-pcard{display:flex;flex-direction:column;gap:8px}
+.pcardph{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:var(--box);border:1px solid var(--line);color:var(--mut);font:600 12px 'Chakra Petch',sans-serif;letter-spacing:.24em}
+.pclabel{text-align:center;color:var(--mut);font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.3em;text-transform:uppercase}
+
+.wstrip{position:absolute;left:34px;right:34px;bottom:8px;color:var(--mut);font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.28em;text-transform:uppercase;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.m3wrap{display:flex;flex-direction:column;height:100%;gap:10px;min-height:0}
+.page{display:flex;flex-direction:column;flex:1;min-height:0;gap:8px;overflow:hidden}
+.m3wrap>.infoband{flex:0 0 300px}
+.pagefoot{flex:none;text-align:right;color:var(--mut);font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.18em}
+
+.ov{display:grid;grid-template-columns:1fr 1fr;gap:16px;flex:1;min-height:0;overflow:hidden}
+.ov-left{display:flex;flex-direction:column;justify-content:center;gap:9px;min-height:0;overflow:hidden}
+.catrow{display:flex;align-items:center;gap:12px}
+.catrow .cnm{width:150px;flex:none;font:600 13px 'Chakra Petch',sans-serif;letter-spacing:.08em;color:var(--ink);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.catrow .bar{flex:1;min-width:0;height:14px;background:var(--box);border:1px solid var(--line);position:relative}
+.catrow .bar i{display:block;height:100%;background:var(--accent)}
+.catrow .n{width:56px;flex:none;text-align:right;font-family:'Anton',sans-serif;font-size:22px;letter-spacing:.04em;color:var(--ink)}
+.catrow .dot{width:11px;height:11px;flex:none;transform:rotate(45deg);background:var(--mut);border:1px solid var(--line)}
+.ov-right{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,150px);gap:10px;align-content:center;min-height:0;overflow:hidden}
+.hero{position:relative;overflow:hidden;border:1px solid var(--line);border-left:3px solid var(--line);min-height:0;
+background:radial-gradient(120% 100% at 50% 0%,var(--sheen),transparent 60%),linear-gradient(180deg,var(--box-hi),var(--box))}
+.hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:4px 8px 22px}
+.hero .hname{position:absolute;left:8px;bottom:6px;right:46px;font:600 11px 'Chakra Petch',sans-serif;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.cathead{display:flex;align-items:baseline;gap:14px;flex:none;border-bottom:1px solid var(--line);padding-bottom:8px}
+.cathead h2{font-family:'Anton',sans-serif;font-size:26px;font-weight:400;letter-spacing:.06em;color:var(--ink);text-transform:uppercase}
+.cathead .sub2{font:600 12px 'Chakra Petch',sans-serif;letter-spacing:.24em;color:var(--mut)}
+.cathead .cont{font:700 12px 'Chakra Petch',sans-serif;letter-spacing:.14em;color:var(--accent);margin-left:auto}
+.tilegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));grid-auto-rows:96px;gap:8px;flex:1;min-height:0;overflow:hidden}
+
+.m6wrap{display:flex;flex-direction:column;height:100%;min-height:0}
+.jstage{position:relative;flex:1;min-height:0;overflow:hidden}
+#card .jstage{display:flex;flex-direction:column;min-height:0}
+.jtile{position:absolute;overflow:hidden;border:1px solid var(--line);border-left:3px solid var(--line);
+background:linear-gradient(180deg,var(--box-hi),var(--box));
+clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)))}
+.jtile img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:6px}
+.jtile .tname{position:absolute;left:7px;bottom:5px;right:42px;font:600 11px 'Chakra Petch',sans-serif;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jhead{position:absolute;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line)}
+.jhead .hn{font-family:'Anton',sans-serif;font-size:14px;font-weight:400;letter-spacing:.08em;color:var(--ink);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jhead .hc{margin-left:auto;color:var(--mut);font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.14em}
+.jchip{position:absolute;display:flex;align-items:center;justify-content:center;text-align:center;border:1px dashed var(--line);color:var(--mut);font:700 12px 'Chakra Petch',sans-serif;letter-spacing:.06em;padding:4px;line-height:1.2;text-transform:uppercase}
+.jfoot{height:28px;flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--mut);font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.18em;padding-top:6px;white-space:nowrap;overflow:hidden}
+.jfoot span{overflow:hidden;text-overflow:ellipsis}
+.m5head{height:26px;flex:none;display:flex;align-items:center;gap:14px;flex-wrap:wrap;color:var(--mut);font:600 12px 'Chakra Petch',sans-serif;letter-spacing:.12em;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.m5head b{color:var(--ink);font-weight:600}
+.mgrid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:10px;flex:1;min-height:0;overflow:hidden}
+.mcell{position:relative;display:flex;flex-direction:column;min-height:0;border:1px solid var(--line);background:var(--panel);overflow:hidden}
+.mcellhead{flex:none;height:24px;display:flex;align-items:center;gap:8px;padding:0 9px;border-bottom:1px solid var(--line)}
+.mcellhead .cn{font-family:'Anton',sans-serif;font-size:13px;font-weight:400;letter-spacing:.06em;color:var(--ink);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mcellhead .cc{margin-left:auto;color:var(--mut);font:600 11px 'Chakra Petch',sans-serif;letter-spacing:.1em}
+.mcellbody{position:relative;flex:1;min-height:0;overflow:hidden}
+.mcell.empty{align-items:center;justify-content:center;border-style:dashed;color:var(--mut);font:600 12px 'Chakra Petch',sans-serif;letter-spacing:.14em;text-transform:uppercase}
+
+@media (max-width:760px){
+  #topbar{row-gap:3px;padding:5px 10px}
+  .tb-left,.tb-right{width:100%;row-gap:5px}
+  #total{border-left:0;padding-left:0}
+}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="tb-left">
+    <span class="logo">CARD FORGE</span>
+    <span class="proto-chip">DENSITY LAB</span>
+  </div>
+  <div class="tb-right">
+    <label class="ctl">DATA
+      <select id="selData" aria-label="Dataset preset">
+        <option value="empty">empty</option>
+        <option value="light">light</option>
+        <option value="typical">typical</option>
+        <option value="heavy">heavy</option>
+        <option value="collector">collector</option>
+        <option value="lopsided">lopsided</option>
+      </select>
+    </label>
+    <label class="ctl">MODE
+      <select id="selMode" aria-label="Layout mode">
+        <option value="m0">M0 · BASELINE</option>
+        <option value="m1">M1 · ADAPTIVE TILES</option>
+        <option value="m2">M2 · TOP-N</option>
+        <option value="m3">M3 · MULTI-PAGE</option>
+        <option value="m4">M4 Justified catalog</option>
+        <option value="m5">M5 Packed category pages</option>
+        <option value="m6">M6 Mosaic overview</option>
+      </select>
+    </label>
+    <label class="ctl">THEME
+      <select id="selTheme" aria-label="Card theme">
+        <option value="protocol">protocol</option>
+        <option value="holo">holo</option>
+        <option value="reaver">reaver</option>
+        <option value="oni">oni</option>
+        <option value="arctic">arctic</option>
+      </select>
+    </label>
+    <div id="pager" hidden>
+      <button id="prev" type="button" aria-label="Previous page">&#8249;</button>
+      <span id="pageLabel">PAGE 1 / 1</span>
+      <button id="next" type="button" aria-label="Next page">&#8250;</button>
+    </div>
+    <span id="total">TOTAL SKINS: 0</span>
+    <a class="tb-link" href="index.html">Prototypes</a>
+  </div>
+</div>
+
+<div id="stage"><div id="sizer"><div id="card"></div></div></div>
+
+<script src="mock-data.js"></script>
+<script>
+(function(){
+  'use strict';
+  var CF = window.CF_MOCK;
+  if (!CF) return;
+
+  var CATS = ['Sidearms','SMGs','Shotguns','Rifles','Sniper Rifles','Machine Guns','Melees','Battlepass','Flex'];
+  var AREAS = {Sidearms:'side',SMGs:'smg',Shotguns:'shot',Rifles:'rifles','Sniper Rifles':'sniper','Machine Guns':'mg',Melees:'melee',Battlepass:'bpass',Flex:'flex'};
+  var TRANK = {select:1,deluxe:2,premium:3,ultra:4,exclusive:5};
+  var PRESETS = {
+    empty:     [0,0,0,0,0,0,0,0,0],
+    light:     [3,2,2,3,1,1,2,2,0],
+    typical:   [6,5,4,10,4,3,5,6,2],
+    heavy:     [24,18,12,38,14,10,14,12,8],
+    collector: [48,36,24,76,28,20,28,24,16],
+    lopsided:  [4,3,2,120,5,3,6,4,2]
+  };
+
+  var card = document.getElementById('card');
+  var sizer = document.getElementById('sizer');
+  var selData = document.getElementById('selData');
+  var selMode = document.getElementById('selMode');
+  var selTheme = document.getElementById('selTheme');
+  var pager = document.getElementById('pager');
+  var pageLabel = document.getElementById('pageLabel');
+  var prevBtn = document.getElementById('prev');
+  var nextBtn = document.getElementById('next');
+  var totalEl = document.getElementById('total');
+
+  var dataPreset = 'typical';
+  var mode = 'm1';
+  var theme = 'protocol';
+  var pageIndex = 0;
+  var pageCount = 1;
+  var panels = [];
+  var dataset = {};
+
+  function el(tag, cls, text){
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function makeImg(src, alt){
+    var i = document.createElement('img');
+    i.src = src;
+    i.alt = alt || '';
+    i.loading = 'lazy';
+    return i;
+  }
+  function lvChip(level){
+    return el('span','lv','L'+level);
+  }
+  function tierColor(t){
+    var e = CF.tiers[t];
+    return e ? e.color : '#8A99A9';
+  }
+  function clamp(min, v, max){
+    return Math.max(min, Math.min(max, v));
+  }
+
+  function hashName(s){
+    var h = 2166136261;
+    for (var i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h,16777619); }
+    return h >>> 0;
+  }
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function generate(preset){
+    var seed = hashName(preset);
+    var rng = mulberry32(seed);
+    var seedInt = Math.floor(rng() * 1000000000);
+    var vals = Object.values(CF.skins);
+    var counts = PRESETS[preset] || PRESETS.typical;
+    var gi = 0;
+    var ds = {};
+    CATS.forEach(function(cat, ci){
+      var n = counts[ci] || 0;
+      var arr = [];
+      for (var i=0;i<n;i++){
+        var s = vals[gi % vals.length];
+        arr.push({ name: s.name, tier: s.tier, icon: s.icon, level: 1 + ((seedInt + gi) % 5) });
+        gi++;
+      }
+      ds[cat] = arr;
+    });
+    return ds;
+  }
+
+  function allSkins(){
+    var a = [];
+    CATS.forEach(function(c){ a = a.concat(dataset[c]); });
+    return a;
+  }
+  function bestTier(cat){
+    var arr = dataset[cat];
+    if (!arr.length) return null;
+    var best = arr[0];
+    arr.forEach(function(s){ if (TRANK[s.tier] > TRANK[best.tier]) best = s; });
+    return best.tier;
+  }
+  function computeStats(){
+    var all = allSkins();
+    var premium = 0, limited = 0, semi = 0, anim = 0;
+    all.forEach(function(s){
+      if (s.tier === 'premium' || s.tier === 'ultra' || s.tier === 'exclusive') premium++;
+      if (s.tier === 'exclusive') limited++;
+      if (s.tier === 'deluxe') semi++;
+      if (s.level >= 2) anim++;
+    });
+    return { premium: premium, limited: limited, semi: semi, bp: dataset['Battlepass'].length, anim: anim };
+  }
+  function computePages(){
+    var pages = [{ type: 'overview' }];
+    CATS.forEach(function(cat){
+      var n = dataset[cat].length;
+      if (!n) return;
+      var chunks = Math.ceil(n / 80);
+      for (var c=0;c<chunks;c++) pages.push({ type:'cat', cat:cat, chunk:c, chunks:chunks });
+    });
+    return pages;
+  }
+
+  function applyTheme(){
+    var t = CF.cardThemes[theme] || CF.cardThemes.protocol;
+    document.body.style.background = t.bg;
+    var map = {
+      card1: t.card1, card2: t.card2, panel: t.panel, box: t.box, 'box-hi': t.boxHi,
+      line: t.line, ink: t.ink, mut: t.mut, accent: t.accent, gold: t.gold,
+      red: t.red, warn: t.warn, sheen: t.sheen, 'sheen-soft': t.sheenSoft,
+      tint: t.tint, raise: t.raise
+    };
+    Object.keys(map).forEach(function(k){ card.style.setProperty('--'+k, map[k]); });
+    card.style.setProperty('--notch','10px');
+  }
+
+  function buildInfoBand(){
+    var band = el('div','infoband');
+
+    var code = el('div','ib ib-code');
+    code.appendChild(el('div','code','K486'));
+    code.appendChild(el('div','vlogin','RMN1#RNZ'));
+    band.appendChild(code);
+
+    var st = el('div','ib ib-stats');
+    var counts = el('div','counts');
+    var stats = computeStats();
+    [['PREMIUM',stats.premium,false],['LIMITED',stats.limited,true],['SEMI PREM',stats.semi,false],['BATTLEPASS',stats.bp,false],['ANIMATED',stats.anim,false]].forEach(function(row){
+      var s = el('div','stat'+(row[2]?' limited':''));
+      s.appendChild(el('label',null,row[0]));
+      s.appendChild(el('b',null,String(row[1])));
+      counts.appendChild(s);
+    });
+    st.appendChild(counts);
+    st.appendChild(el('div','mapnote','MAPPING \u2014 PREMIUM = PREMIUM+ULTRA+EXCLUSIVE \u00b7 LIMITED = EXCLUSIVE \u00b7 SEMI PREM = DELUXE \u00b7 BATTLEPASS = BATTLEPASS CATEGORY \u00b7 ANIMATED = LEVEL 2+'));
+    band.appendChild(st);
+
+    var rk = el('div','ib ib-rank');
+    var rc = el('div','rankcols');
+    [['CURRENT','DIAMOND 2'],['PEAK','IMMORTAL 3']].forEach(function(r){
+      var rr = el('div','rankrow');
+      rr.appendChild(el('label',null,r[0]));
+      rr.appendChild(el('b',null,r[1]));
+      rc.appendChild(rr);
+    });
+    rk.appendChild(rc);
+    band.appendChild(rk);
+
+    var pc = el('div','ib ib-pcard');
+    pc.appendChild(el('div','pcardph','PLAYER CARD'));
+    pc.appendChild(el('div','pclabel','Player card'));
+    band.appendChild(pc);
+
+    return band;
+  }
+
+  function wstrip(){
+    var d = el('div','wstrip');
+    d.appendChild(el('span',null,'CARD FORGE \u00b7 LISTING PROTOTYPE \u00b7 ' + new Date().toLocaleDateString()));
+    return d;
+  }
+
+  function buildGrid(){
+    var grid = el('div','grid');
+    CATS.forEach(function(cat){
+      var sec = el('section','panel'+(cat === 'Flex' ? ' flexcol' : ''));
+      sec.dataset.cat = cat;
+      sec.style.gridArea = AREAS[cat];
+      sec.appendChild(el('h3',null, cat === 'Flex' ? 'Buddies & Flex' : cat));
+      var slots = el('div','slots');
+      sec.appendChild(slots);
+      grid.appendChild(sec);
+      panels.push({ cat:cat, slots:slots });
+    });
+    grid.appendChild(buildInfoBand());
+    return grid;
+  }
+
+  function renderEmpty(slots, cat){
+    var n = cat === 'Melees' ? 4 : 3;
+    for (var i=0;i<n;i++) slots.appendChild(el('div','slotbox empty'));
+  }
+
+  function appendSkin(slots, s, rowMode){
+    var sk = el('div','skin' + (rowMode ? ' rowskin' : ''));
+    sk.appendChild(makeImg(s.icon, s.name));
+    slots.appendChild(sk);
+    return sk;
+  }
+
+  function fillM0(){
+    panels.forEach(function(p){
+      var data = dataset[p.cat];
+      if (!data.length){ renderEmpty(p.slots, p.cat); return; }
+      data.forEach(function(s){
+        var sk = el('div','skin');
+        sk.appendChild(makeImg(s.icon, s.name));
+        p.slots.appendChild(sk);
+      });
+    });
+  }
+
+  function makeTile(s){
+    var t = el('div','tile');
+    t.style.borderLeftColor = tierColor(s.tier);
+    t.appendChild(makeImg(s.icon, s.name));
+    t.appendChild(lvChip(s.level));
+    return t;
+  }
+
+  function fillM1Panel(p){
+    var data = dataset[p.cat];
+    var count = data.length;
+    if (!count){ renderEmpty(p.slots, p.cat); return; }
+
+    var W = p.slots.clientWidth;
+    var H = p.slots.clientHeight;
+
+    if (p.cat === 'Flex'){
+      p.slots.style.display = 'grid';
+      p.slots.style.gridTemplateColumns = 'repeat(4,1fr)';
+      p.slots.style.gridAutoRows = '52px';
+      p.slots.style.gap = '6px';
+      p.slots.style.alignContent = 'start';
+      var cap = 8;
+      data.slice(0, Math.min(count, cap)).forEach(function(s){
+        var c = el('div','charm');
+        c.style.borderLeftColor = tierColor(s.tier);
+        c.appendChild(makeImg(s.icon, s.name));
+        p.slots.appendChild(c);
+      });
+      if (count > cap){
+        var m = el('div','more','+' + (count - cap) + ' MORE');
+        m.style.gridColumn = '1 / -1';
+        p.slots.appendChild(m);
+      }
+      return;
+    }
+
+    if (p.cat === 'Melees'){
+      var cols = clamp(4, Math.floor(W / 76), 14);
+      var chip = count > cols;
+      var shown = chip ? cols - 1 : Math.min(count, cols);
+      for (var i=0;i<shown;i++) appendSkin(p.slots, data[i], false);
+      if (chip){
+        var mc = el('div','more meleemore','+' + (count - shown) + ' MORE');
+        p.slots.appendChild(mc);
+      }
+      return;
+    }
+
+    var capRows = Math.floor((H + 6) / 40);
+    if (count <= capRows){
+      data.forEach(function(s){ appendSkin(p.slots, s, true); });
+      return;
+    }
+
+    var cols2 = clamp(2, Math.floor(W / 110), 4);
+    var visRows = Math.floor((H + 6) / 62);
+    var visible = cols2 * visRows - 1;
+    p.slots.style.display = 'grid';
+    p.slots.style.gridTemplateColumns = 'repeat(' + cols2 + ',1fr)';
+    p.slots.style.gridAutoRows = '56px';
+    p.slots.style.gap = '6px';
+
+    if (count <= visible){
+      data.forEach(function(s){ p.slots.appendChild(makeTile(s)); });
+      return;
+    }
+    data.slice(0, visible).forEach(function(s){ p.slots.appendChild(makeTile(s)); });
+    p.slots.appendChild(el('div','more','+' + (count - visible) + ' MORE'));
+  }
+
+  function fillM2Panel(p){
+    var data = dataset[p.cat];
+    var count = data.length;
+    if (!count){ renderEmpty(p.slots, p.cat); return; }
+
+    var W = p.slots.clientWidth;
+    var H = p.slots.clientHeight;
+
+    if (p.cat === 'Melees'){
+      var cols = clamp(4, Math.floor(W / 90), 10);
+      var chip = count > cols;
+      var shown = chip ? cols - 1 : Math.min(count, cols);
+      for (var i=0;i<shown;i++) appendSkin(p.slots, data[i], false);
+      if (chip){
+        var mc = el('div','more meleemore','+' + (count - shown) + ' MORE');
+        p.slots.appendChild(mc);
+      }
+      return;
+    }
+
+    var sorted = data.slice().sort(function(a,b){
+      return (b.level - a.level) || (TRANK[b.tier] - TRANK[a.tier]);
+    });
+    var N = Math.min(count, Math.floor((H - 46) / 50));
+    sorted.slice(0, N).forEach(function(s){
+      var row = el('div','m2row');
+      row.style.borderLeftColor = tierColor(s.tier);
+      row.appendChild(makeImg(s.icon, s.name));
+      row.appendChild(el('div','nm', s.name));
+      row.appendChild(lvChip(s.level));
+      p.slots.appendChild(row);
+    });
+    if (count > N){
+      p.slots.appendChild(el('div','m2chip','+' + (count - N) + ' MORE'));
+    }
+  }
+
+  function renderM0(){
+    card.appendChild(buildGrid());
+    card.appendChild(wstrip());
+    fillM0();
+  }
+  function renderM1(){
+    card.appendChild(buildGrid());
+    card.appendChild(wstrip());
+    panels.forEach(fillM1Panel);
+  }
+  function renderM2(){
+    card.appendChild(buildGrid());
+    card.appendChild(wstrip());
+    panels.forEach(fillM2Panel);
+  }
+
+  function renderOverview(page){
+    var maxC = 1;
+    CATS.forEach(function(c){ maxC = Math.max(maxC, dataset[c].length); });
+
+    var ov = el('div','ov');
+
+    var left = el('div','ov-left');
+    CATS.forEach(function(cat){
+      var n = dataset[cat].length;
+      var row = el('div','catrow');
+      row.appendChild(el('span','cnm', cat));
+      var bar = el('div','bar');
+      var fill = el('i');
+      fill.style.width = (maxC ? (n / maxC * 100) : 0) + '%';
+      fill.style.background = bestTier(cat) ? tierColor(bestTier(cat)) : 'var(--mut)';
+      bar.appendChild(fill);
+      row.appendChild(bar);
+      row.appendChild(el('span','n', String(n)));
+      var dot = el('i','dot');
+      if (bestTier(cat)) dot.style.background = tierColor(bestTier(cat));
+      row.appendChild(dot);
+      left.appendChild(row);
+    });
+    ov.appendChild(left);
+
+    var right = el('div','ov-right');
+    var best6 = allSkins().slice().sort(function(a,b){
+      return (b.level - a.level) || (TRANK[b.tier] - TRANK[a.tier]);
+    }).slice(0, 6);
+    best6.forEach(function(s){
+      var h = el('div','hero');
+      h.style.borderLeftColor = tierColor(s.tier);
+      h.appendChild(makeImg(s.icon, s.name));
+      h.appendChild(el('div','hname', s.name));
+      h.appendChild(lvChip(s.level));
+      right.appendChild(h);
+    });
+    ov.appendChild(right);
+
+    page.appendChild(ov);
+  }
+
+  function renderCatPage(page, pg){
+    var sorted = dataset[pg.cat].slice().sort(function(a,b){
+      return (b.level - a.level) || (TRANK[b.tier] - TRANK[a.tier]);
+    });
+    var start = pg.chunk * 80;
+    var slice = sorted.slice(start, start + 80);
+
+    var head = el('div','cathead');
+    head.appendChild(el('h2',null, pg.cat));
+    head.appendChild(el('span','sub2', sorted.length + ' SKINS'));
+    if (pg.chunks > 1) head.appendChild(el('span','cont','(cont. ' + (pg.chunk + 1) + '/' + pg.chunks + ')'));
+    page.appendChild(head);
+
+    var g = el('div','tilegrid');
+    slice.forEach(function(s){
+      var t = el('div','tile');
+      t.style.borderLeftColor = tierColor(s.tier);
+      t.appendChild(makeImg(s.icon, s.name));
+      t.appendChild(el('div','tname', s.name));
+      t.appendChild(lvChip(s.level));
+      g.appendChild(t);
+    });
+    page.appendChild(g);
+  }
+
+  function renderM3(pages){
+    var wrap = el('div','m3wrap');
+    var page = el('div','page');
+    wrap.appendChild(page);
+    wrap.appendChild(buildInfoBand());
+    card.appendChild(wrap);
+    card.appendChild(wstrip());
+
+    if (pageIndex >= pages.length) pageIndex = pages.length - 1;
+    if (pageIndex < 0) pageIndex = 0;
+
+    var pg = pages[pageIndex];
+    if (pg.type === 'overview') renderOverview(page);
+    else renderCatPage(page, pg);
+
+    page.appendChild(el('div','pagefoot','PAGE ' + (pageIndex + 1) + ' / ' + pages.length));
+  }
+
+  /* ---- shared justified packer (M4/M5/M6) ---- */
+  var PGAP = 8, PASPECT = 1.7, PHEAD = 30, M5HMIN = 60;
+
+  function packJustified(W, H, items, opts){
+    opts = opts || {};
+    var a = opts.aspect || PASPECT;
+    var g = opts.gap || PGAP;
+    var h0 = opts.h0 || 110;
+    var headH = opts.headerH != null ? opts.headerH : PHEAD;
+    var rows = [];
+    rows.endY = 0; rows.complete = true; rows.consumed = 0;
+    if (!items.length) return rows;
+    var i = 0, y = 0, prevCat = null;
+    while (i < items.length){
+      var it = items[i];
+      if (opts.onNewCategory && it.cat !== prevCat){
+        rows.push({ type:'header', cat:it.cat, count: opts.countFor ? opts.countFor(it.cat) : 0, x:0, y:y, w:W, h:headH });
+        prevCat = it.cat;
+        y += headH + g;
+        continue;
+      }
+      var Hrem = H - y;
+      if (Hrem < 60){ rows.complete = false; break; }
+      var r = Math.max(1, Math.floor((Hrem + g) / (h0 + g)));
+      var h = (Hrem - (r - 1) * g) / r;
+      var n = Math.max(1, Math.floor((W + g) / (a * h + g)));
+      var remainingInCat = 0;
+      while (i + remainingInCat < items.length && items[i + remainingInCat].cat === it.cat) remainingInCat++;
+      var count = Math.min(n, remainingInCat);
+      var exhausted = count >= remainingInCat;
+      rows.push({ type:'row', items: items.slice(i, i + count), x:0, y:y, w:W, h:h, n:n, count:count, stretch:exhausted });
+      i += count;
+      y += h + g;
+    }
+    rows.endY = y;
+    rows.consumed = i;
+    return rows;
+  }
+
+  function renderPackedRows(stage, rows, W, opts){
+    opts = opts || {};
+    var g = PGAP;
+    var nameMin = opts.nameMin != null ? opts.nameMin : 70;
+    var chipRow = opts.chip ? rows.length - 1 : -1;
+    rows.forEach(function(row, ri){
+      if (row.type === 'header'){
+        var hd = el('div','jhead');
+        hd.style.left = '0px'; hd.style.top = row.y + 'px';
+        hd.style.width = W + 'px'; hd.style.height = row.h + 'px';
+        hd.appendChild(el('span','hn', row.cat));
+        hd.appendChild(el('span','hc', String(row.count)));
+        stage.appendChild(hd);
+        return;
+      }
+      var m = row.items.length;
+      var stretch = row.stretch || (opts.stretchLast && ri === rows.length - 1 && m < row.n);
+      var w = stretch ? (W - (m - 1) * g) / m : (W - (row.n - 1) * g) / row.n;
+      for (var j = 0; j < m; j++){
+        if (ri === chipRow && j === m - 1){
+          var chip = el('div','jchip', opts.chip);
+          chip.style.left = (j * (w + g)) + 'px';
+          chip.style.top = row.y + 'px';
+          chip.style.width = w + 'px';
+          chip.style.height = row.h + 'px';
+          stage.appendChild(chip);
+          continue;
+        }
+        var it = row.items[j];
+        var t = el('div','jtile');
+        t.dataset.cat = it.cat;
+        t.style.left = (j * (w + g)) + 'px';
+        t.style.top = row.y + 'px';
+        t.style.width = w + 'px';
+        t.style.height = row.h + 'px';
+        t.style.borderLeftColor = tierColor(it.skin.tier);
+        t.appendChild(makeImg(it.skin.icon, it.skin.name));
+        t.appendChild(lvChip(it.skin.level));
+        if (row.h >= nameMin) t.appendChild(el('div','tname', it.skin.name));
+        stage.appendChild(t);
+      }
+    });
+  }
+
+  function orderedItems(){
+    var arr = [];
+    CATS.forEach(function(cat){
+      dataset[cat].slice().sort(function(a,b){
+        return (b.level - a.level) || (TRANK[b.tier] - TRANK[a.tier]);
+      }).forEach(function(s){ arr.push({ skin:s, cat:cat }); });
+    });
+    return arr;
+  }
+  function catCount(cat){ return dataset[cat].length; }
+  function spanNote(items){
+    if (!items.length) return '';
+    var first = items[0].cat.toUpperCase();
+    var last = items[items.length - 1].cat.toUpperCase();
+    return first === last ? first : first + ' \u2192 ' + last;
+  }
+
+  /* ---- M6 mosaic overview (also page 1 of M4/M5) ---- */
+  function buildMosaicCells(W, H){
+    var cw = (W - 3 * 10) / 4;
+    var ch = (H - 2 * 10) / 3;
+    var entries = [];
+    CATS.forEach(function(c){
+      if (!dataset[c].length) return;
+      entries.push({ cat:c, count:dataset[c].length, skins:dataset[c] });
+    });
+    if (!entries.length) return [];
+    entries.sort(function(a,b){ return b.count - a.count; });
+    if (entries.length > 12){
+      var keep = entries.slice(0, 11);
+      var rest = entries.slice(11);
+      var skins = [], cnt = 0;
+      rest.forEach(function(e){ skins = skins.concat(e.skins); cnt += e.count; });
+      keep.push({ cat:'OTHER', count:cnt, skins:skins });
+      entries = keep;
+    }
+    var total = entries.reduce(function(s,e){ return s + e.count; }, 0);
+    var alloc = entries.map(function(){ return 1; });
+    var usedN = entries.length;
+    var q = entries.map(function(e){ return e.count / total * 12; });
+    while (usedN < 12){
+      var best = 0, bd = -Infinity;
+      for (var i = 0; i < entries.length; i++){
+        var dd = q[i] - alloc[i];
+        if (dd > bd){ bd = dd; best = i; }
+      }
+      alloc[best]++; usedN++;
+    }
+    var cells = [];
+    entries.forEach(function(e, i){
+      var sorted = e.skins.slice().sort(function(a,b){
+        return (b.level - a.level) || (TRANK[b.tier] - TRANK[a.tier]);
+      });
+      var k = alloc[i];
+      var base = Math.floor(sorted.length / k), rem = sorted.length % k;
+      var pos = 0;
+      for (var ci = 0; ci < k; ci++){
+        var size = base + (ci < rem ? 1 : 0);
+        var chunk = sorted.slice(pos, pos + size);
+        pos += size;
+        if (!chunk.length) continue;
+        cells.push({
+          cat: e.cat,
+          count: e.count,
+          items: chunk.map(function(s){ return { skin:s, cat:e.cat }; }),
+          cw: cw, ch: ch
+        });
+      }
+    });
+    return cells;
+  }
+
+  function renderMosaic(stage, W, H){
+    var grid = el('div','mgrid');
+    stage.appendChild(grid);
+    if (!allSkins().length){
+      CATS.forEach(function(cat){
+        var cell = el('div','mcell empty');
+        cell.appendChild(el('span',null,cat));
+        grid.appendChild(cell);
+      });
+      return;
+    }
+    buildMosaicCells(W, H).forEach(function(c){
+      var cell = el('div','mcell');
+      var head = el('div','mcellhead');
+      head.appendChild(el('span','cn', c.cat));
+      head.appendChild(el('span','cc', String(c.count)));
+      cell.appendChild(head);
+      var body = el('div','mcellbody');
+      cell.appendChild(body);
+      grid.appendChild(cell);
+      var rows = packJustified(c.cw, body.clientHeight, c.items, { h0:64, onNewCategory:false });
+      var chip = rows.consumed < c.items.length ? ('+' + (c.items.length - rows.consumed + 1) + ' MORE') : null;
+      renderPackedRows(body, rows, c.cw, { stretchLast:true, nameMin:50, chip:chip });
+    });
+  }
+
+  /* ---- M4 continuous justified catalog ---- */
+  function computeM4Pages(W, H){
+    var items = orderedItems();
+    var pages = [{ type:'mosaic' }];
+    var i = 0, guard = 0;
+    while (i < items.length && guard++ < 400){
+      var rem = items.slice(i);
+      var rows = packJustified(W, H, rem, { h0:110, onNewCategory:true, countFor:catCount });
+      var consumed = rows.consumed > 0 ? rows.consumed : 1;
+      var lastRow = null;
+      for (var li = rows.length - 1; li >= 0; li--){ if (rows[li].type === 'row'){ lastRow = rows[li]; break; } }
+      if (lastRow && lastRow.y + lastRow.h > H + 0.5) consumed = Math.max(1, consumed - lastRow.count);
+      pages.push({ type:'catalog', start:i, items: rem.slice(0, consumed) });
+      i += consumed;
+    }
+    return pages;
+  }
+
+  function renderM4(){
+    var wrap = el('div','m3wrap');
+    var page = el('div','page');
+    var stage = el('div','jstage');
+    var foot = el('div','jfoot');
+    page.appendChild(stage);
+    page.appendChild(foot);
+    wrap.appendChild(page);
+    wrap.appendChild(buildInfoBand());
+    card.appendChild(wrap);
+    card.appendChild(wstrip());
+
+    var W = stage.clientWidth, H = stage.clientHeight;
+    var pages = computeM4Pages(W, H);
+    pageCount = pages.length;
+    if (pageIndex >= pageCount) pageIndex = pageCount - 1;
+    if (pageIndex < 0) pageIndex = 0;
+    updatePager(pageCount);
+
+    var pg = pages[pageIndex];
+    if (pg.type === 'mosaic'){
+      foot.appendChild(el('span',null,'OVERVIEW \u00b7 ' + allSkins().length + ' SKINS'));
+      foot.appendChild(el('span',null,'PAGE ' + (pageIndex + 1) + ' / ' + pages.length));
+      renderMosaic(stage, W, stage.clientHeight);
+    } else {
+      foot.appendChild(el('span',null, spanNote(pg.items)));
+      foot.appendChild(el('span',null,'PAGE ' + (pageIndex + 1) + ' / ' + pages.length));
+      var rows = packJustified(W, stage.clientHeight, pg.items, { h0:110, onNewCategory:true, countFor:catCount });
+      renderPackedRows(stage, rows, W, { stretchLast: pageIndex === pages.length - 1 });
+    }
+  }
+
+  /* ---- M5 packed category pages + hero row ---- */
+  function buildM5Seq(W){
+    var items = orderedItems();
+    var g = PGAP, a = PASPECT, base = 100;
+    var nB = Math.max(1, Math.floor((W + g) / (a * base + g)));
+    var seq = [];
+    var i = 0;
+    while (i < items.length){
+      var cat = items[i].cat;
+      var j = i;
+      while (j < items.length && items[j].cat === cat) j++;
+      var heroN = Math.min(3, j - i);
+      seq.push({ type:'cathead', cat:cat, heroItems: items.slice(i, i + heroN) });
+      i += heroN;
+      while (i < j){
+        var cnt = Math.min(nB, j - i);
+        seq.push({ type:'row', cat:cat, items: items.slice(i, i + cnt), n:nB });
+        i += cnt;
+      }
+    }
+    return seq;
+  }
+  function m5Units(els){
+    var headers = 0, units = 0;
+    els.forEach(function(e){ if (e.type === 'cathead'){ headers++; units += 2; } else units += 1; });
+    return { headers:headers, units:units, gaps:(els.length - 1) + headers };
+  }
+  function m5SolveH(els, H){
+    var s = m5Units(els);
+    return (H - PHEAD * s.headers - PGAP * s.gaps) / Math.max(1, s.units);
+  }
+  function computeM5Pages(W, H){
+    var seq = buildM5Seq(W);
+    var pages = [{ type:'mosaic' }];
+    var p = 0, guard = 0;
+    while (p < seq.length && guard++ < 400){
+      var els = [], units = 0, headers = 0;
+      while (p < seq.length){
+        var e = seq[p];
+        var nu = units + (e.type === 'cathead' ? 2 : 1);
+        var nh = headers + (e.type === 'cathead' ? 1 : 0);
+        var ne = els.length + 1;
+        var gaps = (ne - 1) + nh;
+        var h = (H - PHEAD * nh - PGAP * gaps) / Math.max(1, nu);
+        if (h < M5HMIN && els.length > 0) break;
+        els.push(e); units = nu; headers = nh; p++;
+      }
+      if (!els.length){ els.push(seq[p]); p++; }
+      pages.push({ type:'packed', els:els });
+    }
+    return pages;
+  }
+  function uniqueCats(els){
+    var out = [];
+    els.forEach(function(e){ if (out.indexOf(e.cat) < 0) out.push(e.cat); });
+    return out;
+  }
+  function renderM5Page(stage, pg, W, H, idx, total){
+    var els = pg.els;
+    var isLast = idx === total - 1;
+    var h = m5SolveH(els, H);
+    if (isLast) h = Math.min(h, 100);
+    var g = PGAP, y = 0;
+    els.forEach(function(e){
+      if (e.type === 'cathead'){
+        var hd = el('div','jhead');
+        hd.style.left = '0px'; hd.style.top = y + 'px';
+        hd.style.width = W + 'px'; hd.style.height = PHEAD + 'px';
+        hd.appendChild(el('span','hn', e.cat));
+        hd.appendChild(el('span','hc', String(catCount(e.cat))));
+        stage.appendChild(hd);
+        y += PHEAD + g;
+        var heroH = 2 * h, m = e.heroItems.length;
+        var w = m > 0 ? (W - (m - 1) * g) / m : W;
+        for (var j = 0; j < m; j++){
+          var it = e.heroItems[j];
+          var t = el('div','jtile');
+          t.dataset.cat = e.cat;
+          t.style.left = (j * (w + g)) + 'px';
+          t.style.top = y + 'px';
+          t.style.width = w + 'px';
+          t.style.height = heroH + 'px';
+          t.style.borderLeftColor = tierColor(it.skin.tier);
+          t.appendChild(makeImg(it.skin.icon, it.skin.name));
+          t.appendChild(lvChip(it.skin.level));
+          if (heroH >= 70) t.appendChild(el('div','tname', it.skin.name));
+          stage.appendChild(t);
+        }
+        y += heroH + g;
+      } else {
+        var m2 = e.items.length;
+        var w2 = (W - (e.n - 1) * g) / e.n;
+        for (var k = 0; k < m2; k++){
+          var it2 = e.items[k];
+          var t2 = el('div','jtile');
+          t2.dataset.cat = e.cat;
+          t2.style.left = (k * (w2 + g)) + 'px';
+          t2.style.top = y + 'px';
+          t2.style.width = w2 + 'px';
+          t2.style.height = h + 'px';
+          t2.style.borderLeftColor = tierColor(it2.skin.tier);
+          t2.appendChild(makeImg(it2.skin.icon, it2.skin.name));
+          t2.appendChild(lvChip(it2.skin.level));
+          if (h >= 70) t2.appendChild(el('div','tname', it2.skin.name));
+          stage.appendChild(t2);
+        }
+        y += h + g;
+      }
+    });
+  }
+  function renderM5(){
+    var wrap = el('div','m3wrap');
+    var page = el('div','page');
+    var head = el('div','m5head');
+    var stage = el('div','jstage');
+    var foot = el('div','jfoot');
+    page.appendChild(head);
+    page.appendChild(stage);
+    page.appendChild(foot);
+    wrap.appendChild(page);
+    wrap.appendChild(buildInfoBand());
+    card.appendChild(wrap);
+    card.appendChild(wstrip());
+
+    var W = stage.clientWidth, H = stage.clientHeight;
+    var pages = computeM5Pages(W, H);
+    pageCount = pages.length;
+    if (pageIndex >= pageCount) pageIndex = pageCount - 1;
+    if (pageIndex < 0) pageIndex = 0;
+    updatePager(pageCount);
+
+    var pg = pages[pageIndex];
+    if (pg.type === 'mosaic'){
+      head.appendChild(el('span',null,'MOSAIC OVERVIEW \u00b7 ' + allSkins().length + ' SKINS'));
+      foot.appendChild(el('span',null,'OVERVIEW'));
+      foot.appendChild(el('span',null,'PAGE ' + (pageIndex + 1) + ' / ' + pages.length));
+      renderMosaic(stage, W, stage.clientHeight);
+    } else {
+      uniqueCats(pg.els).forEach(function(c){
+        var s = el('span');
+        s.appendChild(el('b',null,c.toUpperCase()));
+        s.appendChild(document.createTextNode(' ' + catCount(c)));
+        head.appendChild(s);
+      });
+      foot.appendChild(el('span',null, spanNote(pg.els)));
+      foot.appendChild(el('span',null,'PAGE ' + (pageIndex + 1) + ' / ' + pages.length));
+      renderM5Page(stage, pg, W, stage.clientHeight, pageIndex, pages.length);
+    }
+  }
+
+  /* ---- M6 standalone mosaic ---- */
+  function renderM6(){
+    var wrap = el('div','m6wrap');
+    var stage = el('div','jstage');
+    wrap.appendChild(stage);
+    card.appendChild(wrap);
+    card.appendChild(wstrip());
+    pageCount = 1;
+    if (pageIndex > 0) pageIndex = 0;
+    updatePager(1);
+    renderMosaic(stage, stage.clientWidth, stage.clientHeight);
+  }
+
+  function fit(){
+    var s = Math.min((window.innerWidth - 32) / 1920, (window.innerHeight - 150) / 1080);
+    if (!isFinite(s) || s <= 0) s = 0.1;
+    card.style.transform = 'scale(' + s + ')';
+    sizer.style.width = (1920 * s) + 'px';
+    sizer.style.height = (1080 * s) + 'px';
+  }
+
+  function updatePager(count){
+    pageLabel.textContent = 'PAGE ' + (pageIndex + 1) + ' / ' + count;
+    prevBtn.disabled = pageIndex <= 0;
+    nextBtn.disabled = pageIndex >= count - 1;
+    if (mode === 'm3' || mode === 'm4' || mode === 'm5') pager.removeAttribute('hidden');
+    else pager.setAttribute('hidden','');
+  }
+
+  function updateURL(){
+    var p = new URLSearchParams();
+    p.set('data', dataPreset);
+    p.set('mode', mode);
+    p.set('theme', theme);
+    if (mode === 'm3' || mode === 'm4' || mode === 'm5') p.set('page', String(pageIndex + 1));
+    history.replaceState(null, '', '?' + p.toString());
+  }
+
+  function render(){
+    card.innerHTML = '';
+    panels = [];
+    dataset = generate(dataPreset);
+    totalEl.textContent = 'TOTAL SKINS: ' + allSkins().length;
+
+    applyTheme();
+
+    if (mode === 'm0'){ pageCount = 1; pageIndex = 0; updatePager(1); renderM0(); }
+    else if (mode === 'm1'){ pageCount = 1; pageIndex = 0; updatePager(1); renderM1(); }
+    else if (mode === 'm2'){ pageCount = 1; pageIndex = 0; updatePager(1); renderM2(); }
+    else if (mode === 'm3'){
+      var pages = computePages();
+      pageCount = pages.length;
+      if (pageIndex >= pageCount) pageIndex = pageCount - 1;
+      if (pageIndex < 0) pageIndex = 0;
+      updatePager(pageCount);
+      renderM3(pages);
+    }
+    else if (mode === 'm4') renderM4();
+    else if (mode === 'm5') renderM5();
+    else renderM6();
+
+    fit();
+  }
+
+  function readParams(){
+    var qs = new URLSearchParams(location.search);
+    var d = qs.get('data');
+    if (d && PRESETS[d]) dataPreset = d;
+    var m = qs.get('mode');
+    if (m && /^m[0-6]$/.test(m)) mode = m;
+    var t = qs.get('theme');
+    if (t && CF.cardThemes[t]) theme = t;
+    var pg = parseInt(qs.get('page'), 10);
+    if (!isNaN(pg) && pg >= 1) pageIndex = pg - 1;
+
+    selData.value = dataPreset;
+    selMode.value = mode;
+    selTheme.value = theme;
+  }
+
+  selData.addEventListener('change', function(){ dataPreset = selData.value; pageIndex = 0; updateURL(); render(); });
+  selMode.addEventListener('change', function(){ mode = selMode.value; pageIndex = 0; updateURL(); render(); });
+  selTheme.addEventListener('change', function(){ theme = selTheme.value; updateURL(); render(); });
+  prevBtn.addEventListener('click', function(){ if (pageIndex > 0){ pageIndex--; updateURL(); render(); } });
+  nextBtn.addEventListener('click', function(){ if (pageIndex < pageCount - 1){ pageIndex++; updateURL(); render(); } });
+  window.addEventListener('resize', fit);
+
+  readParams();
+  updateURL();
+  render();
+})();
+</script>
+</body>
+</html>
