@@ -1163,6 +1163,17 @@ function faceInit() {
     });
   }
   if (routeGate && new URLSearchParams(location.search).has('edit')) routeGate.hidden = true;
+  const facePublish = CF.$('facePublish');
+  if (facePublish) facePublish.addEventListener('click', () => {
+    if (face.route === 'art' && !face.blob && !face.existing) {
+      CF.status('Upload the artwork image first.', 'err');
+      return;
+    }
+    const modal = CF.$('faceModal');
+    if (modal) modal.hidden = true;
+    const pub = CF.$('publishBtn');
+    if (pub) pub.click();
+  });
   faceSync();
 }
 
