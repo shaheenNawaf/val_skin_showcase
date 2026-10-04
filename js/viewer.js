@@ -625,7 +625,7 @@ CF.initDisclaimerCollapse();
 CF.initStatusDismiss();
 
 /* ── CF-11/CF-12: listing hero — structured price, seller, status ── */
-const CUR_SYMBOL = { USD: '$', EUR: '€', GBP: '£', JPY: '¥' };
+const CUR_SYMBOL = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', PHP: '₱' };
 function moneyText(price, currency) {
   if (price == null || isNaN(Number(price))) return null;
   const n = Number(price);
@@ -754,6 +754,7 @@ function wireOwnerControls(sb, listing, slug) {
     if (sBtn) sBtn.textContent = listing.status === 'sold' ? 'Relist' : 'Mark sold';
     if (fBtn) { fBtn.textContent = listing.featured_at ? 'Unfeature' : 'Feature'; fBtn.classList.toggle('on', !!listing.featured_at); }
     if (flBtn) flBtn.textContent = listing.fb_post_url ? 'FB link \u2713' : 'FB link';
+    syncMoreGroups();
   };
   const deny = e => /42501|token mismatch/i.test(String((e && e.message) || e))
     ? 'This browser’s edit key was rejected for that action.'
@@ -848,7 +849,7 @@ function wireOwnerControls(sb, listing, slug) {
       pBox.hidden = !pBox.hidden;
       if (!pBox.hidden) {
         CF.$('pbPrice').value = listing.price == null ? '' : String(Number(listing.price));
-        CF.$('pbCurrency').value = listing.currency || 'USD';
+        CF.$('pbCurrency').value = listing.currency || 'PHP';
         CF.$('pbNego').checked = !!listing.negotiable;
       }
     });
@@ -999,6 +1000,22 @@ phoneNativeMq.addEventListener('change', e => {
   }
 });
 
+/* Collapse menu groups whose items are all hidden, so a buyer never sees
+   owner-only labels. viewSwitch is CSS-hidden on phones, so it only counts
+   as group content above 700px. */
+const phoneMoreMQ = window.matchMedia('(max-width:700px)');
+function syncMoreGroups() {
+  document.querySelectorAll('#tbMore .mm-group').forEach(g => {
+    const any = [...g.children].some(el => {
+      if (el.classList.contains('mm-label')) return false;
+      if (el.id === 'viewSwitch') return !phoneMoreMQ.matches;
+      return !el.hidden;
+    });
+    g.hidden = !any;
+  });
+}
+phoneMoreMQ.addEventListener('change', syncMoreGroups);
+
 /* M-C2: ⋯ overflow menu — CF-05 pattern (toggle, outside click, Escape) */
 (function () {
   const btn = CF.$('tbMoreBtn'), menu = CF.$('tbMore');
@@ -1018,6 +1035,7 @@ phoneNativeMq.addEventListener('change', e => {
     if (e.key === 'Escape' && !menu.hidden) setOpen(false);
   });
   menu.querySelectorAll('button, a').forEach(i => i.addEventListener('click', () => setOpen(false)));
+  syncMoreGroups();
 })();
 
 /* Artwork mode: the owner's edited image replaces the interactive card.
@@ -1036,8 +1054,11 @@ function initArtMode(src) {
   const peek = document.createElement('button');
   peek.type = 'button';
   peek.id = 'artPeek';
-  const tb = document.querySelector('.tb-right');
-  if (tb) tb.appendChild(peek);
+  peek.className = 'mm-item';
+  /* lives in the View group of the overflow menu, not loose in the topbar */
+  const peekHost = (vs && vs.closest('.mm-group')) || document.querySelector('.tb-right');
+  if (peekHost) peekHost.appendChild(peek);
+  syncMoreGroups();
   function setArt(on) {
     img.hidden = !on;
     sizer.hidden = on;

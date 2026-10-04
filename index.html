@@ -56,11 +56,11 @@
   <div class="tb-left">
     <span class="logo">cardForge</span>
     <div class="themes" role="group" aria-label="Card theme">
-      <button class="swatch active" data-theme="protocol" style="--sw:#1F2731" title="Protocol" aria-label="Protocol theme" aria-pressed="true"></button>
-      <button class="swatch" data-theme="holo"    style="--sw:#0A1E30" title="Holo"    aria-label="Holo theme" aria-pressed="false"></button>
-      <button class="swatch" data-theme="reaver"  style="--sw:#180F2A" title="Reaver"  aria-label="Reaver theme" aria-pressed="false"></button>
-      <button class="swatch" data-theme="oni"     style="--sw:#31191E" title="Oni"     aria-label="Oni theme" aria-pressed="false"></button>
-      <button class="swatch" data-theme="arctic"  style="--sw:#ECE8E1" title="Arctic"  aria-label="Arctic theme" aria-pressed="false"></button>
+      <button class="swatch active" data-theme="protocol" style="--sw:#1F2731" title="High Ranks" aria-label="High Ranks theme" aria-pressed="true"></button>
+      <button class="swatch" data-theme="holo"    style="--sw:#0A1E30" title="With Champions" aria-label="With Champions theme" aria-pressed="false"></button>
+      <button class="swatch" data-theme="reaver"  style="--sw:#180F2A" title="Latest Skins" aria-label="Latest Skins theme" aria-pressed="false"></button>
+      <button class="swatch" data-theme="oni"     style="--sw:#31191E" title="Budget-friendly" aria-label="Budget-friendly theme" aria-pressed="false"></button>
+      <button class="swatch" data-theme="arctic"  style="--sw:#ECE8E1" title="High Prem" aria-label="High Prem theme" aria-pressed="false"></button>
     </div>
     <select id="layoutSel" title="Card layout" aria-label="Card layout">
       <option value="auto">AUTO</option><option value="m1">TILES</option><option value="m2">SHOWCASE</option><option value="m3">CLASSIC</option>
@@ -78,13 +78,23 @@
     <span class="more-wrap">
       <button id="moreBtn" aria-expanded="false" aria-haspopup="true" aria-controls="moreMenu">More ▾</button>
       <div id="moreMenu" hidden>
-        <a class="mm-item" href="browse.html">Browse listings</a>
-        <a class="mm-item" href="dashboard.html">My accounts</a>
-        <button class="mm-item" id="faceMenuBtn" type="button">Listing face…</button>
-        <button class="mm-item" id="signOutBtn" type="button" hidden>Sign out</button>
-        <button class="mm-item" id="importBtn" type="button">Import account</button>
-        <button class="mm-item" id="loadBtn" type="button">Load draft</button>
-        <button class="mm-item" id="postBtn" type="button">Copy post text</button>
+        <div class="mm-group" role="group" aria-labelledby="mmgMarket">
+          <b class="mm-label" id="mmgMarket">Marketplace</b>
+          <a class="mm-item" href="browse.html">Browse listings</a>
+          <a class="mm-item" href="dashboard.html">My accounts</a>
+        </div>
+        <div class="mm-group" role="group" aria-labelledby="mmgListing">
+          <b class="mm-label" id="mmgListing">This listing</b>
+          <button class="mm-item" id="faceMenuBtn" type="button">Listing face…</button>
+          <button class="mm-item" id="reqMenuBtn" type="button">Requirements…</button>
+          <button class="mm-item" id="postBtn" type="button">Copy post text</button>
+        </div>
+        <div class="mm-group" role="group" aria-labelledby="mmgAccount">
+          <b class="mm-label" id="mmgAccount">Account &amp; data</b>
+          <button class="mm-item" id="importBtn" type="button">Import account</button>
+          <button class="mm-item" id="loadBtn" type="button">Load draft</button>
+          <button class="mm-item" id="signOutBtn" type="button" hidden>Sign out</button>
+        </div>
         <label class="pubswitch"><input type="checkbox" id="showAllCards"> Show my full player-card collection on the published page</label>
       </div>
     </span>
@@ -265,7 +275,7 @@
   <div class="mpanel facepanel">
     <div class="mhead">
       <h2 id="faceTitle">Listing face</h2>
-      <button id="faceClose" aria-label="Close face picker">✕</button>
+      <button id="faceClose" class="mclose" aria-label="Close face picker"><svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M2 2l10 10M12 2 2 12" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
     </div>
     <div class="mbody facebody">
       <p class="fhint">What represents this account on the marketplace and the listing page.</p>
@@ -304,6 +314,23 @@
   </div>
 </div>
 
+<div id="reqModal" hidden role="dialog" aria-modal="true" aria-labelledby="reqTitle">
+  <div class="mpanel">
+    <div class="mhead">
+      <h2 id="reqTitle">Requirements</h2>
+      <button id="reqClose" class="mclose" aria-label="Close requirements picker"><svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M2 2l10 10M12 2 2 12" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
+    </div>
+    <div class="mbody noladder">
+      <p class="fhint">Tag this listing for the marketplace filters — buyers shop by these. No Issue / With Issues write the card's WTR field; Premier Unlinked writes the PREMIER | UNLINKED field.</p>
+      <div class="fseg" id="reqSeg">
+        <button type="button" data-req="noissue" class="on">No Issue</button>
+        <button type="button" data-req="issues">With Issues</button>
+      </div>
+      <label class="ffobo"><input type="checkbox" id="rqPrem"> Premier Unlinked</label>
+    </div>
+  </div>
+</div>
+
 <div id="routeGate" role="dialog" aria-modal="true" aria-labelledby="rgTitle">
   <div class="mpanel rgpanel">
     <div class="mhead">
@@ -333,7 +360,7 @@
       <input id="mSearch" type="text" placeholder="Search skins…  ( / to focus · Enter adds top result · Esc closes )" aria-label="Search skins">
       <button id="mAddOwned" class="chip" hidden>Add all owned</button>
       <button id="mUpload" class="chip" hidden>Upload image…</button>
-      <button id="mClose" aria-label="Close picker">✕</button>
+      <button id="mClose" class="mclose" aria-label="Close picker"><svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M2 2l10 10M12 2 2 12" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
     </div>
     <div class="mbody" id="mBody">
       <div id="mLadder" role="group" aria-label="Tier ladder: click for only that tier, click again for that tier and above, third click clears">
@@ -378,7 +405,7 @@
   <div class="mpanel ipanel">
     <div class="mhead">
       <h2 id="iTitle">Import account — Riot token</h2>
-      <button id="iClose" aria-label="Close import">✕</button>
+      <button id="iClose" class="mclose" aria-label="Close import"><svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M2 2l10 10M12 2 2 12" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
     </div>
     <p class="inote">Paste your Riot <strong>access token</strong> (a JWT starting with <code>eyJ…</code>). You can also paste the full <strong>opt_in redirect URL</strong> — but copy it immediately, the <code>#access_token=…</code> part is stripped from the address bar within seconds — or the <strong>JSON</strong> from the local client's entitlements endpoint; the token (and entitlement) are picked out automatically. Paste just the access token — CardForge fetches the entitlements token for you automatically. Add one manually below only if auto-fetch fails.</p>
     <p class="inote">From a single paste CardForge imports level, rank, balances, your equipped player card and buddies, plus your owned skins, variants, buddies and cards, and unlocks an “Owned” filter in the skin, buddy and player-card pickers.</p>

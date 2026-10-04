@@ -232,7 +232,7 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 }
 
 /* uniform topbar controls: one notched shape, one type scale */
-#viewSwitch button,#topbar #copyLinkBtn,#topbar a.tb-link,#viewBadge{
+#viewSwitch button,#topbar #copyLinkBtn,#topbar a.tb-link,#viewBadge,#topbar #editBtn{
   background:transparent;border:1px solid var(--c-line);color:var(--c-mut);
   font:700 9px 'Chakra Petch',sans-serif;letter-spacing:.14em;text-transform:uppercase;
   padding:7px 12px;cursor:pointer;height:28px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
@@ -241,6 +241,11 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 #viewSwitch button[aria-pressed=true]{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
 #viewBadge{display:inline-flex;align-items:center;gap:7px;cursor:default}
 #viewBadge svg{width:12px;height:12px;flex:none}
+/* the owner's way back in is second-in-command: accent tier, inline */
+#topbar #editBtn{border-color:color-mix(in srgb,var(--c-accent) 45%,var(--c-line));color:var(--c-accent)}
+#topbar #editBtn:hover{border-color:var(--c-accent);color:var(--c-accent);background:transparent}
+/* author display rules beat the UA [hidden] — re-assert or the hidden attr leaks */
+#topbar #editBtn[hidden]{display:none}
 
 /* collapsible hero — collapsed = one slim line: name … status + contact */
 #vheroToggle{background:transparent;border:1px solid var(--c-line);color:var(--c-mut);width:28px;height:28px;
@@ -263,22 +268,40 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
   clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 #vheroToggle{width:28px;padding:0}
 
-/* ── M-C2: phone chrome + desktop placement for the moved controls ──── */
-/* >700px: the controls moved into #tbMore render inline exactly as before */
-#tbMoreBtn{display:none}
-#tbMore{position:static;display:flex!important;flex-direction:row;align-items:center;gap:10px;background:transparent;border:none;padding:0;min-width:0}
-
+/* ── M-C2: overflow menu — a real grouped dropdown at every width ────
+   Owner view used to flatten all twelve controls into one inline row;
+   now the bar keeps badge + Editor + More, and the rest live in groups. */
+#vchrome .tb-right{position:relative}
+#vchrome #tbMoreBtn{background:transparent;border:1px solid var(--c-line);color:var(--c-mut);height:28px;padding:0 10px;
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;box-sizing:border-box;
+  font:700 9px 'Chakra Petch',sans-serif;letter-spacing:.14em;text-transform:uppercase;
+  clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+#vchrome #tbMoreBtn:hover{color:var(--c-ink);border-color:var(--c-mut)}
+#tbMoreBtn .tbm-word{display:none}
+@media (min-width:701px){#tbMoreBtn .tbm-dots{display:none}#tbMoreBtn .tbm-word{display:inline}}
+#tbMore{position:absolute;top:calc(100% + 6px);right:0;z-index:40;min-width:230px;background:var(--c-surface);
+  border:1px solid var(--c-line);box-shadow:0 14px 34px rgba(0,0,0,.5);padding:4px 0;
+  clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+#tbMore[hidden]{display:none}
+#tbMore .mm-group{padding:4px 0;border-top:1px solid var(--c-line-soft)}
+#tbMore .mm-group:first-child{border-top:0}
+#tbMore .mm-group[hidden]{display:none}
+#tbMore .mm-label{display:block;font:600 9px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--c-mut);padding:6px 12px 5px}
+#vchrome #tbMore .mm-item{display:flex;width:100%;height:auto;min-height:34px;align-items:center;justify-content:flex-start;
+  background:transparent;border:0;color:var(--c-ink);font:700 11px var(--font-display);letter-spacing:.12em;text-transform:uppercase;
+  padding:9px 12px;cursor:pointer;text-decoration:none;clip-path:none}
+#vchrome #tbMore .mm-item:hover{background:var(--c-surface2);color:var(--c-accent)}
+#vchrome #tbMore .mm-item[hidden]{display:none}
+#vchrome #tbMore #deleteBtn:hover{color:var(--red);background:var(--c-surface2)}
+#tbMore #viewSwitch{padding:6px 12px}
+#viewSwitch[hidden]{display:none}
 @media (max-width:700px){
   #vhero{display:none}
   #viewSwitch{display:none!important}
   #vchrome #topbar{position:relative;flex-wrap:nowrap;min-height:0;height:52px;padding:6px 10px}
   .tb-left{flex:none;width:auto}
   .tb-right{flex:1;min-width:0;flex-wrap:nowrap;justify-content:flex-end;gap:6px;width:auto}
-  #vchrome #tbMoreBtn{background:transparent;border:1px solid var(--c-line);color:var(--c-mut);width:32px;height:28px;display:inline-flex;align-items:center;justify-content:center;font:700 13px 'Chakra Petch',sans-serif;cursor:pointer;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
-  #vchrome #tbMoreBtn:hover{color:var(--c-ink);border-color:var(--c-mut)}
-  #tbMore{position:absolute;top:calc(100% + 6px);right:10px;display:flex;flex-direction:column;gap:6px;background:var(--c-surface2);border:1px solid var(--c-line);padding:8px;z-index:40;min-width:190px}
-  #tbMore[hidden]{display:none!important}
-  #tbMore .tb-link,#tbMore #copyLinkBtn,#tbMore #editBtn{display:inline-flex;width:100%;height:40px;justify-content:center}
+  #vchrome #tbMore .mm-item{min-height:40px}
   #viewBadge{padding:4px 9px;font-size:10.5px;letter-spacing:.06em}
 }
 
@@ -315,7 +338,7 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 padding:10px 12px;font:600 10px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;text-decoration:none;
 clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 .ma-fb[hidden]{display:none}
-#tbMore button.on{border-color:#ffc45e;color:#ffc45e}
+#vchrome #tbMore .mm-item.on{color:#ffc45e}
 
 /* ── artwork mode: owner's edited image as the card face ── */
 .art-img{display:block;width:100%;height:auto;margin:12px 0 24px}

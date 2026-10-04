@@ -844,9 +844,16 @@ function applyImport(j) {
 }
 
 document.addEventListener('keydown', e => {
-  if (!importModal.hidden && e.key === 'Escape') { importModal.hidden = true; return; }
+  if (e.key === 'Escape') {
+    if (!importModal.hidden) { importModal.hidden = true; return; }
+    const fm = CF.$('faceModal');
+    if (fm && !fm.hidden) { fm.hidden = true; return; }
+    const rq = CF.$('reqModal');
+    if (rq && !rq.hidden) { rq.hidden = true; return; }
+    if (!modal.hidden) { closeModal(); return; }
+    return;
+  }
   if (modal.hidden) return;
-  if (e.key === 'Escape') { closeModal(); return; }
   if (e.key === '/' && document.activeElement !== mSearch) { e.preventDefault(); mSearch.focus(); }
   if (e.key === 'Tab') {
     const focusables = [...modal.querySelectorAll('button,input')].filter(el => el.offsetParent !== null);
@@ -855,6 +862,24 @@ document.addEventListener('keydown', e => {
     if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   }
+});
+
+/* Clicking the dimmed backdrop (outside the panel) cancels, same as Esc.
+   The press must start AND end on the backdrop so text-dragging inside the
+   panel and releasing outside never closes it. routeGate stays choice-locked:
+   a new card has to pick artwork or normal, so it gets no cancel path. */
+[['modal', () => closeModal()],
+ ['faceModal', el => { el.hidden = true; }],
+ ['reqModal', el => { el.hidden = true; }],
+ ['importModal', el => { el.hidden = true; }]].forEach(([id, close]) => {
+  const ov = CF.$(id);
+  if (!ov) return;
+  let downOnBackdrop = false;
+  ov.addEventListener('pointerdown', e => { downOnBackdrop = e.target === ov; });
+  ov.addEventListener('click', e => {
+    if (downOnBackdrop && e.target === ov) close(ov);
+    downOnBackdrop = false;
+  });
 });
 
 function recountStats() {
@@ -1252,6 +1277,51 @@ function refreshLayout() {
     if (e.key === 'Escape' && !menu.hidden) { setOpen(false); btn.focus(); }
   });
   menu.querySelectorAll('.mm-item').forEach(i => i.addEventListener('click', () => setOpen(false)));
+})();
+
+/* Requirements picker — overlay modal, no layout impact. No Issue / With Issues
+   write the card's WTR field; Premier Unlinked writes vlink. Marketplace
+   filters read exactly those (browse.js normalize()). */
+(function () {
+  const modal = CF.$('reqModal');
+  const btn = CF.$('reqMenuBtn');
+  if (!modal || !btn) return;
+
+  function fieldText(k) {
+    if (state.texts[k] != null && state.texts[k] !== '') return String(state.texts[k]);
+    const el = card.querySelector('[data-key="' + k + '"]');
+    return el ? el.textContent : '';
+  }
+  function setField(k, v) {
+    state.texts[k] = v;
+    const el = card.querySelector('[data-key="' + k + '"]');
+    if (el) el.textContent = v;
+    const input = document.querySelector('#formMode input[data-fkey="' + k + '"]');
+    if (input) input.value = v;
+  }
+  function sync() {
+    const wtr = fieldText('wtr');
+    const vlink = fieldText('vlink');
+    const no = /yes/i.test(wtr);
+    const issues = /no/i.test(wtr);
+    document.querySelectorAll('#reqSeg button').forEach(b => {
+      b.classList.toggle('on', b.dataset.req === 'noissue' ? no : issues);
+    });
+    const prem = CF.$('rqPrem');
+    if (prem) prem.checked = /unlinked/i.test(vlink);
+  }
+
+  btn.addEventListener('click', () => { modal.hidden = false; sync(); });
+  const close = CF.$('reqClose');
+  if (close) close.addEventListener('click', () => { modal.hidden = true; });
+  document.querySelectorAll('#reqSeg button').forEach(b => {
+    b.addEventListener('click', () => {
+      setField('wtr', b.dataset.req === 'noissue' ? 'WTR: YES' : 'WTR: NO');
+      sync();
+    });
+  });
+  const prem = CF.$('rqPrem');
+  if (prem) prem.addEventListener('change', () => { setField('vlink', prem.checked ? 'UNLINKED' : 'LINKED'); });
 })();
 
 /* TT-110 / FM: relocate live topbar nodes (never clone) to fit each width band.

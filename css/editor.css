@@ -1,10 +1,15 @@
 /* ── CardForge editor-only styles: theme swatches, picker modal ── */
 
-/* theme swatches */
+/* theme swatches — compact chips in the topbar, labeled tiles in menu/form */
 .themes{display:flex;gap:7px;margin-left:6px}
-.swatch{width:26px;height:14px;background:var(--sw);border:1px solid var(--c-line-soft);cursor:pointer;transform:skewX(-18deg)}
+.swatch{width:34px;height:22px;background:var(--sw);border:1px solid var(--c-line);cursor:pointer;transform:skewX(-18deg);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
 .swatch:hover{border-color:var(--c-ink)}
-.swatch.active{box-shadow:0 0 0 2px var(--c-accent)}
+.swatch.active{box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 0 0 2px var(--c-accent)}
+/* #topbar button chrome (transparent background, padding, chamfer, min-height)
+   out-specifies .swatch and was erasing the theme fills — re-assert at ID level */
+#topbar button.swatch,#topbar button.swatch:hover{width:34px;height:22px;min-height:0;padding:0;background:var(--sw);border:1px solid var(--c-line);clip-path:none}
+#topbar button.swatch:hover{border-color:var(--c-ink)}
 
 /* clickable card uploads get a hover cue (editor only) */
 [data-upload]{cursor:pointer}
@@ -20,8 +25,8 @@
 .rankrow .pickrank{margin-left:0}
 
 /* ── fast-add picker modal ─────────────────────────────────────── */
-#modal,#importModal,#faceModal,#routeGate{position:fixed;inset:0;background:var(--c-veil);backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;z-index:50;padding:12px}
-#modal[hidden],#importModal[hidden],#faceModal[hidden],#routeGate[hidden]{display:none}
+#modal,#importModal,#faceModal,#routeGate,#reqModal{position:fixed;inset:0;background:var(--c-veil);backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;z-index:50;padding:12px}
+#modal[hidden],#importModal[hidden],#faceModal[hidden],#routeGate[hidden],#reqModal[hidden]{display:none}
 .mpanel{width:min(1250px,100%);max-height:88vh;background:var(--c-surface2);border:1px solid var(--c-line);display:flex;flex-direction:column;padding:16px;
 clip-path:polygon(0 0,calc(100% - var(--notch-lg)) 0,100% var(--notch-lg),100% 100%,var(--notch-lg) 100%,0 calc(100% - var(--notch-lg)))}
 #modal.variant-wide .mpanel{width:min(1750px,100%)}
@@ -31,8 +36,10 @@ clip-path:polygon(0 0,calc(100% - var(--notch-lg)) 0,100% var(--notch-lg),100% 1
 .mcount{color:var(--c-mut);font-size:12px;letter-spacing:.1em}
 #mSearch{flex:1;min-width:180px;background:var(--c-bg);border:1px solid var(--c-line);color:var(--c-ink);padding:9px 12px;font:600 14px var(--font-ui)}
 #mSearch:focus-visible{box-shadow:inset 0 0 0 2px var(--c-accent)}
-#mClose{background:none;border:none;color:var(--c-mut);font-size:18px;cursor:pointer;padding:4px 8px}
-#mClose:hover{color:var(--c-accent)}
+.mclose{margin-left:auto;background:none;border:none;color:var(--c-mut);cursor:pointer;padding:6px;display:inline-flex;align-items:center;justify-content:center;line-height:0}
+.mclose:hover{color:var(--c-accent)}
+.mclose svg{width:13px;height:13px;display:block}
+#reqModal .mpanel{width:min(420px,100%)}
 .mfilters{display:flex;flex-direction:column;gap:7px;margin-bottom:0}
 .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
 .chip{flex:0 0 auto;background:var(--c-surface);border:1px solid var(--c-line-soft);color:var(--c-mut);padding:5px 12px;font:600 11px var(--font-ui);letter-spacing:.08em;cursor:pointer;text-transform:uppercase;
@@ -165,6 +172,11 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
   text-decoration:none}
 #moreMenu .mm-item:hover{background:var(--c-surface2);color:#fff}
 #moreMenu a.mm-item:hover{color:var(--c-accent)}
+/* function-type groups: micro label + hairline separator so items read as
+   clusters instead of one undifferentiated stack */
+#moreMenu .mm-group{padding:4px 0;border-top:1px solid var(--c-line-soft)}
+#moreMenu .mm-group:first-child{border-top:0;padding-top:6px}
+#moreMenu .mm-label{display:block;font:600 9px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--c-mut);padding:6px 12px 5px}
 
 #layoutSel{background:var(--c-surface);border:1px solid var(--c-line);color:var(--c-mut);font:600 10px 'Chakra Petch',sans-serif;letter-spacing:.14em;padding:7px 6px;cursor:pointer}
 #layoutSel:focus-visible{box-shadow:inset 0 0 0 2px var(--c-accent)}
@@ -175,16 +187,33 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
   #topbar .themes{gap:4px}                          /* TT-44: tight row so swatches don't wrap the topbar */
   #moreBtn{min-height:40px}
   #moreMenu{max-width:calc(100vw - 24px)}
-  #moreMenu .mm-item{min-height:44px;display:flex;align-items:center}
+  #moreMenu .mm-item{min-height:44px;display:flex;align-items:center;justify-content:flex-start}
   #moreMenu .pubswitch{min-height:44px}
   /* TT-110: two rows — left nowrap (logo/SELECT/badge), right nowrap (4 actions) */
   #topbar .tb-left,#topbar .tb-right{flex-wrap:nowrap}
+  /* action row as a 2×2 grid instead of a flushed-left content-sized flex row:
+     filled primary + accent secondary on top, ghost utilities below */
+  #topbar .tb-right{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  #topbar .tb-right #exportBtn{grid-area:1/1}
+  #topbar .tb-right #publishBtn{grid-area:1/2}
+  #topbar .tb-right #saveBtn{grid-area:2/1}
+  #topbar .tb-right .more-wrap{grid-area:2/2}
+  #topbar .tb-right button{min-height:44px}
+  #topbar .tb-right .more-wrap #moreBtn{width:100%}
+  /* the accent tier must read as second-in-command at rest, not as a ghost */
+  #topbar #publishBtn{border-color:color-mix(in srgb,var(--c-accent) 45%,var(--c-line-soft));color:var(--c-accent)}
   #layoutSel{font-size:10px;padding:6px 8px;min-height:40px;max-width:90px}
   #layoutBadge{font-size:9px;padding:4px 6px;letter-spacing:.06em;white-space:nowrap}
   /* TT-110: swatches reparented into the More menu — labeled row, wrap allowed */
-  #moreMenu .themes{display:flex;flex-wrap:wrap;gap:6px;padding:4px 2px 8px;margin-bottom:4px;border-bottom:1px solid var(--c-line-soft);width:100%}
-  #moreMenu .themes::before{content:"CARD THEME";flex:0 0 100%;font:600 9px var(--font-ui);letter-spacing:.16em;color:var(--c-mut);padding:2px}
-  #moreMenu .swatch{width:44px;min-width:44px;height:32px;min-height:32px}
+  #moreMenu .themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px;padding:4px 8px 10px;width:100%}
+  #moreMenu .themes::before{content:"CARD THEME";grid-column:1/-1;font:600 9px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--c-mut);padding:6px 4px 0}
+  /* labeled tiles — color chip + name, so themes are recognizable, not guessable */
+  #moreMenu button.swatch{width:auto;min-width:0;height:auto;min-height:44px;padding:7px 7px 6px;display:flex;flex-direction:column;justify-content:center;gap:6px;background:var(--c-surface2);border:1px solid var(--c-line-soft);transform:none;clip-path:none;box-shadow:none}
+  #moreMenu button.swatch::before{content:"";flex:none;height:18px;background:var(--sw);transform:skewX(-18deg);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+  #moreMenu button.swatch::after{content:attr(title);font:600 8.5px/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--c-mut);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #moreMenu button.swatch:hover{border-color:var(--c-mut);background:var(--c-surface2)}
+  #moreMenu button.swatch.active{border-color:var(--c-accent);box-shadow:0 0 0 1px var(--c-accent)}
+  #moreMenu button.swatch.active::after{color:var(--c-ink)}
 }
 
 /* FM: phone form mode — base off everywhere; ≤700 media turns it on */
@@ -199,9 +228,9 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
   body.stage-peek #stage{transform:none;pointer-events:auto}
   #topbar #formPrevBtn{display:inline-flex;align-items:center;margin-left:auto;min-height:40px;padding:6px 10px;font:700 10px var(--font-ui);letter-spacing:.08em;text-transform:uppercase;background:transparent;border:1px solid var(--c-line);color:var(--c-ink);cursor:pointer;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
   #formPrevBtn:hover{border-color:var(--c-mut)}
-  #fnav{position:sticky;top:0;z-index:8;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:9px 12px 7px;background:var(--c-bg);box-shadow:0 6px 8px -8px rgba(0,0,0,.7)}
+  #fnav{position:sticky;top:0;z-index:8;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:9px 12px 7px;background:var(--c-bg);box-shadow:0 6px 8px -8px rgba(0,0,0,.7)}
   #fnav::-webkit-scrollbar{display:none}
-  .fnav-chip{flex:none;background:transparent;border:1px solid var(--c-line);color:var(--c-mut);font:700 9.5px 'Chakra Petch';letter-spacing:.12em;text-transform:uppercase;padding:11px 12px;min-height:40px;cursor:pointer;white-space:nowrap;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+  .fnav-chip{flex:1 0 auto;background:transparent;border:1px solid var(--c-line);color:var(--c-mut);font:700 9.5px 'Chakra Petch';letter-spacing:.12em;text-transform:uppercase;padding:11px 10px;min-height:40px;cursor:pointer;white-space:nowrap;text-align:center;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
   .fnav-chip[aria-current=true]{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
   #fhero{margin:10px 12px;padding:10px 12px;background:linear-gradient(180deg,var(--card1),var(--card2));border:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,var(--notch) 100%,0 calc(100% - var(--notch)))}
   #fhero b{font:800 14px var(--font-display);letter-spacing:.04em;color:var(--ink)}
@@ -263,8 +292,12 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
   .fbuddy img{width:100%;height:100%;object-fit:contain}
   .fbuddy .x{position:absolute;top:2px;right:2px;width:18px;height:18px;background:var(--c-veil);border:1px solid var(--line);color:var(--c-ink);font:700 10px/1 'Chakra Petch';display:flex;align-items:center;justify-content:center;cursor:pointer}
   .flookrow{display:flex;gap:8px;align-items:center}
-  #fThemeSlot .themes{display:flex;flex-wrap:wrap;gap:8px}
-  #fThemeSlot .swatch{width:44px;min-width:44px;height:32px;min-height:32px}
+  #fThemeSlot .themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+  #fThemeSlot .swatch{width:auto;min-width:0;height:auto;min-height:44px;padding:7px 7px 6px;display:flex;flex-direction:column;justify-content:center;gap:6px;background:var(--c-surface2);border:1px solid var(--c-line-soft);transform:none;box-shadow:none}
+  #fThemeSlot .swatch::before{content:"";flex:none;height:18px;background:var(--sw);transform:skewX(-18deg);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+  #fThemeSlot .swatch::after{content:attr(title);font:600 8.5px/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--c-mut);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #fThemeSlot .swatch.active{border-color:var(--c-accent);box-shadow:0 0 0 1px var(--c-accent)}
+  #fThemeSlot .swatch.active::after{color:var(--c-ink)}
   #fLayoutSlot{display:flex;flex:1;min-width:0}
   #fLayoutSlot #layoutSel{flex:1;min-height:44px;font-size:11px;max-width:none}
   #fBadgeSlot{display:flex;align-items:center}
@@ -298,15 +331,21 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 
 /* ── listing face: auto card vs edited artwork ── */
 .fhint{margin:0 0 10px;font-size:12px;color:var(--c-mut)}
+/* dashboard.css styles .tf-hint but the editor doesn't load it — without this
+   the publish hint falls back to the 16px body default and breaks the modal type scale */
+.tf-hint{font:500 11px/1.5 var(--font-ui);color:var(--c-mut);letter-spacing:.04em}
 .fseg{display:flex;gap:6px;flex-wrap:wrap}
 .fseg button{background:transparent;border:1px solid var(--c-line-soft);color:var(--c-mut);padding:7px 12px;font:600 11px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 .fseg button:hover{border-color:var(--c-mut);color:var(--c-ink)}
 .fseg button.on{border-color:var(--c-accent);color:var(--c-ink)}
 #faceArt{display:flex;flex-direction:column;gap:10px;margin-top:10px}
-.faceup{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.faceup{display:flex;flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap}
 #facePrev{width:96px;height:54px;object-fit:cover;background:var(--c-bg);border:1px solid var(--c-line)}
 .facepanel{width:min(560px,100%)}
 .facebody{display:flex;flex-direction:column;gap:12px;overflow:visible}
+/* these toggled blocks set display in author CSS, which beats the UA
+   [hidden]{display:none} rule — re-assert hidden or faceSync's toggling leaks */
+#faceArt[hidden],#faceFields[hidden],#faceModeSeg[hidden],#faceRemove[hidden]{display:none}
 #faceModal .fbtn{background:transparent;border:1px solid var(--c-line-soft);color:var(--c-mut);padding:7px 12px;font:600 11px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 #faceModal .fbtn:hover{border-color:var(--c-mut);color:var(--c-ink)}
 #facePrev{width:96px;height:54px;object-fit:cover;flex:none}
