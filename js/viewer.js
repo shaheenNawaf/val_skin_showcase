@@ -1045,6 +1045,7 @@ function initArtMode(src) {
     if (vs) vs.style.display = on ? 'none' : '';
     peek.textContent = on ? 'Interactive card' : 'Artwork';
     peek.setAttribute('aria-pressed', String(!on));
+    window.dispatchEvent(new window.Event('resize'));
   }
   function exitArt() {
     setArt(false);

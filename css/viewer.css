@@ -319,3 +319,4 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 
 /* ── artwork mode: owner's edited image as the card face ── */
 .art-img{display:block;width:100%;height:auto;margin:12px 0 24px}
+.art-img[hidden]{display:none}
