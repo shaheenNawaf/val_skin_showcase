@@ -125,6 +125,11 @@ function firstPick(row) {
   return null;
 }
 
+function rowThumb(row) {
+  const th = row.payload && row.payload.thumb;
+  return (th && typeof th.src === 'string' && th.src.startsWith('https://')) ? th : null;
+}
+
 function priceText(row) {
   if (row.price == null) return 'No price set';
   const sym = SYM[row.currency] || (row.currency ? row.currency + ' ' : '$');
@@ -183,13 +188,15 @@ function rowHTML(row) {
     acts.push(actBtn('price', 'Price'));
     acts.push(actBtn('fbpost', 'Copy FB post'));
     acts.push(actBtn('fblink', row.fb_post_url ? 'FB link ✓' : 'FB link'));
+    acts.push(actBtn('thumb', rowThumb(row) ? 'Thumb ✓' : 'Thumb'));
     acts.push(actBtn('copylink', 'Copy link'));
     acts.push(actBtn('archive', row.archived ? 'Unarchive' : 'Archive'));
     acts.push(actBtn('delete', 'Delete', 'danger'));
   }
 
   const pick = firstPick(row);
-  const thumb = pick ? esc(pick) : AVATAR_PLACEHOLDER;
+  const ct = rowThumb(row);
+  const thumb = ct ? esc(ct.src) : (pick ? esc(pick) : AVATAR_PLACEHOLDER);
 
   return '<article class="drow" data-slug="' + esc(row.slug) + '">'
     + '<img class="dthumb" src="' + thumb + '" alt="" loading="lazy" ' + IMGERR + '>'
@@ -304,6 +311,74 @@ function togglePriceForm(rowEl, row) {
   });
 }
 
+// ── thumbnail picker ──────────────────────────────────────────────
+async function saveThumb(row, thumb) {
+  const payload = Object.assign({}, row.payload || {});
+  if (thumb) payload.thumb = thumb; else delete payload.thumb;
+  const h = await hashToken(localStorage.getItem('vc-edit-' + row.slug) || '');
+  const { error } = await supabase.rpc('update_listing', {
+    p_slug: row.slug, p_edit_token_hash: h, p_payload: payload, p_theme: row.theme || 'protocol'
+  });
+  if (error) throw error;
+}
+
+function thumbFormHTML(row) {
+  const cur = rowThumb(row);
+  const picks = Object.values((row.payload && row.payload.picks) || {}).filter(Array.isArray).flat()
+    .filter(p => p && (p.icon || p.img)).slice(0, 12);
+  const btns = picks.map(p =>
+    '<button type="button" class="tf-pick" data-src="' + esc(p.icon || p.img) + '" data-label="' + esc(p.name || '') + '" title="' + esc(p.name || '') + '">'
+    + '<img src="' + esc(p.icon || p.img) + '" alt="" loading="lazy"></button>').join('');
+  const urlVal = (cur && cur.label === '') ? esc(cur.src) : '';
+  return '<form class="thumbForm">'
+    + '<span class="tf-label">Card thumbnail — pick a skin, or paste an image URL</span>'
+    + (btns ? '<div class="tf-picks">' + btns + '</div>' : '')
+    + '<div class="tf-row"><input type="url" class="tf-url" placeholder="https://example.com/cover.jpg" value="' + urlVal + '"><button type="button" data-t="set">Set URL</button></div>'
+    + '<div class="tf-row"><button type="button" data-t="auto">Auto (default)</button><button type="button" data-t="cancel">Cancel</button></div>'
+    + '</form>';
+}
+
+function toggleThumbForm(rowEl, row) {
+  const info = rowEl.querySelector('.dinfo');
+  const existing = info.querySelector('.thumbForm');
+  if (existing) { existing.remove(); return; }
+  const meta = info.querySelector('.dmeta');
+  if (!meta) return;
+  meta.insertAdjacentHTML('afterend', thumbFormHTML(row));
+  const form = info.querySelector('.thumbForm');
+
+  form.addEventListener('submit', ev => ev.preventDefault());
+
+  form.addEventListener('click', ev => {
+    const pick = ev.target.closest('.tf-pick');
+    if (pick) {
+      runAction(rowEl, 'Thumb', async () => {
+        await saveThumb(row, { src: pick.dataset.src, label: pick.dataset.label });
+        status('Card thumbnail updated — the marketplace now shows it.', 'ok');
+      });
+      return;
+    }
+    const b = ev.target.closest('button[data-t]');
+    if (!b) return;
+    if (b.dataset.t === 'cancel') { form.remove(); return; }
+    if (b.dataset.t === 'set') {
+      const v = form.querySelector('.tf-url').value.trim();
+      if (!/^https:\/\//i.test(v)) { status('Enter a full https:// image URL.', 'err'); return; }
+      runAction(rowEl, 'Set URL', async () => {
+        await saveThumb(row, { src: v, label: '' });
+        status('Card thumbnail updated — the marketplace now shows it.', 'ok');
+      });
+      return;
+    }
+    if (b.dataset.t === 'auto') {
+      runAction(rowEl, 'Auto', async () => {
+        await saveThumb(row, null);
+        status('Thumbnail reset to automatic.', 'ok');
+      });
+    }
+  });
+}
+
 // ── action dispatch ───────────────────────────────────────────────
 function wireActions() {
   $('rows').addEventListener('click', e => {
@@ -327,6 +402,8 @@ function wireActions() {
     }
 
     if (act === 'price') { togglePriceForm(rowEl, row); return; }
+
+    if (act === 'thumb') { toggleThumbForm(rowEl, row); return; }
 
     if (act === 'sold') {
       const marking = row.status !== 'sold';

@@ -148,7 +148,10 @@ function normalize(r) {
     seller: { name: r.tag || ((r.vlogin && r.vlogin !== 'RIOT ID') ? r.vlogin : '') || r.slug },
     vlogin: r.vlogin || '',
     link: (r.link || '').trim(),
-    picks: r.picks_top || {}
+    picks: r.picks_top || {},
+    thumb: (typeof r.thumb_src === 'string' && r.thumb_src.startsWith('https://'))
+      ? { src: r.thumb_src, label: r.thumb_label || '' }
+      : null
   };
 }
 
@@ -343,11 +346,15 @@ function cardHTML(l, i) {
   const priceCell = l.price == null
     ? '<span class="gc-offer">CONTACT FOR PRICE</span>' + (l.negotiable ? '<span class="gc-neg">open to offers</span>' : '')
     : price;
+  const cover = l.thumb
+    ? '<img class="gc-cover" src="' + esc(l.thumb.src) + '" alt="" loading="lazy" ' + IMGERR + '>'
+    : '';
   return '<button type="button" class="gcard" data-slug="' + esc(l.slug) + '" data-i="' + i + '">'
     + '<div class="gc-preview tt-' + tierFor(l) + '"' + arctic + ' data-imgwrap>'
+    + cover
     + '<span class="gc-badges">' + badgesGrid(l) + '</span>'
     + '<span class="gc-theme">' + esc(t.label) + '</span>'
-    + previewInner(l, state.style)
+    + (l.thumb ? '' : previewInner(l, state.style))
     + '</div>'
     + '<div class="gc-body">'
     + '<h2>' + esc(entryTitle(l)) + '</h2>'
@@ -366,8 +373,11 @@ function rowHTML(l) {
   const rn = l.rankNow;
   const rp = l.rankPeak;
   const icons = flattenPicks(l, FEATURE_ORDER).slice(0, 2).map(pickIconWrap).join('');
+  const thumbInner = l.thumb
+    ? '<img class="lr-cover" src="' + esc(l.thumb.src) + '" alt="" loading="lazy" ' + IMGERR + '>'
+    : '<div class="lc-icons">' + icons + '</div>';
   return '<button type="button" class="arow" data-slug="' + esc(l.slug) + '">'
-    + '<div class="lr-thumb" data-imgwrap><div class="lc-icons">' + icons + '</div></div>'
+    + '<div class="lr-thumb" data-imgwrap>' + thumbInner + '</div>'
     + '<div class="lr-main"><div class="lr-title"><h2>' + esc(entryTitle(l)) + '</h2><span class="lr-badges">' + badgesGrid(l) + '</span></div></div>'
     + '<div class="lr-ranks"><div class="r">' + rankImg(rn) + '<span>' + esc(rn.name) + '</span></div><div class="r">' + rankImg(rp) + '<span class="pk">PEAK ' + esc(rp.name) + '</span></div></div>'
     + '<div class="lr-chips">' + chipsList(l) + '</div>'

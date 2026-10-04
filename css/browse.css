@@ -329,3 +329,7 @@ img[data-imgfail]{border:1px dashed var(--c-line);box-sizing:border-box}
 ::-webkit-scrollbar-thumb{background:var(--c-line)}
 ::-webkit-scrollbar-thumb:hover{background:var(--c-accent)}
 html{scrollbar-width:thin;scrollbar-color:var(--c-line) transparent}
+
+/* ── owner-set card thumbnail (optional cover over the mini-mosaic) ── */
+.gc-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.lr-cover{width:100%;height:100%;object-fit:cover;display:block}

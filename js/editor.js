@@ -1077,7 +1077,8 @@ function buildPayload() {
     picks: state.picks,
     assets: state.assets,
     owned: state.owned,
-    ownedLevels: state.ownedLevels, ownedVariants: state.ownedVariants, ownedBuddies: state.ownedBuddies, ownedCards: state.ownedCards
+    ownedLevels: state.ownedLevels, ownedVariants: state.ownedVariants, ownedBuddies: state.ownedBuddies, ownedCards: state.ownedCards,
+    ...(state.thumb ? { thumb: state.thumb } : {})
   };
 }
 
@@ -1665,7 +1666,8 @@ async function initEditMode() {
     picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, p.picks?.[c] || []])),
     assets: Object.assign({ avatar: null, pcard: null, buddies: [] }, p.assets),
     owned: p.owned || {},
-    ownedLevels: p.ownedLevels || {}, ownedVariants: p.ownedVariants || [], ownedBuddies: p.ownedBuddies || [], ownedCards: p.ownedCards || []
+    ownedLevels: p.ownedLevels || {}, ownedVariants: p.ownedVariants || [], ownedBuddies: p.ownedBuddies || [], ownedCards: p.ownedCards || [],
+    thumb: p.thumb || null
   });
   if (CF.$('showAllCards')) CF.$('showAllCards').checked = !!state.showAllCards;
   renderFromState();

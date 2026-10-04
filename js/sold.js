@@ -49,6 +49,9 @@ function cardHTML(r) {
   const thumbs = picks.filter(p => p.icon || p.img).slice(0, 3)
     .map(p => '<img loading="lazy" src="' + esc(p.icon || p.img) + '" alt="' + esc(p.name || '') + '" ' + IMGERR + '>')
     .join('');
+  const cover = (typeof r.thumb_src === 'string' && r.thumb_src.startsWith('https://'))
+    ? '<img loading="lazy" src="' + esc(r.thumb_src) + '" alt="' + esc(r.thumb_label || '') + '" ' + IMGERR + '>'
+    : thumbs;
   const rank = (r.crank_icon ? '<img loading="lazy" src="' + esc(r.crank_icon) + '" alt="" ' + IMGERR + '>' : '')
     + '<span>' + esc(r.crank_name || 'UNRANKED') + '</span>';
   let price;
@@ -64,7 +67,7 @@ function cardHTML(r) {
   const meta = sold + ' · ' + (Number(r.views) || 0) + ' views' + (r.skins ? ' · ' + r.skins + ' skins' : '');
   return '<a class="scard" href="view.html?slug=' + encodeURIComponent(r.slug) + '">'
     + '<span class="sold-badge">SOLD</span>'
-    + '<div class="sc-thumbs">' + thumbs + '</div>'
+    + '<div class="sc-thumbs">' + cover + '</div>'
     + '<div class="sc-title">' + esc(r.title || r.slug) + '</div>'
     + '<div class="sc-code">' + esc(r.code) + (THEME_LABELS[r.theme] ? ' · ' + THEME_LABELS[r.theme] : '') + '</div>'
     + '<div class="sc-rank">' + rank + '</div>'
