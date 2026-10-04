@@ -1064,6 +1064,83 @@ CF.$('loadBtn').addEventListener('click', () => {
   CF.status('Nothing saved yet.');
 });
 
+// ── listing face: auto card vs edited artwork (creation-time input) ──
+const face = { on: false, mode: 'card', blob: null, ext: 'jpg', existing: null };
+
+function faceSync() {
+  const seg = CF.$('faceSeg');
+  const art = CF.$('faceArt');
+  const mseg = CF.$('faceModeSeg');
+  if (!seg || !art || !mseg) return;
+  seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', (b.dataset.face === 'art') === face.on));
+  art.hidden = !face.on;
+  mseg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.fmode === face.mode));
+  const prev = CF.$('facePrev');
+  const rm = CF.$('faceRemove');
+  const src = face.blob ? (prev ? prev.src : '') : face.existing;
+  const has = face.on && !!src;
+  if (prev) { prev.hidden = !has; if (has && !face.blob) prev.src = face.existing; }
+  if (rm) rm.hidden = !has;
+}
+
+function faceInit() {
+  const seg = CF.$('faceSeg');
+  if (!seg) return;
+  seg.addEventListener('click', e => {
+    const b = e.target.closest('button[data-face]');
+    if (!b) return;
+    face.on = b.dataset.face === 'art';
+    faceSync();
+  });
+  const mseg = CF.$('faceModeSeg');
+  if (mseg) mseg.addEventListener('click', e => {
+    const b = e.target.closest('button[data-fmode]');
+    if (!b) return;
+    face.mode = b.dataset.fmode;
+    faceSync();
+  });
+  const fileBtn = CF.$('faceFileBtn');
+  const file = CF.$('faceFile');
+  if (fileBtn && file) {
+    fileBtn.addEventListener('click', () => file.click());
+    file.addEventListener('change', () => {
+      const f = file.files && file.files[0];
+      if (!f) return;
+      if (!/^image\/(png|jpeg|webp)$/.test(f.type)) { CF.status('Only PNG, JPEG or WebP images.', 'err'); return; }
+      if (f.size > 10 * 1024 * 1024) { CF.status('Image too large — pick one under 10 MB.', 'err'); return; }
+      CF.resizeToDataUrl(f, 1280).then(dataUrl => fetch(dataUrl).then(r => r.blob()).then(blob => {
+        face.blob = blob;
+        face.ext = blob.type === 'image/png' ? 'png' : 'jpg';
+        const prev = CF.$('facePrev');
+        if (prev) { prev.src = dataUrl; prev.hidden = false; }
+        const rm = CF.$('faceRemove');
+        if (rm) rm.hidden = false;
+        CF.status('Artwork ready — it will attach when you publish.', 'ok');
+      })).catch(() => CF.status('Could not read that image file.', 'err'));
+    });
+  }
+  const rm = CF.$('faceRemove');
+  if (rm) rm.addEventListener('click', () => {
+    face.blob = null;
+    face.existing = null;
+    const prev = CF.$('facePrev');
+    if (prev) { prev.hidden = true; prev.src = ''; }
+    rm.hidden = true;
+    faceSync();
+  });
+  const faceMenuBtn = CF.$('faceMenuBtn');
+  const faceModal = CF.$('faceModal');
+  if (faceMenuBtn && faceModal) {
+    faceMenuBtn.addEventListener('click', () => {
+      faceModal.hidden = false;
+      faceSync();
+    });
+    const faceClose = CF.$('faceClose');
+    if (faceClose) faceClose.addEventListener('click', () => { faceModal.hidden = true; });
+  }
+  faceSync();
+}
+
 // ── publish ───────────────────────────────────────────────────────
 function buildPayload() {
   captureTexts();
@@ -1077,8 +1154,7 @@ function buildPayload() {
     picks: state.picks,
     assets: state.assets,
     owned: state.owned,
-    ownedLevels: state.ownedLevels, ownedVariants: state.ownedVariants, ownedBuddies: state.ownedBuddies, ownedCards: state.ownedCards,
-    ...(state.thumb ? { thumb: state.thumb } : {})
+    ownedLevels: state.ownedLevels, ownedVariants: state.ownedVariants, ownedBuddies: state.ownedBuddies, ownedCards: state.ownedCards
   };
 }
 
@@ -1464,6 +1540,34 @@ async function publishListing() {
       } finally {
         renderAll();
       }
+      try {
+        const { data: curRow } = await supabase.from('listing_public').select('payload,theme').eq('slug', slug).maybeSingle();
+        if (curRow) {
+          const pl = Object.assign({}, curRow.payload || {});
+          if (face.on && (face.blob || face.existing)) {
+            let src = face.existing;
+            if (face.blob) {
+              const path = slug + '-thumb.' + face.ext;
+              const { error: aErr } = await supabase.storage.from('listing-images').upload(path, face.blob, { upsert: true, contentType: face.blob.type });
+              if (aErr) throw aErr;
+              src = supabase.storage.from('listing-images').getPublicUrl(path).data.publicUrl + '?v=' + Date.now();
+            }
+            pl.thumb = { src: src, label: '' };
+            if (face.mode === 'card') pl.thumbMode = 'card'; else delete pl.thumbMode;
+          } else {
+            delete pl.thumb;
+            delete pl.thumbMode;
+          }
+          const changed = JSON.stringify(pl) !== JSON.stringify(curRow.payload || {});
+          if (changed) {
+            const h = await CF.hashToken(localStorage.getItem('vc-edit-' + slug) || '');
+            const { error: uErr } = await supabase.rpc('update_listing', { p_slug: slug, p_edit_token_hash: h, p_payload: pl, p_theme: curRow.theme || 'protocol' });
+            if (uErr) throw uErr;
+          }
+        }
+      } catch (e) {
+        CF.status('Published, but the artwork setting failed to save: ' + ((e && e.message) || e), 'err');
+      }
     }
 
     const url = new URL('view.html?slug=' + encodeURIComponent(slug), location.href).href;
@@ -1480,6 +1584,8 @@ async function publishListing() {
     CF.status(supabase
       ? 'Published! Share link copied.' + keyMsg + ' Attach your edited artwork any time from the dashboard → THUMB.'
       : 'Published for this browser. Link copied — add Supabase keys in js/config.js for public links.' + keyMsg, 'ok');
+    face.existing = face.on ? (face.existing || null) : null;
+    face.blob = null;
     if (keyMsg) {
       const el = document.getElementById('status');
       if (el) el.title = 'Recovery key: ' + key;
@@ -1666,9 +1772,13 @@ async function initEditMode() {
     picks: Object.fromEntries(CF.ALL_CATS.map(c => [c, p.picks?.[c] || []])),
     assets: Object.assign({ avatar: null, pcard: null, buddies: [] }, p.assets),
     owned: p.owned || {},
-    ownedLevels: p.ownedLevels || {}, ownedVariants: p.ownedVariants || [], ownedBuddies: p.ownedBuddies || [], ownedCards: p.ownedCards || [],
-    thumb: p.thumb || null
+    ownedLevels: p.ownedLevels || {}, ownedVariants: p.ownedVariants || [], ownedBuddies: p.ownedBuddies || [], ownedCards: p.ownedCards || []
   });
+  const pthumb = p.thumb && typeof p.thumb.src === 'string' && p.thumb.src.startsWith('https://') ? p.thumb : null;
+  face.on = !!pthumb;
+  face.existing = pthumb ? pthumb.src : null;
+  face.mode = p.thumbMode === 'card' ? 'card' : 'cover';
+  faceSync();
   if (CF.$('showAllCards')) CF.$('showAllCards').checked = !!state.showAllCards;
   renderFromState();
   updateWm();
@@ -1678,6 +1788,7 @@ async function initEditMode() {
 
 // ── boot ──────────────────────────────────────────────────────────
 CF.initThemeSwitch();
+faceInit();
 CF.initDisclaimerCollapse();
 CF.initStatusDismiss();
 renderAll();

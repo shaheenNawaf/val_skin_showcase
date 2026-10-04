@@ -20,8 +20,8 @@
 .rankrow .pickrank{margin-left:0}
 
 /* ── fast-add picker modal ─────────────────────────────────────── */
-#modal,#importModal{position:fixed;inset:0;background:var(--c-veil);backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;z-index:50;padding:12px}
-#modal[hidden],#importModal[hidden]{display:none}
+#modal,#importModal,#faceModal{position:fixed;inset:0;background:var(--c-veil);backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;z-index:50;padding:12px}
+#modal[hidden],#importModal[hidden],#faceModal[hidden]{display:none}
 .mpanel{width:min(1250px,100%);max-height:88vh;background:var(--c-surface2);border:1px solid var(--c-line);display:flex;flex-direction:column;padding:16px;
 clip-path:polygon(0 0,calc(100% - var(--notch-lg)) 0,100% var(--notch-lg),100% 100%,var(--notch-lg) 100%,0 calc(100% - var(--notch-lg)))}
 #modal.variant-wide .mpanel{width:min(1750px,100%)}
@@ -295,3 +295,15 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 .ag-msg.err{color:#FF6B77}
 .ag-browse{display:inline-block;margin-top:20px;font-size:12px;color:var(--c-mut);text-decoration:none;border-bottom:1px solid transparent}
 .ag-browse:hover{color:var(--c-ink);border-bottom-color:var(--c-line)}
+
+/* ── listing face: auto card vs edited artwork ── */
+.fhint{margin:0 0 10px;font-size:12px;color:var(--c-mut)}
+.fseg{display:flex;gap:6px;flex-wrap:wrap}
+.fseg button{background:transparent;border:1px solid var(--c-line-soft);color:var(--c-mut);padding:7px 12px;font:600 11px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.fseg button:hover{border-color:var(--c-mut);color:var(--c-ink)}
+.fseg button.on{border-color:var(--c-accent);color:var(--c-ink)}
+#faceArt{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.faceup{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#facePrev{width:96px;height:54px;object-fit:cover;background:var(--c-bg);border:1px solid var(--c-line)}
+.facepanel{width:min(560px,100%)}
+.facebody{display:flex;flex-direction:column;gap:12px;overflow:visible}
