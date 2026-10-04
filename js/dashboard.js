@@ -1,7 +1,7 @@
 // CardForge owner dashboard — Every listing on the marketplace — owner view, on one
 // page. Edit keys live in localStorage as `vc-edit-<slug>`; every mutation is
 // checked server-side against the key's hash.
-import { esc, $, status, initStatusDismiss, initDisclaimerCollapse, readJSON, writeJSON, hashToken, copyText, fbPostText } from './shared.js';
+import { esc, $, status, initStatusDismiss, initDisclaimerCollapse, readJSON, writeJSON, hashToken, copyText, fbPostText, resizeToDataUrl } from './shared.js';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -331,8 +331,9 @@ function thumbFormHTML(row) {
     + '<img src="' + esc(p.icon || p.img) + '" alt="" loading="lazy"></button>').join('');
   const urlVal = (cur && cur.label === '') ? esc(cur.src) : '';
   return '<form class="thumbForm">'
-    + '<span class="tf-label">Card thumbnail — pick a skin, or paste an image URL</span>'
+    + '<span class="tf-label">Card thumbnail — pick a skin, upload an image, or paste a URL</span>'
     + (btns ? '<div class="tf-picks">' + btns + '</div>' : '')
+    + '<div class="tf-row"><button type="button" data-t="file">Upload image…</button><input type="file" class="tf-input" accept="image/png,image/jpeg,image/webp" hidden></div>'
     + '<div class="tf-row"><input type="url" class="tf-url" placeholder="https://example.com/cover.jpg" value="' + urlVal + '"><button type="button" data-t="set">Set URL</button></div>'
     + '<div class="tf-row"><button type="button" data-t="auto">Auto (default)</button><button type="button" data-t="cancel">Cancel</button></div>'
     + '</form>';
@@ -349,6 +350,32 @@ function toggleThumbForm(rowEl, row) {
 
   form.addEventListener('submit', ev => ev.preventDefault());
 
+  const fileBtn = form.querySelector('[data-t="file"]');
+  const fileInput = form.querySelector('.tf-input');
+  fileBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    const f = fileInput.files && fileInput.files[0];
+    if (!f) return;
+    if (!/^image\/(png|jpeg|webp)$/.test(f.type)) { status('Only PNG, JPEG or WebP images.', 'err'); return; }
+    if (f.size > 10 * 1024 * 1024) { status('Image too large — pick one under 10 MB.', 'err'); return; }
+    runAction(rowEl, 'Upload', async () => {
+      fileBtn.textContent = 'Uploading…';
+      try {
+        const dataUrl = await resizeToDataUrl(f, 1280);
+        const blob = await (await fetch(dataUrl)).blob();
+        const path = row.slug + '-thumb.' + (blob.type === 'image/png' ? 'png' : 'jpg');
+        const { error: upErr } = await supabase.storage.from('listing-images')
+          .upload(path, blob, { upsert: true, contentType: blob.type });
+        if (upErr) throw upErr;
+        const pub = supabase.storage.from('listing-images').getPublicUrl(path).data.publicUrl;
+        await saveThumb(row, { src: pub + '?v=' + Date.now(), label: '' });
+        status('Thumbnail uploaded — the marketplace now shows it.', 'ok');
+      } finally {
+        fileBtn.textContent = 'Upload image…';
+      }
+    });
+  });
+
   form.addEventListener('click', ev => {
     const pick = ev.target.closest('.tf-pick');
     if (pick) {
@@ -360,6 +387,7 @@ function toggleThumbForm(rowEl, row) {
     }
     const b = ev.target.closest('button[data-t]');
     if (!b) return;
+    if (b.dataset.t === 'file') return;
     if (b.dataset.t === 'cancel') { form.remove(); return; }
     if (b.dataset.t === 'set') {
       const v = form.querySelector('.tf-url').value.trim();
@@ -372,7 +400,12 @@ function toggleThumbForm(rowEl, row) {
     }
     if (b.dataset.t === 'auto') {
       runAction(rowEl, 'Auto', async () => {
+        const cur = rowThumb(row);
         await saveThumb(row, null);
+        if (cur && cur.src.indexOf('-thumb.') !== -1) {
+          const m = cur.src.split('?')[0].match(/listing-images\/(.+)$/);
+          if (m) { try { await supabase.storage.from('listing-images').remove([m[1]]); } catch { /* best-effort cleanup */ } }
+        }
         status('Thumbnail reset to automatic.', 'ok');
       });
     }
