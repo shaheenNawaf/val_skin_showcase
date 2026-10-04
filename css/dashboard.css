@@ -27,6 +27,9 @@
 .tc{color:var(--c-mut);font-weight:500}
 
 .drow{display:flex;gap:14px;align-items:flex-start;background:var(--c-surface2);border:1px solid var(--c-line);padding:14px;margin-bottom:10px;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+/* while a row's ⋯ menu is open the chamfer must release (clip-path clips the
+   dropdown) and the row must rise above its siblings */
+.drow.menu-open{clip-path:none;position:relative;z-index:50}
 .dthumb{width:64px;height:64px;object-fit:contain;background:var(--c-bg);border:1px solid var(--c-line);flex:none}
 .dinfo{flex:1;min-width:0}
 .dtitle{font:700 15px var(--font-display);color:var(--c-ink);margin-bottom:6px;overflow-wrap:anywhere}
@@ -41,11 +44,29 @@
 .st-archived{color:var(--c-mut);border-color:var(--c-line);background:transparent}
 .st-featured{color:#ffc45e;border-color:rgba(255,196,94,.5);background:rgba(255,196,94,.1)}
 
-.dacts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex:none;max-width:340px}
+.dacts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-items:center;flex:none}
 #dwrap .dacts button{padding:7px 10px;font-size:10px;letter-spacing:.1em}
+/* the way back into the editor is the row's second-in-command action */
+#dwrap .dacts button[data-act=edit]{border-color:color-mix(in srgb,var(--c-accent) 45%,var(--c-line-soft));color:var(--c-accent)}
+#dwrap .dacts button[data-act=edit]:hover{border-color:var(--c-accent);color:var(--c-accent);background:transparent}
 #dwrap .dacts button.danger{color:#FF6B77;border-color:rgba(255,70,85,.35)}
 #dwrap .dacts button.danger:hover{border-color:#FF4655;background:rgba(255,70,85,.08)}
 #dwrap .dacts button.on{border-color:var(--c-accent);color:var(--c-ink)}
+/* per-row overflow menu — the other ten actions live here, grouped */
+.dmore-wrap{position:relative;display:inline-flex}
+#dwrap .dmore-btn{min-width:34px;padding:7px 8px}
+.dmore{position:absolute;right:0;top:calc(100% + 6px);z-index:45;min-width:190px;background:var(--c-surface);border:1px solid var(--c-line);box-shadow:0 14px 34px rgba(0,0,0,.5);padding:4px 0;
+clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.dmore[hidden]{display:none}
+.dmore .dm-group{padding:4px 0;border-top:1px solid var(--c-line-soft)}
+.dmore .dm-group:first-child{border-top:0}
+.dmore .dm-label{display:block;font:600 9px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--c-mut);padding:6px 12px 5px}
+#dwrap .dmore button{display:flex;width:100%;height:auto;align-items:center;justify-content:flex-start;background:transparent;border:0;color:var(--c-ink);font:700 11px var(--font-display);letter-spacing:.12em;text-transform:uppercase;padding:9px 12px;cursor:pointer;clip-path:none}
+#dwrap .dmore button:hover{background:var(--c-surface2);color:var(--c-accent)}
+#dwrap .dmore button[hidden]{display:none}
+#dwrap .dmore button.danger{color:var(--c-mut);border-color:transparent}
+#dwrap .dmore button.danger:hover{color:#FF6B77;background:rgba(255,70,85,.08)}
+#dwrap .dmore button.on{color:#ffc45e}
 
 #priceForm,.priceForm{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
 .priceForm input[type=number]{width:110px;background:var(--c-bg);border:1px solid var(--c-line);color:var(--c-ink);padding:7px 10px;font:600 12px var(--font-ui)}
@@ -63,6 +84,8 @@
   #dwrap{padding-left:14px;padding-right:14px}
   .drow{flex-wrap:wrap}
   .dacts{justify-content:flex-start;max-width:none;width:100%}
+  /* the ⋯ sits at the row's left edge on phones — anchor the menu rightwards */
+  .dmore{left:0;right:auto}
   #stats{grid-template-columns:repeat(2,1fr)}
   .dhead{align-items:flex-start}
 }

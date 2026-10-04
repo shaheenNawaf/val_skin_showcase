@@ -13,7 +13,7 @@ const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.or
 
 const IMGERR = "onerror=\"this.setAttribute('data-imgfail','1');this.closest('[data-imgwrap]')?.setAttribute('data-imgfail','1')\"";
 
-const SYM = { USD: '$', EUR: '€', GBP: '£', JPY: '¥' };
+const SYM = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', PHP: '₱' };
 
 const state = { tab: 'active', rows: [], tokens: {}, local: false };
 
@@ -173,26 +173,26 @@ function rowHTML(row) {
     dsub2 = parts.join(' · ');
   }
 
-  const acts = [];
+  const manage = [], share = [], danger = [];
   if (row._local) {
-    acts.push(actBtn('open', 'Open'));
-    acts.push(actBtn('edit', 'Edit'));
-    acts.push(actBtn('copylink', 'Copy link'));
-    acts.push(actBtn('delete', 'Delete', 'danger'));
+    share.push(actBtn('copylink', 'Copy link', 'dm-item'));
+    danger.push(actBtn('delete', 'Delete', 'dm-item danger'));
   } else {
-    acts.push(actBtn('open', 'Open'));
-    acts.push(actBtn('edit', 'Edit'));
-    acts.push(actBtn('sold', row.status === 'sold' ? 'Relist' : 'Mark sold'));
-    acts.push(actBtn('feature', row.featured_at ? 'Unfeature' : 'Feature', row.featured_at ? 'on' : '', statusKey !== 'active'));
-    acts.push(actBtn('bump', 'Bump'));
-    acts.push(actBtn('price', 'Price'));
-    acts.push(actBtn('fbpost', 'Copy FB post'));
-    acts.push(actBtn('fblink', row.fb_post_url ? 'FB link ✓' : 'FB link'));
-    acts.push(actBtn('thumb', rowThumb(row) ? 'Thumb ✓' : 'Thumb'));
-    acts.push(actBtn('copylink', 'Copy link'));
-    acts.push(actBtn('archive', row.archived ? 'Unarchive' : 'Archive'));
-    acts.push(actBtn('delete', 'Delete', 'danger'));
+    manage.push(actBtn('sold', row.status === 'sold' ? 'Relist' : 'Mark sold', 'dm-item'));
+    manage.push(actBtn('feature', row.featured_at ? 'Unfeature' : 'Feature', 'dm-item' + (row.featured_at ? ' on' : ''), statusKey !== 'active'));
+    manage.push(actBtn('bump', 'Bump', 'dm-item'));
+    manage.push(actBtn('price', 'Price', 'dm-item'));
+    share.push(actBtn('fbpost', 'Copy FB post', 'dm-item'));
+    share.push(actBtn('fblink', row.fb_post_url ? 'FB link ✓' : 'FB link', 'dm-item'));
+    manage.push(actBtn('thumb', rowThumb(row) ? 'Thumb ✓' : 'Thumb', 'dm-item'));
+    share.push(actBtn('copylink', 'Copy link', 'dm-item'));
+    danger.push(actBtn('archive', row.archived ? 'Unarchive' : 'Archive', 'dm-item'));
+    danger.push(actBtn('delete', 'Delete', 'dm-item danger'));
   }
+  const groups = [];
+  if (manage.length) groups.push('<div class="dm-group"><b class="dm-label">Manage</b>' + manage.join('') + '</div>');
+  if (share.length) groups.push('<div class="dm-group"><b class="dm-label">Share</b>' + share.join('') + '</div>');
+  if (danger.length) groups.push('<div class="dm-group"><b class="dm-label">Danger zone</b>' + danger.join('') + '</div>');
 
   const pick = firstPick(row);
   const ct = rowThumb(row);
@@ -205,7 +205,12 @@ function rowHTML(row) {
     + '<div class="dmeta">' + meta + '</div>'
     + '<div class="dsub2">' + esc(dsub2) + '</div>'
     + '</div>'
-    + '<div class="dacts">' + acts.join('') + '</div>'
+    + '<div class="dacts">'
+    + actBtn('open', 'Open')
+    + actBtn('edit', 'Edit')
+    + '<span class="dmore-wrap"><button type="button" class="dmore-btn" aria-expanded="false" aria-label="More actions for this listing">⋯</button>'
+    + '<div class="dmore" hidden>' + groups.join('') + '</div></span>'
+    + '</div>'
     + '</article>';
 }
 
@@ -264,8 +269,8 @@ function runAction(rowEl, label, fn) {
 
 // ── price form ────────────────────────────────────────────────────
 function priceFormHTML(row) {
-  const sel = row.currency || 'USD';
-  const opts = ['USD', 'EUR', 'GBP', 'JPY'].map(c => '<option' + (c === sel ? ' selected' : '') + '>' + c + '</option>').join('');
+  const sel = row.currency || 'PHP';
+  const opts = ['PHP', 'USD', 'EUR', 'GBP', 'JPY'].map(c => '<option' + (c === sel ? ' selected' : '') + '>' + c + '</option>').join('');
   const val = row.price != null ? esc(String(row.price)) : '';
   return '<form class="priceForm">'
     + '<input type="number" min="0" step="1" placeholder="250" value="' + val + '">'
@@ -534,6 +539,36 @@ function wireActions() {
   });
 }
 
+/* per-row ⋯ overflow menus — one open at a time, outside click + Esc close */
+function wireRowMenus() {
+  const rowsEl = $('rows');
+  function setWrap(w, open) {
+    w.querySelector('.dmore').hidden = !open;
+    w.querySelector('.dmore-btn').setAttribute('aria-expanded', String(open));
+    /* the row's chamfer clip-path would clip the dropdown, and later sibling
+       rows would paint over it — unclip + raise while its menu is open */
+    const row = w.closest('.drow');
+    if (row) row.classList.toggle('menu-open', open);
+  }
+  function closeAll(except) {
+    rowsEl.querySelectorAll('.dmore-wrap').forEach(w => { if (w !== except) setWrap(w, false); });
+  }
+  rowsEl.addEventListener('click', e => {
+    const mb = e.target.closest('.dmore-btn');
+    if (mb) {
+      const wrap = mb.closest('.dmore-wrap');
+      const open = wrap.querySelector('.dmore').hidden;
+      closeAll(wrap);
+      setWrap(wrap, open);
+      return;
+    }
+    const item = e.target.closest('.dmore button[data-act]');
+    if (item) setWrap(item.closest('.dmore-wrap'), false);
+  });
+  document.addEventListener('click', e => { if (!e.target.closest('.dmore-wrap')) closeAll(null); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(null); });
+}
+
 // ── boot ──────────────────────────────────────────────────────────
 initStatusDismiss();
 initDisclaimerCollapse();
@@ -547,6 +582,7 @@ document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click
 $('retryBtn').addEventListener('click', () => { $('derror').hidden = true; load(); });
 
 wireActions();
+wireRowMenus();
 
 function showGate() {
   $('dgate').hidden = false;
