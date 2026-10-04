@@ -689,6 +689,8 @@ function heroThumbs(picks) {
 }
 
 function renderThumbs(picks, slug) {
+  const artImg = qv.querySelector('.qv-art');
+  if (artImg && !artImg.hidden) return;
   const stage = qv.querySelector('.qv-stage');
   if (!stage) return;
   const bar = qv.querySelector('.qv-bar');
@@ -797,6 +799,29 @@ function fillCard(payload, slug) {
   renderThumbs(qvPicks, qvSlug);
 }
 
+function setQvArt(src) {
+  const sizer = qv.querySelector('.qv-sizer');
+  let img = qv.querySelector('.qv-art');
+  if (!src) {
+    if (img) img.hidden = true;
+    if (sizer) sizer.style.display = '';
+    return;
+  }
+  if (!img) {
+    img = document.createElement('img');
+    img.className = 'qv-art';
+    img.alt = '';
+    img.addEventListener('error', () => { img.hidden = true; if (sizer) sizer.style.display = ''; });
+    const stage = qv.querySelector('.qv-stage');
+    if (stage) stage.appendChild(img);
+  }
+  img.src = src;
+  img.hidden = false;
+  if (sizer) sizer.style.display = 'none';
+  const stage = qv.querySelector('.qv-stage');
+  if (stage) stage.hidden = false;
+}
+
 function fitCard() {
   if (qv.hidden) return;
   const stage = qv.querySelector('.qv-stage');
@@ -843,6 +868,7 @@ async function loadFull(slug) {
     if (!data) {
       /* blank the placeholder card so a dead deep link never shows fake data */
       fillCard({ picks: {}, texts: {} }, slug);
+      setQvArt(null);
       $('card').dataset.theme = 'protocol';
       fitCard();
       $('qvContact').hidden = true;
@@ -850,9 +876,13 @@ async function loadFull(slug) {
       return;
     }
     const payload = data.payload || {};
-    fillCard(payload, slug);
-    $('card').dataset.theme = data.theme || payload.theme || 'protocol';
-    fitCard();
+    const artSrc = payload.thumb && typeof payload.thumb.src === 'string' && payload.thumb.src.startsWith('https://') ? payload.thumb.src : null;
+    setQvArt(artSrc);
+    if (!artSrc) {
+      fillCard(payload, slug);
+      $('card').dataset.theme = data.theme || payload.theme || 'protocol';
+      fitCard();
+    }
     const link = (payload.texts && payload.texts.link ? payload.texts.link : '').trim();
     const contact = $('qvContact');
     if (/^https?:\/\//.test(link)) {
@@ -878,6 +908,7 @@ function openQV(slug, opener) {
   document.body.classList.add('modal-open');
   if (qvClose) qvClose.focus();
   fillBar(l, slug);
+  setQvArt(l.thumb ? l.thumb.src : null);
   fitCard();
   loadFull(slug);
 }
@@ -885,6 +916,7 @@ function openQV(slug, opener) {
 function closeQV() {
   if (qv.hidden) return;
   qv.hidden = true;
+  setQvArt(null);
   document.body.classList.remove('modal-open');
   if (qvLastFocus && qvLastFocus.focus) qvLastFocus.focus();
   if (location.search.indexOf('slug=') !== -1) window.history.replaceState(null, '', location.pathname + location.hash);
