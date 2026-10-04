@@ -30,7 +30,7 @@ export default async (request: Request, context: any) => {
   let theme = 'protocol';
   try {
     const r = await fetch(
-      `${SB_URL}/rest/v1/listing_public?select=code,title,price,currency,status,theme,payload&slug=eq.${encodeURIComponent(slug)}`,
+      `${SB_URL}/rest/v1/listing_public?select=slug,theme,status,price,currency,payload&slug=eq.${encodeURIComponent(slug)}`,
       { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` } },
     );
     if (r.ok) {
@@ -38,7 +38,11 @@ export default async (request: Request, context: any) => {
       const l = Array.isArray(rows) ? rows[0] : null;
       if (l) {
         const sym = l.currency === 'EUR' ? '€' : l.currency === 'GBP' ? '£' : l.currency === 'JPY' ? '¥' : '$';
-        title = `${(l.code && String(l.code).trim()) ? l.code : (l.title || 'Listing')}${l.price != null ? ` — ${sym}${l.price}` : ''}`;
+        const texts = (l as any).payload && (l as any).payload.texts ? (l as any).payload.texts : {};
+        const code = String(texts.code || '').trim();
+        const cname = String(texts.cname || '').trim();
+        const base = code || ((cname && cname !== 'CHANGE NAME') ? cname : '') || slug;
+        title = `${base}${l.price != null ? ` — ${sym}${l.price}` : ''}`;
         if (l.status === 'sold') title = `[SOLD] ${title}`;
         description = l.status === 'sold'
           ? 'This listing has been sold.'
