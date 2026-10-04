@@ -1003,6 +1003,12 @@ async function load() {
   }
   try { const { data } = await supabase.rpc('am_i_seller'); isSeller = data === true; } catch { isSeller = false; }
   if (GATE_DISABLED) isSeller = true; /* TEMP: testing window — build CTAs visible */
+  if (isSeller) {
+    const navNew = document.getElementById('navNewCard');
+    const navDash = document.getElementById('navDashboard');
+    if (navNew) navNew.hidden = false;
+    if (navDash) navDash.hidden = false;
+  }
   status('Loading listings…');
   let data = null;
   let limited = false;
