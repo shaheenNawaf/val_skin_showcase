@@ -574,7 +574,7 @@ export function startLocalPresence(channelId, onTick) {
    (or any object with { slug, payload, price, currency, negotiable }); `url` =
    absolute listing URL. Pure function — no DOM, no network. Mirrors the card:
    every value it prints is a value the card itself shows. */
-const FB_SYM = { USD: '$', EUR: '\u20ac', GBP: '\u00a3', JPY: '\u00a5' };
+const FB_SYM = { USD: '$', EUR: '\u20ac', GBP: '\u00a3', JPY: '\u00a5', PHP: '\u20b1' };
 const fbNum = s => parseInt(String(s == null ? '' : s).replace(/[^0-9]/g, ''), 10) || 0;
 
 export function fbPostText(row, url) {

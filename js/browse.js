@@ -19,11 +19,11 @@ const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.or
 const IMGERR = "onerror=\"this.setAttribute('data-imgfail','1');this.closest('[data-imgwrap]')?.setAttribute('data-imgfail','1')\"";
 
 const THEME_ACCENTS = {
-  protocol: { label: 'PROTOCOL', bg: '#0F1923', panel: '#1F2731', accent: '#FF4655', ink: '#ECE8E1', mut: '#8A99A9' },
-  holo: { label: 'HOLO', bg: '#04101A', panel: '#0A1E30', accent: '#46F6FF', ink: '#DFF6FF', mut: '#7E9CB2' },
-  reaver: { label: 'REAVER', bg: '#0D0A14', panel: '#180F2A', accent: '#B44BFF', ink: '#EFE9FF', mut: '#9D92BA' },
-  oni: { label: 'ONI', bg: '#120B0B', panel: '#201114', accent: '#FF5540', ink: '#F5E9DC', mut: '#AF9889' },
-  arctic: { label: 'ARCTIC', bg: '#DAD5CB', panel: '#F2EEE6', accent: '#C22E3C', ink: '#0F1923', mut: '#525D6B' }
+  protocol: { label: 'High Ranks', bg: '#0F1923', panel: '#1F2731', accent: '#FF4655', ink: '#ECE8E1', mut: '#8A99A9' },
+  holo: { label: 'With Champions', bg: '#04101A', panel: '#0A1E30', accent: '#46F6FF', ink: '#DFF6FF', mut: '#7E9CB2' },
+  reaver: { label: 'Latest Skins', bg: '#0D0A14', panel: '#180F2A', accent: '#B44BFF', ink: '#EFE9FF', mut: '#9D92BA' },
+  oni: { label: 'Budget-friendly', bg: '#120B0B', panel: '#201114', accent: '#FF5540', ink: '#F5E9DC', mut: '#AF9889' },
+  arctic: { label: 'High Prem', bg: '#DAD5CB', panel: '#F2EEE6', accent: '#C22E3C', ink: '#0F1923', mut: '#525D6B' }
 };
 
 const RANK_THRESHOLDS = { gold: 10, plat: 13, dia: 16, asc: 19, imm: 22, rad: 27 };
@@ -143,6 +143,8 @@ function normalize(r) {
     },
     flags: {
       wtr: /yes/i.test(r.wtr || ''), receipts: /yes/i.test(r.receipts || ''),
+      wtrIssues: /no/i.test(r.wtr || ''),
+      premierUnlinked: /unlinked/i.test(r.vlink || ''),
       owner: (r.owner || '').replace(/\s*owner\s*$/i, '') || '—'
     },
     seller: { name: r.tag || ((r.vlogin && r.vlogin !== 'RIOT ID') ? r.vlogin : '') || r.slug },
@@ -170,14 +172,13 @@ function buildFacets() {
   $('fRank').innerHTML = '<legend>MIN RANK</legend>' + rankRows;
 
   const priceRows = [
-    { v: '', l: 'Any' }, { v: 'u100', l: 'Under $100' }, { v: 'r300', l: '$100–$300' },
-    { v: 'r600', l: '$300–$600' }, { v: 'o600', l: '$600+' }, { v: 'off', l: 'Offers only' }
+    { v: '', l: 'Any' }, { v: 'u1000', l: 'Under ₱1,000' }, { v: 'r3000', l: '₱1,000–₱3,000' },
+    { v: 'r6000', l: '₱4,000–₱6,000' }, { v: 'r10000', l: '₱7,000–₱10,000' }, { v: 'off', l: 'For Offers' }
   ].map((r, i) => '<label><input type="radio" name="price" value="' + r.v + '"' + (i === 0 ? ' checked' : '') + '><span class="ftxt">' + esc(r.l) + '</span><span class="fn">0</span></label>').join('');
   $('fPrice').innerHTML = '<legend>PRICE</legend>' + priceRows;
 
   const flagRows = [
-    { v: 'anim', l: 'Animated skins' }, { v: 'wtr', l: 'Full access — WTR' },
-    { v: 'rec', l: 'Receipts' }, { v: 'own0', l: '0th owner' }
+    { v: 'noissue', l: 'No Issue' }, { v: 'issues', l: 'With Issues' }, { v: 'premunl', l: 'Premier Unlinked' }
   ].map(r => '<label><input type="checkbox" value="' + r.v + '"><span class="ftxt">' + esc(r.l) + '</span><span class="fn">0</span></label>').join('');
   $('fFlags').innerHTML = '<legend>REQUIREMENTS</legend>' + flagRows;
 }
@@ -205,10 +206,10 @@ function priceCounts() {
     else count = base.filter(l => {
       const p = l.price;
       if (p === null) return false;
-      if (v === 'u100') return p < 100;
-      if (v === 'r300') return p >= 100 && p < 300;
-      if (v === 'r600') return p >= 300 && p < 600;
-      if (v === 'o600') return p >= 600;
+      if (v === 'u1000') return p < 1000;
+      if (v === 'r3000') return p >= 1000 && p < 3000;
+      if (v === 'r6000') return p >= 4000 && p < 6000;
+      if (v === 'r10000') return p >= 7000 && p <= 10000;
       return false;
     }).length;
     const row = r.closest('label');
@@ -240,10 +241,9 @@ function rankCounts() {
 function flagCounts() {
   const base = facetBase('flags');
   const map = {
-    anim: l => l.stats.animated > 0,
-    wtr: l => l.flags.wtr,
-    rec: l => l.flags.receipts,
-    own0: l => l.flags.owner === '0TH'
+    noissue: l => l.flags.wtr,
+    issues: l => l.flags.wtrIssues,
+    premunl: l => l.flags.premierUnlinked
   };
   document.querySelectorAll('#fFlags input').forEach(cb => {
     const row = cb.closest('label');
@@ -263,7 +263,7 @@ function badgesGrid(l) {
 
 /* CF-16: the symbol comes from the listing's own currency column — it was
    hardcoded '$' while the RPC returned EUR/GBP listings untouched. */
-const CUR_SYMBOL = { USD: '$', EUR: '€', GBP: '£', JPY: '¥' };
+const CUR_SYMBOL = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', PHP: '₱' };
 function moneyHTML(l, cls) {
   if (l.price == null) return '<span class="' + (cls || 'lc-offer') + '">CONTACT FOR PRICE</span>';
   const sym = CUR_SYMBOL[l.currency] || (l.currency ? esc(l.currency) + ' ' : '$');
@@ -464,16 +464,15 @@ function matches(l, skip) {
     const p = l.price;
     if (state.price === 'off') { if (p !== null) return false; }
     else if (p === null) return false;
-    else if (state.price === 'u100' && !(p < 100)) return false;
-    else if (state.price === 'r300' && !(p >= 100 && p < 300)) return false;
-    else if (state.price === 'r600' && !(p >= 300 && p < 600)) return false;
-    else if (state.price === 'o600' && !(p >= 600)) return false;
+    else if (state.price === 'u1000' && !(p < 1000)) return false;
+    else if (state.price === 'r3000' && !(p >= 1000 && p < 3000)) return false;
+    else if (state.price === 'r6000' && !(p >= 4000 && p < 6000)) return false;
+    else if (state.price === 'r10000' && !(p >= 7000 && p <= 10000)) return false;
   }
   if (skip !== 'flags' && state.flags.size) {
-    if (state.flags.has('anim') && !(l.stats.animated > 0)) return false;
-    if (state.flags.has('wtr') && !l.flags.wtr) return false;
-    if (state.flags.has('rec') && !l.flags.receipts) return false;
-    if (state.flags.has('own0') && l.flags.owner !== '0TH') return false;
+    if (state.flags.has('noissue') && !l.flags.wtr) return false;
+    if (state.flags.has('issues') && !l.flags.wtrIssues) return false;
+    if (state.flags.has('premunl') && !l.flags.premierUnlinked) return false;
   }
   return true;
 }
