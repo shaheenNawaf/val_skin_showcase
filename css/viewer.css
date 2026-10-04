@@ -316,3 +316,6 @@ padding:10px 12px;font:600 10px var(--font-ui);letter-spacing:.12em;text-transfo
 clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 .ma-fb[hidden]{display:none}
 #tbMore button.on{border-color:#ffc45e;color:#ffc45e}
+
+/* ── artwork mode: owner's edited image as the card face ── */
+.art-img{display:block;width:100%;height:auto;margin:12px 0 24px}

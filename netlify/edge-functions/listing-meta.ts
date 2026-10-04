@@ -26,10 +26,11 @@ export default async (request: Request, context: any) => {
   let title = 'CardForge — Listing';
   let description = 'Valorant inventory showcase listing published with CardForge.';
   let image = '';
+  let artSrc = '';
   let theme = 'protocol';
   try {
     const r = await fetch(
-      `${SB_URL}/rest/v1/listing_public?select=code,title,price,currency,status,theme&slug=eq.${encodeURIComponent(slug)}`,
+      `${SB_URL}/rest/v1/listing_public?select=code,title,price,currency,status,theme,payload&slug=eq.${encodeURIComponent(slug)}`,
       { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` } },
     );
     if (r.ok) {
@@ -45,12 +46,14 @@ export default async (request: Request, context: any) => {
             ? 'Valorant inventory showcase listing — contact the seller through CardForge.'
             : 'Valorant inventory showcase listing — contact the seller for the price.';
         theme = l.theme || 'protocol';
+        const t = (l as any).payload ? (l as any).payload.thumb : null;
+        if (t && typeof t.src === 'string' && t.src.startsWith('https://')) artSrc = String(t.src);
       }
     }
   } catch (_e) {
     // fall back to the static tags rather than failing the page
   }
-  image = `${SB_URL}/storage/v1/object/public/listing-images/${encodeURIComponent(slug)}.jpg`;
+  image = artSrc || `${SB_URL}/storage/v1/object/public/listing-images/${encodeURIComponent(slug)}.jpg`;
 
   // fetch the real page and rewrite its head
   const pageRes = await fetch(new URL('/view.html', request.url));
@@ -68,8 +71,8 @@ export default async (request: Request, context: any) => {
     .replace(
       /<\/head>/,
       `<meta property="og:image" content="${esc(image)}">` +
-        `<meta property="og:image:width" content="3840">` +
-        `<meta property="og:image:height" content="2160">` +
+        (artSrc ? '' : `<meta property="og:image:width" content="3840">` +
+        `<meta property="og:image:height" content="2160">`) +
         `<meta name="twitter:card" content="summary_large_image">` +
         `<meta name="twitter:title" content="${esc(title)}">` +
         `<meta name="twitter:description" content="${esc(description)}">` +

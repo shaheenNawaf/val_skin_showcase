@@ -1020,6 +1020,42 @@ phoneNativeMq.addEventListener('change', e => {
   menu.querySelectorAll('button, a').forEach(i => i.addEventListener('click', () => setOpen(false)));
 })();
 
+/* Artwork mode: the owner's edited image replaces the interactive card.
+   Session-only peek toggle; nothing is persisted from the viewer. */
+function initArtMode(src) {
+  const sizer = CF.$('sizer');
+  if (!sizer || !sizer.parentNode) return;
+  const mcard = CF.$('mcard');
+  const vs = CF.$('viewSwitch');
+  const img = document.createElement('img');
+  img.id = 'artImg';
+  img.className = 'art-img';
+  img.alt = '';
+  img.src = src;
+  sizer.parentNode.insertBefore(img, sizer);
+  const peek = document.createElement('button');
+  peek.type = 'button';
+  peek.id = 'artPeek';
+  const tb = document.querySelector('.tb-right');
+  if (tb) tb.appendChild(peek);
+  function setArt(on) {
+    img.hidden = !on;
+    sizer.hidden = on;
+    if (mcard) mcard.style.display = on ? 'none' : '';
+    if (vs) vs.style.display = on ? 'none' : '';
+    peek.textContent = on ? 'Interactive card' : 'Artwork';
+    peek.setAttribute('aria-pressed', String(!on));
+  }
+  function exitArt() {
+    setArt(false);
+    img.hidden = true;
+    peek.remove();
+  }
+  img.addEventListener('error', exitArt);
+  peek.addEventListener('click', () => setArt(img.hidden));
+  setArt(true);
+}
+
 const slug = new URLSearchParams(location.search).get('slug');
 if (!slug) {
   CF.status('No listing specified — open a published share link.', 'err');
@@ -1073,6 +1109,11 @@ if (!slug) {
        fetch already returned and used to discard */
     applyHero(listing);
     syncFbBtns(listing);
+    const artThumb = listing.payload && listing.payload.thumb
+      && typeof listing.payload.thumb.src === 'string'
+      && listing.payload.thumb.src.startsWith('https://')
+      && listing.payload.thumbMode === 'card' ? listing.payload.thumb : null;
+    if (artThumb) initArtMode(artThumb.src);
     const archNote = CF.$('archNote');
     archNote.hidden = !listing.archived;
     if (listing.archived) archNote.textContent = 'This listing is archived — hidden from the marketplace, still reachable by this link.';

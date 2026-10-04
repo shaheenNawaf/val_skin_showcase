@@ -84,3 +84,7 @@
 .tf-url:focus{outline:1px solid var(--c-mut);outline-offset:1px}
 .tf-foot{display:flex;align-items:center;gap:10px;border-top:1px solid var(--c-line-soft);padding-top:12px}
 .tf-hint{font-size:10.5px;color:var(--c-mut);letter-spacing:.04em}
+
+.tf-mode{display:flex;gap:8px}
+#dwrap .tf-mode button{flex:1}
+#dwrap .tf-mode button.on{border-color:var(--c-accent);color:var(--c-ink)}

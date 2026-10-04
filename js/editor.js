@@ -1478,7 +1478,7 @@ async function publishListing() {
       : '';
     if (firstPublish) localStorage.setItem('cf-key-shown-' + slug, '1');
     CF.status(supabase
-      ? 'Published! Share link copied.' + keyMsg
+      ? 'Published! Share link copied.' + keyMsg + ' Attach your edited artwork any time from the dashboard → THUMB.'
       : 'Published for this browser. Link copied — add Supabase keys in js/config.js for public links.' + keyMsg, 'ok');
     if (keyMsg) {
       const el = document.getElementById('status');

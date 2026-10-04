@@ -336,6 +336,7 @@ function thumbFormHTML(row) {
     + '<div class="tf-sec"><span class="tf-cap">Upload or paste a link</span>'
     + '<div class="tf-row"><button type="button" data-t="file">Upload image…</button><input type="file" class="tf-input" accept="image/png,image/jpeg,image/webp" hidden></div>'
     + '<div class="tf-row"><input type="url" class="tf-url" placeholder="https://example.com/cover.jpg" value="' + urlVal + '"><button type="button" data-t="set">Set URL</button></div></div>'
+    + (cur ? '<div class="tf-sec"><span class="tf-cap">Where it shows</span><div class="tf-mode"><button type="button" data-m="cover"' + ((row.payload && row.payload.thumbMode) === 'card' ? '' : ' class="on"') + '>Marketplace cover only</button><button type="button" data-m="card"' + ((row.payload && row.payload.thumbMode) === 'card' ? ' class="on"' : '') + '>Cover + listing page</button></div></div>' : '')
     + '<div class="tf-foot"><button type="button" data-t="auto">Auto (default)</button><span class="tf-hint">Auto shows the first skin icon, as before.</span></div>'
     + '</form>';
 }
@@ -383,6 +384,19 @@ function toggleThumbForm(rowEl, row) {
       runAction(rowEl, 'Thumb', async () => {
         await saveThumb(row, { src: pick.dataset.src, label: pick.dataset.label });
         status('Card thumbnail updated — the marketplace now shows it.', 'ok');
+      });
+      return;
+    }
+    const mb = ev.target.closest('button[data-m]');
+    if (mb) {
+      const mode = mb.dataset.m;
+      runAction(rowEl, 'Mode', async () => {
+        const payload = Object.assign({}, row.payload || {});
+        if (mode === 'card') payload.thumbMode = 'card'; else delete payload.thumbMode;
+        const h = await hashToken(localStorage.getItem('vc-edit-' + row.slug) || '');
+        const { error } = await supabase.rpc('update_listing', { p_slug: row.slug, p_edit_token_hash: h, p_payload: payload, p_theme: row.theme || 'protocol' });
+        if (error) throw error;
+        status(mode === 'card' ? 'Listing page now shows the artwork.' : 'Artwork is the marketplace cover only.', 'ok');
       });
       return;
     }
