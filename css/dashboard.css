@@ -70,11 +70,17 @@
 .dgate .ag-label{color:var(--c-mut);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
 
 /* ── owner-set card thumbnail picker ── */
-.thumbForm{display:flex;flex-direction:column;gap:8px;margin:8px 0 0}
-.tf-label{font:600 10px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut)}
-.tf-picks{display:flex;flex-wrap:wrap;gap:6px;max-height:118px;overflow-y:auto}
+.thumbForm{display:flex;flex-direction:column;gap:14px;margin:10px 0 0;padding:14px;background:var(--c-surface);border:1px solid var(--c-line)}
+.tf-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.tf-label{font:700 11px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--c-ink)}
+#dwrap .tf-head button{padding:5px 10px;font-size:9px;letter-spacing:.12em}
+.tf-sec{display:flex;flex-direction:column;gap:8px}
+.tf-cap{font:600 9.5px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut)}
+.tf-picks{display:flex;flex-wrap:wrap;gap:8px;max-height:118px;overflow-y:auto}
 #dwrap .tf-pick{padding:3px;width:46px;height:46px;display:flex;align-items:center;justify-content:center}
 .tf-pick img{width:100%;height:100%;object-fit:contain}
-.tf-row{display:flex;gap:6px;align-items:center}
+.tf-row{display:flex;gap:8px;align-items:center}
 .tf-url{flex:1;min-width:0;background:var(--c-bg);border:1px solid var(--c-line);color:var(--c-ink);padding:7px 10px;font:600 12px var(--font-ui)}
 .tf-url:focus{outline:1px solid var(--c-mut);outline-offset:1px}
+.tf-foot{display:flex;align-items:center;gap:10px;border-top:1px solid var(--c-line-soft);padding-top:12px}
+.tf-hint{font-size:10.5px;color:var(--c-mut);letter-spacing:.04em}

@@ -331,11 +331,12 @@ function thumbFormHTML(row) {
     + '<img src="' + esc(p.icon || p.img) + '" alt="" loading="lazy"></button>').join('');
   const urlVal = (cur && cur.label === '') ? esc(cur.src) : '';
   return '<form class="thumbForm">'
-    + '<span class="tf-label">Card thumbnail — pick a skin, upload an image, or paste a URL</span>'
-    + (btns ? '<div class="tf-picks">' + btns + '</div>' : '')
+    + '<div class="tf-head"><span class="tf-label">Card thumbnail</span><button type="button" data-t="cancel">Cancel</button></div>'
+    + (btns ? '<div class="tf-sec"><span class="tf-cap">From your skins</span><div class="tf-picks">' + btns + '</div></div>' : '')
+    + '<div class="tf-sec"><span class="tf-cap">Upload or paste a link</span>'
     + '<div class="tf-row"><button type="button" data-t="file">Upload image…</button><input type="file" class="tf-input" accept="image/png,image/jpeg,image/webp" hidden></div>'
-    + '<div class="tf-row"><input type="url" class="tf-url" placeholder="https://example.com/cover.jpg" value="' + urlVal + '"><button type="button" data-t="set">Set URL</button></div>'
-    + '<div class="tf-row"><button type="button" data-t="auto">Auto (default)</button><button type="button" data-t="cancel">Cancel</button></div>'
+    + '<div class="tf-row"><input type="url" class="tf-url" placeholder="https://example.com/cover.jpg" value="' + urlVal + '"><button type="button" data-t="set">Set URL</button></div></div>'
+    + '<div class="tf-foot"><button type="button" data-t="auto">Auto (default)</button><span class="tf-hint">Auto shows the first skin icon, as before.</span></div>'
     + '</form>';
 }
 
