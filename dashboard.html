@@ -30,30 +30,18 @@
   </div>
 </div>
 
+<section id="dgate" hidden class="dgate"><h2>Owner sign-in</h2><p class="dgate-sub">The dashboard is for the listing owner only.</p><label class="ag-label" for="dgEmail">Seller email</label><input class="ag-input" id="dgEmail" type="email" autocomplete="username" placeholder="you@example.com"><label class="ag-label" for="dgPass">Password</label><input class="ag-input" id="dgPass" type="password" autocomplete="current-password" placeholder="your password"><button class="primary" id="dgSend" type="button">Sign in</button><p class="dgate-msg" id="dgMsg" role="status"></p><a class="dgate-alt" href="browse.html">Browse the marketplace →</a></section>
+
 <main id="dwrap">
   <header class="dhead">
     <div class="dh-left">
       <h1>My accounts</h1>
-      <span id="dsub">Listings this browser can manage</span>
+      <span id="dsub">Every listing on the marketplace — owner view</span>
     </div>
     <div class="dh-right">
-      <button id="keyBtn" type="button">Import recovery key</button>
       <a class="tb-link" id="soldPageLink" href="sold.html">Sold gallery</a>
     </div>
   </header>
-
-  <!-- recovery-key import panel (hidden until keyBtn) -->
-  <div id="keyBox" hidden>
-    <p>Paste a recovery key to manage a listing from this browser. Keys are shown once, at first publish.</p>
-    <div class="kb-row">
-      <label class="sr" for="keySlug">Listing slug</label>
-      <input id="keySlug" type="text" placeholder="slug (from the listing URL)" autocomplete="off" spellcheck="false">
-      <label class="sr" for="keyToken">Recovery key</label>
-      <input id="keyToken" type="text" placeholder="recovery key" autocomplete="off" spellcheck="false">
-      <button id="keySave" type="button">Save</button>
-      <button id="keyCancel" type="button">Cancel</button>
-    </div>
-  </div>
 
   <section id="stats" aria-label="Sales statistics">
     <div class="stat"><span class="sv" id="stActive">—</span><span class="sl">On sale</span></div>

@@ -6,6 +6,7 @@ import { applyLayout, resolveLayout } from './layouts.js';
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
 let sbLoading = null;
+let isSeller = false;
 
 /* CF-25: listing reads are anon REST — a plain fetch returns the row in
    ~1.5KB. The 209KB supabase.js SDK used to sit on the buyer's critical
@@ -706,10 +707,31 @@ function wireContact(link) {
    fb_post_url is a clean https URL — no owner session needed. */
 function syncFbBtns(listing) {
   const u = String((listing && listing.fb_post_url) || '').trim();
-  const ok = /^https:\/\//i.test(u);
+  const ok = /^https?:\/\//i.test(u);
   [CF.$('fbPostBtn'), CF.$('maFb')].forEach(b => {
     if (!b) return;
-    if (ok) { b.href = u; b.hidden = false; } else { b.hidden = true; b.removeAttribute('href'); }
+    if (ok) {
+      b.href = u;
+      b.hidden = false;
+      b.textContent = 'View Facebook post';
+      b.classList.add('primary');
+      b.classList.remove('accent');
+    } else {
+      b.hidden = true;
+      b.removeAttribute('href');
+      b.classList.remove('primary');
+      b.classList.add('accent');
+    }
+  });
+  [CF.$('contactBtn'), CF.$('maContact')].forEach(b => {
+    if (!b) return;
+    if (ok) {
+      b.classList.remove('primary');
+      b.classList.add('accent');
+    } else {
+      b.classList.add('primary');
+      b.classList.remove('accent');
+    }
   });
 }
 
@@ -1059,14 +1081,6 @@ if (!slug) {
 
     /* contact wiring is in wireContact() — the button always renders now */
 
-    if (localStorage.getItem('vc-edit-' + slug)) {
-      const editBtn = CF.$('editBtn');
-      editBtn.hidden = false;
-      editBtn.addEventListener('click', () => {
-        location.href = 'index.html?edit=' + encodeURIComponent(slug);
-      });
-    }
-
     CF.$('copyLinkBtn').addEventListener('click', () => CF.copyText(location.href));
 
     fit();
@@ -1075,12 +1089,19 @@ if (!slug) {
     if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY) {
       const sb = await loadSupabase();
       if (sb) {
+        try { const { data } = await sb.rpc('am_i_seller'); isSeller = data === true; } catch { isSeller = false; }
         startSupabasePresence(slug);
-        /* CF-22: the seller's own loads are not "views" — skip the bump when
-           this browser holds the edit token for the listing */
-        const isOwner = !!localStorage.getItem('vc-edit-' + slug);
-        if (isOwner) wireOwnerControls(sb, listing, slug);
-        if (!isOwner) {
+        /* CF-22: the seller's own loads are not "views" — only a signed-in
+           seller session (am_i_seller) is treated as the owner */
+        if (isSeller) wireOwnerControls(sb, listing, slug);
+        if (isSeller) {
+          const editBtn = CF.$('editBtn');
+          editBtn.hidden = false;
+          editBtn.addEventListener('click', () => {
+            location.href = 'index.html?edit=' + encodeURIComponent(slug);
+          });
+        }
+        if (!isSeller) {
           try {
             const v = await restBumpViews(slug);
             if (v != null) totalViews = Number(v);

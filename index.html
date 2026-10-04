@@ -30,10 +30,13 @@
     <div class="ag-logo">cardForge</div>
     <h1 class="ag-title">Single-seller marketplace</h1>
     <div id="agForm">
-      <p class="ag-sub">Cards here are published by the owner only. If that&rsquo;s you, sign in with your seller email &mdash; we&rsquo;ll send a magic link.</p>
+      <p class="ag-sub">Sign in with the owner account.</p>
       <label class="ag-label" for="agEmail">Seller email</label>
       <input id="agEmail" type="email" autocomplete="email" spellcheck="false" placeholder="you@example.com">
-      <button id="agSend" type="button">Email me a sign-in link</button>
+      <label class="ag-label" for="agPass">Password</label>
+      <input id="agPass" type="password" autocomplete="current-password" placeholder="your password">
+      <button id="agSend" type="button">Sign in</button>
+      <button class="ag-alt" id="agOtp" type="button">No password yet? Email me a sign-in link instead</button>
       <p id="agMsg" class="ag-msg" role="status"></p>
     </div>
     <div id="agSent" hidden>

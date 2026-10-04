@@ -1499,6 +1499,8 @@ async function initAuthGate() {
   if (!gate) return;
   const agForm = CF.$('agForm');
   const agEmail = CF.$('agEmail');
+  const agPass = CF.$('agPass');
+  const agOtp = CF.$('agOtp');
   const agSend = CF.$('agSend');
   const agMsg = CF.$('agMsg');
   const agSent = CF.$('agSent');
@@ -1553,11 +1555,41 @@ async function initAuthGate() {
       agMsg.className = 'ag-msg err';
       return;
     }
+    const password = agPass.value;
+    if (!password) {
+      agMsg.textContent = 'Enter your password.';
+      agMsg.className = 'ag-msg err';
+      return;
+    }
     agSend.disabled = true;
     agMsg.textContent = '';
     agMsg.className = 'ag-msg';
-    const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     agSend.disabled = false;
+    agPass.value = '';
+    if (error) {
+      agMsg.className = 'ag-msg err';
+      agMsg.textContent = /invalid login credentials/i.test(error.message)
+        ? 'Wrong email or password.'
+        : /email not confirmed/i.test(error.message)
+          ? 'That account needs confirming once from the Supabase dashboard.'
+          : 'Sign-in failed: ' + error.message;
+      return;
+    }
+  });
+
+  agOtp.addEventListener('click', async () => {
+    const email = agEmail.value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      agMsg.textContent = 'Enter a valid email address.';
+      agMsg.className = 'ag-msg err';
+      return;
+    }
+    agOtp.disabled = true;
+    agMsg.textContent = '';
+    agMsg.className = 'ag-msg';
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+    agOtp.disabled = false;
     if (error) {
       agMsg.className = 'ag-msg err';
       agMsg.textContent = (error.message && /security purposes|rate limit/i.test(error.message))

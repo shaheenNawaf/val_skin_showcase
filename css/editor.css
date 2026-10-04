@@ -282,13 +282,14 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 .ag-title{font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--c-ink);margin:14px 0 10px}
 .ag-sub{font-size:13px;line-height:1.65;color:var(--c-mut);margin:0 0 18px}
 .ag-label{display:block;text-transform:uppercase;font-size:10px;font-weight:700;letter-spacing:.16em;color:var(--c-mut);margin:0 0 6px}
-#agEmail{width:100%;box-sizing:border-box;background:var(--c-surface2);border:1px solid var(--c-line);color:var(--c-ink);font:14px var(--font-ui);padding:11px 12px;margin-bottom:12px}
-#agEmail:focus{border-color:var(--c-accent);outline:none}
+#agEmail,#agPass{width:100%;box-sizing:border-box;background:var(--c-surface2);border:1px solid var(--c-line);color:var(--c-ink);font:14px var(--font-ui);padding:11px 12px;margin-bottom:12px}
+#agEmail:focus,#agPass:focus{border-color:var(--c-accent);outline:none}
 #agSend,#agBack,#agOut{background:transparent;border:1px solid var(--c-line-soft);color:var(--c-mut);padding:11px 16px;font:700 11px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;cursor:pointer;
   clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 #agSend{background:var(--c-accent-btn);border-color:transparent;color:#fff}
 #agSend:hover{color:#fff;filter:brightness(1.12)}
 #agSend:disabled{opacity:.5;cursor:default}
+.ag-alt{margin-top:10px;background:none;border:none;color:var(--c-mut);font:500 12px var(--font-ui);text-decoration:underline;cursor:pointer}
 #agBack:hover,#agOut:hover{border-color:var(--c-mut);color:var(--c-ink);background:color-mix(in srgb,#fff 4%,transparent)}
 .ag-msg{font-size:12px;margin:10px 0 0;min-height:16px;color:var(--c-mut)}
 .ag-msg.err{color:#FF6B77}

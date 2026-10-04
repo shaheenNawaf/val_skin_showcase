@@ -8,6 +8,7 @@ let supabase = null;
 if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase) {
   supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 }
+let isSeller = false;
 
 const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>";
 
@@ -404,6 +405,7 @@ function featHTML(l) {
 }
 
 function ctaHTML() {
+  if (!isSeller) return '';
   return '<a class="cta-tile" href="index.html">'
     + '<b>Your card could hang here</b>'
     + '<span>Publish a showcase card and it appears on this floor instantly.</span>'
@@ -569,7 +571,8 @@ function renderError(detail) {
     '<span>The listing service did not answer. Nothing was lost — your cards and drafts live in this browser.</span>' +
     (detail ? '<code>' + String(detail).slice(0, 140).replace(/[<>]/g, '') + '</code>' : '') +
     '<span class="sb-actions"><button type="button" class="sbtn primary">Try again</button>' +
-    '<a class="sbtn" href="index.html">Build a card instead</a></span>');
+    (isSeller ? '<a class="sbtn" href="index.html">Build a card instead</a>' : '') +
+    '</span>');
   sb.querySelector('.primary').addEventListener('click', load);
 }
 
@@ -583,7 +586,7 @@ function showCtaOnly() {  $('count').textContent = '0 listings';
   stateBox(
     '<b>No listings yet</b>' +
     '<span>This is the very first day — the marketplace is empty but not broken. The moment anyone publishes, their card appears here.</span>' +
-    '<span class="sb-actions"><a class="sbtn primary" href="index.html">Build the first card</a></span>');
+    (isSeller ? '<span class="sb-actions"><a class="sbtn primary" href="index.html">Build the first card</a></span>' : ''));
 }
 
 function resetAll() {
@@ -997,6 +1000,7 @@ async function load() {
     status('Browse needs Supabase configured — see SETUP.md.', 'err');
     return;
   }
+  try { const { data } = await supabase.rpc('am_i_seller'); isSeller = data === true; } catch { isSeller = false; }
   status('Loading listings…');
   let data = null;
   let limited = false;

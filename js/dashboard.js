@@ -1,4 +1,4 @@
-// CardForge owner dashboard — every listing this browser can manage, on one
+// CardForge owner dashboard — Every listing on the marketplace — owner view, on one
 // page. Edit keys live in localStorage as `vc-edit-<slug>`; every mutation is
 // checked server-side against the key's hash.
 import { esc, $, status, initStatusDismiss, initDisclaimerCollapse, readJSON, writeJSON, hashToken, copyText, fbPostText } from './shared.js';
@@ -49,49 +49,18 @@ const deny = e => /42501|token mismatch/i.test(String((e && e.message) || e))
   ? 'This browser’s edit key was rejected for that action.'
   : null;
 
-// ── key collection + load ─────────────────────────────────────────
-function collectKeys() {
-  state.tokens = {};
-  const out = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (!key || !key.startsWith('vc-edit-')) continue;
-    const token = localStorage.getItem(key);
-    if (!token) continue;
-    const slug = key.slice(8);
-    state.tokens[slug] = token;
-    out.push({ slug, token });
-  }
-  return out;
-}
-
+// ── load ──────────────────────────────────────────────────────────
 async function load(silent) {
-  const keys = collectKeys();
-
   if (!supabase) {
-    state.local = true;
-    state.rows = Object.entries(readJSON('vlistings', {})).map(([slug, e]) => ({
-      _local: true, slug,
-      payload: e.payload || { picks: e.picks || {} },
-      theme: e.theme || 'protocol', status: 'available', archived: false,
-      price: null, currency: null, negotiable: false, views: 0,
-      created_at: null, updated_at: new Date(e.at || Date.now()).toISOString(),
-      sold_at: null, featured_at: null, fb_post_url: null
-    }));
-    status('Local-only mode — publish a listing to unlock sold / featured / price controls.');
-    render();
+    $('dgate').hidden = false;
+    $('dgMsg').textContent = 'Supabase failed to load — refresh to retry.';
+    $('stats').hidden = true;
+    $('tabs').hidden = true;
+    $('rows').hidden = true;
     return;
   }
 
-  if (!keys.length) {
-    state.rows = [];
-    $('rows').innerHTML = '';
-    status('No edit keys found in this browser yet.');
-    render();
-    return;
-  }
-
-  const { data, error } = await supabase.from('listing_public').select('*').in('slug', keys.map(k => k.slug));
+  const { data, error } = await supabase.from('listing_public').select('id,slug,payload,theme,status,price,currency,negotiable,views,created_at,updated_at,archived,sold_at,featured_at,fb_post_url').order('updated_at', { ascending: false });
   if (error) {
     $('derror').hidden = false;
     $('derrorMsg').textContent = error.message || String(error);
@@ -102,7 +71,7 @@ async function load(silent) {
   }
 
   state.rows = data || [];
-  $('dsub').textContent = state.rows.length + (state.rows.length === 1 ? ' listing' : ' listings') + ' under this browser’s control';
+  $('dsub').textContent = state.rows.length + (state.rows.length === 1 ? ' listing' : ' listings') + ' signed-in owner view';
   if (!silent) status('Loaded ' + state.rows.length + ' listings.', 'ok');
   render();
 }
@@ -266,7 +235,7 @@ function render() {
 
 // ── owner RPCs ────────────────────────────────────────────────────
 async function own(row, params) {
-  const h = await hashToken(state.tokens[row.slug]);
+  const h = await hashToken(localStorage.getItem('vc-edit-' + row.slug) || '');
   const { error } = await supabase.rpc('owner_set_listing', Object.assign({ p_slug: row.slug, p_edit_token_hash: h }, params));
   if (error) throw error;
 }
@@ -410,7 +379,7 @@ function wireActions() {
         ? 'Archive this listing? It disappears from the marketplace until you unarchive it.'
         : 'Unarchive this listing? It returns to the marketplace.')) return;
       runAction(rowEl, btn.textContent, async () => {
-        const h = await hashToken(state.tokens[slug]);
+        const h = await hashToken(localStorage.getItem('vc-edit-' + slug) || '');
         const { error } = await supabase.rpc('set_listing_archived', { p_slug: slug, p_edit_token_hash: h, p_archived: next });
         if (error) throw error;
         status(next ? 'Listing archived — hidden from the marketplace.' : 'Listing unarchived — back in the marketplace.', 'ok');
@@ -430,7 +399,7 @@ function wireActions() {
         return;
       }
       runAction(rowEl, btn.textContent, async () => {
-        const h = await hashToken(state.tokens[slug]);
+        const h = await hashToken(localStorage.getItem('vc-edit-' + slug) || '');
         const { error } = await supabase.rpc('delete_listing', { p_slug: slug, p_edit_token_hash: h });
         if (error) throw error;
         localStorage.removeItem('vc-edit-' + slug);
@@ -450,29 +419,65 @@ document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click
   render();
 }));
 
-$('keyBtn').addEventListener('click', () => {
-  const box = $('keyBox');
-  box.hidden = !box.hidden;
-  if (!box.hidden) $('keySlug').focus();
-});
-$('keyCancel').addEventListener('click', () => { $('keyBox').hidden = true; });
-$('keySave').addEventListener('click', () => {
-  const slug = $('keySlug').value.trim().toLowerCase();
-  const token = $('keyToken').value.trim();
-  if (!/^[a-z0-9]{5,16}$/.test(slug)) {
-    status('That does not look like a listing slug — it is the part after ?slug= in the listing URL.', 'err');
-    return;
-  }
-  if (!token) { status('Paste the recovery key too.', 'err'); return; }
-  localStorage.setItem('vc-edit-' + slug, token);
-  $('keySlug').value = '';
-  $('keyToken').value = '';
-  $('keyBox').hidden = true;
-  status('Recovery key saved for ' + slug + '. If it does not match the listing, actions will tell you.', 'ok');
-  load(true);
-});
-
 $('retryBtn').addEventListener('click', () => { $('derror').hidden = true; load(); });
 
 wireActions();
-load();
+
+function showGate() {
+  $('dgate').hidden = false;
+  $('stats').hidden = true;
+  $('tabs').hidden = true;
+  $('rows').hidden = true;
+  $('dempty').hidden = true;
+  $('derror').hidden = true;
+}
+
+async function probeSeller() {
+  try {
+    const { data } = await supabase.rpc('am_i_seller');
+    return data === true;
+  } catch {
+    return false;
+  }
+}
+
+async function initGate() {
+  if (!supabase) {
+    showGate();
+    $('dgMsg').textContent = 'Supabase failed to load — refresh to retry.';
+    return;
+  }
+
+  async function applyGate() {
+    if (await probeSeller()) {
+      $('dgate').hidden = true;
+      load(true);
+    } else {
+      showGate();
+    }
+  }
+
+  supabase.auth.onAuthStateChange(event => {
+    if (event === 'SIGNED_IN') applyGate();
+    else if (event === 'SIGNED_OUT') location.reload();
+  });
+
+  $('dgSend').addEventListener('click', async () => {
+    const email = $('dgEmail').value.trim();
+    const password = $('dgPass').value;
+    $('dgMsg').textContent = '';
+    $('dgSend').disabled = true;
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    $('dgSend').disabled = false;
+    $('dgPass').value = '';
+    if (error) {
+      $('dgMsg').textContent = /invalid login credentials/i.test(error.message || '')
+        ? 'Wrong email or password.'
+        : (error.message || 'Sign-in failed.');
+    }
+  });
+
+  await applyGate();
+}
+
+initGate();
