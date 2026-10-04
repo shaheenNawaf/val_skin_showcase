@@ -1779,6 +1779,9 @@ async function initAuthGate(opts) {
       agForm.hidden = false;
       agSent.hidden = true;
       agSigned.hidden = true;
+      if (!window.matchMedia('(pointer: coarse)').matches) {
+        try { agEmail.focus({ preventScroll: true }); } catch { /* older browsers */ }
+      }
       return;
     }
     let isSeller = false;
@@ -1796,6 +1799,7 @@ async function initAuthGate(opts) {
     agSent.hidden = true;
     agSigned.hidden = false;
     agWho.textContent = (session.user && session.user.email) || 'your account';
+    try { agOut.focus({ preventScroll: true }); } catch { /* older browsers */ }
   }
 
   if (!gate.dataset.wired) {
@@ -1878,6 +1882,17 @@ async function initAuthGate(opts) {
     };
     agOut.addEventListener('click', signOut);
     signOutBtn.addEventListener('click', signOut);
+
+    /* a11y: keep Tab cycling inside the overlay while the gate is up */
+    gate.addEventListener('keydown', e => {
+      if (e.key !== 'Tab' || gate.hidden) return;
+      const focusables = Array.from(gate.querySelectorAll('input:not([disabled]),button:not([disabled]),a[href]'))
+        .filter(el => el.offsetParent !== null);
+      if (!focusables.length) return;
+      const first = focusables[0], last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
   }
 
   if (!force && (location.search.includes('code=') || location.hash.includes('access_token'))) {

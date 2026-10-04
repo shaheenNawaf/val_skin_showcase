@@ -80,32 +80,48 @@ gallery) · terms/privacy/404.
 - Drafts live under `vc-draft-id` / draft storage in the editor; the recovery key only
   matters once published.
 
-## 4b. Seller sign-in (magic link)
+## 4b. Seller sign-in (magic link or password)
 
-- **Who can publish**: only emails in the private `seller_emails` table, signed in via
-  a magic link on the editor page. Everyone else is a viewer (the editor shows a
-  sign-in screen; no public "Build a card" links anymore).
+- **Who can publish**: only emails in the private `seller_emails` table, signed in on
+  the editor gate (magic link or password) — the dashboard gate offers the same two
+  paths. Everyone else is a viewer (both pages show a sign-in screen; no public
+  "Build a card" links anymore).
+- **`?edit=` nuance**: `index.html?edit=<slug>` intentionally skips the boot gate
+  (recovery-key model). If the session is missing/expired at publish time the server
+  returns 42501 and the gate reopens over the intact editor state — sign in and
+  publish again; nothing is lost.
 - **One-time Supabase setup** (dashboard only, not possible from the repo):
   Authentication → URL Configuration → Site URL `https://cardforge.shaheen.works`;
   Additional redirect URLs: `https://cardforge.shaheen.works/index.html`,
+  `https://cardforge.shaheen.works/dashboard.html`,
   `https://staging--cardforge-showcase.netlify.app/index.html`,
-  `http://localhost:3000/index.html`. Optionally disable "Allow new users to sign up"
-  (the allow-list gates publishing either way).
+  `https://staging--cardforge-showcase.netlify.app/dashboard.html`,
+  `http://localhost:3000/index.html`, `http://localhost:3000/dashboard.html`.
+  (The dashboard gate's magic link requests `emailRedirectTo=…/dashboard.html`;
+  without that allow-list entry Supabase falls back to the Site URL — session still
+  works, the seller just lands on the editor.) Optionally disable "Allow new users to
+  sign up" (the allow-list gates publishing either way).
 - **Registering a seller email** (once per seller):
   `supabase db query --linked -q "insert into public.seller_emails (email) values ('seller@example.com') on conflict do nothing"`
   — or run it in the Supabase SQL editor. Rotating/removing a seller = delete/insert
   rows in `seller_emails`; takes effect on their next publish attempt.
 - **Stakeholder onboarding**: open `https://cardforge.shaheen.works/index.html` →
-  enter the seller email → click the magic link in the inbox → editor unlocks (session
-  persists in that browser; sign out via the editor's ⋯ menu). New device/browser:
-  repeat the magic link, then import per-listing recovery keys via the dashboard as
-  before.
+  enter the seller email → magic link (click it in the inbox) or password → editor
+  unlocks (session persists in that browser; sign out via the editor's ⋯ menu or the
+  dashboard header). New device/browser: repeat sign-in, then import per-listing
+  recovery keys via the dashboard as before.
+- **Demo stakeholder account**: `stakeholder@cardforge.test` — password login only
+  (no inbox, so the magic link won't work for it). Credentials + revoke one-liners:
+  `supabase/migrations/16_stakeholder_admin.sql` (rev 2 — allow-list SQL + GoTrue
+  admin-API recipe). **Never hand-insert into `auth.users`**: GoTrue ≥2.197 cannot
+  scan hand-made rows and 500s login/user-list until they're deleted.
 - **SMTP**: magic-link emails use Supabase's built-in SMTP (low hourly limit — fine
   for one seller); configure custom SMTP under Supabase Auth settings if that ever
   changes.
-- **Known limitation (pre-existing, unchanged)**: anon can still upload/overwrite
-  `<slug>.jpg` in the `listing-images` storage bucket; proper fix = edge-function
-  upload path validating the edit token.
+- **Resolved 2026-10-05**: the old anon upload/overwrite hole in `listing-images` is
+  closed — re-applying `12_single_admin.sql` made bucket insert/update/delete
+  seller-only (`am_i_seller()`); anon attempts get 403. No edge-function upload path
+  needed for V1.
 
 ## 5. Changing things (dev + deploy)
 

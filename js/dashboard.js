@@ -638,11 +638,15 @@ async function initGate() {
       $('dgWait').hidden = true;
       $('dgSigned').hidden = false;
       $('dgWho').textContent = (session.user && session.user.email) || 'your account';
+      try { $('dgOut').focus({ preventScroll: true }); } catch { /* older browsers */ }
     } else {
       $('dgForm').hidden = false;
       $('dgSent').hidden = true;
       $('dgSigned').hidden = true;
       $('dgWait').hidden = true;
+      if (!window.matchMedia('(pointer: coarse)').matches) {
+        try { $('dgEmail').focus({ preventScroll: true }); } catch { /* older browsers */ }
+      }
     }
   }
 

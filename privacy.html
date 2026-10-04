@@ -27,13 +27,14 @@
 </div>
 <main class="legal">
   <h1>Privacy Policy</h1>
-  <p class="stamp">Last updated: 29 September 2026</p>
+  <p class="stamp">Last updated: 5 October 2026</p>
 
   <h2>1. The short version</h2>
-  <p>CardForge has no accounts, no logins, no analytics, and no ads. We store what you publish and nothing else. Riot access tokens pass through memory only, are never stored, logged, or published, and are never visible to other users. Published listings are public by design — anyone with the link can see them, so do not publish anything you would not want public. <a href="terms.html">Terms of Service</a>.</p>
+  <p>CardForge needs no account for browsing or buying — no analytics, no ads. Publishing is restricted to registered seller accounts: a seller signs in with an email address plus a password or a one-time sign-in link, and we store what sellers publish and nothing else. Riot access tokens pass through memory only, are never stored, logged, or published, and are never visible to other users. Published listings are public by design — anyone with the link can see them, so do not publish anything you would not want public. <a href="terms.html">Terms of Service</a>.</p>
 
   <h2>2. What we collect</h2>
   <ul>
+    <li><strong>Seller account</strong> — for the small number of registered sellers: email address and sign-in credentials (a password hash or magic-link session), handled by Supabase Authentication and used only to gate publishing, the dashboard, and owner controls. Buyers never see it.</li>
     <li><strong>Seller-published payload</strong> — the card content you choose to publish: your display name and tag, level, rank, balances you include, texts, skin picks, owned-skin markers, server region, and any images you upload (avatar and equipped player card).</li>
     <li><strong>Listing fields</strong> — the slug (share link), theme, and any price or contact fields you enter on the listing.</li>
     <li><strong>View counters</strong> — a simple per-listing view count, plus an ephemeral "viewing now" presence count while a page is open. Presence is not stored as a history.</li>
@@ -41,7 +42,7 @@
 
   <h2>3. What we never collect</h2>
   <ul>
-    <li>No accounts, emails, or passwords — CardForge has no login.</li>
+    <li>No buyer accounts — browsing and buying never require a login, email, or password.</li>
     <li>No payment data — trades and payments happen off-platform, directly between buyer and seller, and never pass through the Service.</li>
     <li>No browsing history beyond the per-listing view counts described above, and no cross-site tracking of any kind.</li>
     <li>No operator personal identity beyond the service infrastructure required to run the Service.</li>
@@ -51,7 +52,7 @@
   <p>The optional <strong>Import account</strong> feature lets a seller pull their own level, rank, wallet, and owned items from Riot. Riot access tokens (and any entitlements token) are sent once over HTTPS to the import function, used entirely <strong>in memory</strong> against Riot's APIs, and are <strong>never stored, logged, or published</strong>. Only the derived snapshot (level, rank tier, balances, owned-item identifiers) comes back to the browser and, if you publish, into the listing you choose to share. Riot tokens expire after roughly one hour; treat them like passwords.</p>
 
   <h2>5. On-device storage</h2>
-  <p>Drafts of unpublished cards live only in your browser's localStorage. The edit token that proves ownership of a listing is also stored only in your browser; to publish, it is sent to our database, which keeps only its cryptographic hash. Nothing in local storage is uploaded unless you publish it as part of the listing payload. Clearing your browser storage deletes all drafts and edit tokens on your side.</p>
+  <p>Drafts of unpublished cards live only in your browser's localStorage. The edit token that proves ownership of a listing is also stored only in your browser; to publish, it is sent to our database, which keeps only its cryptographic hash. Nothing in local storage is uploaded unless you publish it as part of the listing payload. Clearing your browser storage deletes all drafts and edit tokens on your side. Seller sign-in sessions are also kept in browser localStorage by the Supabase auth library and are removed on sign-out.</p>
 
   <h2>6. Cookies and analytics</h2>
   <p>None. CardForge sets no cookies and runs no analytics, tracking pixels, or advertising identifiers. We do not sell or share data with anyone.</p>
@@ -78,7 +79,7 @@
   <p>CardForge is not directed to children under 13, and we do not knowingly collect data from them. Users aged 13–18 must have a guardian's consent to use the Service.</p>
 
   <h2>11. Security</h2>
-  <p>Listing data is protected by row-level security so that only the holder of a listing's edit token can modify it. Edit tokens are stored as cryptographic hashes, never in plaintext. The Supabase anon key used by the site is a public identifier protected by those policies — it is safe to expose and is not a secret.</p>
+  <p>Listing data is protected by row-level security. Creating or managing listings requires a signed-in seller account, checked server-side against a private allow-list, and edits additionally require the listing's edit token — stored as a cryptographic hash, never in plaintext. Seller sign-in runs over HTTPS via Supabase Authentication. The Supabase anon key used by the site is a public identifier protected by those policies — it is safe to expose and is not a secret.</p>
 
   <h2>12. Changes</h2>
   <p>We may update this policy as the Service changes. When we do, we will revise the "last updated" date at the top of this page. Continued use after an update means you accept the revised policy.</p>

@@ -25,10 +25,10 @@
 <script type="module" src="js/editor.js"></script>
 </head>
 <body>
-<div id="authGate" hidden>
+<div id="authGate" hidden role="dialog" aria-modal="true" aria-labelledby="agTitle">
   <div class="ag-panel">
     <div class="ag-logo">cardForge</div>
-    <h1 class="ag-title">Single-seller marketplace</h1>
+    <h1 class="ag-title" id="agTitle">Single-seller marketplace</h1>
     <div id="agForm">
       <p class="ag-sub">Sign in with the owner account.</p>
       <label class="ag-label" for="agEmail">Seller email</label>

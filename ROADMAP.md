@@ -33,6 +33,15 @@
 - Regression harness `npm run check:export`: 5 theme×layout combos assert font drift <2%, grid geometry identity during capture, and blob dims = filename
 - Evidence + decisions: `design-plans/006-export-png-fidelity.md`
 
+## v1.4 — Auth V1 closeout ✅ shipped
+- Testing window closed: `12_single_admin.sql` re-applied (all owner RPCs gated, `listing-images` seller-only; anon → 42501/403 verified) and all 4 client `GATE_DISABLED` guards removed
+- Dashboard gate at parity with the editor: magic-link OTP fallback, email validation, explanatory non-seller state + sign-out, header Sign out, pending states, dev-speak-free error copy
+- Editor gate hardened: re-entrancy guard, 42501-on-publish reopens the gate over the intact editor state (incl. `?edit=` recovery-key mode), "Signing you in…" state on magic-link return (both gates)
+- Gate a11y minimum: `role=dialog` + `aria-modal` + focus-on-show + Tab trap on the editor overlay
+- `privacy.html` updated for the seller-account reality (was "no accounts, no logins"); HANDOVER §4b refreshed (dashboard OTP, redirect allow-list, stakeholder account, storage hole resolved)
+- Stakeholder demo admin (`16_stakeholder_admin.sql` rev 2): created via GoTrue admin API — hand-inserting `auth.users` rows bricks GoTrue ≥2.197 (documented incident)
+- Marketplace wiped to empty-showroom state before release (7 listings + 11 bucket objects)
+
 ---
 
 ## 1. Current State (prototype, single-file)
