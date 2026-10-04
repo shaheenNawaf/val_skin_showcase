@@ -591,6 +591,7 @@ function showGate() {
   $('rows').hidden = true;
   $('dempty').hidden = true;
   $('derror').hidden = true;
+  $('dSignOut').hidden = true;
 }
 
 async function probeSeller() {
@@ -602,21 +603,46 @@ async function probeSeller() {
   }
 }
 
-const GATE_DISABLED = true; /* TEMP 2026-10-04: testing window — seller gate OFF for owner + stakeholder feature testing. Restore before staging -> main: delete this const + its guard line, then re-run supabase/migrations/12_single_admin.sql. */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function setDgMsg(text, isErr) {
+  const m = $('dgMsg');
+  m.textContent = text || '';
+  m.className = isErr ? 'dgate-msg err' : 'dgate-msg';
+}
+
+/* v1.4: the dashboard gate reaches parity with the editor gate — magic-link
+   fallback (magic-link-only sellers could never pass a password-only gate),
+   an explained non-seller state with sign-out, pending labels, email
+   validation, and a "Signing you in…" state for the magic-link return. */
 async function initGate() {
-  if (GATE_DISABLED) { $('dgate').hidden = true; load(); return; }
   if (!supabase) {
     showGate();
-    $('dgMsg').textContent = 'Supabase failed to load — refresh to retry.';
+    setDgMsg('Supabase failed to load — refresh to retry.', true);
     return;
   }
 
   async function applyGate() {
-    if (await probeSeller()) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session && await probeSeller()) {
       $('dgate').hidden = true;
+      $('dSignOut').hidden = false;
       load(true);
+      return;
+    }
+    showGate();
+    if (session) {
+      // signed in, but not on the seller allow-list
+      $('dgForm').hidden = true;
+      $('dgSent').hidden = true;
+      $('dgWait').hidden = true;
+      $('dgSigned').hidden = false;
+      $('dgWho').textContent = (session.user && session.user.email) || 'your account';
     } else {
-      showGate();
+      $('dgForm').hidden = false;
+      $('dgSent').hidden = true;
+      $('dgSigned').hidden = true;
+      $('dgWait').hidden = true;
     }
   }
 
@@ -625,20 +651,75 @@ async function initGate() {
     else if (event === 'SIGNED_OUT') location.reload();
   });
 
+  const sendLabel = $('dgSend').textContent;
+  const otpLabel = $('dgOtp').textContent;
+
   $('dgSend').addEventListener('click', async () => {
     const email = $('dgEmail').value.trim();
+    if (!EMAIL_RE.test(email)) { setDgMsg('Enter a valid email address.', true); return; }
     const password = $('dgPass').value;
-    $('dgMsg').textContent = '';
+    if (!password) { setDgMsg('Enter your password.', true); return; }
+    setDgMsg('');
     $('dgSend').disabled = true;
+    $('dgSend').textContent = 'Signing in…';
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     $('dgSend').disabled = false;
+    $('dgSend').textContent = sendLabel;
     $('dgPass').value = '';
     if (error) {
-      $('dgMsg').textContent = /invalid login credentials/i.test(error.message || '')
+      setDgMsg(/invalid login credentials/i.test(error.message || '')
         ? 'Wrong email or password.'
-        : (error.message || 'Sign-in failed.');
+        : /email not confirmed/i.test(error.message || '')
+          ? 'That account still needs to be confirmed by the marketplace owner.'
+          : 'Sign-in failed: ' + (error.message || 'unknown error'), true);
     }
   });
+
+  $('dgOtp').addEventListener('click', async () => {
+    const email = $('dgEmail').value.trim();
+    if (!EMAIL_RE.test(email)) { setDgMsg('Enter a valid email address.', true); return; }
+    setDgMsg('');
+    $('dgOtp').disabled = true;
+    $('dgOtp').textContent = 'Sending link…';
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+    $('dgOtp').disabled = false;
+    $('dgOtp').textContent = otpLabel;
+    if (error) {
+      setDgMsg(/security purposes|rate limit/i.test(error.message || '')
+        ? 'Too many requests — wait a minute and try again.'
+        : 'Sign-in link failed: ' + (error.message || 'unknown error'), true);
+      return;
+    }
+    $('dgForm').hidden = true;
+    $('dgSent').hidden = false;
+    $('dgSigned').hidden = true;
+  });
+
+  $('dgBack').addEventListener('click', () => {
+    $('dgForm').hidden = false;
+    $('dgSent').hidden = true;
+    setDgMsg('');
+  });
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    location.reload();
+  };
+  $('dgOut').addEventListener('click', signOut);
+  $('dSignOut').addEventListener('click', signOut);
+
+  if (location.search.includes('code=') || location.hash.includes('access_token')) {
+    // magic-link return: hold the calm state while the SDK exchanges the code
+    $('dgate').hidden = false;
+    $('dgForm').hidden = true;
+    $('dgSent').hidden = true;
+    $('dgSigned').hidden = true;
+    $('dgWait').hidden = false;
+    await Promise.race([
+      new Promise(resolve => { supabase.auth.onAuthStateChange(() => resolve()); }),
+      new Promise(resolve => setTimeout(resolve, 4000))
+    ]);
+  }
 
   await applyGate();
 }

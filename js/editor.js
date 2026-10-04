@@ -1628,7 +1628,7 @@ async function publishListing() {
           if (error.code === '23505' || /duplicate|unique|slug/i.test(error.message || '')) slug = CF.randomId(7);
           else if (/sign-in required|not a registered seller/i.test(error.message || '')) {
             CF.status('Publishing is restricted to the signed-in seller. Complete sign-in, then publish again.', 'err');
-            initAuthGate();
+            initAuthGate({ force: true });
             return;
           }
           else throw error;
@@ -1747,11 +1747,14 @@ async function publishListing() {
 CF.$('publishBtn').addEventListener('click', publishListing);
 
 // ── v1.3.1: single-seller auth gate ──
-const GATE_DISABLED = true; /* TEMP 2026-10-04: testing window — seller gate OFF for owner + stakeholder feature testing. Restore before staging -> main: delete this const + its guard line, then re-run supabase/migrations/12_single_admin.sql. */
-async function initAuthGate() {
-  if (GATE_DISABLED) return;
+/* Re-entry safe via gate.dataset.wired: the publish-failure path calls this
+   again to reopen the gate over intact editor state — listeners must not
+   stack. { force: true } skips the ?edit= bypass and the magic-link race so
+   a 42501 publish failure always gets a visible gate. */
+async function initAuthGate(opts) {
   if (!supabase) return;
-  if (new URLSearchParams(location.search).get('edit')) return;
+  const force = !!(opts && opts.force);
+  if (!force && new URLSearchParams(location.search).get('edit')) return;
   const gate = CF.$('authGate');
   if (!gate) return;
   const agForm = CF.$('agForm');
@@ -1765,10 +1768,12 @@ async function initAuthGate() {
   const agSigned = CF.$('agSigned');
   const agWho = CF.$('agWho');
   const agOut = CF.$('agOut');
+  const agWait = CF.$('agWait');
   const signOutBtn = CF.$('signOutBtn');
   if (!agForm || !agEmail || !agSend || !agMsg || !agSent || !agBack || !agSigned || !agWho || !agOut || !signOutBtn) return;
 
   async function applyGateSession(session) {
+    if (agWait) agWait.hidden = true;
     if (!session) {
       gate.hidden = false;
       agForm.hidden = false;
@@ -1793,84 +1798,102 @@ async function initAuthGate() {
     agWho.textContent = (session.user && session.user.email) || 'your account';
   }
 
-  supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') applyGateSession(session);
-  });
+  if (!gate.dataset.wired) {
+    gate.dataset.wired = '1';
 
-  if (location.search.includes('code=') || location.hash.includes('access_token')) {
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') applyGateSession(session);
+    });
+
+    const sendLabel = agSend.textContent;
+    const otpLabel = agOtp ? agOtp.textContent : '';
+
+    agSend.addEventListener('click', async () => {
+      const email = agEmail.value.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        agMsg.textContent = 'Enter a valid email address.';
+        agMsg.className = 'ag-msg err';
+        return;
+      }
+      const password = agPass.value;
+      if (!password) {
+        agMsg.textContent = 'Enter your password.';
+        agMsg.className = 'ag-msg err';
+        return;
+      }
+      agSend.disabled = true;
+      agSend.textContent = 'Signing in…';
+      agMsg.textContent = '';
+      agMsg.className = 'ag-msg';
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      agSend.disabled = false;
+      agSend.textContent = sendLabel;
+      agPass.value = '';
+      if (error) {
+        agMsg.className = 'ag-msg err';
+        agMsg.textContent = /invalid login credentials/i.test(error.message)
+          ? 'Wrong email or password.'
+          : /email not confirmed/i.test(error.message)
+            ? 'That account still needs to be confirmed by the marketplace owner.'
+            : 'Sign-in failed: ' + error.message;
+        return;
+      }
+    });
+
+    if (agOtp) agOtp.addEventListener('click', async () => {
+      const email = agEmail.value.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        agMsg.textContent = 'Enter a valid email address.';
+        agMsg.className = 'ag-msg err';
+        return;
+      }
+      agOtp.disabled = true;
+      agOtp.textContent = 'Sending link…';
+      agMsg.textContent = '';
+      agMsg.className = 'ag-msg';
+      const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+      agOtp.disabled = false;
+      agOtp.textContent = otpLabel;
+      if (error) {
+        agMsg.className = 'ag-msg err';
+        agMsg.textContent = (error.message && /security purposes|rate limit/i.test(error.message))
+          ? 'Too many requests — wait a minute and try again.'
+          : 'Sign-in link failed: ' + error.message;
+        return;
+      }
+      agForm.hidden = true;
+      agSent.hidden = false;
+      agSigned.hidden = true;
+    });
+
+    agBack.addEventListener('click', () => {
+      agForm.hidden = false;
+      agSent.hidden = true;
+      agMsg.textContent = '';
+    });
+
+    const signOut = async () => {
+      await supabase.auth.signOut();
+      location.reload();
+    };
+    agOut.addEventListener('click', signOut);
+    signOutBtn.addEventListener('click', signOut);
+  }
+
+  if (!force && (location.search.includes('code=') || location.hash.includes('access_token'))) {
+    /* Returning from a magic link: hold a calm "signing you in" state while
+       the SDK exchanges the code (<=4s) instead of flashing the raw form. */
+    gate.hidden = false;
+    agForm.hidden = true;
+    agSent.hidden = true;
+    agSigned.hidden = true;
+    if (agWait) agWait.hidden = false;
     await Promise.race([
       new Promise(resolve => { supabase.auth.onAuthStateChange(() => resolve()); }),
       new Promise(resolve => setTimeout(resolve, 4000))
     ]);
   }
   applyGateSession((await supabase.auth.getSession()).data.session);
-
-  agSend.addEventListener('click', async () => {
-    const email = agEmail.value.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      agMsg.textContent = 'Enter a valid email address.';
-      agMsg.className = 'ag-msg err';
-      return;
-    }
-    const password = agPass.value;
-    if (!password) {
-      agMsg.textContent = 'Enter your password.';
-      agMsg.className = 'ag-msg err';
-      return;
-    }
-    agSend.disabled = true;
-    agMsg.textContent = '';
-    agMsg.className = 'ag-msg';
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    agSend.disabled = false;
-    agPass.value = '';
-    if (error) {
-      agMsg.className = 'ag-msg err';
-      agMsg.textContent = /invalid login credentials/i.test(error.message)
-        ? 'Wrong email or password.'
-        : /email not confirmed/i.test(error.message)
-          ? 'That account needs confirming once from the Supabase dashboard.'
-          : 'Sign-in failed: ' + error.message;
-      return;
-    }
-  });
-
-  agOtp.addEventListener('click', async () => {
-    const email = agEmail.value.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      agMsg.textContent = 'Enter a valid email address.';
-      agMsg.className = 'ag-msg err';
-      return;
-    }
-    agOtp.disabled = true;
-    agMsg.textContent = '';
-    agMsg.className = 'ag-msg';
-    const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
-    agOtp.disabled = false;
-    if (error) {
-      agMsg.className = 'ag-msg err';
-      agMsg.textContent = (error.message && /security purposes|rate limit/i.test(error.message))
-        ? 'Too many requests — wait a minute and try again.'
-        : 'Sign-in link failed: ' + error.message;
-      return;
-    }
-    agForm.hidden = true;
-    agSent.hidden = false;
-    agSigned.hidden = true;
-  });
-
-  agBack.addEventListener('click', () => {
-    agForm.hidden = false;
-    agSent.hidden = true;
-    agMsg.textContent = '';
-  });
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    location.reload();
-  };
-  agOut.addEventListener('click', signOut);
-  signOutBtn.addEventListener('click', signOut);
 }
 
 // ── edit mode (?edit=<slug>) ──────────────────────────────────────

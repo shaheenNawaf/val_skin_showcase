@@ -30,7 +30,31 @@
   </div>
 </div>
 
-<section id="dgate" hidden class="dgate"><h2>Owner sign-in</h2><p class="dgate-sub">The dashboard is for the listing owner only.</p><label class="ag-label" for="dgEmail">Seller email</label><input class="ag-input" id="dgEmail" type="email" autocomplete="username" placeholder="you@example.com"><label class="ag-label" for="dgPass">Password</label><input class="ag-input" id="dgPass" type="password" autocomplete="current-password" placeholder="your password"><button class="primary" id="dgSend" type="button">Sign in</button><p class="dgate-msg" id="dgMsg" role="status"></p><a class="dgate-alt" href="browse.html">Browse the marketplace →</a></section>
+<section id="dgate" hidden class="dgate">
+  <h2>Owner sign-in</h2>
+  <p class="dgate-sub">The dashboard is for the listing owner only.</p>
+  <div id="dgForm">
+    <label class="ag-label" for="dgEmail">Seller email</label>
+    <input class="ag-input" id="dgEmail" type="email" autocomplete="email" spellcheck="false" placeholder="you@example.com">
+    <label class="ag-label" for="dgPass">Password</label>
+    <input class="ag-input" id="dgPass" type="password" autocomplete="current-password" placeholder="your password">
+    <button class="primary" id="dgSend" type="button">Sign in</button>
+    <button class="dg-alt" id="dgOtp" type="button">No password yet? Email me a sign-in link instead</button>
+    <p class="dgate-msg" id="dgMsg" role="status"></p>
+  </div>
+  <div id="dgSent" hidden>
+    <p class="dgate-sub">Check your inbox &mdash; the sign-in link is on its way. It expires in about an hour.</p>
+    <button id="dgBack" type="button">Use a different email</button>
+  </div>
+  <div id="dgSigned" hidden>
+    <p class="dgate-sub">Signed in as <b id="dgWho"></b> &mdash; this account isn&rsquo;t a registered seller. Only allow-listed seller accounts can open the dashboard. Sign out, or ask the owner to add this email.</p>
+    <button id="dgOut" type="button">Sign out</button>
+  </div>
+  <div id="dgWait" hidden>
+    <p class="dgate-sub">Signing you in&hellip;</p>
+  </div>
+  <a class="dgate-alt" href="browse.html">Browse the marketplace &rarr;</a>
+</section>
 
 <main id="dwrap">
   <header class="dhead">
@@ -40,6 +64,7 @@
     </div>
     <div class="dh-right">
       <a class="tb-link" id="soldPageLink" href="sold.html">Sold gallery</a>
+      <button id="dSignOut" type="button" hidden>Sign out</button>
     </div>
   </header>
 

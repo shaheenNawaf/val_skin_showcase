@@ -10,8 +10,16 @@
 .dgate{max-width:380px;margin:90px auto;padding:22px;background:var(--c-surface2);border:1px solid var(--c-line);display:flex;flex-direction:column;gap:10px}
 .dgate h2{font:800 16px var(--font-ui);letter-spacing:.08em}
 .dgate-sub,.dgate-msg{color:var(--c-mut);font-size:12.5px}
+.dgate-msg.err{color:#FF6B77}
 .dgate .ag-input{background:var(--c-surface);border:1px solid var(--c-line);color:var(--c-ink);padding:9px 10px;font:500 13px var(--font-ui)}
 .dgate-alt{color:var(--c-mut);font-size:12px;text-decoration:underline}
+/* v1.4: gate states (form / link-sent / non-seller / signing-in) stack like the editor gate */
+.dgate #dgForm,.dgate #dgSent,.dgate #dgSigned{display:flex;flex-direction:column;gap:10px}
+.dgate button{background:transparent;border:1px solid var(--c-line-soft);color:var(--c-mut);padding:10px 14px;font:600 11px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.dgate button:hover{border-color:var(--c-mut);color:var(--c-ink)}
+.dgate button:disabled{opacity:.45;cursor:default}
+.dgate .dg-alt{margin-top:2px;padding:4px 0;background:none;border:none;clip-path:none;color:var(--c-mut);font:500 12px var(--font-ui);letter-spacing:0;text-transform:none;text-decoration:underline;text-align:left}
+.dgate .dg-alt:hover{color:var(--c-ink);border:none}
 
 #dwrap button,.dacts button,#priceForm button{background:transparent;border:1px solid var(--c-line-soft);color:var(--c-mut);padding:8px 14px;font:600 11px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 #dwrap button:hover,.dacts button:hover,#priceForm button:hover{border-color:var(--c-mut);color:var(--c-ink);background:color-mix(in srgb,#fff 4%,transparent)}
