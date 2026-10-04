@@ -161,7 +161,7 @@ function normalize(r) {
 function buildFacets() {
   const themeRows = Object.keys(THEME_ACCENTS).map(k => {
     const t = THEME_ACCENTS[k];
-    return '<label><input type="checkbox" value="' + k + '"><span class="sw sw-' + k + '"></span><span class="ftxt">' + esc(t.label) + '</span><span class="fc" data-theme-count="' + k + '">(0)</span></label>';
+    return '<label><input type="checkbox" value="' + k + '"><span class="sw sw-' + k + '"></span><span class="ftxt">' + esc(t.label) + '</span><span class="fn zero" data-theme-count="' + k + '">0</span></label>';
   }).join('');
   $('fTheme').innerHTML = '<legend>THEME</legend>' + themeRows;
 
@@ -192,7 +192,11 @@ function themeCounts() {
   const base = facetBase('themes');
   Object.keys(THEME_ACCENTS).forEach(k => {
     const el = document.querySelector('[data-theme-count="' + k + '"]');
-    if (el) el.textContent = '(' + base.filter(l => l.theme === k).length + ')';
+    if (el) {
+      const n = base.filter(l => l.theme === k).length;
+      el.textContent = n;
+      el.classList.toggle('zero', n === 0);
+    }
   });
 }
 
@@ -214,7 +218,8 @@ function priceCounts() {
     }).length;
     const row = r.closest('label');
     const fn = row ? row.querySelector('.fn') : null;
-    if (fn) fn.textContent = count;
+    if (fn) { fn.textContent = count; fn.classList.toggle('zero', count === 0); }
+    if (row) row.title = count + ' matching listings';
   });
 }
 
@@ -232,7 +237,8 @@ function rankCounts() {
     const row = r.closest('.frow');
     if (!row) return;
     const fn = row.querySelector('.fn');
-    if (fn) fn.textContent = count;
+    if (fn) { fn.textContent = count; fn.classList.toggle('zero', count === 0); }
+    row.title = count + ' matching listings';
     const bar = row.querySelector('.fbar i');
     if (bar) bar.style.setProperty('--w', (count > 0 ? Math.max(4, count / N * 100) : 0) + '%');
   });
@@ -249,8 +255,42 @@ function flagCounts() {
     const row = cb.closest('label');
     const fn = row ? row.querySelector('.fn') : null;
     const test = map[cb.value];
-    if (fn && test) fn.textContent = base.filter(test).length;
+    if (fn && test) {
+      const n = base.filter(test).length;
+      fn.textContent = n;
+      fn.classList.toggle('zero', n === 0);
+    }
   });
+}
+
+/* F: active-filter chips at the top of the sidebar — what's applied right
+   now, removable in one click; CLEAR ALL only earns its place when set */
+function syncFilterChips() {
+  const box = $('fchips');
+  const chips = [];
+  document.querySelectorAll('#fTheme input:checked').forEach(cb => {
+    const t = THEME_ACCENTS[cb.value];
+    chips.push({ facet: 'theme', value: cb.value, label: t ? t.label : cb.value });
+  });
+  document.querySelectorAll('#fFlags input:checked').forEach(cb => {
+    const l = cb.closest('label');
+    const f = l ? l.querySelector('.ftxt') : null;
+    chips.push({ facet: 'flag', value: cb.value, label: f ? f.textContent : cb.value });
+  });
+  [['minrank', '#fRank'], ['price', '#fPrice']].forEach(pair => {
+    const r = document.querySelector(pair[1] + ' input[name="' + pair[0] + '"]:checked');
+    if (r && r.value) {
+      const l = r.closest('label');
+      const t = l ? (l.querySelector('.fl') || l.querySelector('.ftxt')) : null;
+      chips.push({ facet: pair[0], value: r.value, label: t ? t.textContent : r.value });
+    }
+  });
+  if (box) {
+    box.hidden = chips.length === 0;
+    box.innerHTML = chips.map(c => '<button type="button" class="fchip" data-facet="' + c.facet + '" data-value="' + esc(c.value) + '" title="Remove this filter">' + esc(c.label) + ' ×</button>').join('');
+  }
+  const clear = $('clearAll');
+  if (clear) clear.hidden = chips.length === 0;
 }
 
 // ── renderers ─────────────────────────────────────────────────────
@@ -523,6 +563,7 @@ function render() {
   priceCounts();
   rankCounts();
   flagCounts();
+  syncFilterChips();
   if (total === 0) {
     feature.hidden = true;
     feature.innerHTML = '';
@@ -962,6 +1003,19 @@ function wire() {
   });
   $('clearAll').addEventListener('click', resetAll);
   $('clearBtn').addEventListener('click', resetAll);
+  /* removing a chip re-drives the real input so state + counts stay honest */
+  $('fchips').addEventListener('click', e => {
+    const b = e.target.closest('.fchip');
+    if (!b) return;
+    const facet = b.dataset.facet, value = b.dataset.value;
+    if (facet === 'theme' || facet === 'flag') {
+      const cb = document.querySelector((facet === 'theme' ? '#fTheme' : '#fFlags') + ' input[value="' + value + '"]');
+      if (cb) { cb.checked = false; cb.dispatchEvent(new window.Event('change')); }
+    } else {
+      const any = document.querySelector((facet === 'minrank' ? '#fRank' : '#fPrice') + ' input[value=""]');
+      if (any) { any.checked = true; any.dispatchEvent(new window.Event('change')); }
+    }
+  });
   $('filtersBtn').addEventListener('click', () => {
     const open = document.body.classList.toggle('drawer');
     $('scrim').hidden = !open;
