@@ -285,6 +285,38 @@
           <button type="button" data-fmode="card" class="on">Cover + listing page</button>
         </div>
       </div>
+      <div id="faceFields" hidden>
+        <div class="ffgrid">
+          <div class="frow"><label for="ff-code">Listing code</label><input class="finput up" id="ff-code" type="text" autocomplete="off" placeholder="K486"></div>
+          <div class="frow"><label for="ff-name">Display name</label><input class="finput" id="ff-name" type="text" autocomplete="off" placeholder="Buyer-facing name"></div>
+          <div class="frow"><label for="ff-price">Price</label><input class="finput up" id="ff-price" type="text" autocomplete="off" placeholder="250 or offers"></div>
+          <div class="frow"><label for="ff-rank">Current rank</label><input class="finput" id="ff-rank" type="text" autocomplete="off" placeholder="IMMORTAL 1"></div>
+          <div class="frow"><label for="ff-prank">Peak rank</label><input class="finput" id="ff-prank" type="text" autocomplete="off" placeholder="RADIANT"></div>
+          <div class="frow"><label for="ff-contact">Contact link</label><input class="finput" id="ff-contact" inputmode="url" type="text" autocomplete="off" placeholder="https://facebook.com/…"></div>
+        </div>
+        <label class="ffobo"><input type="checkbox" id="ff-obo"> Open to offers</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="routeGate" role="dialog" aria-modal="true" aria-labelledby="rgTitle">
+  <div class="mpanel rgpanel">
+    <div class="mhead">
+      <h2 id="rgTitle">New card</h2>
+    </div>
+    <div class="mbody rgbody">
+      <p class="fhint">How do you want to build this listing?</p>
+      <div class="rgcards">
+        <button type="button" class="rgcard" id="rgArt">
+          <b>Artwork mode</b>
+          <span>Upload the finished picture your editor made. It becomes the card everywhere — marketplace, listing page, Facebook preview.</span>
+        </button>
+        <button type="button" class="rgcard" id="rgNormal">
+          <b>Normal card</b>
+          <span>Build the interactive card from skins, ranks and stats, exactly as before.</span>
+        </button>
+      </div>
     </div>
   </div>
 </div>

@@ -1065,7 +1065,7 @@ CF.$('loadBtn').addEventListener('click', () => {
 });
 
 // ── listing face: auto card vs edited artwork (creation-time input) ──
-const face = { on: false, mode: 'card', blob: null, ext: 'jpg', existing: null };
+const face = { on: false, mode: 'card', blob: null, ext: 'jpg', existing: null, route: null };
 
 function faceSync() {
   const seg = CF.$('faceSeg');
@@ -1075,6 +1075,11 @@ function faceSync() {
   seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', (b.dataset.face === 'art') === face.on));
   art.hidden = !face.on;
   mseg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.fmode === face.mode));
+  const ff = CF.$('faceFields');
+  if (ff) ff.hidden = !(face.on && face.route === 'art');
+  mseg.hidden = face.route === 'art';
+  const publishBtn = CF.$('publishBtn');
+  if (publishBtn) publishBtn.textContent = face.route === 'art' ? 'Publish artwork' : 'Publish listing';
   const prev = CF.$('facePrev');
   const rm = CF.$('faceRemove');
   const src = face.blob ? (prev ? prev.src : '') : face.existing;
@@ -1138,6 +1143,26 @@ function faceInit() {
     const faceClose = CF.$('faceClose');
     if (faceClose) faceClose.addEventListener('click', () => { faceModal.hidden = true; });
   }
+  const routeGate = CF.$('routeGate');
+  const rgArt = CF.$('rgArt');
+  const rgNormal = CF.$('rgNormal');
+  if (routeGate && rgArt && rgNormal) {
+    rgArt.addEventListener('click', () => {
+      face.route = 'art';
+      face.on = true;
+      face.mode = 'card';
+      routeGate.hidden = true;
+      if (faceModal) faceModal.hidden = false;
+      faceSync();
+    });
+    rgNormal.addEventListener('click', () => {
+      face.route = 'normal';
+      face.on = false;
+      routeGate.hidden = true;
+      faceSync();
+    });
+  }
+  if (routeGate && new URLSearchParams(location.search).has('edit')) routeGate.hidden = true;
   faceSync();
 }
 
@@ -1155,6 +1180,29 @@ function buildPayload() {
     assets: state.assets,
     owned: state.owned,
     ownedLevels: state.ownedLevels, ownedVariants: state.ownedVariants, ownedBuddies: state.ownedBuddies, ownedCards: state.ownedCards
+  };
+}
+
+function artPayload() {
+  const v = id => { const el = CF.$(id); return el ? el.value.trim() : ''; };
+  const texts = {
+    code: v('ff-code') || 'ART',
+    cname: v('ff-name'),
+    crank: v('ff-rank'), prank: v('ff-prank'),
+    price: v('ff-price'),
+    link: v('ff-contact'),
+    wtr: v('ff-obo') ? 'offers' : '',
+    receipts: '', owner: ''
+  };
+  return {
+    theme: document.documentElement.dataset.theme || 'protocol',
+    layout: 'auto',
+    showAllCards: false,
+    texts: texts,
+    ranks: { crank: null, prank: null },
+    picks: {},
+    assets: { avatar: null, pcard: null, buddies: [] },
+    owned: {}, ownedLevels: {}, ownedVariants: [], ownedBuddies: [], ownedCards: []
   };
 }
 
@@ -1423,6 +1471,7 @@ document.querySelector('.themes')?.addEventListener('click', e => {
    create_listing — an empty card full of placeholder text published to the
    public marketplace. Blocking items say exactly what to fix. */
 function publishGate() {
+  if (face.route === 'art') return { blocking: [], pass: true };
   const t = state.texts || {};
   const checks = [];
   const skins = CF.ALL_CATS.reduce((n, c) => n + (state.picks[c] || []).length, 0);
@@ -1456,8 +1505,13 @@ function publishGate() {
 }
 
 async function publishListing() {
-  const payload = buildPayload();
+  const payload = (face.route === 'art') ? artPayload() : buildPayload();
   const btn = CF.$('publishBtn');
+
+  if (face.route === 'art' && !face.blob && !face.existing) {
+    CF.status('Upload the artwork image first.');
+    return;
+  }
 
   /* CF-21: run the gate first — an empty or placeholder card never goes live */
   const gate = publishGate();
@@ -1563,6 +1617,19 @@ async function publishListing() {
             const h = await CF.hashToken(localStorage.getItem('vc-edit-' + slug) || '');
             const { error: uErr } = await supabase.rpc('update_listing', { p_slug: slug, p_edit_token_hash: h, p_payload: pl, p_theme: curRow.theme || 'protocol' });
             if (uErr) throw uErr;
+          }
+          if (face.route === 'art') {
+            const pv = (CF.$('ff-price') ? CF.$('ff-price').value.trim() : '');
+            const num = Number(pv);
+            const obo = !!(CF.$('ff-obo') && CF.$('ff-obo').checked);
+            const h2 = await CF.hashToken(localStorage.getItem('vc-edit-' + slug) || '');
+            if (pv && isFinite(num) && num >= 0) {
+              const { error: pErr } = await supabase.rpc('owner_set_listing', { p_slug: slug, p_edit_token_hash: h2, p_price: num, p_negotiable: obo });
+              if (pErr) throw pErr;
+            } else if (obo) {
+              const { error: nErr } = await supabase.rpc('owner_set_listing', { p_slug: slug, p_edit_token_hash: h2, p_negotiable: true });
+              if (nErr) throw nErr;
+            }
           }
         }
       } catch (e) {
@@ -1775,9 +1842,23 @@ async function initEditMode() {
     ownedLevels: p.ownedLevels || {}, ownedVariants: p.ownedVariants || [], ownedBuddies: p.ownedBuddies || [], ownedCards: p.ownedCards || []
   });
   const pthumb = p.thumb && typeof p.thumb.src === 'string' && p.thumb.src.startsWith('https://') ? p.thumb : null;
+  face.route = pthumb ? 'art' : 'normal';
   face.on = !!pthumb;
   face.existing = pthumb ? pthumb.src : null;
   face.mode = p.thumbMode === 'card' ? 'card' : 'cover';
+  const routeGate = CF.$('routeGate');
+  if (routeGate) routeGate.hidden = true;
+  if (face.route === 'art') {
+    const texts = p.texts || {};
+    const ffSet = (id, val) => { const el = CF.$(id); if (el) el.value = val; };
+    ffSet('ff-code', texts.code && texts.code !== 'ART' ? texts.code : '');
+    ffSet('ff-name', texts.cname || '');
+    ffSet('ff-price', texts.price || '');
+    ffSet('ff-rank', texts.crank || '');
+    ffSet('ff-prank', texts.prank || '');
+    ffSet('ff-contact', texts.link || '');
+    const obo = CF.$('ff-obo'); if (obo) obo.checked = !!texts.wtr;
+  }
   faceSync();
   if (CF.$('showAllCards')) CF.$('showAllCards').checked = !!state.showAllCards;
   renderFromState();

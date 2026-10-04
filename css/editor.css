@@ -20,8 +20,8 @@
 .rankrow .pickrank{margin-left:0}
 
 /* ── fast-add picker modal ─────────────────────────────────────── */
-#modal,#importModal,#faceModal{position:fixed;inset:0;background:var(--c-veil);backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;z-index:50;padding:12px}
-#modal[hidden],#importModal[hidden],#faceModal[hidden]{display:none}
+#modal,#importModal,#faceModal,#routeGate{position:fixed;inset:0;background:var(--c-veil);backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;z-index:50;padding:12px}
+#modal[hidden],#importModal[hidden],#faceModal[hidden],#routeGate[hidden]{display:none}
 .mpanel{width:min(1250px,100%);max-height:88vh;background:var(--c-surface2);border:1px solid var(--c-line);display:flex;flex-direction:column;padding:16px;
 clip-path:polygon(0 0,calc(100% - var(--notch-lg)) 0,100% var(--notch-lg),100% 100%,var(--notch-lg) 100%,0 calc(100% - var(--notch-lg)))}
 #modal.variant-wide .mpanel{width:min(1750px,100%)}
@@ -310,3 +310,18 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 #faceModal .fbtn{background:transparent;border:1px solid var(--c-line-soft);color:var(--c-mut);padding:7px 12px;font:600 11px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 #faceModal .fbtn:hover{border-color:var(--c-mut);color:var(--c-ink)}
 #facePrev{width:96px;height:54px;object-fit:cover;flex:none}
+.rgpanel{width:min(640px,100%)}
+.rgbody{display:flex;flex-direction:column;gap:14px}
+.rgcards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rgcard{display:flex;flex-direction:column;gap:8px;text-align:left;background:var(--c-surface);border:1px solid var(--c-line);padding:16px;cursor:pointer;color:var(--c-mut);clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
+.rgcard b{font:700 14px var(--font-display);color:var(--c-ink);letter-spacing:.02em}
+.rgcard span{font-size:12px;line-height:1.5}
+.rgcard:hover{border-color:var(--c-accent);color:var(--c-ink)}
+@media (max-width:640px){.rgcards{grid-template-columns:1fr}}
+#faceFields{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--c-line-soft);padding-top:12px}
+.ffgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+@media (max-width:640px){.ffgrid{grid-template-columns:1fr}}
+#faceFields .frow{display:flex;flex-direction:column;gap:4px}
+#faceFields label{font:600 10px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut)}
+#faceFields .finput{background:var(--c-bg);border:1px solid var(--c-line);color:var(--c-ink);padding:8px 10px;font:500 12px var(--font-ui);width:100%}
+.ffobo{display:flex;gap:8px;align-items:center;font-size:11px;color:var(--c-mut);letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
