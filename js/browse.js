@@ -9,6 +9,7 @@ if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase) {
   supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 }
 let isSeller = false;
+const GATE_DISABLED = true; /* TEMP 2026-10-04: testing window — seller gate OFF for owner + stakeholder feature testing. Restore before staging -> main: delete this const + its guard line, then re-run supabase/migrations/12_single_admin.sql. */
 
 const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>";
 
@@ -1001,6 +1002,7 @@ async function load() {
     return;
   }
   try { const { data } = await supabase.rpc('am_i_seller'); isSeller = data === true; } catch { isSeller = false; }
+  if (GATE_DISABLED) isSeller = true; /* TEMP: testing window — build CTAs visible */
   status('Loading listings…');
   let data = null;
   let limited = false;

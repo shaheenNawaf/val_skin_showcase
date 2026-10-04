@@ -1492,7 +1492,9 @@ async function publishListing() {
 CF.$('publishBtn').addEventListener('click', publishListing);
 
 // ── v1.3.1: single-seller auth gate ──
+const GATE_DISABLED = true; /* TEMP 2026-10-04: testing window — seller gate OFF for owner + stakeholder feature testing. Restore before staging -> main: delete this const + its guard line, then re-run supabase/migrations/12_single_admin.sql. */
 async function initAuthGate() {
+  if (GATE_DISABLED) return;
   if (!supabase) return;
   if (new URLSearchParams(location.search).get('edit')) return;
   const gate = CF.$('authGate');

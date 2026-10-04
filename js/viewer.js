@@ -1089,7 +1089,9 @@ if (!slug) {
     if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY) {
       const sb = await loadSupabase();
       if (sb) {
+        const GATE_DISABLED = true; /* TEMP 2026-10-04: testing window — seller gate OFF for owner + stakeholder feature testing. Restore before staging -> main: delete this const + its guard line, then re-run supabase/migrations/12_single_admin.sql. */
         try { const { data } = await sb.rpc('am_i_seller'); isSeller = data === true; } catch { isSeller = false; }
+        if (GATE_DISABLED) isSeller = true; /* TEMP: testing window — owner controls visible without sign-in */
         startSupabasePresence(slug);
         /* CF-22: the seller's own loads are not "views" — only a signed-in
            seller session (am_i_seller) is treated as the owner */

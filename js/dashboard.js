@@ -441,7 +441,9 @@ async function probeSeller() {
   }
 }
 
+const GATE_DISABLED = true; /* TEMP 2026-10-04: testing window — seller gate OFF for owner + stakeholder feature testing. Restore before staging -> main: delete this const + its guard line, then re-run supabase/migrations/12_single_admin.sql. */
 async function initGate() {
+  if (GATE_DISABLED) { $('dgate').hidden = true; load(); return; }
   if (!supabase) {
     showGate();
     $('dgMsg').textContent = 'Supabase failed to load — refresh to retry.';
