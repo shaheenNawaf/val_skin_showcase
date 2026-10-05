@@ -586,11 +586,14 @@ wireRowMenus();
 
 function showGate() {
   $('dgate').hidden = false;
+  $('dhead').hidden = true;
   $('stats').hidden = true;
   $('tabs').hidden = true;
   $('rows').hidden = true;
   $('dempty').hidden = true;
   $('derror').hidden = true;
+  $('dNewCard').hidden = true;
+  $('soldPageLink').hidden = true;
   $('dSignOut').hidden = true;
 }
 
@@ -630,6 +633,9 @@ async function initGate() {
     const { data: { session } } = await supabase.auth.getSession();
     if (session && await probeSeller()) {
       $('dgate').hidden = true;
+      $('dhead').hidden = false;
+      $('dNewCard').hidden = false;
+      $('soldPageLink').hidden = false;
       $('dSignOut').hidden = false;
       load(true);
       return;
