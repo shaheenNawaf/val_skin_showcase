@@ -1092,10 +1092,15 @@ function applySellerChrome() {
   const navNew = $('navNewCard');
   const navDash = $('navDashboard');
   const navOut = $('navSignOut');
+  const navMore = $('navMoreM');
   if (navLogin) navLogin.hidden = isSeller;
   if (navNew) navNew.hidden = !isSeller;
   if (navDash) navDash.hidden = !isSeller;
   if (navOut) navOut.hidden = !isSeller;
+  if (navMore) {
+    navMore.hidden = !isSeller;
+    if (!isSeller) $('navMoreMenuM').hidden = true;
+  }
 }
 
 function initLoginModal() {
@@ -1220,6 +1225,23 @@ function initLoginModal() {
   $('lgOut').addEventListener('click', signOut);
   const navOut = $('navSignOut');
   if (navOut) navOut.addEventListener('click', signOut);
+  const mSignOut = $('mSignOut');
+  if (mSignOut) mSignOut.addEventListener('click', signOut);
+
+  /* mobile More ▾ overflow (CF-05 pattern): My accounts + Sign out on phones */
+  const moreM = $('navMoreM'), moreMenuM = $('navMoreMenuM');
+  if (moreM && moreMenuM) {
+    const setM = open => {
+      moreMenuM.hidden = !open;
+      moreM.setAttribute('aria-expanded', String(open));
+    };
+    moreM.addEventListener('click', e => { e.stopPropagation(); setM(moreMenuM.hidden); });
+    document.addEventListener('click', e => {
+      if (!moreMenuM.hidden && !moreMenuM.contains(e.target) && e.target !== moreM) setM(false);
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !moreMenuM.hidden) setM(false); });
+    moreMenuM.querySelectorAll('a,button').forEach(i => i.addEventListener('click', () => setM(false)));
+  }
 }
 
 async function fetchPage(offset) {
