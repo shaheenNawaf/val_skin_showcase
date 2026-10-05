@@ -27,7 +27,7 @@ const THEME_ACCENTS = {
   holo: { label: 'With Champions', bg: '#04101A', panel: '#0A1E30', accent: '#46F6FF', ink: '#DFF6FF', mut: '#7E9CB2' },
   reaver: { label: 'Latest Skins', bg: '#0D0A14', panel: '#180F2A', accent: '#B44BFF', ink: '#EFE9FF', mut: '#9D92BA' },
   oni: { label: 'Budget-friendly', bg: '#120B0B', panel: '#201114', accent: '#FF5540', ink: '#F5E9DC', mut: '#AF9889' },
-  arctic: { label: 'High Prem', bg: '#DAD5CB', panel: '#F2EEE6', accent: '#C22E3C', ink: '#0F1923', mut: '#525D6B' }
+  arctic: { label: 'High Prem', bg: '#171310', panel: '#221B15', accent: '#D8434E', ink: '#F2EEE6', mut: '#A79B8B' }
 };
 
 const RANK_THRESHOLDS = { gold: 10, plat: 13, dia: 16, asc: 19, imm: 22, rad: 27 };
