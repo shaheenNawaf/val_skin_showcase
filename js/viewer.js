@@ -793,6 +793,11 @@ function wireOwnerControls(sb, listing, slug) {
       const h = await CF.hashToken(token);
       const { error } = await sb.rpc('delete_listing', { p_slug: slug, p_edit_token_hash: h });
       if (error) throw error;
+      /* v1.5.1: best-effort storage cleanup — delete_listing cannot touch it */
+      try {
+        await sb.storage.from('listing-images').remove(
+          [slug + '.jpg', slug + '-thumb.jpg', slug + '-thumb.png', slug + '-thumb.webp']);
+      } catch { /* best-effort cleanup */ }
       aBtn.hidden = true;
       dBtn.hidden = true;
       const eb = CF.$('editBtn'); if (eb) eb.hidden = true;

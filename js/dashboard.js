@@ -532,6 +532,12 @@ function wireActions() {
         const h = await hashToken(localStorage.getItem('vc-edit-' + slug) || '');
         const { error } = await supabase.rpc('delete_listing', { p_slug: slug, p_edit_token_hash: h });
         if (error) throw error;
+        /* v1.5.1: delete_listing cannot touch storage — clean the share image
+           and artwork thumb best-effort so deletes stop leaving orphans */
+        try {
+          await supabase.storage.from('listing-images').remove(
+            [slug + '.jpg', slug + '-thumb.jpg', slug + '-thumb.png', slug + '-thumb.webp']);
+        } catch { /* best-effort cleanup */ }
         localStorage.removeItem('vc-edit-' + slug);
         status('Listing deleted.', 'ok');
       });

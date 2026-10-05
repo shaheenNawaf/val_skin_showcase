@@ -1090,7 +1090,7 @@ CF.$('loadBtn').addEventListener('click', () => {
 });
 
 // ── listing face: auto card vs edited artwork (creation-time input) ──
-const face = { on: false, mode: 'card', blob: null, ext: 'jpg', existing: null, route: null };
+const face = { on: false, mode: 'card', blob: null, ext: 'jpg', existing: null, route: null, dataUrl: null };
 
 function faceSync() {
   const seg = CF.$('faceSeg');
@@ -1111,6 +1111,16 @@ function faceSync() {
   const has = face.on && !!src;
   if (prev) { prev.hidden = !has; if (has && !face.blob) prev.src = face.existing; }
   if (rm) rm.hidden = !has;
+  /* v1.5.1: WYSIWYG artwork overlay — in art mode the stage shows the artwork
+     (what marketplace/viewer will show); the card underneath stays the export
+     and share-image artifact, so capture paths are untouched. */
+  const ap = CF.$('artPrev');
+  if (ap) {
+    const asrc = face.blob ? face.dataUrl : face.existing;
+    const show = face.route === 'art' && !!asrc;
+    ap.hidden = !show;
+    if (show) CF.$('artPrevImg').src = asrc;
+  }
 }
 
 function faceInit() {
@@ -1140,18 +1150,21 @@ function faceInit() {
       if (f.size > 10 * 1024 * 1024) { CF.status('Image too large — pick one under 10 MB.', 'err'); return; }
       CF.resizeToDataUrl(f, 1280).then(dataUrl => fetch(dataUrl).then(r => r.blob()).then(blob => {
         face.blob = blob;
+        face.dataUrl = dataUrl;
         face.ext = blob.type === 'image/png' ? 'png' : 'jpg';
         const prev = CF.$('facePrev');
         if (prev) { prev.src = dataUrl; prev.hidden = false; }
         const rm = CF.$('faceRemove');
         if (rm) rm.hidden = false;
         CF.status('Artwork ready — it will attach when you publish.', 'ok');
+        faceSync();
       })).catch(() => CF.status('Could not read that image file.', 'err'));
     });
   }
   const rm = CF.$('faceRemove');
   if (rm) rm.addEventListener('click', () => {
     face.blob = null;
+    face.dataUrl = null;
     face.existing = null;
     const prev = CF.$('facePrev');
     if (prev) { prev.hidden = true; prev.src = ''; }
@@ -1654,6 +1667,8 @@ async function publishListing() {
     editSlug = slug;
     updateWm();
     btn.textContent = supabase ? 'Update listing' : 'Republish';
+    let artNote = '';
+    let lastThumbSrc = null;
 
     /* CF-20: upload the card render as the listing's share image. The
        publish link then carries the card into Discord/Facebook embeds
@@ -1694,6 +1709,7 @@ async function publishListing() {
             delete pl.thumbMode;
           }
           const changed = JSON.stringify(pl) !== JSON.stringify(curRow.payload || {});
+          if (pl.thumb && pl.thumb.src) lastThumbSrc = pl.thumb.src;
           if (changed) {
             const h = await CF.hashToken(localStorage.getItem('vc-edit-' + slug) || '');
             const { error: uErr } = await supabase.rpc('update_listing', { p_slug: slug, p_edit_token_hash: h, p_payload: pl, p_theme: curRow.theme || 'protocol' });
@@ -1714,7 +1730,9 @@ async function publishListing() {
           }
         }
       } catch (e) {
-        CF.status('Published, but the artwork setting failed to save: ' + ((e && e.message) || e), 'err');
+        /* v1.5.1: do NOT toast here — the success toast below used to overwrite
+           this, silently swallowing attach failures (the artwork 403 bug). */
+        artNote = ' WARNING: artwork/price setting failed to save — ' + ((e && e.message) || e);
       }
     }
 
@@ -1730,10 +1748,13 @@ async function publishListing() {
       : '';
     if (firstPublish) localStorage.setItem('cf-key-shown-' + slug, '1');
     CF.status(supabase
-      ? 'Published! Share link copied.' + keyMsg + ' Attach your edited artwork any time from the dashboard → THUMB.'
-      : 'Published for this browser. Link copied — add Supabase keys in js/config.js for public links.' + keyMsg, 'ok');
-    face.existing = face.on ? (face.existing || null) : null;
+      ? 'Published! Share link copied.' + keyMsg + ' Attach your edited artwork any time from the dashboard → THUMB.' + artNote
+      : 'Published for this browser. Link copied — add Supabase keys in js/config.js for public links.' + keyMsg,
+      artNote ? 'err' : 'ok');
+    face.existing = face.on ? (lastThumbSrc || face.existing) : null;
     face.blob = null;
+    face.dataUrl = null;
+    faceSync();
     if (keyMsg) {
       const el = document.getElementById('status');
       if (el) el.title = 'Recovery key: ' + key;

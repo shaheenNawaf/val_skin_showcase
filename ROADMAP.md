@@ -49,6 +49,7 @@
 - Marketplace handles magic-link returns: holds the seller probe until the session lands (≤4s), then forwards sellers to the dashboard
 - All editor links repointed (`view.html` EDIT, dashboard rows/New card/Build a card, seller CTAs); `copy-static.mjs` stages `build.html` + `_redirects`; `check-export`/`screenshot` scripts target the editor's new URL; docs (HANDOVER §1/§3/§4b, README, SETUP) updated — incl. the Supabase redirect allow-list now needing `build.html` entries
 - Hotfix (same release): the dashboard gate rendered while signed in — `.dgate` + child flex rules beat the `hidden` attribute (browse.css carried the `[hidden]{display:none!important}` guard, dashboard.css didn't, so every gate sub-state stacked over the live dashboard); guard added, the gate now owns the page when anon (header hidden), and Sign out / Sold gallery / New card moved into the top navbar (seller-only) with the empty-state CTA restyled to match the chrome
+- v1.5.1 handover closeouts: (18) storage policy regex `^[a-z0-9]{5,16}\.jpg$` had blocked every artwork/thumb upload since the v1.4 re-arm (silent 403 — the publish toast overwrote the attach error); widened to `(-thumb)?\.(jpg|png|webp)$`; editor now shows the artwork as a WYSIWYG stage overlay (`#artPrev`) and surfaces attach failures in the publish toast; (17) `listing_audit` trigger records every listings write with actor metadata (API user vs dashboard vs cron) for disappearance forensics; delete flows now remove orphaned storage objects
 
 ---
 

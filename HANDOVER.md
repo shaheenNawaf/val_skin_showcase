@@ -134,6 +134,32 @@ Since v1.5 the marketplace owns the root URL and the editor lives at `build.html
   seller-only (`am_i_seller()`); anon attempts get 403. No edge-function upload path
   needed for V1.
 
+## 4c. Artwork listings, deletes, and disappearance forensics
+
+- **Artwork mode** (a listing whose face is an uploaded image instead of the skin
+  card): chosen once at creation via the route gate (**Artwork** vs **Normal card**),
+  managed afterwards in the editor's ⋯ → **Listing face…** modal and the dashboard
+  row's **THUMB** panel (upload / URL / pick / mode / reset-auto). Since v1.5.1 the
+  editor stage shows the artwork as a WYSIWYG overlay (`#artPrev`, "Artwork face"
+  badge) whenever art mode has an image — the card canvas underneath stays the
+  export + share-image artifact, so PNG export and the `slug.jpg` embed are
+  unaffected. Buyers see the artwork as the marketplace cover and, with
+  `thumbMode: 'card'`, on the listing page itself.
+- **Deletes**: `delete_listing` (dashboard row ⋯ → Delete, or viewer owner menu)
+  requires typing `DELETE` and the per-listing edit token. Since v1.5.1 both flows
+  also remove the listing's storage objects best-effort (`slug.jpg`,
+  `slug-thumb.{jpg,png,webp}`) — before that, every delete left orphans behind,
+  which made "vanished" and "deleted" indistinguishable in the bucket.
+- **If a listing ever vanishes unexpectedly**: migration 17 keeps a forensic trail.
+  `select id, at, op, slug, actor_uid, jwt_role, db_user, app_name from
+  public.listing_audit where slug = '<slug>' order by id;` (postgres role only —
+  `supabase db query --linked` or the dashboard SQL editor; the app has no grants).
+  `db_user = 'authenticator'` + `jwt_role = 'authenticated'` + `actor_uid` = an API
+  call by that auth user; `db_user = 'postgres'` with `app_name` like `pg-meta` =
+  the Supabase table/SQL editor; `pg_cron`-style `app_name` = a scheduled job.
+  Nothing else can delete a row: no triggers beyond `listings_touch` (updated_at),
+  no webhooks, one cron job (`skin-sync-nightly`, 03:00, catalog only).
+
 ## 5. Changing things (dev + deploy)
 
 ```bash
@@ -143,15 +169,21 @@ npm run lint     # eslint (must stay clean)
 npm run build    # stages dist/ exactly like Netlify does
 ```
 
-**Deploy flow** (the house pattern):
+**Deploy flow** (since the staging/beta branch deploys were retired 2026-10-05):
 
 ```bash
-git checkout staging          # develop here
+git checkout staging          # develop here (or a feature branch)
 # ...commit...
-git push origin staging       # Netlify auto-builds the staging URL — test it
-git checkout main && git merge staging && git push origin main   # prod
+# verify locally: npm run dev + test against http://localhost:3000
+# (playwright; the shared Supabase backend makes local tests fully representative)
+git checkout main && git merge --ff-only staging && git push origin main   # prod
 git checkout staging
 ```
+
+Pushes to `staging`/`beta` no longer produce preview URLs. If a preview environment
+is ever wanted again: Netlify → Site configuration → Build & deploy → Deploy
+contexts → Branch deploys → re-add the branch (the `_redirects` file and build
+script already handle any branch).
 
 **Database migrations**: numbered files in `supabase/migrations/` (10 =
 `10_lifecycle.sql`, the v1.3 lifecycle schema). They are idempotent and applied
