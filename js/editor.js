@@ -1140,6 +1140,26 @@ function exitArtMode() {
   if (am) am.hidden = true;
 }
 
+/* v1.5.2: rank inputs in the artwork form are dropdowns fed by the live
+   catalog (same source as the card's rank picker), so sellers can't typo a
+   rank the marketplace can't parse. Hydration may run before the catalog
+   lands — dataset.pending carries the target value across. */
+function populateRankSelects() {
+  ['ff-rank', 'ff-prank'].forEach(id => {
+    const sel = CF.$(id);
+    if (!sel || sel.dataset.filled) return;
+    const want = sel.dataset.pending || sel.value;
+    (RANKS || []).forEach(r => {
+      const o = document.createElement('option');
+      o.value = r.name;
+      o.textContent = r.name;
+      sel.appendChild(o);
+    });
+    sel.dataset.filled = '1';
+    if (want) sel.value = want;
+  });
+}
+
 function faceInit() {
   const seg = CF.$('faceSeg');
   if (!seg) return;
@@ -1807,7 +1827,8 @@ async function publishListing() {
             const obo = !!(CF.$('ff-obo') && CF.$('ff-obo').checked);
             const h2 = await CF.hashToken(localStorage.getItem('vc-edit-' + slug) || '');
             if (pv && isFinite(num) && num >= 0) {
-              const { error: pErr } = await supabase.rpc('owner_set_listing', { p_slug: slug, p_edit_token_hash: h2, p_price: num, p_negotiable: obo });
+              const cur = (CF.$('ff-cur') && CF.$('ff-cur').value) || 'PHP';
+              const { error: pErr } = await supabase.rpc('owner_set_listing', { p_slug: slug, p_edit_token_hash: h2, p_price: num, p_currency: cur, p_negotiable: obo });
               if (pErr) throw pErr;
             } else if (obo) {
               const { error: nErr } = await supabase.rpc('owner_set_listing', { p_slug: slug, p_edit_token_hash: h2, p_negotiable: true });
@@ -2026,7 +2047,7 @@ async function initAuthGate(opts) {
 async function loadListingForEdit(slug) {
   if (supabase) {
     try {
-      const { data, error } = await supabase.from('listing_public').select('payload,theme').eq('slug', slug).maybeSingle();
+      const { data, error } = await supabase.from('listing_public').select('payload,theme,currency').eq('slug', slug).maybeSingle();
       if (!error && data) return data;
     } catch { /* fall through to localStorage */ }
   }
@@ -2080,13 +2101,20 @@ async function initEditMode() {
   if (routeGate) routeGate.hidden = true;
   if (face.route === 'art') {
     const texts = p.texts || {};
-    const ffSet = (id, val) => { const el = CF.$(id); if (el) el.value = val; };
+    const ffSet = (id, val) => {
+      const el = CF.$(id);
+      if (!el) return;
+      el.value = val;
+      /* rank selects are populated when the catalog lands — remember the target */
+      if (el.tagName === 'SELECT') el.dataset.pending = val;
+    };
     ffSet('ff-code', texts.code && texts.code !== 'ART' ? texts.code : '');
     ffSet('ff-name', texts.cname || '');
     ffSet('ff-price', texts.price || '');
     ffSet('ff-rank', texts.crank || '');
     ffSet('ff-prank', texts.prank || '');
     ffSet('ff-contact', texts.link || '');
+    ffSet('ff-cur', listing.currency || 'PHP');
     const obo = CF.$('ff-obo'); if (obo) obo.checked = !!texts.wtr;
     enterArtMode();
   }
@@ -2141,6 +2169,7 @@ initEditMode().finally(async () => {
        ensureBuddyCardData() loads it on first use instead */
     const catalog = await CF.loadCatalog(supabase, { extras: false });
     DB = catalog.DB; TIERS = catalog.TIERS; RANKS = catalog.RANKS;
+    populateRankSelects();
     BUDDIES = catalog.BUDDIES; CARDS = catalog.CARDS; CARDS_LIST = catalog.CARDS_LIST || [];
     SKIN_BY_ID = catalog.SKIN_BY_ID; LEVEL_MAP = catalog.LEVEL_MAP; CHROMA_MAP = catalog.CHROMA_MAP;
     FLEX_BY_ID = catalog.FLEX_BY_ID || new Map();
