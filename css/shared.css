@@ -27,7 +27,7 @@
 [data-theme=holo]{--bg:#04101A;--card1:#0A1E30;--card2:#061523;--frame:#02090F;--panel:#0A1E30;--box:#0F2C44;--box-hi:#314A5E;--line:#164059;--ink:#DFF6FF;--mut:#7E9CB2;--accent:#46F6FF;--gold:#F2C14E;--red:#FF4655;--accent-dash:rgba(70,246,255,.3)}
 [data-theme=reaver]{--bg:#0D0A14;--card1:#180F2A;--card2:#120B1F;--frame:#080512;--panel:#180F2A;--box:#241740;--box-hi:#43375B;--line:#37255C;--ink:#EFE9FF;--mut:#9D92BA;--accent:#B44BFF;--gold:#59E3B8;--red:#FF4655;--accent-dash:rgba(180,75,255,.3)}
 [data-theme=oni]{--bg:#120B0B;--card1:#201114;--card2:#180D10;--frame:#0B0607;--panel:#201114;--box:#31191E;--box-hi:#4E393D;--line:#4A2A2C;--ink:#F5E9DC;--mut:#AF9889;--accent:#FF5540;--gold:#E8B14E;--red:#FF5540;--accent-dash:rgba(255,85,64,.3)}
-[data-theme=arctic]{--bg:#DAD5CB;--card1:#F7F4EE;--card2:#ECE8E1;--frame:#B8B2A6;--panel:#F2EEE6;--box:#E0DBD1;--box-hi:#E4E0D7;--line:#8E8676;--ink:#0F1923;--mut:#525D6B;--accent:#C22E3C;--gold:#6E5614;--red:#C22E3C;
+[data-theme=arctic]{--bg:#171310;--card1:#F7F4EE;--card2:#ECE8E1;--frame:#B8B2A6;--panel:#F2EEE6;--box:#E0DBD1;--box-hi:#E4E0D7;--line:#8E8676;--ink:#0F1923;--mut:#525D6B;--accent:#C22E3C;--gold:#6E5614;--red:#C22E3C;
 --sheen:rgba(15,25,35,.05);--sheen-soft:rgba(15,25,35,.035);--tint:rgba(15,25,35,.02);--raise:rgba(15,25,35,.04);--stripe:rgba(15,25,35,.02);--veil:rgba(184,178,166,.72);--accent-dash:rgba(194,46,60,.3)}
 
 *{box-sizing:border-box;margin:0;padding:0;border-radius:0}
