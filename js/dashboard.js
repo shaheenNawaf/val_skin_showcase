@@ -23,7 +23,7 @@ function viewUrl(slug) {
 }
 
 function editUrl(slug) {
-  return new URL('index.html?edit=' + encodeURIComponent(slug), location.href).href;
+  return new URL('build.html?edit=' + encodeURIComponent(slug), location.href).href;
 }
 
 function classify(row) {
@@ -621,6 +621,10 @@ async function initGate() {
     setDgMsg('Supabase failed to load — refresh to retry.', true);
     return;
   }
+
+  /* v1.5: magic-link fallback is out of public view — reveal with ?magic=1
+     so OTP-only sellers can never be locked out. */
+  if (new URLSearchParams(location.search).has('magic')) $('dgOtp').hidden = false;
 
   async function applyGate() {
     const { data: { session } } = await supabase.auth.getSession();

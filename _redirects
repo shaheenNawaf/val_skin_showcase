@@ -1,0 +1,8 @@
+# v1.5 layout swap: marketplace moved to / (index.html), editor moved to /build.html.
+# Legacy marketplace URL → new root (Netlify preserves query strings on redirects).
+/browse.html             /                            301
+# Legacy editor recovery links (index.html?edit=<slug>) → the editor's new home.
+# The query-param rule only matches when ?edit= is present; plain /index.html
+# serves the marketplace file as usual. A client-side guard in index.html covers
+# hosts without _redirects support (e.g. local http-server).
+/index.html edit=:edit   /build.html?edit=:edit       301

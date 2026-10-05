@@ -6,7 +6,7 @@ No framework — plain HTML/CSS/JS, staged into `dist/` by a tiny build script a
 
 ## Features
 
-- **Card editor** (`index.html`): per-category skin picker (data from the community API [valorant-api.com](https://valorant-api.com)) with per-skin level (L1–L5) and color-variant badges — level 2+ marks animated skins, current/peak rank picker, avatar / gun buddies / player card uploads (resized client-side), editable texts, 5 themes, auto-count of premium-tier and animated skins.
+- **Card editor** (`build.html`): per-category skin picker (data from the community API [valorant-api.com](https://valorant-api.com)) with per-skin level (L1–L5) and color-variant badges — level 2+ marks animated skins, current/peak rank picker, avatar / gun buddies / player card uploads (resized client-side), editable texts, 5 themes, auto-count of premium-tier and animated skins.
 - **PNG export** at 3840×2160 via html-to-image (foreignObject render of computed styles).
 - **Drafts**: save/load the full structured card to localStorage (old `vcard-builder-v1` drafts migrate automatically).
 - **Publishing** (`view.html`): publishes the card as a listing; share links work cross-device when Supabase is configured, per-browser otherwise. Viewers see a live "viewing now" counter (Supabase Realtime, or BroadcastChannel locally), a total-views counter and a contact-seller button. Republish/update works via a locally-stored edit token.
@@ -25,17 +25,23 @@ No framework — plain HTML/CSS/JS, staged into `dist/` by a tiny build script a
 ## v1.3.1 — single-seller gate
 
 - **Single-seller gate**: publishing (`create_listing`) now requires a Supabase magic-link session whose email is in the private `seller_emails` allow-list; an `am_i_seller()` probe RPC reports eligibility.
-- **Sign-in screen**: visitors to `index.html` see a sign-in overlay instead of the editor; publishing emails get a magic link, and sign-out lives in the editor's ⋯ menu.
+- **Sign-in screen**: visitors to the editor (`build.html`, then `index.html`) see a sign-in overlay instead of the editor; sign-out lives in the editor's ⋯ menu. (v1.5 moved sign-in's front door to a **Log in** modal on the marketplace and hid the magic-link button behind `?magic=1`.)
 - **Public build links removed**: the "Build a card" links were removed from browse / terms / privacy / 404.
 - **Recovery-key editing unchanged**: `?edit=<slug>` editing needs no sign-in, and update/delete/archive/owner actions stay per-listing token-gated.
 - **Database** (`supabase/migrations/11_seller_auth.sql`): private `seller_emails` allow-list, `am_i_seller()` probe, and the `create_listing` gate. See [SETUP.md](SETUP.md).
 
+## v1.5 — marketplace-first landing
+
+- **The marketplace is the front door**: `index.html` now serves the public browse page; the card editor moved to `build.html`. The root URL never shows a login wall. `_redirects` 301s legacy `/browse.html` → `/` and old `index.html?edit=…` recovery links → `build.html?edit=…`.
+- **Log in button** (marketplace, top-right): a password-only sign-in modal. Sellers land on the dashboard; signed-in non-sellers get an explained state with sign-out. Recognised sellers see New card / My accounts / Sign out in the topbar instead.
+- **Magic link out of public view**: the "Email me a sign-in link" button is hidden on all three sign-in surfaces and reappears only when the page URL carries `?magic=1` — a recovery hatch so password-less sellers can never be locked out.
+
 ## Project structure
 
 ```
-index.html              Card editor page
+index.html              Marketplace (public browse page — the front door)
+build.html              Card editor page
 view.html               Listing viewer page (?slug=<id>)
-browse.html             Public listings index (available listings)
 terms.html              Terms of Service
 privacy.html            Privacy Policy
 css/                    shared.css (tokens/themes/card), editor.css, viewer.css, browse.css, legal.css

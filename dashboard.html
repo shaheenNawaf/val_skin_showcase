@@ -24,8 +24,8 @@
     <span class="logo">cardForge</span>
   </div>
   <div class="tb-right">
-    <a class="tb-link" href="browse.html">Marketplace</a>
-    <a class="tb-link" href="index.html">New card</a>
+    <a class="tb-link" href="index.html">Marketplace</a>
+    <a class="tb-link" href="build.html">New card</a>
     <span id="status" role="status" aria-live="polite">Loading your listings…</span>
   </div>
 </div>
@@ -39,7 +39,7 @@
     <label class="ag-label" for="dgPass">Password</label>
     <input class="ag-input" id="dgPass" type="password" autocomplete="current-password" placeholder="your password">
     <button class="primary" id="dgSend" type="button">Sign in</button>
-    <button class="dg-alt" id="dgOtp" type="button">No password yet? Email me a sign-in link instead</button>
+    <button class="dg-alt" id="dgOtp" type="button" hidden>No password yet? Email me a sign-in link instead</button>
     <p class="dgate-msg" id="dgMsg" role="status"></p>
   </div>
   <div id="dgSent" hidden>
@@ -53,7 +53,7 @@
   <div id="dgWait" hidden>
     <p class="dgate-sub">Signing you in&hellip;</p>
   </div>
-  <a class="dgate-alt" href="browse.html">Browse the marketplace &rarr;</a>
+  <a class="dgate-alt" href="index.html">Browse the marketplace &rarr;</a>
 </section>
 
 <main id="dwrap">
@@ -87,7 +87,7 @@
   <div id="dempty" hidden>
     <h2>No listings here yet</h2>
     <p>This browser holds no edit keys. Publish a card and its key lands here automatically — or import an existing recovery key.</p>
-    <a class="tb-link" href="index.html">Build a card</a>
+    <a class="tb-link" href="build.html">Build a card</a>
   </div>
 
   <div id="derror" hidden>

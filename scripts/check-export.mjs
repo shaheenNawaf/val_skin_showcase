@@ -157,7 +157,7 @@ for (const [theme, layout] of COMBOS) {
     localStorage.setItem('vcard-draft-v2', JSON.stringify(d));
     localStorage.setItem('vc-draft-id', 'pr62d5g');
   }, draft);
-  await page.goto(`${BASE || `http://localhost:${PORT}`}/index.html`);
+  await page.goto(`${BASE || `http://localhost:${PORT}`}/build.html`);
   await page.waitForSelector('#card .skin', { timeout: 15000 });
   await page.evaluate(() => document.fonts.ready);
   const report = await page.evaluate(RUN_CHECKS);

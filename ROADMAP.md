@@ -42,6 +42,13 @@
 - Stakeholder demo admin (`16_stakeholder_admin.sql` rev 2): created via GoTrue admin API — hand-inserting `auth.users` rows bricks GoTrue ≥2.197 (documented incident)
 - Marketplace wiped to empty-showroom state before release (7 listings + 11 bucket objects)
 
+## v1.5 — Marketplace-first landing 🔨 staged
+- The marketplace is the front door: `index.html` now serves the public browse page, the editor moved to `build.html`; the root URL never shows a login wall. `_redirects` 301s legacy `/browse.html` → `/` and `index.html?edit=…` → `build.html?edit=…` (client-side guard twin in `index.html` for non-Netlify hosts)
+- Top-right **Log in** on the marketplace: password-only sign-in modal (`role=dialog`, Tab trap, Esc/backdrop close); sellers land on the dashboard, signed-in non-sellers get an explained state + sign-out; seller topbar swaps to New card / My accounts / Sign out
+- Magic link out of public view: the "Email me a sign-in link" button is `hidden` on all three sign-in surfaces (marketplace modal, editor gate, dashboard gate) and reappears only with `?magic=1` — a recovery hatch so OTP-only sellers can never be locked out
+- Marketplace handles magic-link returns: holds the seller probe until the session lands (≤4s), then forwards sellers to the dashboard
+- All editor links repointed (`view.html` EDIT, dashboard rows/New card/Build a card, seller CTAs); `copy-static.mjs` stages `build.html` + `_redirects`; `check-export`/`screenshot` scripts target the editor's new URL; docs (HANDOVER §1/§3/§4b, README, SETUP) updated — incl. the Supabase redirect allow-list now needing `build.html` entries
+
 ---
 
 ## 1. Current State (prototype, single-file)

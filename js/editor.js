@@ -1772,6 +1772,10 @@ async function initAuthGate(opts) {
   const signOutBtn = CF.$('signOutBtn');
   if (!agForm || !agEmail || !agSend || !agMsg || !agSent || !agBack || !agSigned || !agWho || !agOut || !signOutBtn) return;
 
+  /* v1.5: the magic-link fallback is out of public view — it stays reachable
+     via ?magic=1 so OTP-only sellers can never be locked out. */
+  if (agOtp && new URLSearchParams(location.search).has('magic')) agOtp.hidden = false;
+
   async function applyGateSession(session) {
     if (agWait) agWait.hidden = true;
     if (!session) {

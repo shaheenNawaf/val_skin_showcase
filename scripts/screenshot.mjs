@@ -69,9 +69,9 @@ async function shoot(name, url, { width = 1440, height = 900, before } = {}) {
 }
 
 // desktop editor with the seeded draft restored
-await shoot('editor-desktop', '/index.html');
+await shoot('editor-desktop', '/build.html');
 // picker modal open with a search applied
-await shoot('editor-modal', '/index.html', {
+await shoot('editor-modal', '/build.html', {
   before: async (page) => {
     await page.locator('.panel[data-cat="Rifles"] .add').click();
     await page.locator('#mSearch').fill('vandal');
@@ -81,14 +81,14 @@ await shoot('editor-modal', '/index.html', {
 // desktop viewer with the seeded listing
 await shoot('viewer-desktop', '/view.html?slug=demo2026');
 // riot token import modal (opened directly — needs no Supabase to render)
-await shoot('editor-import', '/index.html', {
+await shoot('editor-import', '/build.html', {
   before: async (page) => {
     await page.evaluate(() => { document.getElementById('importModal').hidden = false; });
     await page.waitForTimeout(300);
   }
 });
 // mobile editor + viewer (real 390px viewport)
-await shoot('editor-mobile', '/index.html', { width: 390, height: 844 });
+await shoot('editor-mobile', '/build.html', { width: 390, height: 844 });
 await shoot('viewer-mobile', '/view.html?slug=demo2026', { width: 390, height: 844 });
 // arctic theme viewer
 await shoot('viewer-arctic', '/view.html?slug=demo2026', {

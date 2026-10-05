@@ -32,7 +32,7 @@ window.CARDFORGE_CONFIG = {
 
 The anon key is a public identifier protected by RLS — safe to commit. Never put the service-role key in this file.
 
-- **Auth URL configuration** (single-seller magic-link sign-in): Supabase dashboard → Authentication → URL Configuration — Site URL `https://cardforge.shaheen.works`, redirect URLs `https://cardforge.shaheen.works/index.html`, `https://staging--cardforge-showcase.netlify.app/index.html`, `http://localhost:3000/index.html`.
+- **Auth URL configuration** (seller sign-in; magic link is hidden behind `?magic=1` since v1.5): Supabase dashboard → Authentication → URL Configuration — Site URL `https://cardforge.shaheen.works`, redirect URLs `https://cardforge.shaheen.works/index.html`, `https://cardforge.shaheen.works/build.html`, `https://cardforge.shaheen.works/dashboard.html`, and the same three paths for `https://staging--cardforge-showcase.netlify.app` and `http://localhost:3000`.
 
 ## 3. Skin catalog sync (optional)
 
@@ -81,5 +81,5 @@ How it works / safety notes:
 
 ## 5. Verify
 
-- `index.html` → Publish listing → status shows "Published!" and the link is copied.
+- `build.html` → Publish listing → status shows "Published!" and the link is copied.
 - Open the copied `view.html?slug=…` link in a different browser/incognito — the card should render and the viewer counter should tick.

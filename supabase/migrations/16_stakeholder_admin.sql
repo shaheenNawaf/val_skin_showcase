@@ -47,7 +47,8 @@ on conflict (email) do nothing;
 
 -- VERIFY ────────────────────────────────────────────────────────────────────
 -- select * from public.seller_emails;   -- expect owner + stakeholder rows
--- Then in an incognito window: index.html → gate → email + password → editor
+-- Then in an incognito window: open the marketplace (site root) → Log in
+-- (top-right) → email + password → dashboard; or build.html → gate → editor
 -- unlocks; dashboard.html → owner view. (Only once the client guards are gone —
 -- with GATE_DISABLED the gates never render.)
 

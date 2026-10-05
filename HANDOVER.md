@@ -15,10 +15,12 @@ Written at v1.3 (`a8e33b5`, personal-marketplace close-out).
 | Database + storage | Supabase project `psxpxcqrepkcrymwveok` (CLI is linked on your machine) |
 | Hosting | Netlify (build: `node scripts/copy-static.mjs` → `dist/`) |
 
-It is a **static site + serverless DB**. No framework, no app server, no user accounts.
-Pages: `index.html` (card editor) · `view.html?slug=…` (a listing) · `browse.html`
-(marketplace) · `dashboard.html` (your control hub) · `sold.html` (unlisted past-sales
-gallery) · terms/privacy/404.
+It is a **static site + serverless DB**. No framework, no app server, no buyer accounts.
+Pages: `index.html` (marketplace — the front door) · `build.html` (card editor) ·
+`view.html?slug=…` (a listing) · `dashboard.html` (your control hub) · `sold.html`
+(unlisted past-sales gallery) · terms/privacy/404.
+Since v1.5 the marketplace owns the root URL and the editor lives at `build.html`;
+`_redirects` 301s legacy `/browse.html` → `/` and `index.html?edit=…` → `build.html?edit=…`.
 
 ## 2. How it works (two minutes)
 
@@ -39,7 +41,7 @@ gallery) · terms/privacy/404.
 
 ## 3. Daily selling workflow
 
-1. **Create** — `index.html`: fill the card, **Publish**. Copy the recovery key into
+1. **Create** — `build.html`: fill the card, **Publish**. Copy the recovery key into
    your password manager *immediately*; it is shown only once.
 2. **Post to the Facebook group** — `dashboard.html` → **COPY FB POST** on the row →
    paste into your group post. It writes itself: title, price (or "DM me"), rank,
@@ -51,7 +53,7 @@ gallery) · terms/privacy/404.
    (USD/EUR/GBP/JPY), OBO checkbox (= negotiable). The price flows to the listing hero,
    marketplace cards, price filters, tab title, and FB preview.
 5. **Feature** — dashboard **FEATURE** pins *one* listing as the big tile on
-   `browse.html`. Pinning another automatically unpins the previous. With nothing
+   `index.html`. Pinning another automatically unpins the previous. With nothing
    pinned, the most-viewed listing gets the tile (old behavior).
 6. **Bump** — **BUMP** refreshes `updated_at`, pushing the listing to the top of
    "Newest" on the marketplace.
@@ -80,36 +82,46 @@ gallery) · terms/privacy/404.
 - Drafts live under `vc-draft-id` / draft storage in the editor; the recovery key only
   matters once published.
 
-## 4b. Seller sign-in (magic link or password)
+## 4b. Seller sign-in (password; magic link is hidden)
 
-- **Who can publish**: only emails in the private `seller_emails` table, signed in on
-  the editor gate (magic link or password) — the dashboard gate offers the same two
-  paths. Everyone else is a viewer (both pages show a sign-in screen; no public
-  "Build a card" links anymore).
-- **`?edit=` nuance**: `index.html?edit=<slug>` intentionally skips the boot gate
+- **Who can publish**: only emails in the private `seller_emails` table, signed in —
+  the marketplace **Log in** modal (top-right of `index.html`), the editor gate
+  (`build.html`), and the dashboard gate all take email + password. The **magic link
+  is out of public view since v1.5**: the "Email me a sign-in link" button is hidden
+  on all three surfaces and reappears only when the page URL carries **`?magic=1`**
+  (recovery hatch so OTP-only sellers can never be locked out). Everyone else is a
+  viewer — the marketplace is fully browsable with no account, and anonymous visitors
+  see no "New card"/"Build a card" links.
+- **`?edit=` nuance**: `build.html?edit=<slug>` intentionally skips the boot gate
   (recovery-key model). If the session is missing/expired at publish time the server
   returns 42501 and the gate reopens over the intact editor state — sign in and
-  publish again; nothing is lost.
+  publish again; nothing is lost. Legacy `index.html?edit=<slug>` URLs 301 via
+  `_redirects` (plus a client-side guard in `index.html` for non-Netlify hosts).
 - **One-time Supabase setup** (dashboard only, not possible from the repo):
   Authentication → URL Configuration → Site URL `https://cardforge.shaheen.works`;
   Additional redirect URLs: `https://cardforge.shaheen.works/index.html`,
+  `https://cardforge.shaheen.works/build.html`,
   `https://cardforge.shaheen.works/dashboard.html`,
   `https://staging--cardforge-showcase.netlify.app/index.html`,
+  `https://staging--cardforge-showcase.netlify.app/build.html`,
   `https://staging--cardforge-showcase.netlify.app/dashboard.html`,
-  `http://localhost:3000/index.html`, `http://localhost:3000/dashboard.html`.
-  (The dashboard gate's magic link requests `emailRedirectTo=…/dashboard.html`;
-  without that allow-list entry Supabase falls back to the Site URL — session still
-  works, the seller just lands on the editor.) Optionally disable "Allow new users to
-  sign up" (the allow-list gates publishing either way).
+  `http://localhost:3000/index.html`, `http://localhost:3000/build.html`,
+  `http://localhost:3000/dashboard.html`.
+  (Magic-link requests ask for `emailRedirectTo=<the page you are on>`; without the
+  allow-list entry for that page Supabase falls back to the Site URL — the session
+  still works, the seller just lands on the marketplace instead of where they
+  started. The marketplace detects a magic-link return and forwards sellers to the
+  dashboard.) Optionally disable "Allow new users to sign up" (the allow-list gates
+  publishing either way).
 - **Registering a seller email** (once per seller):
   `supabase db query --linked -q "insert into public.seller_emails (email) values ('seller@example.com') on conflict do nothing"`
   — or run it in the Supabase SQL editor. Rotating/removing a seller = delete/insert
   rows in `seller_emails`; takes effect on their next publish attempt.
-- **Stakeholder onboarding**: open `https://cardforge.shaheen.works/index.html` →
-  enter the seller email → magic link (click it in the inbox) or password → editor
-  unlocks (session persists in that browser; sign out via the editor's ⋯ menu or the
-  dashboard header). New device/browser: repeat sign-in, then import per-listing
-  recovery keys via the dashboard as before.
+- **Stakeholder onboarding**: open `https://cardforge.shaheen.works/` → **Log in**
+  (top-right) → seller email + password → you land on the dashboard; **New card**
+  opens the editor (session persists in that browser; sign out via the marketplace
+  topbar, the dashboard header, or the editor's ⋯ menu). New device/browser: repeat
+  sign-in, then import per-listing recovery keys via the dashboard as before.
 - **Demo stakeholder account**: `stakeholder@cardforge.test` — password login only
   (no inbox, so the magic link won't work for it). Credentials + revoke one-liners:
   `supabase/migrations/16_stakeholder_admin.sql` (rev 2 — allow-list SQL + GoTrue

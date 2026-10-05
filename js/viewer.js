@@ -1161,7 +1161,7 @@ if (!slug) {
           const editBtn = CF.$('editBtn');
           editBtn.hidden = false;
           editBtn.addEventListener('click', () => {
-            location.href = 'index.html?edit=' + encodeURIComponent(slug);
+            location.href = 'build.html?edit=' + encodeURIComponent(slug);
           });
         }
         if (!isSeller) {

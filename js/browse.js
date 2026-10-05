@@ -9,6 +9,11 @@ if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase) {
   supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 }
 let isSeller = false;
+/* v1.5: the marketplace is the front door — public sign-in is password-only.
+   The magic-link button in the login modal is revealed with ?magic=1
+   (recovery hatch so OTP-only sellers can never be locked out). */
+const MAGIC = new URLSearchParams(location.search).has('magic');
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>";
 
@@ -456,7 +461,7 @@ function featHTML(l) {
 
 function ctaHTML() {
   if (!isSeller) return '';
-  return '<a class="cta-tile" href="index.html">'
+  return '<a class="cta-tile" href="build.html">'
     + '<b>Your card could hang here</b>'
     + '<span>Publish a showcase card and it appears on this floor instantly.</span>'
     + '<span class="ct-link">Build your card →</span>'
@@ -621,7 +626,7 @@ function renderError(detail) {
     '<span>The listing service did not answer. Nothing was lost — your cards and drafts live in this browser.</span>' +
     (detail ? '<code>' + String(detail).slice(0, 140).replace(/[<>]/g, '') + '</code>' : '') +
     '<span class="sb-actions"><button type="button" class="sbtn primary">Try again</button>' +
-    (isSeller ? '<a class="sbtn" href="index.html">Build a card instead</a>' : '') +
+    (isSeller ? '<a class="sbtn" href="build.html">Build a card instead</a>' : '') +
     '</span>');
   sb.querySelector('.primary').addEventListener('click', load);
 }
@@ -636,7 +641,7 @@ function showCtaOnly() {  $('count').textContent = '0 listings';
   stateBox(
     '<b>No listings yet</b>' +
     '<span>This is the very first day — the marketplace is empty but not broken. The moment anyone publishes, their card appears here.</span>' +
-    (isSeller ? '<span class="sb-actions"><a class="sbtn primary" href="index.html">Build the first card</a></span>' : ''));
+    (isSeller ? '<span class="sb-actions"><a class="sbtn primary" href="build.html">Build the first card</a></span>' : ''));
 }
 
 function resetAll() {
@@ -1071,6 +1076,146 @@ const PAGE_SIZE = 60;
 let shownCount = 0;
 let hasMore = false;
 
+// ── v1.5: seller chrome + login modal (the marketplace is the front door) ──
+async function probeSeller() {
+  try { const { data } = await supabase.rpc('am_i_seller'); return data === true; } catch { return false; }
+}
+
+function applySellerChrome() {
+  const navLogin = $('navLogin');
+  const navNew = $('navNewCard');
+  const navDash = $('navDashboard');
+  const navOut = $('navSignOut');
+  if (navLogin) navLogin.hidden = isSeller;
+  if (navNew) navNew.hidden = !isSeller;
+  if (navDash) navDash.hidden = !isSeller;
+  if (navOut) navOut.hidden = !isSeller;
+}
+
+function initLoginModal() {
+  const modal = $('loginModal');
+  if (!modal || !supabase) return;
+  const form = $('lgForm'), sent = $('lgSent'), signed = $('lgSigned');
+  const email = $('lgEmail'), pass = $('lgPass'), send = $('lgSend');
+  const otp = $('lgOtp'), msg = $('lgMsg');
+  if (MAGIC && otp) otp.hidden = false;
+
+  function setMsg(text, isErr) {
+    msg.textContent = text || '';
+    msg.className = isErr ? 'lg-msg err' : 'lg-msg';
+  }
+  function show(which) {
+    form.hidden = which !== 'form';
+    sent.hidden = which !== 'sent';
+    signed.hidden = which !== 'signed';
+  }
+
+  let lastFocus = null;
+  async function open() {
+    lastFocus = document.activeElement;
+    show('form');
+    setMsg('');
+    pass.value = '';
+    modal.hidden = false;
+    if (!window.matchMedia('(pointer: coarse)').matches) {
+      try { email.focus({ preventScroll: true }); } catch { /* older browsers */ }
+    }
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session && !isSeller) {
+      // signed in but not allow-listed: explained state, not a bare form
+      show('signed');
+      $('lgWho').textContent = (session.user && session.user.email) || 'your account';
+      try { $('lgOut').focus({ preventScroll: true }); } catch { /* older browsers */ }
+    }
+  }
+  function close() {
+    modal.hidden = true;
+    if (lastFocus && lastFocus.focus) {
+      try { lastFocus.focus({ preventScroll: true }); } catch { /* older browsers */ }
+    }
+  }
+
+  const navLogin = $('navLogin');
+  if (navLogin) navLogin.addEventListener('click', open);
+  $('lgClose').addEventListener('click', close);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) close(); });
+
+  /* a11y: keep Tab cycling inside the modal while it is open */
+  modal.addEventListener('keydown', e => {
+    if (e.key !== 'Tab' || modal.hidden) return;
+    const focusables = Array.from(modal.querySelectorAll('input:not([disabled]),button:not([disabled]),a[href]'))
+      .filter(el => el.offsetParent !== null);
+    if (!focusables.length) return;
+    const first = focusables[0], last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+
+  const sendLabel = send.textContent;
+  const otpLabel = otp ? otp.textContent : '';
+
+  send.addEventListener('click', async () => {
+    const em = email.value.trim();
+    if (!EMAIL_RE.test(em)) { setMsg('Enter a valid email address.', true); return; }
+    if (!pass.value) { setMsg('Enter your password.', true); return; }
+    send.disabled = true;
+    send.textContent = 'Signing in…';
+    setMsg('');
+    const { error } = await supabase.auth.signInWithPassword({ email: em, password: pass.value });
+    pass.value = '';
+    if (error) {
+      send.disabled = false;
+      send.textContent = sendLabel;
+      setMsg(/invalid login credentials/i.test(error.message || '')
+        ? 'Wrong email or password.'
+        : /email not confirmed/i.test(error.message || '')
+          ? 'That account still needs to be confirmed by the marketplace owner.'
+          : 'Sign-in failed: ' + (error.message || 'unknown error'), true);
+      return;
+    }
+    // success: sellers land on the dashboard; everyone else gets the explained state
+    setMsg('Checking seller access…');
+    isSeller = await probeSeller();
+    applySellerChrome();
+    if (isSeller) { location.href = 'dashboard.html'; return; }
+    send.disabled = false;
+    send.textContent = sendLabel;
+    const { data: { session } } = await supabase.auth.getSession();
+    show('signed');
+    $('lgWho').textContent = (session && session.user && session.user.email) || em;
+    try { $('lgOut').focus({ preventScroll: true }); } catch { /* older browsers */ }
+  });
+
+  if (otp) otp.addEventListener('click', async () => {
+    const em = email.value.trim();
+    if (!EMAIL_RE.test(em)) { setMsg('Enter a valid email address.', true); return; }
+    otp.disabled = true;
+    otp.textContent = 'Sending link…';
+    setMsg('');
+    const { error } = await supabase.auth.signInWithOtp({ email: em, options: { emailRedirectTo: location.origin + location.pathname } });
+    otp.disabled = false;
+    otp.textContent = otpLabel;
+    if (error) {
+      setMsg(/security purposes|rate limit/i.test(error.message || '')
+        ? 'Too many requests — wait a minute and try again.'
+        : 'Sign-in link failed: ' + (error.message || 'unknown error'), true);
+      return;
+    }
+    show('sent');
+  });
+
+  $('lgBack').addEventListener('click', () => { show('form'); setMsg(''); });
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    location.reload();
+  };
+  $('lgOut').addEventListener('click', signOut);
+  const navOut = $('navSignOut');
+  if (navOut) navOut.addEventListener('click', signOut);
+}
+
 async function fetchPage(offset) {
   /* v1.3: prefer browse_listings_v3 (adds `featured`); if migration 10 is not
      applied yet the RPC errors — fall back to v2 so browse behaves exactly as
@@ -1095,12 +1240,21 @@ async function load() {
     status('Browse needs Supabase configured — see SETUP.md.', 'err');
     return;
   }
-  try { const { data } = await supabase.rpc('am_i_seller'); isSeller = data === true; } catch { isSeller = false; }
-  if (isSeller) {
-    const navNew = document.getElementById('navNewCard');
-    const navDash = document.getElementById('navDashboard');
-    if (navNew) navNew.hidden = false;
-    if (navDash) navDash.hidden = false;
+  /* v1.5 magic-link return: supabase-js exchanges the URL code asynchronously —
+     hold the seller probe until the session lands (≤4s) so a returning seller
+     is recognised (and forwarded to the dashboard) instead of flashing the
+     anonymous chrome. */
+  if (location.search.includes('code=') || location.hash.includes('access_token')) {
+    await Promise.race([
+      new Promise(resolve => { supabase.auth.onAuthStateChange(() => resolve()); }),
+      new Promise(resolve => setTimeout(resolve, 4000))
+    ]);
+  }
+  isSeller = await probeSeller();
+  applySellerChrome();
+  if (isSeller && (location.search.includes('code=') || location.hash.includes('access_token'))) {
+    location.replace('dashboard.html');
+    return;
   }
   status('Loading listings…');
   let data = null;
@@ -1153,6 +1307,7 @@ async function load() {
 // ── boot ──────────────────────────────────────────────────────────
 buildFacets();
 wire();
+initLoginModal();
 const savedStyle = localStorage.getItem('cf-card-style');
 if (savedStyle === 'mini' || savedStyle === 'rail') state.style = savedStyle;
 applyStyle();

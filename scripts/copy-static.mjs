@@ -1,8 +1,10 @@
-import { cpSync, mkdirSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, rmSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 
-const FILES = ['index.html', 'view.html', 'browse.html', 'dashboard.html', 'sold.html', 'terms.html', 'privacy.html', '404.html'];
+const FILES = ['index.html', 'build.html', 'view.html', 'dashboard.html', 'sold.html', 'terms.html', 'privacy.html', '404.html'];
 const DIRS = ['css', 'js', 'fonts'];
+/* non-HTML assets copied verbatim (no buildstamp injection) */
+const RAW = ['_redirects'];
 
 // ── build metadata: Netlify env vars first, git fallback for local builds ──
 function git(args) {
@@ -40,6 +42,9 @@ for (const f of FILES) {
   const inBar = src.replace(/(<div id="disclaimer">[\s\S]*?)(<\/div>)/, (m, open, close) => `${open}${stamp}${close}`);
   const html = inBar !== src ? inBar : src.replace('</body>', `${stamp}\n</body>`);
   writeFileSync(`dist/${f}`, html);
+}
+for (const f of RAW) {
+  if (existsSync(f)) cpSync(f, `dist/${f}`);
 }
 
 console.log(`Staged ${FILES.concat(DIRS).join(', ')} -> dist/  [${env} v${version} ${sha}]`);
