@@ -1055,7 +1055,11 @@ function initArtMode(src) {
   img.className = 'art-img';
   img.alt = '';
   img.src = src;
-  sizer.parentNode.insertBefore(img, sizer);
+  /* Body-level, above #stage: the stage is display:none on phones, so an image
+     nested inside it never rendered in the mobile layout (blank viewer). */
+  const stage = CF.$('stage');
+  const host = (stage && stage.parentNode) || sizer.parentNode;
+  host.insertBefore(img, stage || sizer);
   const peek = document.createElement('button');
   peek.type = 'button';
   peek.id = 'artPeek';
