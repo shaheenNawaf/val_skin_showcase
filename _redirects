@@ -2,10 +2,12 @@
 # Legacy marketplace URL → new root (Netlify preserves query strings on redirects).
 /browse.html             /                            301
 # Legacy editor recovery links (index.html?edit=<slug>) → the editor's new home.
-# Netlify normalizes /index.html to / at the edge before rules run, so the
-# root-path rule is the one that fires in production; the /index.html twin is
-# kept for safety. Query-param rules match ONLY when ?edit= is the sole param
-# (Netlify semantics) — anything else falls through to the marketplace file,
-# whose client-side guard redirects the same way (covers local hosts too).
-/            edit=:edit   /build.html?edit=:edit       301
-/index.html  edit=:edit   /build.html?edit=:edit       301
+# Force (!) is required: / and /index.html resolve to a real file, which would
+# otherwise shadow these rules. Netlify normalizes /index.html to / at the edge
+# before rules run, so the root rule is the one that fires; the /index.html twin
+# is kept for safety. Query-param rules match ONLY when ?edit= is the sole param
+# (Netlify semantics) and query strings auto-forward to the target — anything
+# else falls through to the marketplace file, whose client-side guard redirects
+# the same way (covers local hosts too).
+/            edit=:edit   /build.html   301!
+/index.html  edit=:edit   /build.html   301!
