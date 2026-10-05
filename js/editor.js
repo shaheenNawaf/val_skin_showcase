@@ -1322,14 +1322,20 @@ function buildPayload() {
 
 function artPayload() {
   const v = id => { const el = CF.$(id); return el ? el.value.trim() : ''; };
+  const on = id => { const el = CF.$(id); return !el || el.checked; };
   const texts = {
     code: v('ff-code') || 'ART',
     cname: v('ff-name'),
     crank: v('ff-rank'), prank: v('ff-prank'),
     price: v('ff-price'),
     link: v('ff-contact'),
-    wtr: v('ff-obo') ? 'offers' : '',
-    receipts: '', owner: ''
+    /* v1.5.2: marketplace tags were unreachable in art mode (they lived on
+       the hidden card canvas) — the panel now carries them explicitly */
+    wtr: on('ff-wtr') ? 'WTR: YES' : 'WTR: NO',
+    receipts: on('ff-receipts') ? 'RECEIPTS: YES' : 'RECEIPTS: NO',
+    vlink: CF.$('ff-unlinked') && CF.$('ff-unlinked').checked ? 'UNLINKED' : 'LINKED',
+    owner: v('ff-owner') || '0TH OWNER',
+    tag: v('ff-tag')
   };
   return {
     theme: document.documentElement.dataset.theme || 'protocol',
@@ -1834,6 +1840,10 @@ async function publishListing() {
               const { error: nErr } = await supabase.rpc('owner_set_listing', { p_slug: slug, p_edit_token_hash: h2, p_negotiable: true });
               if (nErr) throw nErr;
             }
+            if (CF.$('ff-feature') && CF.$('ff-feature').checked) {
+              const { error: fErr } = await supabase.rpc('owner_set_listing', { p_slug: slug, p_edit_token_hash: h2, p_featured: true });
+              if (fErr) throw fErr;
+            }
           }
         }
       } catch (e) {
@@ -2047,7 +2057,7 @@ async function initAuthGate(opts) {
 async function loadListingForEdit(slug) {
   if (supabase) {
     try {
-      const { data, error } = await supabase.from('listing_public').select('payload,theme,currency').eq('slug', slug).maybeSingle();
+      const { data, error } = await supabase.from('listing_public').select('payload,theme,currency,featured_at').eq('slug', slug).maybeSingle();
       if (!error && data) return data;
     } catch { /* fall through to localStorage */ }
   }
@@ -2115,6 +2125,13 @@ async function initEditMode() {
     ffSet('ff-prank', texts.prank || '');
     ffSet('ff-contact', texts.link || '');
     ffSet('ff-cur', listing.currency || 'PHP');
+    const cbSet = (id, onv) => { const el = CF.$(id); if (el) el.checked = !!onv; };
+    cbSet('ff-wtr', /yes/i.test(texts.wtr || ''));
+    cbSet('ff-receipts', /yes/i.test(texts.receipts || ''));
+    cbSet('ff-unlinked', /unlinked/i.test(texts.vlink || ''));
+    ffSet('ff-owner', texts.owner || '');
+    ffSet('ff-tag', texts.tag || '');
+    cbSet('ff-feature', !!listing.featured_at);
     const obo = CF.$('ff-obo'); if (obo) obo.checked = !!texts.wtr;
     enterArtMode();
   }
