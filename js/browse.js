@@ -441,10 +441,16 @@ function featHTML(l) {
     ? '<b>' + sym + esc(l.price) + (l.negotiable ? '<i>open to offers</i>' : '') + '</b><span>one-time · full access</span>'
     : '<b class="offer">Contact for price</b><span>' + (l.negotiable ? 'open to offers' : 'seller accepts trades') + '</span>';
   const flags = esc(l.flags.owner + ' OWNER · ' + (l.flags.wtr ? 'WTR' : 'NO-WTR') + ' · ' + (l.flags.receipts ? 'RECEIPTS' : 'NO RECEIPTS'));
+  /* v1.5.2: artwork listings have no skin mosaic — the featured tile used to
+     render an empty preview for them; show the owner's cover instead */
+  const cover = l.thumb
+    ? '<img class="gf-cover" src="' + esc(l.thumb.src) + '" alt="" loading="lazy" ' + IMGERR + '>'
+    : '';
   return '<div class="gfeat" data-slug="' + esc(l.slug) + '">'
     + '<div class="gf-preview" data-imgwrap>'
     + '<span class="gf-ribbon">FEATURED</span>'
-    + '<div class="gf-skins">' + sk + '</div>'
+    + cover
+    + (l.thumb ? '' : '<div class="gf-skins">' + sk + '</div>')
     + '<div class="gf-strip"><span>PREM ' + esc(s.premium) + '</span><span>LIM ' + esc(s.limited) + '</span><span>ANIM ' + esc(s.animated) + '</span><span>LV ' + esc(s.level) + '</span></div>'
     + '<div class="gf-ranks"><span class="gfr">' + rankImg(rn) + '<b>' + esc(rn.name) + '</b></span><span class="gfr">' + rankImg(rp) + '<b>PEAK ' + esc(rp.name) + '</b></span></div>'
     + '</div>'
