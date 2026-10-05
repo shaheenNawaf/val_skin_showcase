@@ -392,3 +392,32 @@ html{scrollbar-width:thin;scrollbar-color:var(--c-line) transparent}
   /* stats are desktop merchandising — mobile opens straight into the goods */
   #pulse{display:none}
 }
+
+/* ── v1.5.4: mobile commerce card — new nodes, desktop hides them ── */
+.gc-trow{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.gc-trow h2{min-width:0}
+.gf-trow{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.gf-trow h2{min-width:0}
+.gc-strip{display:none}
+.gc-pslot{display:none}
+.gc-more{display:none}
+@media (max-width:700px){
+  .gc-preview .mc{display:none}
+  .gc-strip{display:flex;position:absolute;inset:0;align-items:center;justify-content:center;gap:6px;padding:10px 12px;background:linear-gradient(180deg,var(--card1),var(--card2))}
+  .gs-iw{flex:0 1 auto;height:78%;min-width:0;display:flex;align-items:center;justify-content:center}
+  .gs-iw img{height:100%;width:auto;max-width:100%;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
+  .gs-more{font:700 10px var(--font-ui);color:var(--mut);letter-spacing:.06em}
+  .gc-pslot{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:none}
+  .gp-val{font:800 16px/1 var(--font-display);color:var(--ink);white-space:nowrap}
+  .gp-offer{font:700 10px/1.2 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--mut);text-align:right}
+  .gp-obo{font:700 9px/1 var(--font-ui);letter-spacing:.1em;color:var(--mut);border:1px solid var(--line);padding:3px 5px}
+  .gc-chips > :nth-child(n+5){display:none}
+  .gc-more{display:inline-flex;align-items:center;margin-top:8px;font:700 9.5px var(--font-ui);letter-spacing:.08em;color:var(--mut);border:1px dashed var(--line);padding:4px 6px}
+  .gc-foot{flex-direction:column;align-items:stretch;gap:8px}
+  .gc-foot .gc-price,.gc-foot .gc-offer,.gc-foot .gc-neg{display:none}
+  .gc-go{margin-left:0;justify-content:center;background:var(--c-accent-btn);border:0;color:#fff;font:700 12px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;padding:11px 14px;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+  .lr-chips > :nth-child(n+4){display:none}
+  .lr-go{display:none}
+  /* featured tile gets the same commerce treatment on phones */
+  .gf-price{display:none}
+}

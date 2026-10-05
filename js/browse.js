@@ -333,6 +333,31 @@ function chipsList(l) {
   return c;
 }
 
+/* v1.5.4: mobile commerce card — one-row skin strip (replaces the 6-panel
+   mosaic on phones), price slot on the title row, chip cap with +N, and
+   correct view grammar. Desktop keeps the existing anatomy via CSS. */
+function stripHTML(l) {
+  const all = flattenPicks(l, FEATURE_ORDER);
+  if (!all.length) return '';
+  const icons = all.slice(0, 6).map(p => pickWrap(p, 'gs-iw')).join('');
+  const more = all.length > 6 ? '<b class="gs-more">+' + (all.length - 6) + '</b>' : '';
+  return '<span class="gc-strip">' + icons + more + '</span>';
+}
+
+function pslotHTML(l) {
+  return '<span class="gc-pslot">'
+    + (l.price == null ? '<span class="gp-offer">Contact for price</span>' : moneyHTML(l, 'gp-val'))
+    + (l.negotiable ? '<span class="gp-obo">OBO</span>' : '')
+    + '</span>';
+}
+
+function chipMoreHTML(l) {
+  const n = 2 + (l.stats.animated > 0 ? 1 : 0) + (l.flags.wtr ? 1 : 0) + (l.flags.receipts ? 1 : 0) + 1;
+  return n > 4 ? '<b class="gc-more">+' + (n - 4) + '</b>' : '';
+}
+
+const viewsText = l => esc(l.views) + (Number(l.views) === 1 ? ' view · ' : ' views · ');
+
 function priceHTML(l) {
   /* CF-16: negotiable is rendered — a buyer should know the price is soft
      before they contact anyone. It was normalised and never shown. */
@@ -399,17 +424,18 @@ function cardHTML(l, i) {
     + '<span class="gc-badges">' + badgesGrid(l) + '</span>'
     + '<span class="gc-theme">' + esc(t.label) + '</span>'
     + (l.thumb ? '' : previewInner(l, state.style))
+    + (l.thumb ? '' : stripHTML(l))
     + '</div>'
     + '<div class="gc-body">'
-    + '<h2>' + esc(entryTitle(l)) + '</h2>'
+    + '<div class="gc-trow"><h2>' + esc(entryTitle(l)) + '</h2>' + pslotHTML(l) + '</div>'
     + '<div class="gc-code">' + esc(entrySub(l)) + '</div>'
     + '<div class="gc-ranks">' + rankImg(rn) + '<span>' + esc(rn.name) + '</span><i>·</i><span class="pk">PEAK ' + esc(rp.name) + '</span></div>'
-    + '<div class="gc-chips">' + chipsGrid(l) + '</div>'
+    + '<div class="gc-chips">' + chipsGrid(l) + '</div>' + chipMoreHTML(l)
     + '<div class="gc-seller">' + img(AVATAR_PLACEHOLDER, 'Seller avatar') + '<span>' + esc(l.seller.name) + '</span></div>'
     + '</div>'
     + '<div class="gc-foot">' + priceCell
-    + '<span class="gc-meta">' + esc(l.views) + ' views · ' + esc(agoText(l.daysAgo)) + '</span>'
-    + '<span class="gc-go">VIEW →</span>'
+    + '<span class="gc-meta">' + viewsText(l) + esc(agoText(l.daysAgo)) + '</span>'
+    + '<span class="gc-go">View card →</span>'
     + '</div></button>';
 }
 
@@ -425,8 +451,8 @@ function rowHTML(l) {
     + '<div class="lr-main"><div class="lr-title"><h2>' + esc(entryTitle(l)) + '</h2><span class="lr-badges">' + badgesGrid(l) + '</span></div></div>'
     + '<div class="lr-ranks"><div class="r">' + rankImg(rn) + '<span>' + esc(rn.name) + '</span></div><div class="r">' + rankImg(rp) + '<span class="pk">PEAK ' + esc(rp.name) + '</span></div></div>'
     + '<div class="lr-chips">' + chipsList(l) + '</div>'
-    + '<div class="lr-price">' + priceHTML(l) + '<span class="lc-meta">' + esc(l.views) + ' views · ' + esc(agoText(l.daysAgo)) + '</span></div>'
-    + '<div class="lr-go lc-go">VIEW →</div>'
+    + '<div class="lr-price">' + priceHTML(l) + '<span class="lc-meta">' + viewsText(l) + esc(agoText(l.daysAgo)) + '</span></div>'
+    + '<div class="lr-go lc-go">View card →</div>'
     + '</button>';
 }
 
@@ -456,11 +482,11 @@ function featHTML(l) {
     + '</div>'
     + '<div class="gf-info">'
     + '<span class="gf-theme">' + esc(t.label) + '</span>'
-    + '<h2>' + esc(entryTitle(l)) + '</h2>'
+    + '<div class="gf-trow"><h2>' + esc(entryTitle(l)) + '</h2>' + pslotHTML(l) + '</div>'
     + '<div class="gf-seller">' + img(AVATAR_PLACEHOLDER, 'Seller avatar') + '<div><b>' + esc(l.seller.name) + '</b><span>' + flags + '</span></div></div>'
     + '<div class="gf-rankrow">' + rankImg(rn) + '<span>' + esc(rn.name) + '</span><i>·</i><span class="m">PEAK ' + esc(rp.name) + '</span></div>'
     + '<div class="gf-price">' + price + '</div>'
-    + '<div class="gf-meta">' + esc(l.views) + ' VIEWS · UPDATED ' + esc(agoText(l.daysAgo).toUpperCase()) + '</div>'
+    + '<div class="gf-meta">' + esc(l.views) + (Number(l.views) === 1 ? ' VIEW · UPDATED ' : ' VIEWS · UPDATED ') + esc(agoText(l.daysAgo).toUpperCase()) + '</div>'
     + '<button type="button" class="gf-cta" data-slug="' + esc(l.slug) + '">View full card →</button>'
     + '</div></div>';
 }
