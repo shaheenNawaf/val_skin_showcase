@@ -1055,11 +1055,10 @@ function initArtMode(src) {
   img.className = 'art-img';
   img.alt = '';
   img.src = src;
-  /* Body-level, above #stage: the stage is display:none on phones, so an image
-     nested inside it never rendered in the mobile layout (blank viewer). */
-  const stage = CF.$('stage');
-  const host = (stage && stage.parentNode) || sizer.parentNode;
-  host.insertBefore(img, stage || sizer);
+  /* Inside #stage as before (desktop composition stays exactly as verified);
+     phones force-show the stage in art mode via body.art-mode below, so the
+     image renders in both layouts without moving nodes. */
+  sizer.parentNode.insertBefore(img, sizer);
   const peek = document.createElement('button');
   peek.type = 'button';
   peek.id = 'artPeek';
@@ -1071,6 +1070,7 @@ function initArtMode(src) {
   function setArt(on) {
     img.hidden = !on;
     sizer.hidden = on;
+    document.body.classList.toggle('art-mode', on);
     if (mcard) mcard.style.display = on ? 'none' : '';
     if (vs) vs.style.display = on ? 'none' : '';
     peek.textContent = on ? 'Interactive card' : 'Artwork';
