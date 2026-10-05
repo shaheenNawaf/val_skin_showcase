@@ -13,7 +13,7 @@ Written at v1.3 (`a8e33b5`, personal-marketplace close-out).
 | Staging site | https://staging--cardforge-showcase.netlify.app (deploys from `staging`) |
 | Repo | https://github.com/shaheenNawaf/val_skin_showcase |
 | Database + storage | Supabase project `psxpxcqrepkcrymwveok` (CLI is linked on your machine) |
-| Hosting | Netlify (build: `node scripts/copy-static.mjs` → `dist/`) |
+| Hosting | Netlify (build: `node scripts/copy-static.mjs` → `dist/`) — production branch `main` only; the `staging`/`beta` branch deploys were retired 2026-10-05 |
 
 It is a **static site + serverless DB**. No framework, no app server, no buyer accounts.
 Pages: `index.html` (marketplace — the front door) · `build.html` (card editor) ·
@@ -102,11 +102,10 @@ Since v1.5 the marketplace owns the root URL and the editor lives at `build.html
   Additional redirect URLs: `https://cardforge.shaheen.works/index.html`,
   `https://cardforge.shaheen.works/build.html`,
   `https://cardforge.shaheen.works/dashboard.html`,
-  `https://staging--cardforge-showcase.netlify.app/index.html`,
-  `https://staging--cardforge-showcase.netlify.app/build.html`,
-  `https://staging--cardforge-showcase.netlify.app/dashboard.html`,
   `http://localhost:3000/index.html`, `http://localhost:3000/build.html`,
   `http://localhost:3000/dashboard.html`.
+  (The `staging--cardforge-showcase.netlify.app` entries are gone with the retired
+  branch deploys — re-add them only if branch deploys are ever re-enabled.)
   (Magic-link requests ask for `emailRedirectTo=<the page you are on>`; without the
   allow-list entry for that page Supabase falls back to the Site URL — the session
   still works, the seller just lands on the marketplace instead of where they
