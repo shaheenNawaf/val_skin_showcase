@@ -281,7 +281,7 @@
     <p class="am-sub">The uploaded image is the face of this listing on the marketplace and the listing page. There is no card builder in this mode.</p>
     <div class="am-drop">
       <img id="amPrev" alt="Artwork preview" hidden>
-      <div class="frow faceup">
+      <div class="faceup">
         <button type="button" class="fbtn" id="amFileBtn">Upload artwork image…</button>
         <input type="file" id="amFile" accept="image/png,image/jpeg,image/webp" hidden>
         <button type="button" class="fbtn" id="amRemove" hidden>Remove image</button>
@@ -297,14 +297,17 @@
         <div class="frow"><label for="ff-prank">Peak rank</label><select class="finput" id="ff-prank"><option value="">— not set —</option></select></div>
         <div class="frow"><label for="ff-contact">Contact link</label><input class="finput up" id="ff-contact" inputmode="url" type="text" autocomplete="off" placeholder="https://facebook.com/…"></div>
       </div>
-      <label class="ffobo"><input type="checkbox" id="ff-obo"> Open to offers</label>
     </div>
-    <div class="am-tags">
+    <div class="am-divider" role="separator"></div>
+    <div class="ffgrid">
+      <div class="frow"><label for="ff-owner">Owner count</label><input class="finput up" id="ff-owner" type="text" autocomplete="off" placeholder="0TH OWNER"></div>
+      <div class="frow"><label for="ff-tag">Seller tag</label><input class="finput up" id="ff-tag" type="text" autocomplete="off" placeholder="FS/FT+ADD"></div>
+    </div>
+    <div class="am-checks">
+      <label class="ffobo"><input type="checkbox" id="ff-obo"> Open to offers</label>
       <label class="ffobo"><input type="checkbox" id="ff-wtr" checked> WTR available</label>
       <label class="ffobo"><input type="checkbox" id="ff-receipts" checked> Receipts available</label>
       <label class="ffobo"><input type="checkbox" id="ff-unlinked"> Premier unlinked</label>
-      <div class="frow"><label for="ff-owner">Owner count</label><input class="finput up" id="ff-owner" type="text" autocomplete="off" placeholder="0TH OWNER"></div>
-      <div class="frow"><label for="ff-tag">Seller tag</label><input class="finput up" id="ff-tag" type="text" autocomplete="off" placeholder="FS/FT+ADD"></div>
       <label class="ffobo"><input type="checkbox" id="ff-feature"> Feature on marketplace (unpins the current featured)</label>
     </div>
     <button id="amPublish" type="button" disabled>Publish artwork</button>

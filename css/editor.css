@@ -322,11 +322,15 @@ body.art-mode #stage,body.art-mode #saveBtn,body.art-mode #exportBtn,body.art-mo
 .am-sub{margin:0;font:400 12.5px/1.55 var(--font-ui);color:var(--c-mut)}
 .am-drop{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
 .am-drop .faceup{gap:10px;align-items:center}
-.am-tags{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:center}
-.am-tags .frow{flex:1 1 40%;min-width:160px}
+.am-divider{height:1px;background:var(--c-line-soft);border:0;margin:0}
+.am-checks{display:grid;grid-template-columns:1fr 1fr;gap:16px 24px}
+@media (max-width:640px){.am-checks{grid-template-columns:1fr}}
 .am-panel .ffgrid{gap:16px 12px}
 #amPublish{margin-top:4px}
-#amPrev{max-width:100%;max-height:340px;object-fit:contain;border:1px solid var(--c-line);background:var(--c-bg);display:block}
+/* Remove is destructive — it must not read as a sibling of Upload */
+.am-panel #amRemove{border-color:rgba(255,107,119,.5);color:#FF6B77}
+.am-panel #amRemove:hover{border-color:#FF6B77;color:#FF6B77;background:rgba(255,107,119,.08)}
+#amPrev{max-width:100%;max-height:340px;min-width:180px;min-height:110px;object-fit:contain;border:1px solid var(--c-line);background:var(--c-bg);display:block}
 #amPrev[hidden]{display:none}
 #amPublish{background:var(--c-accent-btn);border:0;color:#fff;font:700 12px/1 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;padding:13px 16px;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 #amPublish:hover:not(:disabled){filter:brightness(1.12)}
