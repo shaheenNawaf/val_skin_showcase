@@ -137,14 +137,14 @@ Since v1.5 the marketplace owns the root URL and the editor lives at `build.html
 ## 4c. Artwork listings, deletes, and disappearance forensics
 
 - **Artwork mode** (a listing whose face is an uploaded image instead of the skin
-  card): chosen once at creation via the route gate (**Artwork** vs **Normal card**),
-  managed afterwards in the editor's ⋯ → **Listing face…** modal and the dashboard
-  row's **THUMB** panel (upload / URL / pick / mode / reset-auto). Since v1.5.1 the
-  editor stage shows the artwork as a WYSIWYG overlay (`#artPrev`, "Artwork face"
-  badge) whenever art mode has an image — the card canvas underneath stays the
-  export + share-image artifact, so PNG export and the `slug.jpg` embed are
-  unaffected. Buyers see the artwork as the marketplace cover and, with
-  `thumbMode: 'card'`, on the listing page itself.
+  card): chosen once at creation via the route gate (**Artwork** vs **Normal card**).
+  Since v1.5.2 artwork is a **dedicated surface** — the card editor chrome steps
+  aside (`body.art-mode`) and a self-contained panel takes the stage: upload +
+  preview, listing fields, and a Publish button that stays disabled until an image
+  is present. Re-opening an artwork listing (`?edit=` or dashboard Edit) returns to
+  that same panel, hydrated. The artwork doubles as the share/FB embed image
+  (`slug.jpg`) and the thumb (`slug-thumb.*`); the dashboard row's **THUMB** panel
+  can still swap it later. Normal card mode is unchanged.
 - **Deletes**: `delete_listing` (dashboard row ⋯ → Delete, or viewer owner menu)
   requires typing `DELETE` and the per-listing edit token. Since v1.5.1 both flows
   also remove the listing's storage objects best-effort (`slug.jpg`,

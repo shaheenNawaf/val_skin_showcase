@@ -1101,7 +1101,7 @@ function faceSync() {
   art.hidden = !face.on;
   mseg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.fmode === face.mode));
   const ff = CF.$('faceFields');
-  if (ff) ff.hidden = !(face.on && face.route === 'art');
+  if (ff) ff.hidden = face.route !== 'art';
   mseg.hidden = face.route === 'art';
   const publishBtn = CF.$('publishBtn');
   if (publishBtn) publishBtn.textContent = face.route === 'art' ? 'Publish artwork' : 'Publish listing';
@@ -1111,16 +1111,33 @@ function faceSync() {
   const has = face.on && !!src;
   if (prev) { prev.hidden = !has; if (has && !face.blob) prev.src = face.existing; }
   if (rm) rm.hidden = !has;
-  /* v1.5.1: WYSIWYG artwork overlay — in art mode the stage shows the artwork
-     (what marketplace/viewer will show); the card underneath stays the export
-     and share-image artifact, so capture paths are untouched. */
-  const ap = CF.$('artPrev');
-  if (ap) {
-    const asrc = face.blob ? face.dataUrl : face.existing;
-    const show = face.route === 'art' && !!asrc;
-    ap.hidden = !show;
-    if (show) CF.$('artPrevImg').src = asrc;
-  }
+  artSync();
+}
+
+/* v1.5.2: artwork mode is a dedicated surface (#artMode) — the card editor
+   chrome steps aside entirely, so there is no modal-over-editor state to
+   desync. Publish is impossible until an image is present (button disabled). */
+function artSync() {
+  const prev = CF.$('amPrev');
+  const rm = CF.$('amRemove');
+  const pub = CF.$('amPublish');
+  const src = face.blob ? face.dataUrl : face.existing;
+  if (prev) { prev.hidden = !src; if (src) prev.src = src; }
+  if (rm) rm.hidden = !src;
+  if (pub) pub.disabled = !src;
+}
+
+function enterArtMode() {
+  document.body.classList.add('art-mode');
+  const am = CF.$('artMode');
+  if (am) am.hidden = false;
+  artSync();
+}
+
+function exitArtMode() {
+  document.body.classList.remove('art-mode');
+  const am = CF.$('artMode');
+  if (am) am.hidden = true;
 }
 
 function faceInit() {
@@ -1181,6 +1198,56 @@ function faceInit() {
     const faceClose = CF.$('faceClose');
     if (faceClose) faceClose.addEventListener('click', () => { faceModal.hidden = true; });
   }
+
+  /* v1.5.2: dedicated artwork surface wiring */
+  const amFileBtn = CF.$('amFileBtn');
+  const amFile = CF.$('amFile');
+  if (amFileBtn && amFile) {
+    amFileBtn.addEventListener('click', () => amFile.click());
+    amFile.addEventListener('change', () => {
+      const f = amFile.files && amFile.files[0];
+      if (!f) return;
+      if (!/^image\/(png|jpeg|webp)$/.test(f.type)) { CF.status('Only PNG, JPEG or WebP images.', 'err'); return; }
+      if (f.size > 10 * 1024 * 1024) { CF.status('Image too large — pick one under 10 MB.', 'err'); return; }
+      CF.resizeToDataUrl(f, 1280).then(dataUrl => fetch(dataUrl).then(r => r.blob()).then(blob => {
+        face.blob = blob;
+        face.dataUrl = dataUrl;
+        face.ext = blob.type === 'image/png' ? 'png' : 'jpg';
+        face.on = true;
+        artSync();
+        CF.status('Artwork ready — it will attach when you publish.', 'ok');
+      })).catch(() => CF.status('Could not read that image file.', 'err'));
+    });
+  }
+  const amRemove = CF.$('amRemove');
+  if (amRemove) amRemove.addEventListener('click', () => {
+    face.blob = null;
+    face.dataUrl = null;
+    face.existing = null;
+    if (amFile) amFile.value = '';
+    artSync();
+  });
+  const amPublish = CF.$('amPublish');
+  if (amPublish) amPublish.addEventListener('click', () => {
+    const msg = CF.$('amMsg');
+    if (!face.blob && !face.existing) {
+      if (msg) { msg.textContent = 'Upload the artwork image first.'; msg.className = 'ag-msg err'; }
+      return;
+    }
+    if (msg) { msg.textContent = ''; msg.className = 'ag-msg'; }
+    publishListing();
+  });
+  const amToNormal = CF.$('amToNormal');
+  if (amToNormal) amToNormal.addEventListener('click', () => {
+    face.route = 'normal';
+    face.on = false;
+    face.blob = null;
+    face.dataUrl = null;
+    face.existing = null;
+    exitArtMode();
+    faceSync();
+    CF.status('Switched to normal card mode.', 'ok');
+  });
   const routeGate = CF.$('routeGate');
   const rgArt = CF.$('rgArt');
   const rgNormal = CF.$('rgNormal');
@@ -1190,13 +1257,14 @@ function faceInit() {
       face.on = true;
       face.mode = 'card';
       routeGate.hidden = true;
-      if (faceModal) faceModal.hidden = false;
+      enterArtMode();
       faceSync();
     });
     rgNormal.addEventListener('click', () => {
       face.route = 'normal';
       face.on = false;
       routeGate.hidden = true;
+      exitArtMode();
       faceSync();
     });
   }
@@ -1622,7 +1690,7 @@ async function publishListing() {
   try {
     let slug = editSlug || localStorage.getItem('vc-draft-id') || CF.randomId(7);
     if (supabase) {
-      const existingToken = localStorage.getItem('vc-edit-' + slug);
+      let existingToken = localStorage.getItem('vc-edit-' + slug);
       const token = existingToken || CF.randomId(40);
       const hash = await CF.hashToken(token);
       if (existingToken) {
@@ -1630,7 +1698,17 @@ async function publishListing() {
           p_slug: slug, p_edit_token_hash: hash, p_payload: payload, p_theme: payload.theme
         });
         if (error) throw error;
-      } else {
+        /* v1.5.2: an update that matches no row is a SILENT no-op (the row
+           vanished server-side while this browser kept its edit key). Detect
+           it and fall through to create, instead of toasting "Published!"
+           at thin air — this is what made deleted listings look un-readdable. */
+        const { data: chk } = await supabase.from('listing_public').select('slug').eq('slug', slug).maybeSingle();
+        if (!chk) {
+          localStorage.removeItem('vc-edit-' + slug);
+          existingToken = null;
+        }
+      }
+      if (!existingToken) {
         let created = false, lastErr = null;
         for (let i = 0; i < 3 && !created; i++) {
           const { error } = await supabase.rpc('create_listing', {
@@ -1677,13 +1755,21 @@ async function publishListing() {
     if (supabase) {
       const pubMode = state.layout === 'auto' ? resolveLayout(payload) : state.layout;
       try {
-        applyLayout(CF.$('card'), payload, pubMode, 1, { editable: false });
-        const blob = await CF.captureCardBlob(card, 'image/jpeg', .82);
-        if (blob) {
+        if (face.route === 'art' && face.blob) {
+          /* v1.5.2: in art mode the artwork IS the share image — no card capture */
           const { error: upErr } = await supabase.storage
             .from('listing-images')
-            .upload(slug + '.jpg', blob, { upsert: true, contentType: 'image/jpeg' });
+            .upload(slug + '.jpg', face.blob, { upsert: true, contentType: face.blob.type });
           if (upErr) CF.status('Published, but the share image failed to upload: ' + (upErr.message || upErr), 'err');
+        } else if (face.route !== 'art') {
+          applyLayout(CF.$('card'), payload, pubMode, 1, { editable: false });
+          const blob = await CF.captureCardBlob(card, 'image/jpeg', .82);
+          if (blob) {
+            const { error: upErr } = await supabase.storage
+              .from('listing-images')
+              .upload(slug + '.jpg', blob, { upsert: true, contentType: 'image/jpeg' });
+            if (upErr) CF.status('Published, but the share image failed to upload: ' + (upErr.message || upErr), 'err');
+          }
         }
       } catch (e) {
         CF.status('Published, but the share image failed: ' + (e.message || e), 'err');
@@ -2002,6 +2088,7 @@ async function initEditMode() {
     ffSet('ff-prank', texts.prank || '');
     ffSet('ff-contact', texts.link || '');
     const obo = CF.$('ff-obo'); if (obo) obo.checked = !!texts.wtr;
+    enterArtMode();
   }
   faceSync();
   if (CF.$('showAllCards')) CF.$('showAllCards').checked = !!state.showAllCards;

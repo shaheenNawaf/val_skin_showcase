@@ -106,7 +106,7 @@
 </div>
 </div><!-- /#chrome -->
 
-<div id="stage"><div id="sizer"><div id="artPrev" hidden><img id="artPrevImg" alt="Artwork face preview"><span class="ap-badge">Artwork face</span></div><div id="card">
+<div id="stage"><div id="sizer"><div id="card">
   <div class="grid">
     <section class="panel" data-cat="Sidearms" style="grid-area:side">
       <h3>Sidearms</h3>
@@ -274,6 +274,36 @@
   <div style="height:14px"></div>
 </div>
 
+<!-- v1.5.2: artwork mode is its own surface — no card editor behind it -->
+<div id="artMode" hidden>
+  <div class="am-panel">
+    <h2 class="am-title">Artwork listing</h2>
+    <p class="am-sub">The uploaded image is the face of this listing on the marketplace and the listing page. There is no card builder in this mode.</p>
+    <div class="am-drop">
+      <img id="amPrev" alt="Artwork preview" hidden>
+      <div class="frow faceup">
+        <button type="button" class="fbtn" id="amFileBtn">Upload artwork image…</button>
+        <input type="file" id="amFile" accept="image/png,image/jpeg,image/webp" hidden>
+        <button type="button" class="fbtn" id="amRemove" hidden>Remove image</button>
+      </div>
+    </div>
+    <div id="faceFields">
+      <div class="ffgrid">
+        <div class="frow"><label for="ff-code">Listing code</label><input class="finput up" id="ff-code" type="text" autocomplete="off" placeholder="K486"></div>
+        <div class="frow"><label for="ff-name">Display name</label><input class="finput" id="ff-name" type="text" autocomplete="off" placeholder="Buyer-facing name"></div>
+        <div class="frow"><label for="ff-price">Price</label><input class="finput up" id="ff-price" type="text" autocomplete="off" placeholder="250 or offers"></div>
+        <div class="frow"><label for="ff-rank">Current rank</label><input class="finput up" id="ff-rank" type="text" autocomplete="off" placeholder="IMMORTAL 1"></div>
+        <div class="frow"><label for="ff-prank">Peak rank</label><input class="finput up" id="ff-prank" type="text" autocomplete="off" placeholder="RADIANT"></div>
+        <div class="frow"><label for="ff-contact">Contact link</label><input class="finput up" id="ff-contact" inputmode="url" type="text" autocomplete="off" placeholder="https://facebook.com/…"></div>
+      </div>
+      <label class="ffobo"><input type="checkbox" id="ff-obo"> Open to offers</label>
+    </div>
+    <button id="amPublish" type="button" disabled>Publish artwork</button>
+    <button class="am-alt" id="amToNormal" type="button">Switch to normal card mode (discards the artwork)</button>
+    <p id="amMsg" class="ag-msg" role="status"></p>
+  </div>
+</div>
+
 <div id="faceModal" hidden role="dialog" aria-modal="true" aria-labelledby="faceTitle">
   <div class="mpanel facepanel">
     <div class="mhead">
@@ -297,17 +327,6 @@
           <button type="button" data-fmode="cover">Marketplace cover only</button>
           <button type="button" data-fmode="card" class="on">Cover + listing page</button>
         </div>
-      </div>
-      <div id="faceFields" hidden>
-        <div class="ffgrid">
-          <div class="frow"><label for="ff-code">Listing code</label><input class="finput up" id="ff-code" type="text" autocomplete="off" placeholder="K486"></div>
-          <div class="frow"><label for="ff-name">Display name</label><input class="finput" id="ff-name" type="text" autocomplete="off" placeholder="Buyer-facing name"></div>
-          <div class="frow"><label for="ff-price">Price</label><input class="finput up" id="ff-price" type="text" autocomplete="off" placeholder="250 or offers"></div>
-          <div class="frow"><label for="ff-rank">Current rank</label><input class="finput" id="ff-rank" type="text" autocomplete="off" placeholder="IMMORTAL 1"></div>
-          <div class="frow"><label for="ff-prank">Peak rank</label><input class="finput" id="ff-prank" type="text" autocomplete="off" placeholder="RADIANT"></div>
-          <div class="frow"><label for="ff-contact">Contact link</label><input class="finput" id="ff-contact" inputmode="url" type="text" autocomplete="off" placeholder="https://facebook.com/…"></div>
-        </div>
-        <label class="ffobo"><input type="checkbox" id="ff-obo"> Open to offers</label>
       </div>
       <div class="facefoot">
         <button type="button" id="facePublish">Save &amp; publish</button>
