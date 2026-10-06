@@ -253,6 +253,10 @@ QR exports, viewer owner controls. Lint clean, build clean, migration 10 applied
    UUID set (`js/vendor/bp-skins.js`, regenerate per act with `node scripts/gen-bp-skins.mjs`),
    and listings published before v1.5.5 show 00 until re-published; the sixth theme swatch
    "Normal" (`standard`) is the tier for regular accounts.
+6. **Versioning**: the footer stamp shows only the semver (`v1.5.6` at the time of writing) —
+   the commit/branch/date live in its hover title. Since the number is now the only visible
+   identifier, **bump `package.json`'s `version` with every release** (it had been pinned at
+   1.5.0 since the v1.5.0 release).
 
 ## 7. Where things live
 

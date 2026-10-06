@@ -30,7 +30,7 @@ const envLabel = { production: 'PRODUCTION', preview: 'PREVIEW', staging: 'STAGI
 const stamp =
   `<div id="buildstamp" data-env="${env}" title="Built from ${branch} @ ${sha} on ${date} (UTC)">` +
   `<span class="bs-env">${envLabel}</span>` +
-  `<span class="bs-ver">v${version} \u00b7 ${sha} \u00b7 ${date} \u00b7 ${branch}</span>` +
+  `<span class="bs-ver">v${version}</span>` +
   `</div>`;
 
 rmSync('dist', { recursive: true, force: true });
