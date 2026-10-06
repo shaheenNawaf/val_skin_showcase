@@ -494,7 +494,7 @@ function featHTML(l) {
 
 function ctaHTML() {
   if (!isSeller) return '';
-  return '<a class="cta-tile" href="build.html">'
+  return '<a class="cta-tile" href="build.html?new=1">'
     + '<b>Your card could hang here</b>'
     + '<span>Publish a showcase card and it appears on this floor instantly.</span>'
     + '<span class="ct-link">Build your card →</span>'
@@ -661,7 +661,7 @@ function renderError(detail) {
     '<span>The listing service did not answer. Nothing was lost — your cards and drafts live in this browser.</span>' +
     (detail ? '<code>' + String(detail).slice(0, 140).replace(/[<>]/g, '') + '</code>' : '') +
     '<span class="sb-actions"><button type="button" class="sbtn primary">Try again</button>' +
-    (isSeller ? '<a class="sbtn" href="build.html">Build a card instead</a>' : '') +
+    (isSeller ? '<a class="sbtn" href="build.html?new=1">Build a card instead</a>' : '') +
     '</span>');
   sb.querySelector('.primary').addEventListener('click', load);
 }
@@ -676,7 +676,7 @@ function showCtaOnly() {  $('count').textContent = '0 listings';
   stateBox(
     '<b>No listings yet</b>' +
     '<span>This is the very first day — the marketplace is empty but not broken. The moment anyone publishes, their card appears here.</span>' +
-    (isSeller ? '<span class="sb-actions"><a class="sbtn primary" href="build.html">Build the first card</a></span>' : ''));
+    (isSeller ? '<span class="sb-actions"><a class="sbtn primary" href="build.html?new=1">Build the first card</a></span>' : ''));
 }
 
 function resetAll() {

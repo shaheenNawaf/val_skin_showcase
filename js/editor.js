@@ -2159,6 +2159,16 @@ card.classList.add('is-live'); /* editor preview scrolls like the live surfaces 
 const fit = CF.makeFitter({ card, sizer: CF.$('sizer'), topbar: CF.$('chrome'), stage: CF.$('stage') });
 fit();
 
+/* v1.5.6: "New card" entry points arrive with ?new=1. Without this, this
+   browser's vc-draft-id kept pointing at the last published listing, so a
+   NEW card silently took the update path and OVERWROTE that listing — the
+   "published but nothing new recorded" report. ?new=1 (and no ?edit=)
+   starts empty: fresh card, fresh slug. */
+if (new URLSearchParams(location.search).has('new') && !new URLSearchParams(location.search).get('edit')) {
+  localStorage.removeItem('vc-draft-id');
+  localStorage.removeItem(DRAFT_KEY);
+}
+
 // a draft saved earlier is restored automatically so a refresh never
 // wipes the card (or an accidental republish of an empty one)
 const bootDraft = CF.readJSON(DRAFT_KEY, null);
