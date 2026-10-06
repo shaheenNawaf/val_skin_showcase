@@ -9,7 +9,7 @@ if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase) {
 const IMGERR = "onerror=\"this.setAttribute('data-imgfail','1');this.closest('[data-imgwrap]')?.setAttribute('data-imgfail','1')\"";
 
 const CUR_SYMBOL = { USD: '$', EUR: '\u20ac', GBP: '\u00a3', JPY: '\u00a5', PHP: '\u20b1' };
-const THEME_LABELS = { protocol: 'High Ranks', holo: 'With Champions', reaver: 'Latest Skins', oni: 'Budget-friendly', arctic: 'High Prem' };
+const THEME_LABELS = { protocol: 'High Ranks', holo: 'With Champions', reaver: 'Latest Skins', oni: 'Budget-friendly', arctic: 'High Prem', standard: 'Normal' };
 
 async function load() {
   if (!supabase) {

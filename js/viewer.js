@@ -224,7 +224,7 @@ const MOBILE_SKELETON = `
     <span class="mhstat"><label>PREMIUM</label><b data-m="prems">42</b></span>
     <span class="mhstat mlimited"><label>LIMITED</label><b data-m="limited">02</b></span>
     <span class="mhstat"><label>SEMI PREM</label><b data-m="semis">00</b></span>
-    <span class="mhstat"><label>ANIMATED</label><b data-m="anims">00</b></span>
+    <span class="mhstat"><label>BATTLEPASS</label><b data-m="bpass">00</b></span>
   </div>
   <div class="mhrow mhrow4">
     <span class="mhcur2"><i>V</i><b data-m="vp">420</b></span>

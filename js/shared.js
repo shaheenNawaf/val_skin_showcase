@@ -110,7 +110,7 @@ export function copyText(t) {
 }
 
 // ── theme ─────────────────────────────────────────────────────────
-export const THEMES = ['protocol', 'holo', 'reaver', 'oni', 'arctic'];
+export const THEMES = ['protocol', 'holo', 'reaver', 'oni', 'arctic', 'standard'];
 
 export function applyTheme(t) {
   if (!THEMES.includes(t)) t = 'protocol';
@@ -606,7 +606,7 @@ export function fbPostText(row, url) {
   if (crank || prank) lines.push('\u{1F3C5} Rank: ' + (crank || '\u2014') + (prank ? ' \u00b7 Peak ' + prank : ''));
   const bits = [];
   if (fbNum(t.prems)) bits.push(fbNum(t.prems) + ' premium skins');
-  if (fbNum(t.anims)) bits.push(fbNum(t.anims) + ' animated');
+  if (fbNum(t.bpass)) bits.push(fbNum(t.bpass) + ' battlepass');
   if (fbNum(t.limited)) bits.push(fbNum(t.limited) + ' limited');
   if (all.length) bits.push(all.length + ' skins total');
   if (fbNum(t.level)) bits.push('level ' + fbNum(t.level));

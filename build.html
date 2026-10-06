@@ -64,6 +64,7 @@
       <button class="swatch" data-theme="reaver"  style="--sw:#180F2A" title="Latest Skins" aria-label="Latest Skins theme" aria-pressed="false"></button>
       <button class="swatch" data-theme="oni"     style="--sw:#31191E" title="Budget-friendly" aria-label="Budget-friendly theme" aria-pressed="false"></button>
       <button class="swatch" data-theme="arctic"  style="--sw:#221B15" title="High Prem" aria-label="High Prem theme" aria-pressed="false"></button>
+      <button class="swatch" data-theme="standard" style="--sw:#1F2427" title="Normal" aria-label="Normal theme" aria-pressed="false"></button>
     </div>
     <select id="layoutSel" title="Card layout" aria-label="Card layout">
       <option value="auto">AUTO</option><option value="m1">TILES</option><option value="m2">SHOWCASE</option><option value="m3">CLASSIC</option>
@@ -159,7 +160,7 @@
         <div class="stat"><label>PREMIUM</label><b data-key="prems" contenteditable>42</b><button class="auto" data-auto="prems" title="Auto-count Premium/Ultra/Exclusive skins">auto</button></div>
         <div class="stat limited"><label>LIMITED</label><b data-key="limited" contenteditable>02</b></div>
         <div class="stat"><label>SEMI PREM</label><b data-key="semis" contenteditable>00</b></div>
-        <div class="stat"><label>ANIMATED</label><b data-key="anims" contenteditable>00</b><button class="auto" data-auto="anims" title="Auto-count skins at level 2 or higher">auto</button></div>
+        <div class="stat"><label>BATTLEPASS</label><b data-key="bpass" contenteditable>00</b><button class="auto" data-auto="bpass" title="Auto-count battlepass skins">auto</button></div>
       </div>
       <div class="inforow"><span data-key="wtr" contenteditable>WTR: YES</span><span data-key="receipts" contenteditable>RECEIPTS: YES</span><span data-key="owner" contenteditable>0TH OWNER</span></div>
       <div class="inforow"><span data-key="cname" contenteditable>CHANGE NAME</span><span class="warn" data-key="cstatus" contenteditable>NOT READY</span><span data-key="date" contenteditable>2/6/2026</span></div>
@@ -248,7 +249,7 @@
       <span class="fstat"><label>Premium</label><input data-fkey="prems" inputmode="numeric" value="42" type="text" autocomplete="off"></span>
       <span class="fstat limited"><label>Limited</label><input data-fkey="limited" inputmode="numeric" value="02" type="text" autocomplete="off"></span>
       <span class="fstat"><label>Semi prem</label><input data-fkey="semis" inputmode="numeric" value="00" type="text" autocomplete="off"></span>
-      <span class="fstat"><label>Animated</label><input data-fkey="anims" inputmode="numeric" value="00" type="text" autocomplete="off"></span>
+      <span class="fstat"><label>Battlepass</label><input data-fkey="bpass" inputmode="numeric" value="00" type="text" autocomplete="off"></span>
     </div>
     <div class="fbtnrow"><button class="fbtn" type="button" id="fRecount">Recount from skins</button><span class="fhint">Updates automatically when skins change; manual overrides survive until the next recount.</span></div>
   </section>

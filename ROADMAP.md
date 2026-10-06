@@ -53,6 +53,22 @@
 - v1.5.2 artwork mode rebuilt as a **dedicated surface** (no card editor behind it, no modal-over-editor state): own panel with upload+preview, fields, publish disabled until an image exists; `?edit=` re-hydrates into it; artwork doubles as share image; publish also detects silent 0-row updates (stale local edit key after a server-side delete) and recreates the listing instead of toasting "Published!" at nothing
 - **Deferred, awaiting stakeholder:** viewer artwork mode — disable the interactive card chrome (zoom dock, drag-pan, layout switcher) on artwork listing pages while the artwork shows, with the ⋯-menu "Interactive card" peek as explicit opt-in; stakeholder may want the interactive card unreachable entirely (peek removed). Spec + implementation hook (`initArtMode()` in `js/viewer.js`) recorded in memory; cover-only thumbs and the marketplace quick-view stay as-is
 
+## v1.5.5 — handover closeout (vanish perception, BATTLEPASS stat, Normal theme) ✅ shipped
+- "Listing looks deleted after publishing" closed out: forensics (listing_audit) proved every
+  delete was a typed-confirm owner action — the perception was stale already-open tabs plus the
+  featured listing being excluded from the grid. Marketplace + dashboard now re-fetch when a
+  background tab becomes visible (hidden >60s), and the featured listing also renders in the
+  grid/list so nothing is ever big-tile-only
+- The card's 4th stat is BATTLEPASS (was ANIMATED): Riot/valorant-api exposes no battlepass flag
+  (tiers carry Select/Deluxe for BP skins), so a vendored UUID set identifies them —
+  `js/vendor/bp-skins.js`, 489 gun skins from 129 wiki Battle Pass collections -> 115 valorant-api
+  themes; refresh per act with `node scripts/gen-bp-skins.mjs`. Old listings show 00 until
+  re-published; browse RPC already parsed `texts.bpass` (no migration)
+- Sixth card theme `standard` ("Normal"): graphite/steel palette, sixth swatch, browse facet row,
+  sold-gallery label — the honest tier for regular accounts against High Prem & friends
+- Seller #3 unblocked: klyndonsuico@gmail.com got a password set out-of-band via the GoTrue admin
+  API (invite-link flow had dead-ended); login + `am_i_seller` verified
+
 ---
 
 ## 1. Current State (prototype, single-file)

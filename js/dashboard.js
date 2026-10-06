@@ -76,6 +76,19 @@ async function load(silent) {
   render();
 }
 
+/* v1.5.5: a dashboard tab left open in the background kept its boot-time rows —
+   a seller publishing elsewhere switched back and their fresh listing looked
+   "gone" until a manual reload. Re-fetch when the tab becomes visible again,
+   but only after it has been hidden a while, so bouncing between apps never
+   storms the API. */
+let hiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return; }
+  if (!hiddenAt || Date.now() - hiddenAt < 60000) return;
+  hiddenAt = 0;
+  load(true);
+});
+
 // ── stats ─────────────────────────────────────────────────────────
 function renderStats(rows) {
   const active = rows.filter(r => classify(r) === 'active').length;

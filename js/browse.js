@@ -28,6 +28,7 @@ const THEME_ACCENTS = {
   reaver: { label: 'Latest Skins', bg: '#0D0A14', panel: '#180F2A', accent: '#B44BFF', ink: '#EFE9FF', mut: '#9D92BA' },
   oni: { label: 'Budget-friendly', bg: '#120B0B', panel: '#201114', accent: '#FF5540', ink: '#F5E9DC', mut: '#AF9889' },
   arctic: { label: 'High Prem', bg: '#171310', panel: '#221B15', accent: '#D8434E', ink: '#F2EEE6', mut: '#A79B8B' }
+  , standard: { label: 'Normal', bg: '#141719', panel: '#1F2427', accent: '#AFC2CE', ink: '#EEF0EF', mut: '#96A0A4' }
 };
 
 const RANK_THRESHOLDS = { gold: 10, plat: 13, dia: 16, asc: 19, imm: 22, rad: 27 };
@@ -143,7 +144,7 @@ function normalize(r) {
     rankNow: { name: r.crank_name || 'UNRANKED', icon: r.crank_icon || '', tier: rankTier(r.crank_name) },
     rankPeak: { name: r.prank_name || 'UNRANKED', icon: r.prank_icon || '', tier: rankTier(r.prank_name) },
     stats: {
-      skins: r.skins || 0, premium: r.prems || 0, limited: r.limited || 0, animated: r.anims || 0, level: r.level || 0, vp: r.vp || 0, rp: r.rp || 0, kc: r.kc || 0
+      skins: r.skins || 0, premium: r.prems || 0, limited: r.limited || 0, bpass: r.bpass || 0, level: r.level || 0, vp: r.vp || 0, rp: r.rp || 0, kc: r.kc || 0
     },
     flags: {
       wtr: /yes/i.test(r.wtr || ''), receipts: /yes/i.test(r.receipts || ''),
@@ -316,7 +317,7 @@ function moneyHTML(l, cls) {
 
 function chipsGrid(l) {
   let c = '<span>' + esc(l.stats.skins) + ' SKINS</span><span>' + esc(l.stats.premium) + ' PREMIUM</span>';
-  if (l.stats.animated > 0) c += '<span>' + esc(l.stats.animated) + ' ANIMATED</span>';
+  if (l.stats.bpass > 0) c += '<span>' + esc(l.stats.bpass) + ' BATTLEPASS</span>';
   /* CF-19: WTR and receipts are the buyer's first trust question — they
      were list-mode-only before */
   if (l.flags.wtr) c += '<span>WTR</span>';
@@ -327,7 +328,7 @@ function chipsGrid(l) {
 
 function chipsList(l) {
   let c = '<span class="chip">' + esc(l.stats.skins) + ' SKINS</span><span class="chip">' + esc(l.stats.premium) + ' PREMIUM</span>';
-  if (l.stats.animated > 0) c += '<span class="chip">' + esc(l.stats.animated) + ' ANIMATED</span>';
+  if (l.stats.bpass > 0) c += '<span class="chip">' + esc(l.stats.bpass) + ' BATTLEPASS</span>';
   if (l.flags.wtr) c += '<span class="chip">WTR</span>';
   if (l.flags.receipts) c += '<span class="chip">RECEIPTS</span>';
   return c;
@@ -352,7 +353,7 @@ function pslotHTML(l) {
 }
 
 function chipMoreHTML(l) {
-  const n = 2 + (l.stats.animated > 0 ? 1 : 0) + (l.flags.wtr ? 1 : 0) + (l.flags.receipts ? 1 : 0) + 1;
+  const n = 2 + (l.stats.bpass > 0 ? 1 : 0) + (l.flags.wtr ? 1 : 0) + (l.flags.receipts ? 1 : 0) + 1;
   return n > 4 ? '<b class="gc-more">+' + (n - 4) + '</b>' : '';
 }
 
@@ -392,7 +393,7 @@ function previewInner(l, style) {
   return '<div class="mc">'
     + '<div class="mc-head"><span></span><span class="mc-rank">' + rankImg(rn) + esc(rn.name) + '</span></div>'
     + '<div class="mc-grid">' + g + '</div>'
-    + '<div class="mc-foot"><span>SKINS ' + esc(st.skins) + ' · PREM ' + esc(st.premium) + ' · ANIM ' + esc(st.animated) + '</span><span>LV ' + esc(st.level) + '</span></div>'
+    + '<div class="mc-foot"><span>SKINS ' + esc(st.skins) + ' · PREM ' + esc(st.premium) + ' · BP ' + esc(st.bpass) + '</span><span>LV ' + esc(st.level) + '</span></div>'
     + '</div>';
 }
 
@@ -477,7 +478,7 @@ function featHTML(l) {
     + '<span class="gf-ribbon">FEATURED</span>'
     + cover
     + (l.thumb ? '' : '<div class="gf-skins">' + sk + '</div>')
-    + '<div class="gf-strip"><span>PREM ' + esc(s.premium) + '</span><span>LIM ' + esc(s.limited) + '</span><span>ANIM ' + esc(s.animated) + '</span><span>LV ' + esc(s.level) + '</span></div>'
+    + '<div class="gf-strip"><span>PREM ' + esc(s.premium) + '</span><span>LIM ' + esc(s.limited) + '</span><span>BP ' + esc(s.bpass) + '</span><span>LV ' + esc(s.level) + '</span></div>'
     + '<div class="gf-ranks"><span class="gfr">' + rankImg(rn) + '<b>' + esc(rn.name) + '</b></span><span class="gfr">' + rankImg(rp) + '<b>PEAK ' + esc(rp.name) + '</b></span></div>'
     + '</div>'
     + '<div class="gf-info">'
@@ -587,11 +588,13 @@ function render() {
   const list = $('list');
   const empty = $('empty');
   const feat = featuredListing();
-  const rest = listings.filter(l => l !== feat);
-  const fRest = rest.filter(matches).sort(cmp);
+  /* v1.5.5: the featured listing now also renders in the grid/list — a listing
+     that only existed as the big tile read as "gone" to sellers scanning the
+     grid, which is exactly the vanish report. Count matches what's scannable. */
+  const fRest = listings.filter(matches).sort(cmp);
   hideStateBox();
   const featVis = !!(feat && matches(feat));
-  const total = fRest.length + (featVis ? 1 : 0);
+  const total = fRest.length;
   $('count').textContent = total + (total === 1 ? ' listing' : ' listings');
   /* CF-30: facet counts update on every render — the zero-result early
      return below used to skip them, so the sidebar froze mid-filter */
@@ -1289,7 +1292,7 @@ function moreBar() {
     + '</div>';
 }
 
-async function load() {
+async function load(silent) {
   if (!supabase) {
     status('Browse needs Supabase configured — see SETUP.md.', 'err');
     return;
@@ -1298,7 +1301,7 @@ async function load() {
      hold the seller probe until the session lands (≤4s) so a returning seller
      is recognised (and forwarded to the dashboard) instead of flashing the
      anonymous chrome. */
-  if (location.search.includes('code=') || location.hash.includes('access_token')) {
+  if (!silent && (location.search.includes('code=') || location.hash.includes('access_token'))) {
     await Promise.race([
       new Promise(resolve => { supabase.auth.onAuthStateChange(() => resolve()); }),
       new Promise(resolve => setTimeout(resolve, 4000))
@@ -1306,11 +1309,11 @@ async function load() {
   }
   isSeller = await probeSeller();
   applySellerChrome();
-  if (isSeller && (location.search.includes('code=') || location.hash.includes('access_token'))) {
+  if (isSeller && !silent && (location.search.includes('code=') || location.hash.includes('access_token'))) {
     location.replace('dashboard.html');
     return;
   }
-  status('Loading listings…');
+  if (!silent) status('Loading listings…');
   let data = null;
   let limited = false;
   try {
@@ -1324,7 +1327,7 @@ async function load() {
         views: r.views, skins: r.skins, updated_at: r.updated_at,
         price: null, negotiable: false,
         featured: false,
-        prems: null, limited: null, anims: null, level: null,
+        prems: null, limited: null, bpass: null, level: null,
         vp: null, rp: null, kc: null,
         crank_name: '', prank_name: '', crank_icon: '', prank_icon: '',
         vlogin: '', tag: '', link: '', wtr: '', receipts: '', owner: '', picks_top: {}
@@ -1351,8 +1354,9 @@ async function load() {
   }
   status(listings.length + ' listing(s) available.', 'ok');
   if (limited) status('Limited data — run migration 6_browse_listings_v2.sql', 'err');
-  skeleton();
-  setTimeout(() => {
+  if (!silent) skeleton();
+  if (silent) render();
+  else setTimeout(() => {
     render();
     if (deepSlug) openQV(deepSlug, null);
   }, 400);
@@ -1366,6 +1370,18 @@ const savedStyle = localStorage.getItem('cf-card-style');
 if (savedStyle === 'mini' || savedStyle === 'rail') state.style = savedStyle;
 applyStyle();
 load();
+
+/* v1.5.5: a marketplace tab left open in the background kept serving its
+   boot-time snapshot — a seller publishing in another tab switched back and
+   their fresh listing was "gone" until a manual reload. Re-fetch when the
+   tab becomes visible again, but only after it was hidden a while. */
+let hiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return; }
+  if (!hiddenAt || Date.now() - hiddenAt < 60000) return;
+  hiddenAt = 0;
+  load(true);
+});
 
 initDisclaimerCollapse();
 initStatusDismiss();

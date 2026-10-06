@@ -1,6 +1,7 @@
 // CardForge editor — card builder, PNG export, draft storage, listing publish.
 import * as CF from './shared.js';
 import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js';
+import { BP_SKINS } from './vendor/bp-skins.js';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -738,7 +739,7 @@ CF.$('iRun').addEventListener('click', async () => {
     CF.$('iToken').value = '';
     CF.$('iEnt').value = '';
     CF.status(`Imported ${j.name || 'account'}#${j.tag || ''} — level ${j.level ?? '?'}` +
-      (j.skins ? ` · ${j.skins.length} skins owned (${Object.values(state.ownedLevels).filter(l => l >= 2).length} animated)` : '') +
+      (j.skins ? ` · ${j.skins.length} skins owned (${j.skins.filter(id => BP_SKINS.has(id)).length} battlepass)` : '') +
       (j.errors && j.errors.length ? ' · partial: ' + j.errors.join(', ') : '') + '.', 'ok');
     refreshLayout();
   } catch (e) {
@@ -817,7 +818,7 @@ function applyImport(j) {
     prems: ownedSkins.filter(s => ['premium', 'ultra', 'exclusive'].includes(keyOf(s))).length,
     limited: ownedSkins.filter(s => ['ultra', 'exclusive'].includes(keyOf(s))).length,
     semis: ownedSkins.filter(s => keyOf(s) === 'deluxe').length,
-    anims: ownedSkins.filter(s => (state.ownedLevels[s.id] || 0) >= 2).length,
+    bpass: ownedSkins.filter(s => BP_SKINS.has(s.id)).length,
   };
   Object.keys(counts).forEach(k => {
     const v = String(counts[k]).padStart(2, '0');
@@ -889,7 +890,7 @@ function recountStats() {
     prems: all.filter(p => ['premium', 'ultra', 'exclusive'].includes(keyOf(p))).length,
     limited: all.filter(p => keyOf(p) === 'ultra').length,
     semis: all.filter(p => keyOf(p) === 'deluxe').length,
-    anims: all.filter(p => (p.level || 0) >= 2).length,
+    bpass: all.filter(p => BP_SKINS.has(p.id)).length,
   };
   Object.keys(counts).forEach(k => {
     const v = String(counts[k]).padStart(2, '0');
@@ -903,8 +904,8 @@ function recountStats() {
 card.addEventListener('click', e => {
   const auto = e.target.closest('[data-auto]');
   if (auto) {
-    const n = auto.dataset.auto === 'anims'
-      ? Object.values(state.picks).flat().filter(p => (p.level || 0) >= 2).length
+    const n = auto.dataset.auto === 'bpass'
+      ? Object.values(state.picks).flat().filter(p => BP_SKINS.has(p.id)).length
       : Object.values(state.picks).flat().filter(p => ['premium', 'ultra', 'exclusive'].includes(CF.tierKey(p.tier))).length;
     auto.closest('.stat').querySelector('b').textContent = String(n).padStart(2, '0');
     return;
@@ -1023,7 +1024,7 @@ CF.$('postBtn').addEventListener('click', () => {
   const txt = [
     `${t.code || ''} • ${t.vlogin || ''} • ${t.tag || ''}`,
     `LEVEL ${t.level || '?'} • ${t.crank || 'UNRANKED'} (peak ${t.prank || 'UNRANKED'})`,
-    `PREMIUM ${t.prems || '00'} | LIMITED ${t.limited || '00'} | SEMI PREM ${t.semis || '00'} | ANIMATED ${t.anims || '00'}`,
+    `PREMIUM ${t.prems || '00'} | LIMITED ${t.limited || '00'} | SEMI PREM ${t.semis || '00'} | BATTLEPASS ${t.bpass || '00'}`,
     `${t.wtr || ''} | ${t.receipts || ''} | ${t.owner || ''}`,
     `${t.cname || ''} | ${t.cstatus || ''} | ${t.date || ''}`,
     `${t.premier || ''} | ${t.vlink || ''} | ${t.price || ''}`,
@@ -1486,7 +1487,7 @@ function syncFormArt() {
 }
 
 function syncStatsInputs() {
-  ['prems', 'limited', 'semis', 'anims'].forEach(k => {
+  ['prems', 'limited', 'semis', 'bpass'].forEach(k => {
     const el = document.querySelector('#formMode input[data-fkey="' + k + '"]');
     const b = card.querySelector('b[data-key="' + k + '"]');
     if (el && b) el.value = b.textContent.trim();
@@ -1652,7 +1653,11 @@ CF.$('layoutSel').addEventListener('change', () => {
   CF.status(state.layout === 'auto' ? 'Layout: AUTO → ' + NAMES[mode] + '.' : 'Layout: ' + NAMES[mode] + '.', 'info');
 });
 document.querySelector('.themes')?.addEventListener('click', e => {
-  if (e.target.closest('.swatch')) refreshLayout();
+  /* v1.5.5: keep state.theme in step with the swatch or the next renderFromState()
+     (draft restore, import, edit hydrate) re-applied the stale theme over the
+     seller's choice and published the wrong one — live-reproduced in QA. */
+  const sw = e.target.closest('.swatch');
+  if (sw) { state.theme = sw.dataset.theme; refreshLayout(); }
 });
 
 /* CF-21: a publish gate. buildPayload() used to go straight to

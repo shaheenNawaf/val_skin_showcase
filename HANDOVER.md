@@ -126,6 +126,11 @@ Since v1.5 the marketplace owns the root URL and the editor lives at `build.html
   `supabase/migrations/16_stakeholder_admin.sql` (rev 2 — allow-list SQL + GoTrue
   admin-API recipe). **Never hand-insert into `auth.users`**: GoTrue ≥2.197 cannot
   scan hand-made rows and 500s login/user-list until they're deleted.
+- **Seller #3 (klyndonsuico@gmail.com)**: their invite-link password setup dead-ended twice
+  (the pre-fix Site URL era), so on 2026-10-06 a password was set directly via the GoTrue admin
+  API and verified with a real sign-in (the credential lives with the owner, not in this repo).
+  If they ever forget it: Supabase dashboard → Auth → that user → set a new one (or the
+  `?magic=1` magic-link hatch).
 - **SMTP**: magic-link emails use Supabase's built-in SMTP (low hourly limit — fine
   for one seller); configure custom SMTP under Supabase Auth settings if that ever
   changes.
@@ -242,6 +247,12 @@ QR exports, viewer owner controls. Lint clean, build clean, migration 10 applied
 4. **Not built (roadmap fodder)**: `pending` status button, price-history badge,
    offers/negotiation inbox, an `events` table for real analytics, magic-link auth
    for multi-device ownership. See `ROADMAP.md`.
+5. **v1.5.5 mechanics worth knowing**: the marketplace and dashboard re-fetch when you switch
+   back to a long-hidden tab (the "my new listing isn't there" fix) and the featured listing also
+   appears in the grid; the card's 4th stat is BATTLEPASS — its count comes from a vendored skin
+   UUID set (`js/vendor/bp-skins.js`, regenerate per act with `node scripts/gen-bp-skins.mjs`),
+   and listings published before v1.5.5 show 00 until re-published; the sixth theme swatch
+   "Normal" (`standard`) is the tier for regular accounts.
 
 ## 7. Where things live
 

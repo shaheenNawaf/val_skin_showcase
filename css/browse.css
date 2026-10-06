@@ -65,6 +65,7 @@ button,input,select{font-family:var(--font-ui)}
 .sw-reaver{background:#B44BFF}
 .sw-oni{background:#FF5540}
 .sw-arctic{background:#C22E3C}
+.sw-standard{background:#AFC2CE}
 .frow .fl{width:88px;flex:none;font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--c-ink)}
 /* honest bars: no track at zero, so empty ranks stop showing phantom data */
 .frow .fbar{flex:1;height:6px;background:transparent;min-width:0;overflow:hidden}
