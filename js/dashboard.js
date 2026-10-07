@@ -1,7 +1,7 @@
 // CardForge owner dashboard — Every listing on the marketplace — owner view, on one
 // page. Edit keys live in localStorage as `vc-edit-<slug>`; every mutation is
 // checked server-side against the key's hash.
-import { esc, $, status, initStatusDismiss, initDisclaimerCollapse, readJSON, writeJSON, hashToken, copyText, fbPostText, resizeToDataUrl, isPlaceholderTitle } from './shared.js';
+import { esc, $, status, initStatusDismiss, initDisclaimerCollapse, readJSON, writeJSON, hashToken, copyText, fbPostText, resizeToDataUrl, isPlaceholderTitle } from './shared.js?v=1.6.0';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;

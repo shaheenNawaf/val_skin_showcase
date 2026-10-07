@@ -1,5 +1,5 @@
 // CardForge shared layout engine — M1 adaptive tiles, M2 top-N showcase, M4 justified catalog.
-import { ALL_CATS, tierKey } from './shared.js';
+import { ALL_CATS, tierKey } from './shared.js?v=1.6.0';
 
 export const TIER_COLORS = { select: '#9ba8b9', deluxe: '#4aa8ff', premium: '#b44bf0', ultra: '#ff5d7b', exclusive: '#ffc45e' };
 export const TIER_RANK = { select: 0, deluxe: 1, premium: 2, ultra: 3, exclusive: 4 };

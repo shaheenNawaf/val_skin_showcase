@@ -1,7 +1,7 @@
 // CardForge browse — Direction-D marketplace over live Supabase listings.
 // Summary cards come from browse_listings_v2 (legacy browse_listings as a
 // fallback); the quick-view modal carries the REAL shared.css #card.
-import { esc, $, status, initDisclaimerCollapse, initStatusDismiss, ALL_CATS, DESIGN_W, DESIGN_H, isPlaceholderTitle } from './shared.js';
+import { esc, $, status, initDisclaimerCollapse, initStatusDismiss, ALL_CATS, DESIGN_W, DESIGN_H, isPlaceholderTitle } from './shared.js?v=1.6.0';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -414,6 +414,9 @@ const entrySub = l => {
   return cn || ((l.vlogin && l.vlogin !== 'RIOT ID') ? l.vlogin : '');
 };
 
+/* Grid card. Anatomy ported from the approved prototype
+   prototypes/fixes/marketplace-card.html (design reference, not shipped
+   in-repo): ID hero, theme strip, peak-as-icon, stat + trust rows. */
 function cardHTML(l, i) {
   const t = THEME_ACCENTS[l.theme] || THEME_ACCENTS.protocol;
   const rn = l.rankNow;

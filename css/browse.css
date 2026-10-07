@@ -154,6 +154,8 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 .rl-icons .mc-empty{height:8px;min-height:0}
 
 /* ── card anatomy ────────────────────────────────────────────────
+   Design reference: prototypes/fixes/marketplace-card.html (kept out of
+   the repo by choice; it is the approved artifact this block ports).
    THE LISTING ID IS THE PRIMARY IDENTIFIER. Rank, skins, stats and
    trust are per-offering detail below it on a 4-step scale:
      1 30px/800 mono · 2 15px/700 · 3 11px/600 muted · 4 9.5px/700 caps

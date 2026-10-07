@@ -1,4 +1,4 @@
-import { esc, $, status, initStatusDismiss, initDisclaimerCollapse } from './shared.js';
+import { esc, $, status, initStatusDismiss, initDisclaimerCollapse } from './shared.js?v=1.6.0';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;

@@ -1,6 +1,6 @@
 // CardForge viewer — renders a published listing from Supabase (public share
 // links) or, as a fallback, from this browser's localStorage.
-import * as CF from './shared.js';
+import * as CF from './shared.js?v=1.6.0';
 import { applyLayout, resolveLayout } from './layouts.js';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};

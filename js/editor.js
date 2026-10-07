@@ -1,5 +1,5 @@
 // CardForge editor — card builder, PNG export, draft storage, listing publish.
-import * as CF from './shared.js';
+import * as CF from './shared.js?v=1.6.0';
 import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js';
 import { BP_SKINS } from './vendor/bp-skins.js';
 
