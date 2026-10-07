@@ -17,12 +17,12 @@
      reading cssRules, which is blocked for cross-origin sheets (plan 006) -->
 <link rel="stylesheet" href="css/fonts.css?v=1.6.0">
 <link rel="stylesheet" href="css/shared.css?v=1.6.0">
-<link rel="stylesheet" href="css/editor.css?v=1.6.0">
+<link rel="stylesheet" href="css/editor.css?v=1.6.1">
 <script src="js/vendor/html-to-image.js?v=1.6.0" defer></script>
 <script src="js/vendor/supabase.js?v=1.6.0" defer></script>
 <script src="js/vendor/fflate.min.js?v=1.6.0"></script>
 <script src="js/config.js?v=1.6.0"></script>
-<script type="module" src="js/editor.js?v=1.6.0"></script>
+<script type="module" src="js/editor.js?v=1.6.1"></script>
 </head>
 <body>
 <div id="authGate" hidden role="dialog" aria-modal="true" aria-labelledby="agTitle">
@@ -91,6 +91,8 @@
           <b class="mm-label" id="mmgListing">This listing</b>
           <button class="mm-item" id="faceMenuBtn" type="button">Listing face…</button>
           <button class="mm-item" id="reqMenuBtn" type="button">Requirements…</button>
+          <!-- B: price/currency/offers are real listing COLUMNS, not card text -->
+          <button class="mm-item" id="priceMenuBtn" type="button">Price &amp; offers…</button>
           <button class="mm-item" id="postBtn" type="button">Copy post text</button>
         </div>
         <div class="mm-group" role="group" aria-labelledby="mmgAccount">
@@ -214,7 +216,11 @@
     <div class="frow"><label for="f-cname">Display name (buyer sees this)</label><input class="finput" id="f-cname" data-fkey="cname" value="CHANGE NAME" type="text" autocomplete="off"></div>
     <div class="fgrid2">
       <div class="frow"><label for="f-tag">Seller tag</label><input class="finput up" id="f-tag" data-fkey="tag" value="FS/FT+ADD" type="text" autocomplete="off"></div>
-      <div class="frow"><label for="f-price">Price line</label><input class="finput up" id="f-price" data-fkey="price" value="PRICE OFFER" type="text" autocomplete="off"></div>
+      <!-- B: the free-text "Price line" is gone. Price is a number + currency +
+           two explicit flags, set in one modal shared with the desktop More menu. -->
+      <div class="frow"><label for="f-priceBtn">Price &amp; offers</label>
+        <div class="fbtnrow"><button class="fbtn accent" type="button" id="f-priceBtn">Set price…</button><b class="fhint" id="f-priceSum">Contact for price</b></div>
+      </div>
     </div>
     <div class="frow"><label for="f-link">Contact link</label><input class="finput" id="f-link" data-fkey="link" inputmode="url" value="https://www.facebook.com/Your.Page.Here" type="text" autocomplete="off"></div>
   </section>
@@ -362,6 +368,28 @@
         <button type="button" data-req="issues">With Issues</button>
       </div>
       <label class="ffobo"><input type="checkbox" id="rqPrem"> Premier Unlinked</label>
+    </div>
+  </div>
+</div>
+
+<!-- B: explicit price form. Writes the listing's price / currency / negotiable
+     columns — create_listing and update_listing only ever carried payload+theme,
+     so a normal-mode publish left price NULL no matter what the seller typed. -->
+<div id="priceModal" hidden role="dialog" aria-modal="true" aria-labelledby="priceTitle">
+  <div class="mpanel">
+    <div class="mhead">
+      <h2 id="priceTitle">Price &amp; offers</h2>
+      <button id="priceClose" class="mclose" aria-label="Close price picker"><svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M2 2l10 10M12 2 2 12" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
+    </div>
+    <div class="mbody noladder">
+      <p class="fhint">This sets the listing's real price — the marketplace foot, the list view and Quick View all read it. The line printed on the card follows automatically.</p>
+      <div class="ffgrid">
+        <div class="frow"><label for="pm-price">Asking price</label><input class="finput" id="pm-price" type="text" inputmode="decimal" autocomplete="off" placeholder="4500"></div>
+        <div class="frow"><label for="pm-cur">Currency</label><select class="finput" id="pm-cur"><option>PHP</option><option>USD</option><option>EUR</option><option>GBP</option><option>JPY</option></select></div>
+      </div>
+      <label class="ffobo"><input type="checkbox" id="pm-cfp" checked> Contact for price</label>
+      <label class="ffobo"><input type="checkbox" id="pm-obo" checked> Open to offers</label>
+      <div class="pm-prev" id="pm-prev" aria-live="polite"><span>Buyers will see</span><b>Contact for price</b><i>open to offers</i></div>
     </div>
   </div>
 </div>

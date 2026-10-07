@@ -851,6 +851,8 @@ document.addEventListener('keydown', e => {
     if (fm && !fm.hidden) { fm.hidden = true; return; }
     const rq = CF.$('reqModal');
     if (rq && !rq.hidden) { rq.hidden = true; return; }
+    const pm = CF.$('priceModal');
+    if (pm && !pm.hidden) { pm.hidden = true; return; }
     if (!modal.hidden) { closeModal(); return; }
     return;
   }
@@ -872,6 +874,7 @@ document.addEventListener('keydown', e => {
 [['modal', () => closeModal()],
  ['faceModal', el => { el.hidden = true; }],
  ['reqModal', el => { el.hidden = true; }],
+ ['priceModal', el => { el.hidden = true; }],
  ['importModal', el => { el.hidden = true; }]].forEach(([id, close]) => {
   const ov = CF.$(id);
   if (!ov) return;
@@ -1432,6 +1435,116 @@ function refreshLayout() {
   if (prem) prem.addEventListener('change', () => { setField('vlink', prem.checked ? 'UNLINKED' : 'LINKED'); });
 })();
 
+/* ── B: explicit price state ──────────────────────────────────────────
+   price / currency / negotiable are listing COLUMNS, and until now only the
+   artwork publish path wrote them. create_listing and update_listing carry
+   payload+theme alone, so every normal-mode listing went live with price NULL
+   and negotiable true no matter what the seller typed into the card's price
+   line — the marketplace foot just said "Contact for price". One state object
+   now feeds the modal, the phone summary, the card text and the publish RPC. */
+const CUR_SYM = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', PHP: '₱' };
+
+function priceState() {
+  if (!state.price) state.price = { amount: null, currency: 'PHP', contact: true, offers: true };
+  return state.price;
+}
+
+/* "4,500" / "₱4500" / "4500.00" → 4500. Never NaN: a NaN would reach
+   owner_set_listing as an invalid numeric and fail the whole publish. */
+function parseAmount(v) {
+  const s = String(v == null ? '' : v).replace(/[^\d.]/g, '');
+  if (!s) return null;
+  const n = Number(s);
+  return isFinite(n) && n >= 0 ? n : null;
+}
+
+function priceMoney(p) {
+  const sym = CUR_SYM[p.currency] || (p.currency ? p.currency + ' ' : '$');
+  return sym + Number(p.amount).toLocaleString('en-US', { maximumFractionDigits: 2 });
+}
+
+/* The line printed on the card follows the structured price. "PRICE OFFER" is
+   kept for contact+offers so existing cards read exactly as they did. */
+function priceLine(p) {
+  if (p.contact || p.amount == null) return p.offers ? 'PRICE OFFER' : 'PRICE ON REQUEST';
+  return priceMoney(p) + (p.offers ? ' · OBO' : '');
+}
+
+/* Verbatim what browse.js cardHTML() puts in the card foot. */
+function priceSummary(p) {
+  return (p.contact || p.amount == null) ? 'Contact for price' : priceMoney(p);
+}
+
+function syncPriceSummary() {
+  const p = priceState();
+  const sum = CF.$('f-priceSum');
+  if (sum) sum.textContent = priceSummary(p) + (p.offers ? ' · offers' : '');
+}
+
+function applyPriceToCard() {
+  const p = priceState();
+  state.texts.price = priceLine(p);
+  const el = card.querySelector('[data-key="price"]');
+  if (el) el.textContent = state.texts.price;
+  syncPriceSummary();
+}
+
+/* Price & offers picker — one modal, two entry points (desktop More ▾ and the
+   phone Identity section). Same shape as the Requirements picker above. */
+(function () {
+  const modal = CF.$('priceModal');
+  const openers = [CF.$('priceMenuBtn'), CF.$('f-priceBtn')].filter(Boolean);
+  if (!modal || !openers.length) return;
+  const amt = CF.$('pm-price'), cur = CF.$('pm-cur'), cfp = CF.$('pm-cfp'),
+        obo = CF.$('pm-obo'), prev = CF.$('pm-prev');
+
+  function fill() {
+    const p = priceState();
+    if (amt) amt.value = p.amount == null ? '' : String(p.amount);
+    if (cur) cur.value = p.currency || 'PHP';
+    if (cfp) cfp.checked = !!p.contact;
+    if (obo) obo.checked = p.offers !== false;
+    reflect();
+  }
+  function read() {
+    const p = priceState();
+    if (cfp) p.contact = cfp.checked;
+    if (obo) p.offers = obo.checked;
+    if (cur) p.currency = cur.value || 'PHP';
+    if (amt) p.amount = p.contact ? p.amount : parseAmount(amt.value);
+  }
+  function reflect() {
+    const p = priceState();
+    if (amt) amt.disabled = !!p.contact;
+    if (cur) cur.disabled = !!p.contact;
+    if (prev) {
+      const b = prev.querySelector('b'), i = prev.querySelector('i');
+      if (b) b.textContent = priceSummary(p);
+      if (i) i.textContent = p.offers ? 'open to offers' : 'fixed price';
+    }
+    applyPriceToCard();
+  }
+  const commit = () => { read(); reflect(); };
+
+  openers.forEach(b => b.addEventListener('click', () => { modal.hidden = false; fill(); }));
+  const close = CF.$('priceClose');
+  if (close) close.addEventListener('click', () => { modal.hidden = true; });
+  [amt, cur].forEach(el => el && el.addEventListener('input', commit));
+  [cfp, obo].forEach(el => el && el.addEventListener('change', commit));
+
+  /* The artwork panel keeps its own price/currency/offers fields; point them at
+     the same state object so the two surfaces can never disagree. */
+  const ffPrice = CF.$('ff-price'), ffCur = CF.$('ff-cur'), ffObo = CF.$('ff-obo');
+  if (ffPrice) ffPrice.addEventListener('input', () => {
+    const p = priceState();
+    p.amount = parseAmount(ffPrice.value);
+    p.contact = p.amount == null;
+    syncPriceSummary();
+  });
+  if (ffCur) ffCur.addEventListener('change', () => { priceState().currency = ffCur.value || 'PHP'; syncPriceSummary(); });
+  if (ffObo) ffObo.addEventListener('change', () => { priceState().offers = !!ffObo.checked; syncPriceSummary(); });
+})();
+
 /* TT-110 / FM: relocate live topbar nodes (never clone) to fit each width band.
    >760: tb-left original order (logo→themes→layoutSel→layoutBadge) + pubswitch last in More.
    701-760: themes prepend + pubswitch last in More; layoutSel/badge stay in tb-left.
@@ -1562,6 +1675,7 @@ function syncFormFromState() {
   if (ownedEl) ownedEl.textContent = state.ownedCards?.length
     ? 'Owned collection: ' + state.ownedCards.length + ' player cards (from Riot import) — published with the toggle below.'
     : 'Owned collection: import your account to attach the full card collection.';
+  syncPriceSummary();
   syncFormArt();
   renderFormSkins();
   renderFormBuddies();
@@ -1679,11 +1793,15 @@ function publishGate() {
     label: 'the card title still says “CHANGE NAME”',
     fix: 'click the title on the card and type the listing name',
   });
-  const priceSet = (t.price || '').trim() && t.price !== 'PRICE OFFER';
+  /* B: the gate reads the structured price, not the card's printed line. An
+     explicit "contact for price" is a deliberate choice, not a placeholder —
+     the old check could only tell them apart by string-matching PRICE OFFER. */
+  const pp = priceState();
+  const priceSet = pp.contact || (pp.amount != null && isFinite(pp.amount));
   checks.push({
     ok: !!priceSet,
-    label: 'the price is still the placeholder',
-    fix: 'type an asking price, or something like “offers” in its place',
+    label: 'no asking price is set',
+    fix: 'open More ▸ Price & offers… and type a price, or tick “Contact for price”',
   });
   const link = (t.link || '').trim();
   checks.push({
@@ -1849,6 +1967,19 @@ async function publishListing() {
               const { error: fErr } = await supabase.rpc('owner_set_listing', { p_slug: slug, p_edit_token_hash: h2, p_featured: true });
               if (fErr) throw fErr;
             }
+          } else {
+            /* B: normal mode never wrote the price columns at all. create_listing
+               and update_listing take payload+theme only, so the row kept its
+               defaults (price NULL, negotiable true) whatever the seller typed.
+               This is the missing half. p_clear_price is the documented way to
+               null a price — sending p_price: null would COALESCE and keep it. */
+            const p = priceState();
+            const h2 = await CF.hashToken(localStorage.getItem('vc-edit-' + slug) || '');
+            const params = { p_slug: slug, p_edit_token_hash: h2, p_negotiable: !!p.offers };
+            if (p.contact || p.amount == null || !isFinite(p.amount)) params.p_clear_price = true;
+            else { params.p_price = p.amount; params.p_currency = p.currency || 'PHP'; }
+            const { error: prErr } = await supabase.rpc('owner_set_listing', params);
+            if (prErr) throw prErr;
           }
         }
       } catch (e) {
@@ -2062,7 +2193,7 @@ async function initAuthGate(opts) {
 async function loadListingForEdit(slug) {
   if (supabase) {
     try {
-      const { data, error } = await supabase.from('listing_public').select('payload,theme,currency,featured_at').eq('slug', slug).maybeSingle();
+      const { data, error } = await supabase.from('listing_public').select('payload,theme,currency,featured_at,price,negotiable').eq('slug', slug).maybeSingle();
       if (!error && data) return data;
     } catch { /* fall through to localStorage */ }
   }
@@ -2079,6 +2210,16 @@ async function initEditMode() {
     CF.status(`Listing "${slug}" not found on this device.`, 'err');
     return;
   }
+  /* B: seed the price form from the row's real columns. price NULL means the
+     seller is on "contact for price" — not that a number is missing. */
+  state.price = {
+    amount: listing.price == null ? null : Number(listing.price),
+    currency: listing.currency || 'PHP',
+    contact: listing.price == null,
+    offers: listing.negotiable !== false,
+  };
+  syncPriceSummary();
+
   editSlug = slug;
   /* CF-23: recovery-key re-entry. Without the local edit token this browser
      could load the listing but never update it (update_listing checks the
@@ -2125,7 +2266,10 @@ async function initEditMode() {
     };
     ffSet('ff-code', texts.code && texts.code !== 'ART' ? texts.code : '');
     ffSet('ff-name', texts.cname || '');
-    ffSet('ff-price', texts.price || '');
+    /* B: this used to seed from the CARD TEXT (texts.price), which is usually
+       "PRICE OFFER" — Number() gave NaN, so the save fell through to the
+       negotiable-only branch and the real price was never written. */
+    ffSet('ff-price', listing.price == null ? '' : String(Number(listing.price)));
     ffSet('ff-rank', texts.crank || '');
     ffSet('ff-prank', texts.prank || '');
     ffSet('ff-contact', texts.link || '');
@@ -2137,7 +2281,10 @@ async function initEditMode() {
     ffSet('ff-owner', texts.owner || '');
     ffSet('ff-tag', texts.tag || '');
     cbSet('ff-feature', !!listing.featured_at);
-    const obo = CF.$('ff-obo'); if (obo) obo.checked = !!texts.wtr;
+    /* B: was `!!texts.wtr` — "open to offers" was initialised from the WTR
+       answer, so a WTR: NO listing silently published as fixed-price and a
+       WTR: YES one as negotiable. It reads the negotiable column now. */
+    const obo = CF.$('ff-obo'); if (obo) obo.checked = priceState().offers !== false;
     enterArtMode();
   }
   faceSync();

@@ -29,8 +29,8 @@
 .rankrow .pickrank{margin-left:0}
 
 /* ── fast-add picker modal ─────────────────────────────────────── */
-#modal,#importModal,#faceModal,#routeGate,#reqModal{position:fixed;inset:0;background:var(--c-veil);backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;z-index:50;padding:12px}
-#modal[hidden],#importModal[hidden],#faceModal[hidden],#routeGate[hidden],#reqModal[hidden]{display:none}
+#modal,#importModal,#faceModal,#routeGate,#reqModal,#priceModal{position:fixed;inset:0;background:var(--c-veil);backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;z-index:50;padding:12px}
+#modal[hidden],#importModal[hidden],#faceModal[hidden],#routeGate[hidden],#reqModal[hidden],#priceModal[hidden]{display:none}
 .mpanel{width:min(1250px,100%);max-height:88vh;background:var(--c-surface2);border:1px solid var(--c-line);display:flex;flex-direction:column;padding:16px;
 clip-path:polygon(0 0,calc(100% - var(--notch-lg)) 0,100% var(--notch-lg),100% 100%,var(--notch-lg) 100%,0 calc(100% - var(--notch-lg)))}
 #modal.variant-wide .mpanel{width:min(1750px,100%)}
@@ -44,6 +44,20 @@ clip-path:polygon(0 0,calc(100% - var(--notch-lg)) 0,100% var(--notch-lg),100% 1
 .mclose:hover{color:var(--c-accent)}
 .mclose svg{width:13px;height:13px;display:block}
 #reqModal .mpanel{width:min(420px,100%)}
+/* B: the price modal. .finput/.frow are otherwise only styled inside the phone
+   media query and .am-panel, so this surface needs its own. */
+#priceModal .mpanel{width:min(420px,100%)}
+/* .fhint is otherwise only styled inside the ≤700px phone block */
+#priceModal .fhint{font:500 11px/1.55 var(--font-ui);color:var(--c-mut);margin:0}
+#priceModal .frow{display:flex;flex-direction:column;gap:4px}
+#priceModal .frow label{font:600 10px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut)}
+#priceModal .finput{background:var(--c-bg);border:1px solid var(--c-line);color:var(--c-ink);padding:8px 10px;font:500 13px var(--font-ui);width:100%;box-sizing:border-box}
+#priceModal .finput:focus{outline:none;border-color:var(--c-accent)}
+#priceModal .finput:disabled{opacity:.4;cursor:not-allowed}
+#priceModal .pm-prev{border:1px solid var(--c-line);background:var(--c-bg);padding:9px 11px;display:flex;flex-direction:column;gap:3px}
+#priceModal .pm-prev span{font:600 9px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut)}
+#priceModal .pm-prev b{font:800 17px var(--font-display);letter-spacing:-.01em;color:var(--c-ink);font-variant-numeric:tabular-nums}
+#priceModal .pm-prev i{font:600 9px var(--font-ui);font-style:normal;letter-spacing:.09em;text-transform:uppercase;color:var(--c-mut)}
 .mfilters{display:flex;flex-direction:column;gap:7px;margin-bottom:0}
 .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
 .chip{flex:0 0 auto;background:var(--c-surface);border:1px solid var(--c-line-soft);color:var(--c-mut);padding:5px 12px;font:600 11px var(--font-ui);letter-spacing:.08em;cursor:pointer;text-transform:uppercase;

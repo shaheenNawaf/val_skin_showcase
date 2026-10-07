@@ -2,6 +2,10 @@
 // Summary cards come from browse_listings_v2 (legacy browse_listings as a
 // fallback); the quick-view modal carries the REAL shared.css #card.
 import { esc, $, status, initDisclaimerCollapse, initStatusDismiss, ALL_CATS, DESIGN_W, DESIGN_H, isPlaceholderTitle } from './shared.js?v=1.6.0';
+/* A: the quick-view modal renders the shared #card, and until now it always
+   showed the raw panel grid — the layout the seller chose in the editor
+   (payload.layout) was honoured by view.html but ignored here. */
+import { applyLayout, resolveLayout } from './layouts.js';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -972,6 +976,13 @@ async function loadFull(slug) {
     if (!artSrc) {
       fillCard(payload, slug);
       $('card').dataset.theme = data.theme || payload.theme || 'protocol';
+      /* A: same resolution rule as view.html — an explicit m1/m2/m3 wins,
+         otherwise AUTO resolves from the payload. fillCard only fills the
+         fixed panel grid, so without this the modal never showed TILES or
+         SHOWCASE no matter what the seller published. */
+      const mode = (payload.layout === 'm1' || payload.layout === 'm2' || payload.layout === 'm3')
+        ? payload.layout : resolveLayout(payload);
+      applyLayout($('card'), payload, mode, 1, { editable: false, showAll: true });
       fitCard();
     }
     const link = (payload.texts && payload.texts.link ? payload.texts.link : '').trim();
