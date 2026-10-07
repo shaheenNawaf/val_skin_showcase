@@ -348,11 +348,11 @@ function renderMobile(listing, force) {
 
   /* M-T: head title fallback (mirrors applyHero) */
   const mtitle = mcard.querySelector('.mhead2 .mhid b[data-m="cname"]');
-  if (mtitle) mtitle.textContent = (texts.code && texts.code.trim()) || (texts.cname && texts.cname !== 'CHANGE NAME' && texts.cname.trim()) || ('Listing ' + (listing.slug || slug));
+  if (mtitle) mtitle.textContent = (texts.code && texts.code.trim()) || (texts.cname && !CF.isPlaceholderTitle(texts.cname) && texts.cname.trim()) || ('Listing ' + (listing.slug || slug));
   const msub = mcard.querySelector('.mhead2 .mhid span[data-m="vlogin"]');
   const mvl = (texts.vlogin && texts.vlogin !== 'RIOT ID') ? texts.vlogin : '';
   const mriot = mvl ? (mvl.includes('#') || !texts.tag ? mvl : mvl + '#' + texts.tag) : (texts.tag || '');
-  const mident = mriot || ((texts.cname && texts.cname !== 'CHANGE NAME' && texts.cname.trim()) || '');
+  const mident = mriot || ((texts.cname && !CF.isPlaceholderTitle(texts.cname) && texts.cname.trim()) || '');
   if (msub) msub.textContent = [mident, total + ' skin' + (total === 1 ? '' : 's')].filter(Boolean).join(' · ');
 
   const ranks = payload.ranks || {};
@@ -635,13 +635,13 @@ function moneyText(price, currency) {
 function applyHero(listing) {
   const t = listing.payload?.texts || {};
   const hero = CF.$('vhero');
-  const title = (t.code && t.code.trim()) || (t.cname && t.cname !== 'CHANGE NAME' && t.cname.trim()) || 'Listing ' + (listing.slug || '');
+  const title = (t.code && t.code.trim()) || (t.cname && !CF.isPlaceholderTitle(t.cname) && t.cname.trim()) || 'Listing ' + (listing.slug || '');
   CF.$('vhTitle').textContent = title;
   document.title = title + (listing.price != null ? ' · ' + (moneyText(listing.price, listing.currency)?.sym || '') + listing.price : '');
   const bits = [];
   const vl = (t.vlogin && t.vlogin !== 'RIOT ID') ? t.vlogin : '';
   const riot = vl ? (vl.includes('#') || !t.tag ? vl : vl + '#' + t.tag) : (t.tag || '');
-  const ident = riot || ((t.cname && t.cname !== 'CHANGE NAME' && t.cname.trim()) || '');
+  const ident = riot || ((t.cname && !CF.isPlaceholderTitle(t.cname) && t.cname.trim()) || '');
   if (ident) bits.push(ident);
   if (t.crank) bits.push(t.crank);
   const skins = (listing.payload?.picks ? Object.values(listing.payload.picks).reduce((n, a) => n + (Array.isArray(a) ? a.length : 0), 0) : null);

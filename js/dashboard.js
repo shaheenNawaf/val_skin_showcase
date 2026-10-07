@@ -1,7 +1,7 @@
 // CardForge owner dashboard — Every listing on the marketplace — owner view, on one
 // page. Edit keys live in localStorage as `vc-edit-<slug>`; every mutation is
 // checked server-side against the key's hash.
-import { esc, $, status, initStatusDismiss, initDisclaimerCollapse, readJSON, writeJSON, hashToken, copyText, fbPostText, resizeToDataUrl } from './shared.js';
+import { esc, $, status, initStatusDismiss, initDisclaimerCollapse, readJSON, writeJSON, hashToken, copyText, fbPostText, resizeToDataUrl, isPlaceholderTitle } from './shared.js';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -160,7 +160,7 @@ function rowHTML(row) {
   const t = (row.payload && row.payload.texts) || {};
   const cname = String(t.cname || '').trim();
   const code = String(t.code || '').trim();
-  const title = (cname && cname !== 'CHANGE NAME') ? cname : (code && code !== 'K486') ? code : row.slug;
+  const title = (cname && !isPlaceholderTitle(cname)) ? cname : (code && code !== 'K486') ? code : row.slug;
   const statusKey = classify(row);
 
   const chips = ['<span class="chip st-' + esc(row.status || 'available') + '">' + esc(statusLabel(row.status)) + '</span>'];

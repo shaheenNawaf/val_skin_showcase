@@ -38,6 +38,22 @@ export function rankByFlat(n, RANKS) {
   return byFlat.get(n) || byFlat.get(n + 2) || byFlat.get(n - 2) || RANKS[0];
 }
 
+/* Placeholder listing titles. Sellers who never renamed their listing ship
+   the editor default; the live marketplace currently carries "CHANGE NAMsE"
+   (mixed case AND a typo), which an exact 'CHANGE NAME' compare misses and
+   then renders as if it were a real card name. A normalised allow-list
+   catches the known variants; a loose regex would risk swallowing a real
+   seller name, so the list stays explicit. Shared by browse / dashboard /
+   viewer / editor so the guard can't drift again. */
+const PLACEHOLDER_TITLES = ['change name', 'changes name', 'change namse', 'change my name', 'changename'];
+export function isPlaceholderTitle(s) {
+  /* Trailing punctuation is stripped too: a live listing ships
+     "CHANGE NAME:" with a colon, which an exact list entry would miss. */
+  const n = String(s == null ? '' : s).trim().toLowerCase()
+    .replace(/\s+/g, ' ').replace(/[\s:.,;!]+$/g, '');
+  return PLACEHOLDER_TITLES.indexOf(n) !== -1;
+}
+
 // ── status + persistence ──────────────────────────────────────────
 // kind: 'info' (default) | 'ok' | 'err' — err persists, others auto-dim
 let statusTimer = null;
@@ -584,7 +600,7 @@ export function fbPostText(row, url) {
   const slug = (row && row.slug) || '';
   const cname = String(t.cname || '').trim();
   const code = String(t.code || '').trim();
-  const title = (cname && cname !== 'CHANGE NAME') ? cname
+  const title = (cname && !isPlaceholderTitle(cname)) ? cname
     : (code && code !== 'K486') ? code
     : slug;
   const all = Object.values(picks).filter(Array.isArray).flat();

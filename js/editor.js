@@ -1673,7 +1673,7 @@ function publishGate() {
     label: 'the card has no skins on it',
     fix: 'add at least one skin so buyers see an inventory',
   });
-  const titleSet = (t.cname || '').trim() && t.cname !== 'CHANGE NAME';
+  const titleSet = (t.cname || '').trim() && !CF.isPlaceholderTitle(t.cname);
   checks.push({
     ok: !!titleSet,
     label: 'the card title still says “CHANGE NAME”',

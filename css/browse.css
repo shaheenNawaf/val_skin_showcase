@@ -120,58 +120,84 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 .gcard,.arow{font:inherit;color:inherit;text-align:left;width:100%;cursor:pointer;background:none}
 .agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
 .gcard{background:var(--c-surface);border:1px solid var(--c-line);display:flex;flex-direction:column;text-decoration:none;color:inherit;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
-.gc-preview{position:relative;aspect-ratio:16/10;overflow:hidden;border-top:2px solid var(--tier-select);
-  background:linear-gradient(165deg,var(--th-bg),var(--th-panel));
+/* The strip is the THEME accent, not a content tier. tierFor() read the
+   variant level while the class names meant content tier, and .tt-exclusive
+   was unreachable dead CSS. --th-accent is already set per card by
+   setThemeVars(). Weapon previews get the shared 175px box; artwork keeps
+   its own 16:9 so a designed banner is never cropped. */
+.gc-preview{position:relative;height:175px;overflow:hidden;border-top:2px solid var(--th-accent);
   background:
     radial-gradient(300px 180px at 50% 0%,color-mix(in srgb,var(--th-accent) 12%,transparent),transparent 70%),
     repeating-linear-gradient(115deg,transparent 0 22px,rgba(255,255,255,.015) 22px 24px),
     linear-gradient(165deg,var(--th-bg),var(--th-panel))}
-.tt-select{border-top-color:var(--tier-select)}
-.tt-deluxe{border-top-color:var(--tier-deluxe)}
-.tt-premium{border-top-color:var(--tier-premium)}
-.tt-ultra{border-top-color:var(--tier-ultra)}
-.tt-exclusive{border-top-color:var(--tier-exclusive)}
+.gc-preview[data-thumb]{height:auto;aspect-ratio:16/9}
 .gc-badges{position:absolute;top:10px;right:10px;display:flex;gap:6px}
 .b-new{background:var(--c-accent);color:#fff;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 7px}
 .b-hot{background:#E8A33D;color:#0B0F14;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 7px}
 .b-feat{background:var(--c-accent-btn);color:#fff;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 7px}
-.gc-theme{position:absolute;top:10px;left:10px;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--th-ink);background:rgba(0,0,0,.35);padding:3px 7px}
 
-.mc{position:absolute;inset:0;display:grid;grid-template-rows:auto 1fr auto;padding:20px 9px 22px;gap:3px}
-.mc-head{display:flex;justify-content:space-between;align-items:center;gap:6px}
-.mc-rank{display:flex;align-items:center;gap:4px;font-family:var(--font-display);font-weight:700;font-size:7.5px;letter-spacing:.06em;color:var(--th-ink);opacity:.85}
-.mc-rank img{width:13px;height:13px;object-fit:contain}
+/* Mosaic drops its head rank and foot stat strip — both repeated rows
+   already rendered below the preview. Panels only. */
+.mc{position:absolute;inset:0;display:grid;grid-template-rows:1fr;padding:11px 9px;gap:3px}
 .mc-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr;grid-template-rows:1fr 1fr;gap:3px;min-height:0}
 .mc-panel{border:1px solid var(--mc-line);background:rgba(0,0,0,.16);padding:2px 3px 3px;display:flex;flex-direction:column;gap:1px;min-width:0;min-height:0;overflow:hidden;--mc-line:rgba(255,255,255,.13)}
-.mc-panel label{font:600 6px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--th-mut);line-height:1.2;white-space:nowrap;overflow:hidden}
+.mc-panel label{font:700 7.5px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--th-mut);line-height:1.2;white-space:nowrap;overflow:hidden}
 .mc-icons{flex:1;display:flex;align-items:center;justify-content:center;gap:2px;min-height:0}
 .mc-iw{flex:0 1 auto;min-width:0;height:100%;display:flex;align-items:center;justify-content:center}
 .mc-iw img{height:100%;width:auto;max-width:100%;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
 .mc-empty{flex:1;border:1px dashed var(--mc-line);min-height:6px}
-.mc-foot{display:flex;justify-content:space-between;gap:6px;font:600 6.5px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--th-mut);white-space:nowrap;overflow:hidden}
 
-.rl{position:absolute;inset:0;padding:20px 10px 24px;display:flex;flex-direction:column;justify-content:center;gap:5px;--mc-line:rgba(255,255,255,.13)}
+.rl{position:absolute;inset:0;padding:12px 10px;display:flex;flex-direction:column;justify-content:center;gap:5px;--mc-line:rgba(255,255,255,.13)}
 .rl-row{display:flex;align-items:center;gap:5px;flex:1;min-height:0}
 .rl-l{flex:none;width:46px;font:600 6px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--th-mut);white-space:nowrap;overflow:hidden}
 .rl-icons{flex:1;display:flex;align-items:center;justify-content:flex-start;gap:3px;min-width:0;height:100%}
 .rl-icons .mc-empty{height:8px;min-height:0}
 
-.gc-body{padding:14px 16px 12px}
-.gc-body h2{font-family:var(--font-display);font-weight:700;font-size:15px;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gc-ranks{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--c-ink)}
-.gc-ranks img{width:18px;height:18px;object-fit:contain}
-.gc-ranks i{font-style:normal;color:var(--c-line)}
-.gc-ranks .pk{color:var(--c-mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gc-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.gc-chips span{background:var(--c-surface2);border:1px solid var(--c-line-soft);color:var(--c-mut);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:3px 7px;clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px)}
-.gc-seller{display:flex;align-items:center;gap:7px;margin-top:10px;font-size:11px;font-weight:500;color:var(--c-mut);min-width:0}
-.gc-seller img{width:16px;height:16px;flex:none;object-fit:cover;clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px)}
-.gc-seller span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gc-foot{margin-top:auto;border-top:1px solid var(--c-line);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:6px}
-.gc-price{font-family:var(--font-display);font-weight:800;font-size:18px;letter-spacing:0;color:var(--c-ink);font-variant-numeric:tabular-nums;flex:none}
-.gc-offer{background:var(--c-accent-btn);color:#fff;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 8px;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch));white-space:nowrap;flex:none}
-.gc-meta{font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--c-mut);white-space:nowrap;flex:none}
-.gc-go{margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#FF7A85;white-space:nowrap}
+/* ── card anatomy ────────────────────────────────────────────────
+   THE LISTING ID IS THE PRIMARY IDENTIFIER. Rank, skins, stats and
+   trust are per-offering detail below it on a 4-step scale:
+     1 30px/800 mono · 2 15px/700 · 3 11px/600 muted · 4 9.5px/700 caps
+   Seller avatar and the redundant name line are gone; the theme label
+   moved from a preview overlay into the head so it sits with the ID. */
+.gc-head{display:flex;align-items:flex-start;gap:10px;padding:13px 15px 12px;border-bottom:1px solid var(--c-line)}
+.gc-id{min-width:0;flex:1}
+.gc-idcode{display:block;font:800 30px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.02em;color:var(--c-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gc-sub{display:block;margin-top:8px;font:600 11px var(--font-ui);color:var(--c-mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gc-flags{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:none;padding-top:3px}
+.gc-themechip{font:700 9px var(--font-ui);letter-spacing:.13em;text-transform:uppercase;color:var(--th-mut);border:1px solid var(--c-line);padding:3px 6px;white-space:nowrap}
+.gc-ranks{display:flex;align-items:center;gap:6px;padding:12px 15px 0;font-size:11px;min-width:0}
+.gc-ranks img{width:17px;height:17px;object-fit:contain;flex:none}
+.gc-ranks b{font-weight:600;color:var(--c-mut);white-space:nowrap}
+/* peak as an icon: prank_icon already ships in browse_listings_v3 and
+   normalize() parses it; only the grid card wasted it. Peak >= current
+   by definition so the up-arrow is never wrong. Listings with no icon
+   (the artwork path) fall back to the name in JS. */
+.gc-ranks .up{font-style:normal;color:var(--c-mut);opacity:.65;font-weight:700;font-size:11px;flex:none}
+.gc-ranks .pk-badge{width:15px;height:15px;object-fit:contain;flex:none;opacity:.9}
+.gc-ranks .pk{font-weight:600;color:var(--c-mut);opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.gc-chips{display:flex;flex-wrap:wrap;gap:5px;margin:8px 15px 0}
+.gc-chips span{background:var(--c-surface2);border:1px solid var(--c-line-soft);color:var(--c-mut);font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:4px 7px;clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px);display:inline-block;white-space:nowrap}
+.gc-chips span b{color:var(--c-ink);font-weight:700;font-variant-numeric:tabular-nums}
+/* inline-block dot, NOT a flex item: a bare text node inside an
+   inline-flex chip collapsed to zero width and the label vanished.
+   Class is "hasdot", not "dot" — a global .dot (9px rotated diamond for
+   facet dots) already exists and would squash the chip to 9px. */
+.gc-chips span.hasdot::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:currentColor;margin-right:5px;vertical-align:1px}
+/* trust colours are semantic, not themed: green = verified, amber = the
+   removable premier-unlinked warn, red = WTR issues. Literals on purpose
+   — shared.css has no ok/bad token and these must not shift with theme. */
+.gc-chips span.ok{color:#59E3B8;border-color:rgba(89,227,184,.4);background:rgba(89,227,184,.08)}
+.gc-chips span.bad{color:#FF7A85;border-color:rgba(255,122,133,.48);background:rgba(255,122,133,.1)}
+.gc-chips span.warn{color:#E8A33D;border-color:rgba(232,163,61,.4);background:rgba(232,163,61,.08)}
+.gc-chips span.na{color:var(--c-mut);border-color:var(--c-line);background:transparent}
+.gc-chips span.na b{color:var(--c-mut)}
+.gc-foot{margin-top:auto;border-top:1px solid var(--c-line);padding:12px 15px;display:flex;align-items:center;gap:11px}
+.gc-amt{flex:1;min-width:0}
+.gc-amt .big{display:block;font-family:var(--font-display);font-weight:800;font-size:20px;line-height:1;color:var(--c-ink);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.gc-amt .big.offer{font-size:17px}
+.gc-amt .sub{display:block;margin-top:4px;font:600 9px var(--font-ui);letter-spacing:.09em;text-transform:uppercase;color:var(--c-mut)}
+.gc-cta{flex:none;display:inline-flex;align-items:center;justify-content:center;background:var(--c-accent-btn);color:#fff;border:0;font:700 10px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;padding:12px 13px;cursor:pointer;white-space:nowrap;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.gc-cta:hover{background:var(--c-accent)}
 
 .cta-tile{border:1px dashed var(--c-line);background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:30px;min-height:220px;text-decoration:none;text-align:center;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
 .cta-tile b{font-family:var(--font-display);font-weight:800;font-size:17px;letter-spacing:0;color:var(--c-ink)}
@@ -394,31 +420,32 @@ html{scrollbar-width:thin;scrollbar-color:var(--c-line) transparent}
   #pulse{display:none}
 }
 
-/* ── v1.5.4: mobile commerce card — new nodes, desktop hides them ── */
-.gc-trow{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-.gc-trow h2{min-width:0}
+/* ── mobile ───────────────────────────────────────────────────────
+   v1.5.4's separate mobile commerce card (icon strip + price slot +
+   4-chip cap) is RETIRED for the grid: the card is now one anatomy at
+   every width and phones inherit the desktop format, re-proportioned
+   below. List rows and the featured tile keep their own phone rules. */
 .gf-trow{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .gf-trow h2{min-width:0}
-.gc-strip{display:none}
+/* The price slot survives only on the featured tile; the grid card dropped
+   it in favour of the foot price. Hidden everywhere by default. */
 .gc-pslot{display:none}
-.gc-more{display:none}
+.gp-val{font:800 16px/1 var(--font-display);color:var(--c-ink);white-space:nowrap}
+.gp-offer{font:700 10px/1.2 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--c-mut);text-align:right}
+.gp-obo{font:700 9px/1 var(--font-ui);letter-spacing:.1em;color:var(--c-mut);border:1px solid var(--c-line);padding:3px 5px}
 @media (max-width:700px){
-  .gc-preview .mc{display:none}
-  .gc-strip{display:flex;position:absolute;inset:0;align-items:center;justify-content:center;gap:6px;padding:10px 12px;background:linear-gradient(180deg,var(--card1),var(--card2))}
-  .gs-iw{flex:0 1 auto;height:78%;min-width:0;display:flex;align-items:center;justify-content:center}
-  .gs-iw img{height:100%;width:auto;max-width:100%;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
-  .gs-more{font:700 10px var(--font-ui);color:var(--mut);letter-spacing:.06em}
-  .gc-pslot{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:none}
-  .gp-val{font:800 16px/1 var(--font-display);color:var(--ink);white-space:nowrap}
-  .gp-offer{font:700 10px/1.2 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--mut);text-align:right}
-  .gp-obo{font:700 9px/1 var(--font-ui);letter-spacing:.1em;color:var(--mut);border:1px solid var(--line);padding:3px 5px}
-  .gc-chips > :nth-child(n+5){display:none}
-  .gc-more{display:inline-flex;align-items:center;margin-top:8px;font:700 9.5px var(--font-ui);letter-spacing:.08em;color:var(--mut);border:1px dashed var(--line);padding:4px 6px}
-  .gc-foot{flex-direction:column;align-items:stretch;gap:8px}
-  .gc-foot .gc-price,.gc-foot .gc-offer,.gc-foot .gc-neg{display:none}
-  .gc-go{margin-left:0;justify-content:center;background:var(--c-accent-btn);border:0;color:#fff;font:700 12px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;padding:11px 14px;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+  .gf-trow .gc-pslot{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:none}
+  .gc-idcode{font-size:26px}
+  .gc-head{padding:12px 13px 11px}
+  .gc-ranks{padding:11px 13px 0}
+  .gc-chips{margin:8px 13px 0}
+  .gc-foot{padding:11px 13px;gap:9px}
+  .gc-amt .big{font-size:18px}
+  .gc-amt .big.offer{font-size:15px}
+  .gc-cta{padding:12px 11px;font-size:9.5px}
+  .rl-l{width:42px;font-size:6.5px}
   .lr-chips > :nth-child(n+4){display:none}
   .lr-go{display:none}
-  /* featured tile gets the same commerce treatment on phones */
+  /* featured tile keeps its commerce treatment on phones */
   .gf-price{display:none}
 }

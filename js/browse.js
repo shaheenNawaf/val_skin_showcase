@@ -1,7 +1,7 @@
 // CardForge browse — Direction-D marketplace over live Supabase listings.
 // Summary cards come from browse_listings_v2 (legacy browse_listings as a
 // fallback); the quick-view modal carries the REAL shared.css #card.
-import { esc, $, status, initDisclaimerCollapse, initStatusDismiss, ALL_CATS, DESIGN_W, DESIGN_H } from './shared.js';
+import { esc, $, status, initDisclaimerCollapse, initStatusDismiss, ALL_CATS, DESIGN_W, DESIGN_H, isPlaceholderTitle } from './shared.js';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -115,18 +115,6 @@ function setThemeVars(el, key) {
   el.style.setProperty('--th-accent', t.accent);
   el.style.setProperty('--th-ink', t.ink);
   el.style.setProperty('--th-mut', t.mut);
-}
-
-function tierFor(l) {
-  let maxLv = 0;
-  Object.values(l.picks || {}).forEach(arr => {
-    if (!Array.isArray(arr)) return;
-    arr.forEach(p => { const lv = Number(p.level) || 0; if (lv > maxLv) maxLv = lv; });
-  });
-  if (maxLv >= 4) return 'ultra';
-  if (maxLv === 3) return 'premium';
-  if (maxLv === 2) return 'deluxe';
-  return 'select';
 }
 
 function normalize(r) {
@@ -315,15 +303,39 @@ function moneyHTML(l, cls) {
   return '<span class="' + (cls || 'lc-price') + '">' + sym + esc(l.price) + '</span>';
 }
 
-function chipsGrid(l) {
-  let c = '<span>' + esc(l.stats.skins) + ' SKINS</span><span>' + esc(l.stats.premium) + ' PREMIUM</span>';
-  if (l.stats.bpass > 0) c += '<span>' + esc(l.stats.bpass) + ' BATTLEPASS</span>';
-  /* CF-19: WTR and receipts are the buyer's first trust question — they
-     were list-mode-only before */
-  if (l.flags.wtr) c += '<span>WTR</span>';
-  if (l.flags.receipts) c += '<span>RECEIPTS</span>';
-  c += '<span>' + esc(l.flags.owner) + ' OWNER</span>';
-  return c;
+/* Stats and trust are separate rows: stats are per-offering inventory,
+   trust is the buyer's risk question. A listing with no inventory at all
+   (the artwork path) renders NO stat row — a row of zeros is a lie, not
+   a fact. */
+function statsEmpty(l) {
+  const s = l.stats;
+  return !s || (s.skins === 0 && s.premium === 0 && s.limited === 0 && s.bpass === 0 && s.level === 0);
+}
+function statChips(l) {
+  if (statsEmpty(l)) return '';
+  const s = l.stats;
+  return '<div class="gc-chips">'
+    + '<span><b>' + esc(s.skins) + '</b> skins</span>'
+    + '<span><b>' + esc(s.premium) + '</b> prem</span>'
+    + '<span><b>' + esc(s.limited) + '</b> limited</span>'
+    + '<span><b>' + esc(s.bpass) + '</b> bp</span>'
+    + '<span>lv <b>' + esc(s.level) + '</b></span>'
+    + '</div>';
+}
+
+/* Single flag: set false and WTR issues degrade to a muted "WTR not
+   stated" chip — no second code path, per the stakeholder-removable
+   requirement. */
+const SHOW_WTR_ISSUES = true;
+function trustChips(l) {
+  const f = l.flags;
+  const w = (f.wtrIssues && SHOW_WTR_ISSUES) ? { c: 'bad', t: 'WTR issues' }
+          : f.wtr ? { c: 'ok', t: 'WTR verified' }
+          : { c: 'na', t: 'WTR not stated' };
+  let c = '<span class="hasdot ' + w.c + '">' + w.t + '</span>';
+  if (f.receipts) c += '<span class="hasdot ok">Receipts</span>';
+  if (f.premierUnlinked) c += '<span class="hasdot warn">Premier unlinked</span>';
+  return '<div class="gc-chips">' + c + '</div>';
 }
 
 function chipsList(l) {
@@ -337,26 +349,8 @@ function chipsList(l) {
 /* v1.5.4: mobile commerce card — one-row skin strip (replaces the 6-panel
    mosaic on phones), price slot on the title row, chip cap with +N, and
    correct view grammar. Desktop keeps the existing anatomy via CSS. */
-function stripHTML(l) {
-  const all = flattenPicks(l, FEATURE_ORDER);
-  if (!all.length) return '';
-  const icons = all.slice(0, 6).map(p => pickWrap(p, 'gs-iw')).join('');
-  const more = all.length > 6 ? '<b class="gs-more">+' + (all.length - 6) + '</b>' : '';
-  return '<span class="gc-strip">' + icons + more + '</span>';
-}
-
-function pslotHTML(l) {
-  return '<span class="gc-pslot">'
-    + (l.price == null ? '<span class="gp-offer">Contact for price</span>' : moneyHTML(l, 'gp-val'))
-    + (l.negotiable ? '<span class="gp-obo">OBO</span>' : '')
-    + '</span>';
-}
-
-function chipMoreHTML(l) {
-  const n = 2 + (l.stats.bpass > 0 ? 1 : 0) + (l.flags.wtr ? 1 : 0) + (l.flags.receipts ? 1 : 0) + 1;
-  return n > 4 ? '<b class="gc-more">+' + (n - 4) + '</b>' : '';
-}
-
+/* v1.5.4's mobile-only nodes (icon strip, price slot, chip cap) are gone —
+   the card is one anatomy at every width now. */
 const viewsText = l => esc(l.views) + (Number(l.views) === 1 ? ' view · ' : ' views · ');
 
 function priceHTML(l) {
@@ -364,6 +358,22 @@ function priceHTML(l) {
      before they contact anyone. It was normalised and never shown. */
   const neg = l.negotiable ? '<span class="lc-neg">open to offers</span>' : '';
   return moneyHTML(l) + neg;
+}
+
+/* Bare "₱4,500" for the grid foot; moneyHTML() wraps it in a classed span
+   for the list/featured views. */
+function priceText(l) {
+  const sym = CUR_SYMBOL[l.currency] || (l.currency ? esc(l.currency) + ' ' : '$');
+  return sym + esc(l.price);
+}
+
+/* Still used by the FEATURED tile (.gf-trow), which is out of scope for
+   this ship. The grid card no longer emits a price slot. */
+function pslotHTML(l) {
+  return '<span class="gc-pslot">'
+    + (l.price == null ? '<span class="gp-offer">Contact for price</span>' : moneyHTML(l, 'gp-val'))
+    + (l.negotiable ? '<span class="gp-obo">OBO</span>' : '')
+    + '</span>';
 }
 
 function previewInner(l, style) {
@@ -388,21 +398,19 @@ function previewInner(l, style) {
     if (!icons) icons = '<span class="mc-empty"></span>';
     return '<section class="mc-panel"><label>' + esc(p.l) + '</label><div class="mc-icons">' + icons + '</div></section>';
   }).join('');
-  const rn = l.rankNow;
-  const st = l.stats;
-  return '<div class="mc">'
-    + '<div class="mc-head"><span></span><span class="mc-rank">' + rankImg(rn) + esc(rn.name) + '</span></div>'
-    + '<div class="mc-grid">' + g + '</div>'
-    + '<div class="mc-foot"><span>SKINS ' + esc(st.skins) + ' · PREM ' + esc(st.premium) + ' · BP ' + esc(st.bpass) + '</span><span>LV ' + esc(st.level) + '</span></div>'
-    + '</div>';
+  /* Mosaic is panels only — the head rank and foot stat strip repeated
+     rows already rendered below the preview. */
+  return '<div class="mc"><div class="mc-grid">' + g + '</div></div>';
 }
 
-/* The listing ID is the title everywhere; custom name / Riot ID drop to the subline. */
+/* The listing ID is the title everywhere; custom name / Riot ID drop to the subline.
+   The placeholder guard is the shared matcher — the old exact 'CHANGE NAME'
+   compare missed the live "CHANGE NAMsE" (mixed case + typo). */
 const entryTitle = l => (l.code && l.code.trim()) || l.title;
 const entrySub = l => {
   const t = entryTitle(l);
   if (l.code && l.code.trim() && l.code !== t) return l.code;
-  const cn = (l.title && l.title !== 'CHANGE NAME' && l.title !== t) ? l.title : '';
+  const cn = (l.title && !isPlaceholderTitle(l.title) && l.title !== t) ? l.title : '';
   return cn || ((l.vlogin && l.vlogin !== 'RIOT ID') ? l.vlogin : '');
 };
 
@@ -410,33 +418,34 @@ function cardHTML(l, i) {
   const t = THEME_ACCENTS[l.theme] || THEME_ACCENTS.protocol;
   const rn = l.rankNow;
   const rp = l.rankPeak;
-  const arctic = l.theme === 'arctic' ? ' data-theme-tile="arctic"' : '';
-  const price = moneyHTML(l, 'gc-price') + (l.negotiable ? '<span class="gc-neg">open to offers</span>' : '');
-  if (l.price == null) { /* moneyHTML already handles the offer case */ }
-  const priceCell = l.price == null
-    ? '<span class="gc-offer">CONTACT FOR PRICE</span>' + (l.negotiable ? '<span class="gc-neg">open to offers</span>' : '')
-    : price;
   const cover = l.thumb
     ? '<img class="gc-cover" src="' + esc(l.thumb.src) + '" alt="" loading="lazy" ' + IMGERR + '>'
     : '';
+  /* Peak as an icon. prank_icon already ships in browse_listings_v3 and
+     normalize() parses it; only the grid card wasted it. Listings with no
+     icon (the artwork path) fall back to the name so the row never lies. */
+  const peak = rp.icon
+    ? '<i class="up" aria-hidden="true">&#8593;</i><img class="pk-badge" src="' + esc(rp.icon) + '" alt="Peak rank ' + esc(rp.name) + '">'
+    : '<i class="up" aria-hidden="true">&#8593;</i><span class="pk">' + esc(rp.name) + '</span>';
+  const amt = l.price == null
+    ? '<span class="big offer">Contact for price</span>'
+    : '<span class="big">' + priceText(l) + '</span>';
   return '<button type="button" class="gcard" data-slug="' + esc(l.slug) + '" data-i="' + i + '">'
-    + '<div class="gc-preview tt-' + tierFor(l) + '"' + arctic + ' data-imgwrap>'
-    + cover
-    + '<span class="gc-badges">' + badgesGrid(l) + '</span>'
-    + '<span class="gc-theme">' + esc(t.label) + '</span>'
-    + (l.thumb ? '' : previewInner(l, state.style))
-    + (l.thumb ? '' : stripHTML(l))
+    + '<div class="gc-head">'
+    +   '<div class="gc-id"><span class="gc-idcode">' + esc(entryTitle(l)) + '</span>'
+    +     '<span class="gc-sub">' + esc(entrySub(l)) + '</span></div>'
+    +   '<div class="gc-flags">' + badgesGrid(l) + '<span class="gc-themechip">' + esc(t.label) + '</span></div>'
     + '</div>'
-    + '<div class="gc-body">'
-    + '<div class="gc-trow"><h2>' + esc(entryTitle(l)) + '</h2>' + pslotHTML(l) + '</div>'
-    + '<div class="gc-code">' + esc(entrySub(l)) + '</div>'
-    + '<div class="gc-ranks">' + rankImg(rn) + '<span>' + esc(rn.name) + '</span><i>·</i><span class="pk">PEAK ' + esc(rp.name) + '</span></div>'
-    + '<div class="gc-chips">' + chipsGrid(l) + '</div>' + chipMoreHTML(l)
-    + '<div class="gc-seller">' + img(AVATAR_PLACEHOLDER, 'Seller avatar') + '<span>' + esc(l.seller.name) + '</span></div>'
+    + '<div class="gc-preview"' + (l.thumb ? ' data-thumb' : '') + ' data-imgwrap>'
+    +   cover
+    +   (l.thumb ? '' : previewInner(l, state.style))
     + '</div>'
-    + '<div class="gc-foot">' + priceCell
-    + '<span class="gc-meta">' + viewsText(l) + esc(agoText(l.daysAgo)) + '</span>'
-    + '<span class="gc-go">View card →</span>'
+    + '<div class="gc-ranks">' + rankImg(rn) + '<b>' + esc(rn.name) + '</b>' + peak + '</div>'
+    + statChips(l)
+    + trustChips(l)
+    + '<div class="gc-foot"><span class="gc-amt">' + amt
+    +   '<span class="sub">' + (l.negotiable ? 'open to offers' : 'fixed price') + '</span></span>'
+    +   '<span class="gc-cta">View card</span>'
     + '</div></button>';
 }
 
