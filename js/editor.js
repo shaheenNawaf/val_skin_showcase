@@ -1979,6 +1979,10 @@ function gateFix(key) {
 }
 
 function recheckGate() {
+  /* Card spans write state.texts only at buildPayload/capture time; the span
+     content IS the truth while typing, so mirror it first (same pure copy
+     publishListing does) and the checklist/badge/flags stay live. */
+  captureTexts();
   const res = publishGate();
   const btn = CF.$('publishBtn');
   if (btn) btn.dataset.blocking = String(res.blocking.length);
