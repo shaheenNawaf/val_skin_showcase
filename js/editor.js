@@ -757,7 +757,8 @@ CF.$('iRun').addEventListener('click', async () => {
       : (rs && j.regionCorrected
         ? ` · region auto-corrected: account lives on ${rs}, imported from there instead of ${String(j.region || '').toUpperCase()}`
         : '');
-    CF.status(`Imported ${j.name || 'account'}#${j.tag || ''} — level ${j.level ?? '?'}` +
+    const imported = j.name ? (j.tag ? `${j.name}#${j.tag}` : j.name) : 'account';
+    CF.status(`Imported ${imported} — level ${j.level ?? '?'}` +
       (j.skins ? ` · ${j.skins.length} skins owned (${j.skins.filter(id => BP_SKINS.has(id)).length} battlepass)` : '') +
       regionNote +
       (j.errors && j.errors.length ? ' · partial: ' + j.errors.join(', ') : '') + '.', 'ok');
@@ -786,7 +787,10 @@ function applyImport(j) {
     const r = CF.rankByFlat(j.peakTier, RANKS);
     if (r && r.name !== 'UNRANKED') { state.texts.prank = r.name; const prankIcon = r.icon || (RANKS.find(x => x.name === r.name) || {}).icon || null; state.ranks.prank = prankIcon; }
   }
-  if (j.playerCard) {
+  /* The zero UUID is Riot's "nothing equipped" sentinel — skip it so the
+     card never points at a guaranteed-404 wideart.png. (The edge function
+     filters it too; this guard covers any version skew.) */
+  if (j.playerCard && j.playerCard !== '00000000-0000-0000-0000-000000000000') {
     const wide = (CARDS[j.playerCard] || {}).wide ||
       `https://media.valorant-api.com/playercards/${j.playerCard}/wideart.png`;
     if (wide) state.assets.pcard = wide;

@@ -466,6 +466,51 @@ Deno.test("no entitlements: probe still resolves region and level, error explain
   hasErr(r.body, /^rank, wallet and owned items need the entitlements token/);
 });
 
+Deno.test("zero-UUID sentinel (unequipped card) yields null, not a 404 image", async () => {
+  // A real played account whose loadout succeeds but has nothing equipped
+  // reports the zero UUID — truthy, but every asset URL built from it 404s.
+  const { f } = makeFetch(stdHandler({
+    loadout: {
+      status: 200,
+      body: {
+        Identity: {
+          AccountLevel: 42,
+          PlayerCardID: "00000000-0000-0000-0000-000000000000",
+          PlayerTitleID: "00000000-0000-0000-0000-000000000000",
+        },
+        Guns: [],
+      },
+    },
+  }));
+  const r = await runImport(importBody(), f);
+  eq(r.body.playerCard, null, "playerCard: ");
+  eq(r.body.playerTitle, null, "playerTitle: ");
+  eq(r.body.level, 42, "level: ");
+  noErr(r.body, /loadout/);
+});
+
+Deno.test("an expired pasted entitlements token is ignored and re-derived", async () => {
+  const { f } = makeFetch(stdHandler({}));
+  const r = await runImport(
+    { accessToken: makeToken(), entitlements: makeToken({}, -600), region: "na" },
+    f,
+  );
+  eq(r.body.ok, true, "ok: ");
+  eq(r.body.skins, [`item-${TYPE_SKINS.slice(0, 8)}`], "skins via the fresh ent: ");
+  hasErr(r.body, /pasted entitlements token was expired/);
+});
+
+Deno.test("a malformed pasted entitlements token is ignored and re-derived", async () => {
+  const { f } = makeFetch(stdHandler({}));
+  const r = await runImport(
+    { accessToken: makeToken(), entitlements: "not-a-jwt", region: "na" },
+    f,
+  );
+  eq(r.body.ok, true, "ok: ");
+  eq(r.body.skins, [`item-${TYPE_SKINS.slice(0, 8)}`], "skins via the fresh ent: ");
+  hasErr(r.body, /pasted entitlements token doesn't look like a Riot JWT/);
+});
+
 // ── token validation ──────────────────────────────────────────────
 
 Deno.test("expired token is rejected with 401 before any Riot call", async () => {

@@ -47,6 +47,10 @@ export const CUR_VP = "85ad13f7-3d1b-5128-9eb2-7cd8ee0b5741";
 export const CUR_RP = "e59aa87c-4cbf-517a-5983-6e81511be9b7";
 export const CUR_KC = "85ca954a-41f2-ce94-9b45-8ca3dd39a00d"; // Kingdom Credits (valorant-api.com/v1/currencies)
 
+// Riot's "nothing equipped / hollow profile" sentinel: truthy, but every
+// asset URL built from it 404s.
+const ZERO_UUID = "00000000-0000-0000-0000-000000000000";
+
 // Entitlement ItemTypeIDs (community-documented constants).
 export const TYPE_SKINS = "e7c63390-eda7-46e0-bb7a-a6abdacd2433";
 export const TYPE_BUDDIES = "dd3bf334-87f3-40bd-b043-682a57a8dc3a";
@@ -152,7 +156,6 @@ export async function runImport(
   // and every later pd.* call must follow (wallet/rank/entitlements all 404
   // on the wrong shard — that was the "partially retrieved" bug).
   let shard = requestedShard;
-  const regionSource = autoRegion ? "token" : "manual";
   if (!token) return { status: 400, body: { ok: false, error: "accessToken is required" } };
 
   // Validate shape + expiry before spending a Riot call, so the seller gets an
@@ -197,9 +200,24 @@ export async function runImport(
     return { status: 401, body: { ok: false, error: "Riot rejected this access token (invalid, revoked, or wrong region). Re-copy a fresh token and try again." } };
   }
 
-  // Derive the entitlements JWT server-side when the seller didn't paste one, so a
-  // single access-token paste is enough for a full import (fire-and-forget).
-  let entJwt = ent;
+  // A pasted entitlements token must look like a JWT and be unexpired — a
+  // stale paste would 403 every pd call with no hint which field caused it.
+  // Ignore a bad paste and fall through to a fresh derivation instead (the
+  // access token was already validated above, so a derived entitlement is
+  // fresher than the paste).
+  let entJwt = "";
+  if (ent) {
+    const entExp = jwtExp(ent);
+    if (!JWT_RE.test(ent)) {
+      out.errors.push("the pasted entitlements token doesn't look like a Riot JWT — it was ignored and a fresh one was auto-fetched");
+    } else if (entExp !== null && entExp <= Math.floor(Date.now() / 1000)) {
+      out.errors.push("the pasted entitlements token was expired — it was ignored and a fresh one was auto-fetched");
+    } else {
+      entJwt = ent;
+    }
+  }
+  // Derive the entitlements JWT server-side when the seller didn't paste a
+  // usable one, so a single access-token paste is enough for a full import.
   if (!entJwt) {
     try {
       const er = await f("https://entitlements.auth.riotgames.com/api/token/v1", {
@@ -310,8 +328,15 @@ export async function runImport(
         throw new Error(failSummary || `failed on ${shard}`);
       }
       out.level = posNum(j.Identity?.AccountLevel) ?? out.level ?? null;
-      out.playerCard = j.Identity?.PlayerCardID || null;
-      out.playerTitle = j.Identity?.PlayerTitleID || null;
+      // The zero UUID is the "nothing equipped" sentinel (also served by
+      // hollow foreign-shard loadouts): truthy, but the editor would build
+      // a guaranteed-404 asset URL from it.
+      out.playerCard = j.Identity?.PlayerCardID && j.Identity.PlayerCardID !== ZERO_UUID
+        ? j.Identity.PlayerCardID
+        : null;
+      out.playerTitle = j.Identity?.PlayerTitleID && j.Identity.PlayerTitleID !== ZERO_UUID
+        ? j.Identity.PlayerTitleID
+        : null;
       // The same charm can sit on several guns — dedupe.
       out.charms = [...new Set((j.Guns || []).map((g: any) => g.CharmID).filter(Boolean))];
     });
