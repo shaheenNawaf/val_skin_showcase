@@ -76,6 +76,8 @@ type Opts = {
   perType?: (type: string) => Reply | null; // null → default flat reply
   bulk?: Reply | null; // null → default wrapped-empty reply
   loadout?: Reply | null; // null → default loadout reply
+  /** Every pd endpoint answers 200 with empty/default data — Riot's "shadow" profile. */
+  shadow?: boolean;
 };
 
 const pdShardOf = (url: string) => url.match(/pd\.([a-z]+)\.a\.pvp\.net/)?.[1] || "";
@@ -100,19 +102,35 @@ function stdHandler(o: Opts = {}) {
 
     const wrongShard = pdShardOf(url) !== home;
     if (url.includes("/account-xp/v1/players/")) {
-      return wrongShard ? { status: 404 } : { status: 200, body: { Progress: { Level: 42 } } };
+      if (wrongShard) return { status: 404 };
+      return o.shadow
+        ? { status: 200, body: { Progress: { Level: 1 } } }
+        : { status: 200, body: { Progress: { Level: 42 } } };
     }
     if (url.includes("/personalization/")) {
       if (wrongShard) return { status: 404 };
+      if (o.shadow) {
+        return {
+          status: 200,
+          body: {
+            Identity: {
+              AccountLevel: 1,
+              PlayerCardID: "00000000-0000-0000-0000-000000000000",
+              PlayerTitleID: "00000000-0000-0000-0000-000000000000",
+            },
+            Guns: [],
+          },
+        };
+      }
       return o.loadout === undefined ? { status: 200, body: DEFAULT_LOADOUT } : o.loadout;
     }
     if (url.includes("/store/v1/wallet/")) {
-      return wrongShard
-        ? { status: 404 }
-        : { status: 200, body: { Balances: { [CUR_VP]: 1000, [CUR_RP]: 20, [CUR_KC]: 5 } } };
+      if (wrongShard) return { status: 404 };
+      return o.shadow ? { status: 200, body: { Balances: {} } } : { status: 200, body: { Balances: { [CUR_VP]: 1000, [CUR_RP]: 20, [CUR_KC]: 5 } } };
     }
     if (url.includes("/mmr/v1/players/")) {
-      return wrongShard ? { status: 404 } : { status: 200, body: DEFAULT_MMR };
+      if (wrongShard) return { status: 404 };
+      return o.shadow ? { status: 200, body: {} } : { status: 200, body: DEFAULT_MMR };
     }
     if (url.includes("/store/v1/entitlements/")) {
       if (wrongShard) return { status: 404 };
@@ -123,6 +141,7 @@ function stdHandler(o: Opts = {}) {
           const r = o.perType(type);
           if (r) return r;
         }
+        if (o.shadow) return { status: 200, body: { ItemTypeID: type, Entitlements: [] } };
         // Default: the FLAT per-type shape the live endpoint actually returns.
         return {
           status: 200,
@@ -130,9 +149,8 @@ function stdHandler(o: Opts = {}) {
         };
       }
       // Bulk endpoint.
-      return o.bulk === undefined || o.bulk === null
-        ? { status: 200, body: { EntitlementsByTypes: [] } }
-        : o.bulk;
+      if (!(o.bulk === undefined || o.bulk === null)) return o.bulk;
+      return o.shadow ? { status: 200, body: { EntitlementsByTypes: [] } } : { status: 200, body: { EntitlementsByTypes: [] } };
     }
     return null;
   };
@@ -213,16 +231,46 @@ Deno.test("flat response tagged with a foreign ItemTypeID is rejected", async ()
 
 // ── authoritative per-type + shared bulk fallback (root causes A/C) ─
 
-Deno.test("per-type 2xx empty is authoritative — no bulk fallback, no error", async () => {
+Deno.test("empty per-type result falls through to the shared bulk payload", async () => {
   const { f, calls } = makeFetch(stdHandler({
     perType: (type) => type === TYPE_VARIANTS
       ? { status: 200, body: { ItemTypeID: TYPE_VARIANTS, Entitlements: [] } }
       : null,
   }));
   const r = await runImport(importBody(), f);
-  eq(r.body.variantsOwned, [], "empty per-type result: ");
+  eq(r.body.variantsOwned, [], "empty everywhere: ");
   noErr(r.body, /variantsOwned/);
-  eq(bulkCalls(calls), 1, "bulk fetch count (flex only): ");
+  // owned() fetched the bulk once for the empty type; flex reuses that promise.
+  eq(bulkCalls(calls), 1, "bulk fetch count: ");
+});
+
+Deno.test("empty per-type falls back to bulk data (Riot serves 200-empty per-type)", async () => {
+  const { f } = makeFetch(stdHandler({
+    perType: (type) => type === TYPE_SKINS
+      ? { status: 200, body: { ItemTypeID: TYPE_SKINS, Entitlements: [] } }
+      : null,
+    bulk: {
+      status: 200,
+      body: { EntitlementsByTypes: [{ ItemTypeID: TYPE_SKINS, Entitlements: [{ ItemID: "shadow-skin" }] }] },
+    },
+  }));
+  const r = await runImport(importBody(), f);
+  eq(r.body.skins, ["shadow-skin"], "skins recovered from bulk: ");
+  noErr(r.body, /skins/);
+});
+
+Deno.test("shadow-empty profile (all 200s, no data) produces an actionable note", async () => {
+  const { f } = makeFetch(stdHandler({ shadow: true }));
+  const r = await runImport(importBody(), f);
+  eq(r.body.level, 1, "level: ");
+  eq(r.body.skins, [], "skins: ");
+  eq(r.body.vp, 0, "vp: ");
+  eq(r.body.rankTier, 0, "rankTier: ");
+  // No hard errors — every endpoint answered — but the seller gets a hint
+  // instead of silent zeros.
+  noErr(r.body, /loadout \(|wallet \(|rank \(|skins \(|flexOwned \(/);
+  hasErr(r.body, /Riot returned an empty profile/);
+  hasErr(r.body, /paste the entitlements token from the local client/);
 });
 
 Deno.test("per-type failure falls back to the bulk payload, fetched once", async () => {

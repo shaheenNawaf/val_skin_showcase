@@ -371,30 +371,37 @@ export async function runImport(
       return bulkPromise;
     };
 
-    // The per-type call is authoritative: any 2xx — even an empty list — is the
-    // real answer. Only a request failure or an unrecognized shape falls
-    // through to the bulk payload; if that fails too, the caller gets an
-    // explicit error instead of a silently empty import.
+    // First NON-EMPTY result wins across per-type (ent, then no-ent) and the
+    // shared bulk payload: the live API has been observed answering entitled
+    // requests with 200-plus-empty-data (an anti-abuse "shadow" profile), so
+    // a 2xx empty is NOT authoritative the way the docs imply. Strict
+    // ItemTypeID matching stays; and when no request answered at all (all
+    // failed or unparseable) the seller gets an explicit error instead of a
+    // silently empty import.
     const owned = async (type: string): Promise<string[]> => {
       const path = `/store/v1/entitlements/${out.puuid}/${type}`;
       let lastErr = "";
+      let answered = false; // any 2xx with a parseable shape is an answer, even empty
       for (const h of [auth, authNoEnt]) {
         try {
           const got = idsFrom(await getJSON(pd(path), h, f), type);
-          if (got) return got;
-          lastErr = "unrecognized response shape";
+          if (got && got.length) return got;
+          if (got) answered = true;
+          else lastErr = lastErr || "unrecognized response shape";
         } catch (e) {
-          lastErr = (e as Error)?.message || "error";
+          lastErr = lastErr || (e as Error)?.message || "error";
         }
       }
       try {
         const got = idsFrom(await getBulk(), type);
-        if (got) return got;
-        lastErr = `${lastErr}; bulk: unrecognized response shape`;
+        if (got && got.length) return got;
+        if (got) answered = true;
+        else lastErr = `${lastErr}; bulk: unrecognized response shape`;
       } catch (e) {
         lastErr = `${lastErr}; ${(e as Error)?.message || "error"}`;
       }
-      throw new Error(`entitlements failed on ${shard}: ${lastErr}`);
+      if (!answered) throw new Error(`entitlements failed on ${shard}: ${lastErr}`);
+      return [];
     };
 
     // Owned-item defaults: a fetch failure must read as "empty + explicit
@@ -446,6 +453,18 @@ export async function runImport(
 
   const noProfile = out.level == null && !(out.skins || []).length && !out.vp && !out.rp && !out.rankTier;
   if (noProfile) out.errors.push(`no Valorant profile found for this account (account-xp answered on none of the shards: ${probeShards.join(", ")}). Import with an account that has played Valorant.`);
+
+  // The other failure shape: Riot answered every endpoint with 200 + empty/
+  // default data (level 1, no rank, no wallet, no items) — an anti-abuse
+  // "shadow" profile served to tokens whose derived entitlement carries no
+  // game entitlements. Distinguish it from a genuinely new account with an
+  // actionable hint instead of silent zeros.
+  const shadowProfile = (out.level == null || (out.level ?? 0) <= 1) &&
+    !(out.skins || []).length && !out.vp && !out.rp && !out.rankTier &&
+    !(out.errors || []).length;
+  if (shadowProfile) {
+    out.errors.push("Riot returned an empty profile (level 1, no rank, wallet, or owned items). If this account has actually played Valorant, the auto-fetched entitlements token is missing the Valorant entitlement — paste the entitlements token from the local client in the second field and re-run.");
+  }
 
   return { status: 200, body: out };
 }
