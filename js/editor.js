@@ -1433,6 +1433,7 @@ function refreshLayout() {
     if (el) el.textContent = v;
     const input = document.querySelector('#formMode input[data-fkey="' + k + '"]');
     if (input) input.value = v;
+    if (BIN_FIELDS[k]) syncBinSegs();
   }
   function sync() {
     const wtr = fieldText('wtr');
@@ -1703,6 +1704,7 @@ function syncFormFromState() {
   syncFormArt();
   renderFormSkins();
   renderFormBuddies();
+  syncBinSegs();
 }
 
 function afterPicksChange() {
@@ -1723,6 +1725,60 @@ formMode?.addEventListener('input', e => {
     const titleEl = document.getElementById('fheroTitle');
     if (titleEl) titleEl.textContent = 'EDITING · ' + (v || 'DRAFT');
   }
+});
+
+/* ── binary card fields: WTR / receipts ─────────────────────────────
+   These are yes/no facts (the marketplace renders them as With/No chips),
+   so free-text typing is gone: the phone form gets Yes/No segmented pairs
+   and the card fields cycle on click. The reqModal tags and the
+   artwork-modal checkboxes remain as additional binary writers; every
+   writer produces the same WTR/RECEIPTS: YES/NO strings, so the
+   marketplace, quick view, FB post text and stored payloads are unchanged. */
+const BIN_FIELDS = {
+  wtr: ['WTR: YES', 'WTR: NO'],
+  receipts: ['RECEIPTS: YES', 'RECEIPTS: NO'],
+};
+function binText(k) {
+  const v = state.texts[k];
+  if (v != null && v !== '') return String(v);
+  const el = card.querySelector('[data-key="' + k + '"]');
+  return el ? el.textContent : '';
+}
+function binIsOn(k) { return /yes/i.test(binText(k)); }
+function binSet(k, on) {
+  const v = BIN_FIELDS[k][on ? 0 : 1];
+  state.texts[k] = v;
+  const el = card.querySelector('[data-key="' + k + '"]');
+  if (el) el.textContent = v;
+  syncBinSegs();
+}
+function syncBinSegs() {
+  document.querySelectorAll('#formMode .fseg[data-fseg]').forEach(seg => {
+    const k = seg.dataset.fseg;
+    if (!BIN_FIELDS[k]) return;
+    const t = binText(k);
+    /* A blank or legacy non-yes/no value leaves both buttons unpressed —
+       "not set" — the marketplace renders that as No WTR / No Receipts. */
+    const isSet = /\b(yes|no)\b/i.test(t);
+    const isOn = /yes/i.test(t);
+    seg.querySelectorAll('button[data-val]').forEach(b => {
+      b.classList.toggle('on', isSet && (b.dataset.val === 'yes') === isOn);
+    });
+  });
+}
+document.querySelectorAll('#formMode .fseg[data-fseg]').forEach(seg => {
+  seg.addEventListener('click', e => {
+    const b = e.target.closest('button[data-val]');
+    if (b) binSet(seg.dataset.fseg, b.dataset.val === 'yes');
+  });
+});
+card.querySelectorAll('.bintog').forEach(el => {
+  const k = el.dataset.key;
+  const flip = () => binSet(k, !binIsOn(k));
+  el.addEventListener('click', flip);
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+  });
 });
 
 const fskinCatsEl = document.getElementById('fskinCats');

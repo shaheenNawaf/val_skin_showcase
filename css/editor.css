@@ -414,3 +414,8 @@ body.art-mode #stage,body.art-mode #saveBtn,body.art-mode #exportBtn,body.art-mo
 .facefoot{display:flex;align-items:center;gap:10px;border-top:1px solid var(--c-line-soft);padding-top:12px}
 #facePublish{background:var(--c-accent-btn);border:1px solid var(--c-accent-btn);color:#fff;padding:9px 16px;font:600 12px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 #facePublish:hover{filter:brightness(1.12)}
+
+/* Binary card fields (WTR/receipts): yes/no facts, click to toggle — the
+   marketplace renders them as With/No chips, so free-text typing is gone. */
+.inforow .bintog{cursor:pointer}
+.inforow .bintog:hover,.inforow .bintog:focus-visible{text-decoration:underline dotted var(--c-mut)}
