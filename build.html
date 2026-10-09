@@ -395,6 +395,22 @@
 <!-- B: explicit price form. Writes the listing's price / currency / negotiable
      columns — create_listing and update_listing only ever carried payload+theme,
      so a normal-mode publish left price NULL no matter what the seller typed. -->
+<div id="gateModal" hidden role="dialog" aria-modal="true" aria-labelledby="gmTitle">
+  <div class="mpanel gmpanel">
+    <div class="mhead">
+      <h2 id="gmTitle">Before you publish</h2>
+      <button id="gmClose" class="mclose" aria-label="Close checklist"><svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M2 2l10 10M12 2 2 12" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
+    </div>
+    <div class="mbody">
+      <div id="gmList"></div>
+    </div>
+    <div class="gm-foot">
+      <span class="gm-hint">Items check off live.</span>
+      <button id="gmNow" class="chip">Not now</button>
+      <button id="gmRetry" class="primary" disabled>Retry publish</button>
+    </div>
+  </div>
+</div>
 <div id="priceModal" hidden role="dialog" aria-modal="true" aria-labelledby="priceTitle">
   <div class="mpanel">
     <div class="mhead">

@@ -415,7 +415,21 @@ body.art-mode #stage,body.art-mode #saveBtn,body.art-mode #exportBtn,body.art-mo
 #facePublish{background:var(--c-accent-btn);border:1px solid var(--c-accent-btn);color:#fff;padding:9px 16px;font:600 12px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 #facePublish:hover{filter:brightness(1.12)}
 
-/* Binary card fields (WTR/receipts): yes/no facts, click to toggle — the
+/* Binary card fields (WTR/receipts): yes/no facts, click to toggle - the
    marketplace renders them as With/No chips, so free-text typing is gone. */
 .inforow .bintog{cursor:pointer}
 .inforow .bintog:hover,.inforow .bintog:focus-visible{text-decoration:underline dotted var(--c-mut)}
+
+/* CF-21b: publish checklist — live rows, dashed flags on offending fields,
+   and a red count badge on Publish while the gate blocks. */
+#publishBtn{position:relative}
+#publishBtn[data-blocking]:not([data-blocking="0"])::after{content:attr(data-blocking);position:absolute;top:-8px;right:-8px;min-width:19px;height:19px;box-sizing:border-box;padding:0 5px;border-radius:10px;background:#E5484D;color:#fff;font:800 11px/19px var(--font-ui);text-align:center}
+.gm-row{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--c-bg);border:1px solid var(--c-line)}
+.gm-dot{width:9px;height:9px;flex:none;border-radius:50%;background:#E5484D}
+.gm-row.done .gm-dot{background:#3FBF7F}
+.gm-txt{flex:1;font:600 12.5px var(--font-ui);color:var(--c-ink)}
+.gm-row.done .gm-txt{color:var(--c-mut);text-decoration:line-through}
+.gm-fix{flex:none;color:#FF7A85}
+.gm-foot{display:flex;align-items:center;gap:10px;border-top:1px solid var(--c-line-soft);padding:12px 18px 16px}
+.gm-hint{flex:1;font:600 10px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut)}
+.gate-flag{outline:2px dashed #E5484D;outline-offset:3px}

@@ -877,6 +877,8 @@ document.addEventListener('keydown', e => {
     if (rq && !rq.hidden) { rq.hidden = true; return; }
     const pm = CF.$('priceModal');
     if (pm && !pm.hidden) { pm.hidden = true; return; }
+    const gm = CF.$('gateModal');
+    if (gm && !gm.hidden) { gm.hidden = true; return; }
     if (!modal.hidden) { closeModal(); return; }
     return;
   }
@@ -899,6 +901,7 @@ document.addEventListener('keydown', e => {
  ['faceModal', el => { el.hidden = true; }],
  ['reqModal', el => { el.hidden = true; }],
  ['priceModal', el => { el.hidden = true; }],
+ ['gateModal', el => { el.hidden = true; }],
  ['importModal', el => { el.hidden = true; }]].forEach(([id, close]) => {
   const ov = CF.$(id);
   if (!ov) return;
@@ -1884,17 +1887,19 @@ document.querySelector('.themes')?.addEventListener('click', e => {
    create_listing — an empty card full of placeholder text published to the
    public marketplace. Blocking items say exactly what to fix. */
 function publishGate() {
-  if (face.route === 'art') return { blocking: [], pass: true };
+  if (face.route === 'art') return { blocking: [], pass: true, checks: [] };
   const t = state.texts || {};
   const checks = [];
   const skins = CF.ALL_CATS.reduce((n, c) => n + (state.picks[c] || []).length, 0);
   checks.push({
+    key: 'skins',
     ok: skins > 0,
     label: 'the card has no skins on it',
     fix: 'add at least one skin so buyers see an inventory',
   });
   const titleSet = (t.cname || '').trim() && !CF.isPlaceholderTitle(t.cname);
   checks.push({
+    key: 'title',
     ok: !!titleSet,
     label: 'the card title still says “CHANGE NAME”',
     fix: 'click the title on the card and type the listing name',
@@ -1905,12 +1910,14 @@ function publishGate() {
   const pp = priceState();
   const priceSet = pp.contact || (pp.amount != null && isFinite(pp.amount));
   checks.push({
+    key: 'price',
     ok: !!priceSet,
     label: 'no asking price is set',
     fix: 'open More ▸ Price & offers… and type a price, or tick “Contact for price”',
   });
   const link = (t.link || '').trim();
   checks.push({
+    key: 'link',
     ok: link.length > 0 && link !== 'https://www.facebook.com/Your.Page.Here',
     label: 'no contact link is set',
     fix: 'set a Discord or other contact in the seller box so buyers can reach you',
@@ -1918,8 +1925,102 @@ function publishGate() {
   return {
     blocking: checks.filter(c => !c.ok),
     pass: checks.every(c => c.ok),
+    checks,
   };
 }
+
+/* CF-21b: the blocked-publish checklist. One glance at what's missing, a Fix
+   button per item, live re-check while the modal is up, dashed flags on the
+   offending fields, and a red count badge on the Publish button — replacing
+   the old hover-the-tooltip archaeology (whose title stayed stale forever). */
+const gateModal = CF.$('gateModal'), gmList = CF.$('gmList'),
+  gmRetry = CF.$('gmRetry'), gmNow = CF.$('gmNow'), gmClose = CF.$('gmClose');
+const GATE_DONE = {
+  skins: 'At least one skin on the card',
+  title: 'Listing title set',
+  price: 'Price or “contact for price” set',
+  link: 'Buyer contact set',
+};
+let gateArmed = false, gateSig = '';
+
+function gateVisible(el) { return el && el.offsetParent !== null; }
+
+function gateEls(key) {
+  /* Flag/jump targets: desktop edits the card itself; phones get the form
+     field instead (the card spans are display:none in form mode). */
+  if (key === 'skins') {
+    const cat = CF.CATS.find(c => !(state.picks[c] || []).length) || CF.CATS[0];
+    const q = `.add[data-add="${CSS.escape(cat)}"], [data-fadd="${CSS.escape(cat)}"]`;
+    return [...document.querySelectorAll(q)].filter(gateVisible);
+  }
+  const spanKey = key === 'title' ? 'cname' : key;
+  const map = { title: 'ff-name', price: 'ff-price', link: 'ff-contact' };
+  const span = card.querySelector(`[data-key="${spanKey}"]`);
+  return [gateVisible(span) ? span : document.getElementById(map[key])].filter(Boolean);
+}
+
+function gateFix(key) {
+  if (key === 'skins') {
+    const cat = CF.CATS.find(c => !(state.picks[c] || []).length);
+    if (cat) { gateModal.hidden = true; openPicker(cat); }
+    return;
+  }
+  if (key === 'price') {
+    const opener = [CF.$('f-priceBtn'), CF.$('priceMenuBtn')].find(b => b && gateVisible(b)) || CF.$('priceMenuBtn');
+    gateModal.hidden = true;
+    opener?.click();
+    return;
+  }
+  const el = gateEls(key)[0];
+  if (!el) return;
+  gateModal.hidden = true;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  try { el.focus({ preventScroll: true }); } catch { /* older engines */ }
+}
+
+function recheckGate() {
+  const res = publishGate();
+  const btn = CF.$('publishBtn');
+  if (btn) btn.dataset.blocking = String(res.blocking.length);
+  /* Flags arm after the first blocked attempt and clear per item as it passes. */
+  const wanted = new Map(res.checks.filter(c => !c.ok).map(c => [c.key, gateEls(c.key)]));
+  document.querySelectorAll('.gate-flag').forEach(el => {
+    let keep = false;
+    wanted.forEach(els => { if (els.includes(el)) keep = true; });
+    if (!keep) el.classList.remove('gate-flag');
+  });
+  if (gateArmed) wanted.forEach(els => els.forEach(el => el.classList.add('gate-flag')));
+  if (res.pass) gateArmed = false;
+  if (!gateModal.hidden) {
+    const sig = res.checks.map(c => (c.ok ? 1 : 0)).join();
+    if (sig !== gateSig) {
+      gateSig = sig;
+      gmList.innerHTML = res.checks.map(c => {
+        const txt = c.ok ? GATE_DONE[c.key] : c.fix.charAt(0).toUpperCase() + c.fix.slice(1) + '.';
+        return `<div class="gm-row${c.ok ? ' done' : ''}"><span class="gm-dot" aria-hidden="true"></span><span class="gm-txt">${txt}</span>` +
+          (c.ok ? '' : `<button type="button" class="chip gm-fix" data-gfix="${c.key}">Fix</button>`) +
+          '</div>';
+      }).join('');
+      gmRetry.disabled = !res.pass;
+    }
+  }
+}
+
+function gateArm() {
+  gateArmed = true;
+  gateSig = '';
+  gateModal.hidden = false;
+  recheckGate();
+}
+
+gmClose?.addEventListener('click', () => { gateModal.hidden = true; });
+gmNow?.addEventListener('click', () => { gateModal.hidden = true; });
+gmRetry?.addEventListener('click', () => { gateModal.hidden = true; publishListing(); });
+gmList?.addEventListener('click', e => {
+  const b = e.target.closest('[data-gfix]');
+  if (b) gateFix(b.dataset.gfix);
+});
+setInterval(recheckGate, 900);
 
 async function publishListing() {
   const payload = (face.route === 'art') ? artPayload() : buildPayload();
@@ -1933,10 +2034,8 @@ async function publishListing() {
   /* CF-21: run the gate first — an empty or placeholder card never goes live */
   const gate = publishGate();
   if (!gate.pass) {
-    const lines = gate.blocking.map(b => `• ${b.label} — ${b.fix}`).join('\n');
-    CF.status('Publish blocked — ' + gate.blocking.length + ' item' + (gate.blocking.length === 1 ? '' : 's') + ' to fix. Hover this message for exactly what.', 'err');
-    const el = document.getElementById('status');
-    if (el) el.title = lines;
+    CF.status('Publish blocked — ' + gate.blocking.length + ' item' + (gate.blocking.length === 1 ? '' : 's') + ' to fix.', 'err');
+    gateArm();
     return;
   }
 
