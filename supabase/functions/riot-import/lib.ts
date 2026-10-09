@@ -57,7 +57,19 @@ export type Fetch = (url: string, init?: RequestInit) => Promise<Response>;
 
 async function getJSON(url: string, headers: Record<string, string>, f: Fetch) {
   const r = await f(url, { headers });
-  if (!r.ok) throw new Error(`${r.status}`);
+  if (!r.ok) {
+    // Carry a short body snippet into the error: Riot's 4xx bodies often name
+    // the real reason (bad claims, entitlement scope, …) and status codes
+    // alone have sent this project down blind alleys before. No tokens ever
+    // appear in a response body.
+    let detail = "";
+    try {
+      detail = (await r.text()).replace(/\s+/g, " ").trim().slice(0, 160);
+    } catch {
+      // body unreadable — the status alone will have to do
+    }
+    throw new Error(detail ? `${r.status} (${detail})` : `${r.status}`);
+  }
   return r.json();
 }
 
@@ -237,26 +249,30 @@ export async function runImport(
       const paths = [
         `/personalization/v2/players/${out.puuid}/playerloadout`,
         `/personalization/v1/players/${out.puuid}/playerloadout`,
+        `/personalization/v3/players/${out.puuid}/playerloadout`,
       ];
       let j: any = null;
-      let lastErr = "";
+      const fails: string[] = [];
       for (const p of paths) {
         for (const [hName, h] of [["ent", auth], ["noent", noEnt]] as [string, Record<string, string>][]) {
           try {
             j = await getJSON(pd(p), h, f);
             break;
           } catch (e) {
-            lastErr = `${p.split("/")[2]}/${hName}:${(e as Error)?.message || "?"}`;
+            fails.push(`${p.split("/")[2]}/${hName}:${(e as Error)?.message || "?"}`);
           }
         }
         if (j) break;
       }
       if (!j) {
+        // Report every attempt, not just the last: v2/ent vs v1/noent failing
+        // differently is diagnostic signal for private-API drift.
+        const failSummary = fails.slice(0, 6).join(" ");
         if (out.level != null) {
-          out.errors.push(`player card, title and gun buddies unavailable (playerloadout ${lastErr} on ${shard}); level came from the shard probe`);
+          out.errors.push(`player card, title and gun buddies unavailable (playerloadout ${failSummary} on ${shard}); level came from the shard probe`);
           return;
         }
-        throw new Error(lastErr || `failed on ${shard}`);
+        throw new Error(failSummary || `failed on ${shard}`);
       }
       out.level = posNum(j.Identity?.AccountLevel) ?? out.level ?? null;
       out.playerCard = j.Identity?.PlayerCardID || null;
