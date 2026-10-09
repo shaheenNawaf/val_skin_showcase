@@ -57,7 +57,7 @@ select cron.schedule('skin-sync-nightly', '0 3 * * *', $$
 $$);
 ```
 
-The skins cache also stores `max_level` (highest upgrade level, 1–5), `chromas` (color variants, same shape the editor uses) and `levels` (per-level UUIDs for owned-level detection). The generic `catalog_cache` table caches `competitivetiers`, `buddies` and `playercards` under their keys, and the editor loads the catalog cache-first from Supabase, falling back to valorant-api.com when the cache is unavailable or incomplete. Before deploying a skin-sync that writes these columns, apply the migration:
+The skins cache also stores `max_level` (highest upgrade level, 1–5), `chromas` (color variants, same shape the editor uses) and `levels` (per-level UUIDs for owned-level detection). The sync verifies every icon against media.valorant-api.com's placeholder "X" image (a real HTTP 200 the CDN serves at URLs the API populates when Riot never published the asset — Prime Guardian, the Sovereign line, and all `Standard *` defaults are affected) and falls back to the chroma/level/weapon art; standard skins resolve to the weapon's own render. The generic `catalog_cache` table caches `competitivetiers`, `buddies` and `playercards` under their keys, and the editor loads the catalog cache-first from Supabase, falling back to valorant-api.com when the cache is unavailable or incomplete. Before deploying a skin-sync that writes these columns, apply the migration:
 
 ```bash
 supabase db push        # applies supabase/migrations/4_skin_levels.sql + 5_catalog_cache.sql (idempotent)

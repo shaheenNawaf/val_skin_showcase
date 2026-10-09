@@ -311,10 +311,22 @@ export async function loadCatalogFromApi(opts) {
     if (!cat) return;
     (w.skins || []).forEach(s => {
       if (s.displayName === 'Standard') return;
-      const icon = s.displayIcon || (s.chromas && s.chromas[0] && s.chromas[0].displayIcon);
+      const standard = String(s.displayName || '').startsWith('Standard');
+      const c0 = s.chromas && s.chromas[0];
+      /* No byte-level checks here (the browser can't afford ~700 image
+         fetches) — this is the fallback path used only when the Supabase
+         cache is unreachable; the cache itself is verified server-side by
+         skin-sync. Heuristic: media.valorant-api.com serves a placeholder
+         "X" (a real 200) at skin-level displayIcon URLs for skins whose art
+         Riot only published on the chroma/level (Prime Guardian, the entire
+         Sovereign line) and for all Standard defaults, so prefer the fields
+         that are real for those. */
+      const icon = standard
+        ? (w.displayIcon || (c0 && c0.fullRender) || s.displayIcon)
+        : ((c0 && c0.displayIcon) || s.displayIcon || (c0 && c0.fullRender));
       if (!icon) return;
       const chromas = (s.chromas || []).map(c => {
-        const cIcon = c.displayIcon || c.fullRender || c.swatch;
+        const cIcon = standard ? (c.fullRender || c.displayIcon || c.swatch) : (c.displayIcon || c.fullRender || c.swatch);
         if (!cIcon) return null;
         const raw = String(c.displayName || '').replace(/\r?\n/g, ' ').trim();
         const unlock = (raw.match(/Level (\d+)/) || [])[1];
