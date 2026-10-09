@@ -261,10 +261,14 @@ Deno.test("bulk buckets are matched strictly by ItemTypeID", async () => {
   eq(r.body.cardsOwned, ["card-1"], "cards: ");
 });
 
-Deno.test("owned-item failures surface explicit errors instead of silent empties", async () => {
+Deno.test("owned-item failures surface explicit errors, fields stay [] (so the editor clears owned state)", async () => {
   const { f } = makeFetch(stdHandler({ perType: () => ({ status: 404 }), bulk: { status: 404 } }));
   const r = await runImport(importBody(), f);
-  eq(r.body.skins, undefined, "skins unset on failure: ");
+  eq(r.body.skins, [], "skins: ");
+  eq(r.body.buddiesOwned, [], "buddies: ");
+  eq(r.body.cardsOwned, [], "cards: ");
+  eq(r.body.variantsOwned, [], "variants: ");
+  eq(r.body.flexOwned, [], "flex: ");
   hasErr(r.body, /^skins \(entitlements failed on na: 404/);
   hasErr(r.body, /^buddiesOwned \(entitlements failed on na/);
   hasErr(r.body, /^cardsOwned \(entitlements failed on na/);

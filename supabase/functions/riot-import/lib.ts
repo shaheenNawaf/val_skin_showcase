@@ -381,6 +381,16 @@ export async function runImport(
       throw new Error(`entitlements failed on ${shard}: ${lastErr}`);
     };
 
+    // Owned-item defaults: a fetch failure must read as "empty + explicit
+    // error", never as "field absent" — the editor only resets its owned state
+    // when a field is present, so an absent array would leave the PREVIOUS
+    // import's inventory on the card. Legit-empty (2xx) lands here as [] too;
+    // the errors array is what distinguishes the two.
+    out.skins = [];
+    out.buddiesOwned = [];
+    out.cardsOwned = [];
+    out.variantsOwned = [];
+    out.flexOwned = [];
     await guard("skins", async () => { out.skins = await owned(TYPE_SKINS); });
     await guard("buddiesOwned", async () => { out.buddiesOwned = await owned(TYPE_BUDDIES); });
     await guard("cardsOwned", async () => { out.cardsOwned = await owned(TYPE_CARDS); });
