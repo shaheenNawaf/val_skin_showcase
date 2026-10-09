@@ -401,13 +401,13 @@
       <h2 id="gmTitle">Before you publish</h2>
       <button id="gmClose" class="mclose" aria-label="Close checklist"><svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M2 2l10 10M12 2 2 12" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
     </div>
-    <div class="mbody">
+    <div class="mbody noladder">
+      <p class="fhint">These need attention before the listing goes public. Items check off as you fix them.</p>
       <div id="gmList"></div>
     </div>
     <div class="gm-foot">
-      <span class="gm-hint">Items check off live.</span>
-      <button id="gmNow" class="chip">Not now</button>
-      <button id="gmRetry" class="primary" disabled>Retry publish</button>
+      <button id="gmNow" type="button">Not now</button>
+      <button id="gmRetry" type="button" class="primary" disabled>Retry publish</button>
     </div>
   </div>
 </div>
