@@ -27,7 +27,8 @@ export default [
         setTimeout: 'readonly', setInterval: 'readonly', clearTimeout: 'readonly', clearInterval: 'readonly',
         prompt: 'readonly', alert: 'readonly', URL: 'readonly', URLSearchParams: 'readonly',
         TextEncoder: 'readonly', TextDecoder: 'readonly', ResizeObserver: 'readonly',
-        htmlToImage: 'readonly', supabase: 'readonly', atob: 'readonly', btoa: 'readonly'
+        htmlToImage: 'readonly', supabase: 'readonly', atob: 'readonly', btoa: 'readonly',
+        CSS: 'readonly'
       }
     },
     rules: {
