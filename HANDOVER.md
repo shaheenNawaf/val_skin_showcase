@@ -13,7 +13,7 @@ Written at v1.3 (`a8e33b5`, personal-marketplace close-out).
 | Staging site | https://staging--cardforge-showcase.netlify.app (deploys from `staging`) |
 | Repo | https://github.com/shaheenNawaf/val_skin_showcase |
 | Database + storage | Supabase project `psxpxcqrepkcrymwveok` (CLI is linked on your machine) |
-| Hosting | Netlify (build: `node scripts/copy-static.mjs` → `dist/`) — production branch `main` only; the `staging`/`beta` branch deploys were retired 2026-10-05 |
+| Hosting | Netlify (build: `node scripts/copy-static.mjs` → `dist/`) — production deploys from `main`; pushes to `staging`/`beta` auto-deploy to their branch URLs (verified live 2026-10-09) |
 
 It is a **static site + serverless DB**. No framework, no app server, no buyer accounts.
 Pages: `index.html` (marketplace — the front door) · `build.html` (card editor) ·
@@ -104,8 +104,9 @@ Since v1.5 the marketplace owns the root URL and the editor lives at `build.html
   `https://cardforge.shaheen.works/dashboard.html`,
   `http://localhost:3000/index.html`, `http://localhost:3000/build.html`,
   `http://localhost:3000/dashboard.html`.
-  (The `staging--cardforge-showcase.netlify.app` entries are gone with the retired
-  branch deploys — re-add them only if branch deploys are ever re-enabled.)
+  (The `staging--cardforge-showcase.netlify.app` entries were removed on 2026-10-05 in a cleanup tied to the supposedly-retired
+  branch deploys — they are actually live (verified 2026-10-09), so re-add the entries only if a
+   seller needs magic-link sign-in on the staging URL (password login works without them).)
   (Magic-link requests ask for `emailRedirectTo=<the page you are on>`; without the
   allow-list entry for that page Supabase falls back to the Site URL — the session
   still works, the seller just lands on the marketplace instead of where they
@@ -174,21 +175,28 @@ npm run lint     # eslint (must stay clean)
 npm run build    # stages dist/ exactly like Netlify does
 ```
 
-**Deploy flow** (since the staging/beta branch deploys were retired 2026-10-05):
+**Deploy flow** (staging/beta branch deploys are active — verified 2026-10-09):
 
 ```bash
 git checkout staging          # develop here (or a feature branch)
 # ...commit...
 # verify locally: npm run dev + test against http://localhost:3000
 # (playwright; the shared Supabase backend makes local tests fully representative)
+git push origin staging       # auto-deploys https://staging--cardforge-showcase.netlify.app
+# ...verify on the staging URL (orange STAGING buildstamp)...
 git checkout main && git merge --ff-only staging && git push origin main   # prod
 git checkout staging
 ```
 
-Pushes to `staging`/`beta` no longer produce preview URLs. If a preview environment
-is ever wanted again: Netlify → Site configuration → Build & deploy → Deploy
-contexts → Branch deploys → re-add the branch (the `_redirects` file and build
-script already handle any branch).
+Pushes to `staging`/`beta` deploy to `https://<branch>--cardforge-showcase.netlify.app`
+(Netlify's `build_settings.allowed_branches` lists `main`, `beta`, `staging` — inspect
+with `netlify api getSite --data '{"site_id":"ef900bcf-471b-45cb-bef5-af97e288e300"}'`).
+If a branch ever stops deploying: Netlify → Site configuration → Build & deploy →
+Deploy contexts → Branch deploys (the `_redirects` file and build script already
+handle any branch). Git auth for the `shaheenNawaf/val_skin_showcase` remote runs
+through the GitHub CLI in this repo (`credential.https://github.com.helper` =
+`!gh auth git-credential`), so pushes use whichever `gh` account is active —
+`gh auth switch --user shaheenNawaf`.
 
 **Database migrations**: numbered files in `supabase/migrations/` (10 =
 `10_lifecycle.sql`, the v1.3 lifecycle schema). They are idempotent and applied
@@ -267,6 +275,7 @@ QR exports, viewer owner controls. Lint clean, build clean, migration 10 applied
 | Project overview | `README.md` |
 | Design decisions + prototypes | `design-plans/`, `prototypes/` |
 | DB schema truth | `supabase/migrations/` (latest wins) |
+| Riot token import (Explorant-style pull) | `supabase/functions/riot-import/` — pipeline in `lib.ts`, unit tests via `deno task test` |
 | FB preview logic | `netlify/edge-functions/listing-meta.ts` |
 | Capture/export + FB post text | `js/shared.js` (`captureCardBlob`, `fbPostText`) |
 | Export fidelity regression harness | `scripts/check-export.mjs` (`npm run check:export`) |
