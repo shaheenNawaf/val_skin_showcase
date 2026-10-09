@@ -70,14 +70,22 @@ const DEFAULT_MMR = {
 type Reply = { status: number; body?: unknown };
 
 type Opts = {
-  home?: string; // shard whose pd.* answers 200; "" = account exists nowhere
+  home?: string; // shard whose pd.* answers with real data; "" = account exists nowhere
   entFail?: boolean; // entitlements derive endpoint fails
   userinfoFail?: boolean;
   perType?: (type: string) => Reply | null; // null → default flat reply
   bulk?: Reply | null; // null → default wrapped-empty reply
   loadout?: Reply | null; // null → default loadout reply
+  accountXp?: Reply; // overrides the home-shard account-xp reply
   /** Every pd endpoint answers 200 with empty/default data — Riot's "shadow" profile. */
   shadow?: boolean;
+};
+
+// Live-observed 2026-10-09: pd endpoints reply 200 with this hollow default
+// profile for puuids that don't live on the queried shard.
+const HOLLOW_XP = {
+  status: 200,
+  body: { Version: 0, Subject: PUUID, Progress: { Level: 1, XP: 0 }, History: [] },
 };
 
 const pdShardOf = (url: string) => url.match(/pd\.([a-z]+)\.a\.pvp\.net/)?.[1] || "";
@@ -102,10 +110,12 @@ function stdHandler(o: Opts = {}) {
 
     const wrongShard = pdShardOf(url) !== home;
     if (url.includes("/account-xp/v1/players/")) {
-      if (wrongShard) return { status: 404 };
+      // Wrong shards answer 200 with the hollow default profile (NOT 404).
+      if (wrongShard) return HOLLOW_XP;
+      if (o.accountXp) return o.accountXp;
       return o.shadow
-        ? { status: 200, body: { Progress: { Level: 1 } } }
-        : { status: 200, body: { Progress: { Level: 42 } } };
+        ? { status: 200, body: { Progress: { Level: 1, XP: 0 }, History: [] } }
+        : { status: 200, body: { Version: 42, Progress: { Level: 42, XP: 5000 }, History: [{ ID: "m1" }] } };
     }
     if (url.includes("/personalization/")) {
       if (wrongShard) return { status: 404 };
@@ -125,7 +135,8 @@ function stdHandler(o: Opts = {}) {
       return o.loadout === undefined ? { status: 200, body: DEFAULT_LOADOUT } : o.loadout;
     }
     if (url.includes("/store/v1/wallet/")) {
-      if (wrongShard) return { status: 404 };
+      // Wrong shards answer 200 with an empty wallet (live-observed).
+      if (wrongShard) return { status: 200, body: { Balances: {} } };
       return o.shadow ? { status: 200, body: { Balances: {} } } : { status: 200, body: { Balances: { [CUR_VP]: 1000, [CUR_RP]: 20, [CUR_KC]: 5 } } };
     }
     if (url.includes("/mmr/v1/players/")) {
@@ -133,8 +144,13 @@ function stdHandler(o: Opts = {}) {
       return o.shadow ? { status: 200, body: {} } : { status: 200, body: DEFAULT_MMR };
     }
     if (url.includes("/store/v1/entitlements/")) {
-      if (wrongShard) return { status: 404 };
       const m = url.match(/\/store\/v1\/entitlements\/[^/]+\/([^/]+)$/);
+      // Wrong shards answer 200 with empty lists (live-observed).
+      if (wrongShard) {
+        return m
+          ? { status: 200, body: { ItemTypeID: m[1], Entitlements: [] } }
+          : { status: 200, body: { EntitlementsByTypes: [] } };
+      }
       if (m) {
         const type = m[1];
         if (o.perType) {
@@ -150,7 +166,7 @@ function stdHandler(o: Opts = {}) {
       }
       // Bulk endpoint.
       if (!(o.bulk === undefined || o.bulk === null)) return o.bulk;
-      return o.shadow ? { status: 200, body: { EntitlementsByTypes: [] } } : { status: 200, body: { EntitlementsByTypes: [] } };
+      return { status: 200, body: { EntitlementsByTypes: [] } };
     }
     return null;
   };
@@ -356,7 +372,34 @@ Deno.test("no profile on any shard says so explicitly", async () => {
   const r = await runImport(importBody(), f);
   eq(r.body.resolvedShard, null, "resolvedShard: ");
   eq(r.body.level ?? null, null, "level: ");
-  hasErr(r.body, /no Valorant profile found for this account \(account-xp answered on none of the shards: na, eu, ap, kr\)/);
+  hasErr(r.body, /no Valorant profile found for this account/);
+});
+
+Deno.test("wrong shards serve 200-empty profiles; probe pins the shard with real data (LoL-NA / Valorant-AP)", async () => {
+  // The live case that broke the import: token dat.r says NA1 (the LEAGUE
+  // region), the seller picks na, but the account lives on pd.ap with real
+  // data — and pd.na/eu/kr all answer 200 with hollow default profiles.
+  const { f, calls } = makeFetch(stdHandler({
+    home: "ap",
+    accountXp: { status: 200, body: { Version: 1918, Progress: { Level: 159, XP: 2966 }, History: [{ ID: "c5d76095" }] } },
+    // Live-observed: the loadout 404s even on the home shard (Riot tightened
+    // the personalization endpoints) — level comes from the probe.
+    loadout: { status: 404 },
+  }));
+  const r = await runImport(importBody({ region: "na" }), f);
+  eq(r.body.resolvedShard, "ap", "resolvedShard: ");
+  eq(r.body.regionCorrected, true, "regionCorrected: ");
+  eq(r.body.level, 159, "level: ");
+  eq(r.body.vp, 1000, "vp: ");
+  eq(r.body.skins, [`item-${TYPE_SKINS.slice(0, 8)}`], "skins: ");
+  noErr(r.body, /wallet|rank|skins/);
+  hasErr(r.body, /player card, title and gun buddies unavailable/);
+  hasErr(r.body, /level came from the shard probe/);
+  // The scan touched the lying shard first — but only via the probe; every
+  // data call ran on ap.
+  ok(calls.some((u) => u.includes("pd.na.a.pvp.net/account-xp")), "na was probed first");
+  const naNonProbe = calls.filter((u) => u.includes("pd.na.") && !u.includes("/account-xp/"));
+  eq(naNonProbe, [], "no data calls on the wrong shard: ");
 });
 
 Deno.test("dat.r claim in the token picks the region", async () => {

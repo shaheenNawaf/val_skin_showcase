@@ -216,25 +216,32 @@ export async function runImport(
   const pd = (p: string) => `https://pd.${shard}.a.pvp.net${p}`;
 
   // ── Shard probe ───────────────────────────────────────────────────
-  // The requested region is only a guess: `dat.r` is absent from many Riot
-  // tokens and the editor's region select defaults to NA. account-xp is the
-  // cheapest profile check, so probe it across all four shards; the first 2xx
-  // pins the real shard for every later call and yields the level as a bonus.
-  // ≤4 requests. (account-xp needs no entitlements header, so this also works
-  // — and still corrects the region — when entitlements derivation failed.)
+  // A puuid lives on exactly one shard, but pd endpoints answer 200 with an
+  // EMPTY default profile for puuids that don't live there (observed live:
+  // a Level-159 AP account returned Level 1 / XP 0 / no history / empty
+  // wallet on na, eu and kr). So a 2xx is NOT proof of residency — only real
+  // progression data is. Scan all four shards and pin the one with data;
+  // `dat.r` and the manual region only order the scan (dat.r is the LEAGUE
+  // region and can disagree with the Valorant affinity, e.g. LoL-NA players
+  // in the Philippines). An account that has never played looks empty
+  // everywhere — keep the requested shard in that case.
   out.resolvedShard = null;
   const probeShards = [shard, ...["na", "eu", "ap", "kr"].filter((s) => s !== shard)];
   for (const s of probeShards) {
     try {
       const xp = await getJSON(`https://pd.${s}.a.pvp.net/account-xp/v1/players/${out.puuid}`, auth, f);
+      const lvl = posNum(xp.Progress?.Level ?? xp.Progression?.Level ?? xp.level);
+      const played = (lvl ?? 0) > 1 ||
+        posNum(xp.Progress?.XP ?? xp.Progression?.XP ?? xp.xp) != null ||
+        (Array.isArray(xp.History) && xp.History.length > 0);
+      if (!played) continue; // hollow foreign-profile response — wrong shard
       shard = s;
       out.shard = s;
       out.resolvedShard = s;
-      const lvl = posNum(xp.Progress?.Level ?? xp.Progression?.Level ?? xp.level);
       if (lvl != null) out.level = lvl;
       break;
     } catch {
-      // no profile on this shard (404) or transient failure — try the next
+      // 404/403 — not on this shard; keep scanning
     }
   }
   out.regionCorrected = !!out.resolvedShard && out.resolvedShard !== requestedShard;
@@ -452,7 +459,7 @@ export async function runImport(
   }
 
   const noProfile = out.level == null && !(out.skins || []).length && !out.vp && !out.rp && !out.rankTier;
-  if (noProfile) out.errors.push(`no Valorant profile found for this account (account-xp answered on none of the shards: ${probeShards.join(", ")}). Import with an account that has played Valorant.`);
+  if (noProfile) out.errors.push("no Valorant profile found for this account (no shard returned progression data). Import with an account that has played Valorant.");
 
   // The other failure shape: Riot answered every endpoint with 200 + empty/
   // default data (level 1, no rank, no wallet, no items) — an anti-abuse
