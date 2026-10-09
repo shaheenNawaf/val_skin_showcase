@@ -738,8 +738,18 @@ CF.$('iRun').addEventListener('click', async () => {
     importModal.hidden = true;
     CF.$('iToken').value = '';
     CF.$('iEnt').value = '';
+    /* The edge function probes every shard and pins the one the account
+       actually lives on. When it differs from the region we asked for, say
+       so — a silent region mismatch is what made imports look "partial".
+       Also leave the select on the detected shard for the next import. */
+    const regionNote = j.regionCorrected && j.resolvedShard
+      ? ` · region auto-corrected: account lives on ${String(j.resolvedShard).toUpperCase()}, imported from there instead of ${String(j.region || '').toUpperCase()}`
+      : '';
+    const iRegion = CF.$('iRegion');
+    if (iRegion && j.resolvedShard && ['na', 'eu', 'ap', 'kr'].includes(j.resolvedShard)) iRegion.value = j.resolvedShard;
     CF.status(`Imported ${j.name || 'account'}#${j.tag || ''} — level ${j.level ?? '?'}` +
       (j.skins ? ` · ${j.skins.length} skins owned (${j.skins.filter(id => BP_SKINS.has(id)).length} battlepass)` : '') +
+      regionNote +
       (j.errors && j.errors.length ? ' · partial: ' + j.errors.join(', ') : '') + '.', 'ok');
     refreshLayout();
   } catch (e) {
