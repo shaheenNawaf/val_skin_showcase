@@ -1727,16 +1727,32 @@ formMode?.addEventListener('input', e => {
   }
 });
 
-/* ── binary card fields: WTR / receipts ─────────────────────────────
-   These are yes/no facts (the marketplace renders them as With/No chips),
-   so free-text typing is gone: the phone form gets Yes/No segmented pairs
-   and the card fields cycle on click. The reqModal tags and the
+/* ── binary card fields ─────────────────────────────────────────────
+   These are two-state facts (the marketplace renders them as chips or
+   flags), so free-text typing is gone: the phone form gets segmented pairs
+   and the card fields cycle on click. The reqModal tags/checkboxes and the
    artwork-modal checkboxes remain as additional binary writers; every
-   writer produces the same WTR/RECEIPTS: YES/NO strings, so the
-   marketplace, quick view, FB post text and stored payloads are unchanged. */
+   writer produces the same stored strings, so the marketplace, quick view,
+   FB post text and stored payloads are unchanged.
+   Per field: on/off value strings, seg button labels, value matchers, and
+   (for card spans that carry the warn class) which state it belongs to. */
 const BIN_FIELDS = {
-  wtr: ['WTR: YES', 'WTR: NO'],
-  receipts: ['RECEIPTS: YES', 'RECEIPTS: NO'],
+  wtr: {
+    on: 'WTR: YES', off: 'WTR: NO', onLabel: 'Yes', offLabel: 'No',
+    isOn: t => /\byes\b/i.test(t), isSet: t => /\b(yes|no)\b/i.test(t), warn: null,
+  },
+  receipts: {
+    on: 'RECEIPTS: YES', off: 'RECEIPTS: NO', onLabel: 'Yes', offLabel: 'No',
+    isOn: t => /\byes\b/i.test(t), isSet: t => /\b(yes|no)\b/i.test(t), warn: null,
+  },
+  cstatus: {
+    on: 'READY', off: 'NOT READY', onLabel: 'Ready', offLabel: 'Not ready',
+    isOn: t => /^\s*ready\b/i.test(t), isSet: t => /\bready\b/i.test(t), warn: 'off',
+  },
+  vlink: {
+    on: 'UNLINKED', off: 'LINKED', onLabel: 'Unlinked', offLabel: 'Linked',
+    isOn: t => /\bunlinked\b/i.test(t), isSet: t => /\b(un)?linked\b/i.test(t), warn: 'on',
+  },
 };
 function binText(k) {
   const v = state.texts[k];
@@ -1744,32 +1760,42 @@ function binText(k) {
   const el = card.querySelector('[data-key="' + k + '"]');
   return el ? el.textContent : '';
 }
-function binIsOn(k) { return /yes/i.test(binText(k)); }
+function binIsOn(k) { return BIN_FIELDS[k].isOn(binText(k)); }
 function binSet(k, on) {
-  const v = BIN_FIELDS[k][on ? 0 : 1];
+  const cfg = BIN_FIELDS[k];
+  const v = on ? cfg.on : cfg.off;
   state.texts[k] = v;
   const el = card.querySelector('[data-key="' + k + '"]');
-  if (el) el.textContent = v;
+  if (el) {
+    el.textContent = v;
+    if (cfg.warn) el.classList.toggle('warn', on ? cfg.warn === 'on' : cfg.warn === 'off');
+  }
   syncBinSegs();
 }
 function syncBinSegs() {
   document.querySelectorAll('#formMode .fseg[data-fseg]').forEach(seg => {
     const k = seg.dataset.fseg;
-    if (!BIN_FIELDS[k]) return;
+    const cfg = BIN_FIELDS[k];
+    if (!cfg) return;
     const t = binText(k);
-    /* A blank or legacy non-yes/no value leaves both buttons unpressed —
-       "not set" — the marketplace renders that as No WTR / No Receipts. */
-    const isSet = /\b(yes|no)\b/i.test(t);
-    const isOn = /yes/i.test(t);
+    /* A blank or legacy unmatched value leaves both buttons unpressed —
+       "not set". The card span's warn class follows the value so it can
+       never disagree with the text (it was static HTML before). */
+    const isSet = cfg.isSet(t);
+    const isOn = cfg.isOn(t);
     seg.querySelectorAll('button[data-val]').forEach(b => {
-      b.classList.toggle('on', isSet && (b.dataset.val === 'yes') === isOn);
+      b.classList.toggle('on', isSet && (b.dataset.val === 'on') === isOn);
     });
+    const el = card.querySelector('[data-key="' + k + '"]');
+    if (el && cfg.warn) {
+      el.classList.toggle('warn', isSet && (isOn ? cfg.warn === 'on' : cfg.warn === 'off'));
+    }
   });
 }
 document.querySelectorAll('#formMode .fseg[data-fseg]').forEach(seg => {
   seg.addEventListener('click', e => {
     const b = e.target.closest('button[data-val]');
-    if (b) binSet(seg.dataset.fseg, b.dataset.val === 'yes');
+    if (b) binSet(seg.dataset.fseg, b.dataset.val === 'on');
   });
 });
 card.querySelectorAll('.bintog').forEach(el => {

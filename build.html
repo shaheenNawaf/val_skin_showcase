@@ -165,8 +165,8 @@
         <div class="stat"><label>BATTLEPASS</label><b data-key="bpass" contenteditable>00</b><button class="auto" data-auto="bpass" title="Auto-count battlepass skins">auto</button></div>
       </div>
       <div class="inforow"><span data-key="wtr" class="bintog" role="button" tabindex="0" title="Click to toggle WTR availability">WTR: YES</span><span data-key="receipts" class="bintog" role="button" tabindex="0" title="Click to toggle receipts availability">RECEIPTS: YES</span><span data-key="owner" contenteditable>0TH OWNER</span></div>
-      <div class="inforow"><span data-key="cname" contenteditable>CHANGE NAME</span><span class="warn" data-key="cstatus" contenteditable>NOT READY</span><span data-key="date" contenteditable>2/6/2026</span></div>
-      <div class="inforow"><span data-key="premier" contenteditable>PREMIER</span><span class="warn" data-key="vlink" contenteditable>UNLINKED</span><span data-key="price" contenteditable>PRICE OFFER</span></div>
+      <div class="inforow"><span data-key="cname" contenteditable>CHANGE NAME</span><span class="warn bintog" data-key="cstatus" role="button" tabindex="0" title="Click to toggle change-name status">NOT READY</span><span data-key="date" contenteditable>2/6/2026</span></div>
+      <div class="inforow"><span data-key="premier" contenteditable>PREMIER</span><span class="warn bintog" data-key="vlink" role="button" tabindex="0" title="Click to toggle Premier link">UNLINKED</span><span data-key="price" contenteditable>PRICE OFFER</span></div>
     </div>
     <div class="boxf rankbox">
       <div class="rankcols">
@@ -242,21 +242,31 @@
     <div class="fgrid2">
       <div class="frow"><label id="f-wtr-label">WTR</label>
         <div class="fseg" data-fseg="wtr" role="group" aria-labelledby="f-wtr-label">
-          <button type="button" data-val="yes">Yes</button>
-          <button type="button" data-val="no">No</button>
+          <button type="button" data-val="on">Yes</button>
+          <button type="button" data-val="off">No</button>
         </div>
       </div>
       <div class="frow"><label id="f-receipts-label">Receipts</label>
         <div class="fseg" data-fseg="receipts" role="group" aria-labelledby="f-receipts-label">
-          <button type="button" data-val="yes">Yes</button>
-          <button type="button" data-val="no">No</button>
+          <button type="button" data-val="on">Yes</button>
+          <button type="button" data-val="off">No</button>
         </div>
       </div>
       <div class="frow"><label for="f-owner">Owner</label><input class="finput up" id="f-owner" data-fkey="owner" value="0TH OWNER" type="text" autocomplete="off"></div>
       <div class="frow"><label for="f-date">Name-change date</label><input class="finput up" id="f-date" data-fkey="date" value="2/6/2026" type="text" autocomplete="off"></div>
-      <div class="frow"><label for="f-cstatus">Change-name status</label><input class="finput up" id="f-cstatus" data-fkey="cstatus" value="NOT READY" type="text" autocomplete="off"></div>
+      <div class="frow"><label id="f-cstatus-label">Change-name status</label>
+        <div class="fseg" data-fseg="cstatus" role="group" aria-labelledby="f-cstatus-label">
+          <button type="button" data-val="on">Ready</button>
+          <button type="button" data-val="off">Not ready</button>
+        </div>
+      </div>
       <div class="frow"><label for="f-premier">Premier</label><input class="finput up" id="f-premier" data-fkey="premier" value="PREMIER" type="text" autocomplete="off"></div>
-      <div class="frow"><label for="f-vlink">Verification link</label><input class="finput up" id="f-vlink" data-fkey="vlink" value="UNLINKED" type="text" autocomplete="off"></div>
+      <div class="frow"><label id="f-vlink-label">Premier link</label>
+        <div class="fseg" data-fseg="vlink" role="group" aria-labelledby="f-vlink-label">
+          <button type="button" data-val="on">Unlinked</button>
+          <button type="button" data-val="off">Linked</button>
+        </div>
+      </div>
     </div>
   </section>
 
