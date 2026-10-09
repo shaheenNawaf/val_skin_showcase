@@ -4,10 +4,11 @@
 // in-memory for this one request only and is never logged, cached or persisted.
 //
 // Request flow (kept deliberately small — Riot rate-limits, and seller tokens
-// expire in ~1h): userinfo → entitlements derive → shard probe (account-xp
-// across all four shards, which also yields the level) → loadout → wallet →
-// rank → per-type entitlements (authoritative; the undocumented bulk endpoint
-// is only a failure fallback, fetched once and shared) → flex catalog.
+// expire in ~1h): userinfo → entitlements derive → PAS region affinity (when
+// an id_token was pasted; otherwise skipped) → shard probe (account-xp across
+// all four shards, pinning the shard with real progression data; also yields
+// the level) → loadout → wallet → rank → per-type entitlements (the
+// undocumented bulk endpoint is a fallback, fetched once and shared) → flex.
 
 export const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -141,9 +142,11 @@ export async function runImport(
 ): Promise<{ status: number; body: any }> {
   const token = String(body.accessToken || "").trim();
   const ent = String(body.entitlements || "").trim();
+  const idToken = String(body.idToken || "").trim();
   const claims = jwtClaims(token);
   const autoRegion = REGION_CODE_TO_REGION[String(claims?.dat?.r || "").toUpperCase()];
-  const region = autoRegion || String(body.region || "na").toLowerCase();
+  const bodyRegion = String(body.region || "").trim().toLowerCase();
+  const region = autoRegion || bodyRegion || "na";
   const requestedShard = SHARDS[region] || "na";
   // Mutable: the shard probe below may discover the account lives elsewhere,
   // and every later pd.* call must follow (wallet/rank/entitlements all 404
@@ -173,7 +176,7 @@ export async function runImport(
     "X-Riot-ClientVersion": clientVersion,
   };
 
-  const out: any = { ok: true, region, shard, regionSource, errors: [] as string[] };
+  const out: any = { ok: true, region, shard, regionSource: "default", errors: [] as string[] };
   const guard = async (key: string, fn: () => Promise<void>) => {
     try {
       await fn();
@@ -215,18 +218,43 @@ export async function runImport(
 
   const pd = (p: string) => `https://pd.${shard}.a.pvp.net${p}`;
 
+  // ── Region affinity (PAS) ─────────────────────────────────────────
+  // When the seller pasted the full opt_in redirect, its id_token unlocks
+  // Riot's own affinity service, which names the account's ACTUAL Valorant
+  // region — authoritative where dat.r is only the League region (the
+  // LoL-NA-token / Valorant-AP-account combination). It is still just a
+  // hint: the progression scan below is the ground truth, and PAS failing
+  // (or no id_token pasted) simply falls back to the scan.
+  let pasShard: string | null = null;
+  if (idToken && JWT_RE.test(idToken)) {
+    try {
+      const r = await f("https://riot-geo.pas.si.riotgames.com/pas/v1/product/valorant", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token: idToken }),
+      });
+      if (r.ok) {
+        const j = await r.json();
+        pasShard = SHARDS[String(j?.affinities?.live || "").toLowerCase()] || null;
+      }
+    } catch {
+      // PAS unreachable from this egress — the scan decides
+    }
+  }
+  out.regionSource = pasShard ? "pas" : autoRegion ? "token" : bodyRegion ? "manual" : "default";
+
   // ── Shard probe ───────────────────────────────────────────────────
   // A puuid lives on exactly one shard, but pd endpoints answer 200 with an
   // EMPTY default profile for puuids that don't live there (observed live:
   // a Level-159 AP account returned Level 1 / XP 0 / no history / empty
   // wallet on na, eu and kr). So a 2xx is NOT proof of residency — only real
   // progression data is. Scan all four shards and pin the one with data;
-  // `dat.r` and the manual region only order the scan (dat.r is the LEAGUE
-  // region and can disagree with the Valorant affinity, e.g. LoL-NA players
-  // in the Philippines). An account that has never played looks empty
-  // everywhere — keep the requested shard in that case.
+  // PAS affinity (when known) and `dat.r`/the manual region only order the
+  // scan. An account that has never played looks empty everywhere — keep
+  // the requested shard in that case.
   out.resolvedShard = null;
-  const probeShards = [shard, ...["na", "eu", "ap", "kr"].filter((s) => s !== shard)];
+  const scanFirst = pasShard || shard;
+  const probeShards = [scanFirst, ...["na", "eu", "ap", "kr"].filter((s) => s !== scanFirst)];
   for (const s of probeShards) {
     try {
       const xp = await getJSON(`https://pd.${s}.a.pvp.net/account-xp/v1/players/${out.puuid}`, auth, f);

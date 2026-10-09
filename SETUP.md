@@ -73,7 +73,7 @@ supabase functions deploy riot-import --project-ref <project-ref> --no-verify-jw
 
 How it works / safety notes:
 
-- The seller pastes an access token (plus an optional entitlements token for wallet + owned items) into the import modal. Tokens expire in ~1h.
+- The seller pastes an access token (plus an optional entitlements token for wallet + owned items) into the import modal; the region defaults to Auto-detect — pasting the full opt_in redirect URL (which carries an `id_token`) resolves the region via Riot's affinity service, with an all-shard progression scan as the fallback. Tokens expire in ~1h.
 - The token is sent once over HTTPS to `riot-import`, used in memory against `auth.riotgames.com` / `pd.<shard>.a.pvp.net`, and **never logged, stored or published**. Only the derived snapshot (level, rank tier numbers, balances, owned UUIDs) returns to the browser.
 - Without Supabase configured the button explains that the feature is unavailable; everything else keeps working in localStorage mode.
 - Getting tokens: any Riot auth helper that outputs a Bearer token + entitlements JWT works (see the community docs linked from the modal). Treat tokens like passwords — anyone holding one can read the account.

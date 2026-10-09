@@ -471,10 +471,11 @@
       <button id="iClose" class="mclose" aria-label="Close import"><svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M2 2l10 10M12 2 2 12" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
     </div>
     <p class="inote">Paste your Riot <strong>access token</strong> (a JWT starting with <code>eyJ…</code>). You can also paste the full <strong>opt_in redirect URL</strong> — but copy it immediately, the <code>#access_token=…</code> part is stripped from the address bar within seconds — or the <strong>JSON</strong> from the local client's entitlements endpoint; the token (and entitlement) are picked out automatically. Paste just the access token — CardForge fetches the entitlements token for you automatically. Add one manually below only if auto-fetch fails.</p>
-    <p class="inote">From a single paste CardForge imports level, rank, balances, your equipped player card and buddies, plus your owned skins, variants, buddies and cards, and unlocks an “Owned” filter in the skin, buddy and player-card pickers.</p>
+    <p class="inote">From a single paste CardForge imports level, rank, balances, your equipped player card and buddies, plus your owned skins, variants, buddies and cards, and unlocks an “Owned” filter in the skin, buddy and player-card pickers. The account’s region is auto-detected — pasting the full opt_in redirect URL lets Riot’s own region service resolve it, and every shard is checked as a fallback — so Region can stay on Auto-detect.</p>
     <p class="inote">Tokens expire in ~1h, are sent only to the riot-import edge function over HTTPS, and are never stored or published.</p>
     <label class="ilabel" for="iRegion">Region</label>
     <select id="iRegion" class="iselect" aria-label="Account region">
+      <option value="" selected>Auto-detect (recommended)</option>
       <option value="na">NA</option>
       <option value="eu">EU</option>
       <option value="ap">AP</option>

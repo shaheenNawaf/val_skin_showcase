@@ -647,16 +647,20 @@ function jwtClaims(jwt) {
 
 const JWT_RE = /^eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 
-// Parse whatever the seller pasted into { token, entitlements }, or return an
-// actionable { code, message } explaining why it can't be used. Accepts a bare
-// JWT, the opt_in redirect URL (#access_token=...), or the local-client
-// entitlements JSON ({"accessToken":...,"token":...}).
+// Parse whatever the seller pasted into { token, entitlements, idToken }, or
+// return an actionable { code, message } explaining why it can't be used.
+// Accepts a bare JWT, the opt_in redirect URL (#access_token=…&id_token=…),
+// or the local-client entitlements JSON ({"accessToken":...,"token":...}).
+// The id_token (present in the opt_in redirect) lets the edge function ask
+// Riot's affinity service which region the VALORANT account actually lives
+// on — the token's dat.r claim is the League region and can disagree.
 function parseTokenInput(raw) {
   const v = (raw || '').trim();
   if (!v) return { code: 'empty', message: 'Paste your Riot access token first.' };
 
   let token = '';
   let entitlements = '';
+  let idToken = '';
 
   if (v.startsWith('{')) {
     try {
@@ -665,6 +669,7 @@ function parseTokenInput(raw) {
       entitlements = String(
         o.token || o.entitlements || o.entitlements_token || o.entitlementsToken || o.ent_token || ''
       ).trim();
+      idToken = String(o.id_token || o.idToken || '').trim();
     } catch {
       return { code: 'malformed', message: "That looks like JSON but didn't parse. Copy the full entitlements response, or just the access token (starts with eyJ…)." };
     }
@@ -672,6 +677,8 @@ function parseTokenInput(raw) {
     const compact = v.replace(/\s+/g, '');
     const m = compact.match(/(?:access_token|accessToken)=([^&#\s]+)/);
     if (m) { try { token = decodeURIComponent(m[1]); } catch { token = m[1]; } }
+    const idm = compact.match(/(?:^|[&#])id_token=([^&#\s]+)/);
+    if (idm) { try { idToken = decodeURIComponent(idm[1]); } catch { idToken = idm[1]; } }
   } else if (/^[a-z][a-z0-9+.-]*:\/\//i.test(v)) {
     // A URL with no access_token in it (e.g. a stripped opt_in redirect).
     return { code: 'no-token', message: "Couldn't find an access token in that URL. If it's the opt_in redirect, copy it before the page redirects — the #access_token=… part is stripped within seconds. Or paste the token itself (starts with eyJ…)." };
@@ -693,7 +700,7 @@ function parseTokenInput(raw) {
       return { code: 'expired', message: `That access token expired ~${mins} min ago — Riot tokens last ~1h. Grab a fresh one.` };
     }
   }
-  return { token, entitlements };
+  return { token, entitlements, idToken };
 }
 
 function iStatus(text, kind) {
@@ -724,6 +731,7 @@ CF.$('iRun').addEventListener('click', async () => {
       body: JSON.stringify({
         accessToken: parsed.token,
         entitlements: ent,
+        idToken: parsed.idToken || '',
         region: CF.$('iRegion').value
       })
     });
@@ -738,15 +746,17 @@ CF.$('iRun').addEventListener('click', async () => {
     importModal.hidden = true;
     CF.$('iToken').value = '';
     CF.$('iEnt').value = '';
-    /* The edge function probes every shard and pins the one the account
-       actually lives on. When it differs from the region we asked for, say
-       so — a silent region mismatch is what made imports look "partial".
-       Also leave the select on the detected shard for the next import. */
-    const regionNote = j.regionCorrected && j.resolvedShard
-      ? ` · region auto-corrected: account lives on ${String(j.resolvedShard).toUpperCase()}, imported from there instead of ${String(j.region || '').toUpperCase()}`
-      : '';
-    const iRegion = CF.$('iRegion');
-    if (iRegion && j.resolvedShard && ['na', 'eu', 'ap', 'kr'].includes(j.resolvedShard)) iRegion.value = j.resolvedShard;
+    /* Region handling: the edge function resolves the account's real Valorant
+       shard via Riot's affinity service (when the pasted redirect carried an
+       id_token) or by scanning every shard for real progression data — the
+       token's dat.r claim is the LEAGUE region and can disagree (LoL-NA token
+       with a Valorant-AP account). Say where the account actually lives. */
+    const rs = String(j.resolvedShard || '').toUpperCase();
+    const regionNote = rs && j.regionSource === 'pas'
+      ? ` · region auto-detected: account lives on ${rs}`
+      : (rs && j.regionCorrected
+        ? ` · region auto-corrected: account lives on ${rs}, imported from there instead of ${String(j.region || '').toUpperCase()}`
+        : '');
     CF.status(`Imported ${j.name || 'account'}#${j.tag || ''} — level ${j.level ?? '?'}` +
       (j.skins ? ` · ${j.skins.length} skins owned (${j.skins.filter(id => BP_SKINS.has(id)).length} battlepass)` : '') +
       regionNote +

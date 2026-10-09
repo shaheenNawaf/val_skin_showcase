@@ -77,6 +77,8 @@ type Opts = {
   bulk?: Reply | null; // null → default wrapped-empty reply
   loadout?: Reply | null; // null → default loadout reply
   accountXp?: Reply; // overrides the home-shard account-xp reply
+  /** PAS affinity value to return for an id_token; undefined → PAS 404s. */
+  pas?: string;
   /** Every pd endpoint answers 200 with empty/default data — Riot's "shadow" profile. */
   shadow?: boolean;
 };
@@ -106,6 +108,11 @@ function stdHandler(o: Opts = {}) {
     }
     if (url.includes("entitlements.auth.riotgames.com")) {
       return o.entFail ? { status: 401 } : { status: 200, body: { entitlements_token: makeToken() } };
+    }
+    if (url.includes("riot-geo.pas.si.riotgames.com")) {
+      return o.pas === undefined
+        ? { status: 404 }
+        : { status: 200, body: { affinities: { live: o.pas } } };
     }
 
     const wrongShard = pdShardOf(url) !== home;
@@ -409,6 +416,45 @@ Deno.test("dat.r claim in the token picks the region", async () => {
   eq(r.body.regionSource, "token", "regionSource: ");
   eq(r.body.resolvedShard, "eu", "resolvedShard: ");
   eq(r.body.regionCorrected, false, "no correction needed: ");
+});
+
+Deno.test("id_token + PAS affinity resolves the region before the scan", async () => {
+  // The full opt_in redirect was pasted: its id_token names the Valorant
+  // affinity (ap), the scan pins on the first probe, and only ONE
+  // account-xp request is spent.
+  const { f, calls } = makeFetch(stdHandler({ home: "ap", pas: "ap" }));
+  const r = await runImport(importBody({ idToken: makeToken() }), f);
+  eq(r.body.resolvedShard, "ap", "resolvedShard: ");
+  eq(r.body.regionSource, "pas", "regionSource: ");
+  eq(r.body.regionCorrected, true, "regionCorrected: ");
+  eq(r.body.level, 42, "level: ");
+  const xpCalls = calls.filter((u) => u.includes("/account-xp/"));
+  eq(xpCalls.length, 1, "account-xp calls: ");
+  ok(xpCalls[0].includes("pd.ap."), "probe ran on the PAS shard: ");
+});
+
+Deno.test("PAS unavailable (or no id_token) — the progression scan still finds the shard", async () => {
+  // Auto-detect with no id_token pasted and PAS down: the scan walks the
+  // shards, skips the hollow 200s, and pins the one with real data.
+  const { f } = makeFetch(stdHandler({ home: "ap" }));
+  const r = await runImport(importBody({ region: "", idToken: makeToken() }), f);
+  eq(r.body.resolvedShard, "ap", "resolvedShard: ");
+  eq(r.body.regionCorrected, true, "regionCorrected: ");
+  eq(r.body.regionSource, "default", "regionSource: ");
+  eq(r.body.level, 42, "level: ");
+});
+
+Deno.test("PAS is a hint — the scan stays authoritative when they disagree", async () => {
+  // PAS names the wrong shard (eu); the scan starts there, sees the hollow
+  // 200, keeps walking, and pins the shard that actually has the data (ap).
+  const { f, calls } = makeFetch(stdHandler({ home: "ap", pas: "eu" }));
+  const r = await runImport(importBody({ idToken: makeToken() }), f);
+  eq(r.body.resolvedShard, "ap", "resolvedShard: ");
+  eq(r.body.regionSource, "pas", "regionSource: ");
+  eq(r.body.vp, 1000, "vp from the real shard: ");
+  const xpCalls = calls.filter((u) => u.includes("/account-xp/"));
+  ok(xpCalls.some((u) => u.includes("pd.eu.")), "scan started on the PAS shard: ");
+  ok(xpCalls.some((u) => u.includes("pd.ap.")), "scan reached the real shard: ");
 });
 
 Deno.test("no entitlements: probe still resolves region and level, error explains the gap", async () => {
