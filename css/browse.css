@@ -185,8 +185,8 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
    Class is "hasdot", not "dot" — a global .dot (9px rotated diamond for
    facet dots) already exists and would squash the chip to 9px. */
 .gc-chips span.hasdot::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:currentColor;margin-right:5px;vertical-align:1px}
-/* trust colours are semantic, not themed: green = verified, amber = the
-   removable premier-unlinked warn, red = WTR issues. Literals on purpose
+/* trust colours are semantic, not themed: green = available, amber = the
+   premier-unlinked warn, red = no WTR / no receipts. Literals on purpose
    — shared.css has no ok/bad token and these must not shift with theme. */
 .gc-chips span.ok{color:#59E3B8;border-color:rgba(89,227,184,.4);background:rgba(89,227,184,.08)}
 .gc-chips span.bad{color:#FF7A85;border-color:rgba(255,122,133,.48);background:rgba(255,122,133,.1)}

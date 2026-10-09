@@ -140,7 +140,6 @@ function normalize(r) {
     },
     flags: {
       wtr: /yes/i.test(r.wtr || ''), receipts: /yes/i.test(r.receipts || ''),
-      wtrIssues: /no/i.test(r.wtr || ''),
       premierUnlinked: /unlinked/i.test(r.vlink || ''),
       owner: (r.owner || '').replace(/\s*owner\s*$/i, '') || '—'
     },
@@ -327,17 +326,19 @@ function statChips(l) {
     + '</div>';
 }
 
-/* Single flag: set false and WTR issues degrade to a muted "WTR not
-   stated" chip — no second code path, per the stakeholder-removable
-   requirement. */
-const SHOW_WTR_ISSUES = true;
+/* Binary trust disclosure: WTR and receipts each render a state chip
+   (green = available, red = not); when both are available they merge into
+   a single "With WTR & Receipts" chip. The seller indicates both facts at
+   publish time, so there is no "not stated" middle state. */
 function trustChips(l) {
   const f = l.flags;
-  const w = (f.wtrIssues && SHOW_WTR_ISSUES) ? { c: 'bad', t: 'WTR issues' }
-          : f.wtr ? { c: 'ok', t: 'WTR verified' }
-          : { c: 'na', t: 'WTR not stated' };
-  let c = '<span class="hasdot ' + w.c + '">' + w.t + '</span>';
-  if (f.receipts) c += '<span class="hasdot ok">Receipts</span>';
+  let c;
+  if (f.wtr && f.receipts) {
+    c = '<span class="hasdot ok">With WTR &amp; Receipts</span>';
+  } else {
+    c = (f.wtr ? '<span class="hasdot ok">With WTR</span>' : '<span class="hasdot bad">No WTR</span>')
+      + (f.receipts ? '<span class="hasdot ok">Receipts</span>' : '<span class="hasdot bad">No Receipts</span>');
+  }
   if (f.premierUnlinked) c += '<span class="hasdot warn">Premier unlinked</span>';
   return '<div class="gc-chips">' + c + '</div>';
 }
