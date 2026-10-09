@@ -1984,8 +1984,8 @@ function recheckGate() {
      publishListing does) and the checklist/badge/flags stay live. */
   captureTexts();
   const res = publishGate();
-  const btn = CF.$('publishBtn');
-  if (btn) btn.dataset.blocking = String(res.blocking.length);
+  const wrap = CF.$('publishWrap');
+  if (wrap) wrap.dataset.blocking = String(res.blocking.length);
   /* Flags arm after the first blocked attempt and clear per item as it passes. */
   const wanted = new Map(res.checks.filter(c => !c.ok).map(c => [c.key, gateEls(c.key)]));
   document.querySelectorAll('.gate-flag').forEach(el => {
@@ -2038,7 +2038,8 @@ async function publishListing() {
   /* CF-21: run the gate first — an empty or placeholder card never goes live */
   const gate = publishGate();
   if (!gate.pass) {
-    CF.status('Publish blocked — ' + gate.blocking.length + ' item' + (gate.blocking.length === 1 ? '' : 's') + ' to fix.', 'err');
+    /* No toast here: the checklist modal IS the notification, and the
+       bottom-left toast was overlapping the card's seller box. */
     gateArm();
     return;
   }

@@ -213,7 +213,7 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
      filled primary + accent secondary on top, ghost utilities below */
   #topbar .tb-right{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   #topbar .tb-right #exportBtn{grid-area:1/1}
-  #topbar .tb-right #publishBtn{grid-area:1/2}
+  #topbar .tb-right .pubwrap{grid-area:1/2}
   #topbar .tb-right #saveBtn{grid-area:2/1}
   #topbar .tb-right .more-wrap{grid-area:2/2}
   #topbar .tb-right button{min-height:44px}
@@ -328,7 +328,7 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 #authGate{position:fixed;inset:0;z-index:2000;background:rgba(11,15,20,.97);display:flex;align-items:center;justify-content:center;padding:24px}
 #authGate[hidden]{display:none}
 /* v1.5.2: artwork mode = its own surface; the card editor chrome steps aside */
-body.art-mode #stage,body.art-mode #saveBtn,body.art-mode #exportBtn,body.art-mode #publishBtn,body.art-mode #formPrevBtn{display:none}
+body.art-mode #stage,body.art-mode #saveBtn,body.art-mode #exportBtn,body.art-mode #publishWrap,body.art-mode #publishBtn,body.art-mode #formPrevBtn{display:none}
 #artMode{position:fixed;inset:var(--tbh) 0 0 0;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px 90px}
 #artMode[hidden]{display:none}
 .am-panel{width:min(560px,100%);background:var(--c-surface2);border:1px solid var(--c-line);padding:28px 26px;display:flex;flex-direction:column;gap:20px;color-scheme:dark;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
@@ -423,9 +423,11 @@ body.art-mode #stage,body.art-mode #saveBtn,body.art-mode #exportBtn,body.art-mo
 /* CF-21b: publish checklist — live rows, dashed flags on offending fields,
    and a red count badge on Publish while the gate blocks. Panel/body/footer
    follow the reqModal/priceModal recipes (noladder body, fhint, accent +
-   ghost buttons) so the modal reads as part of the same family. */
-#publishBtn{position:relative}
-#publishBtn[data-blocking]:not([data-blocking="0"])::after{content:attr(data-blocking);position:absolute;top:-8px;right:-8px;min-width:19px;height:19px;box-sizing:border-box;padding:0 5px;border-radius:10px;background:#E5484D;color:#fff;font:800 11px/19px var(--font-ui);text-align:center}
+   ghost buttons) so the modal reads as part of the same family. The badge
+   rides a wrapper span, NOT the button: the accent button's notch clip-path
+   clips anything drawn outside its box. */
+.pubwrap{position:relative;display:inline-flex}
+.pubwrap[data-blocking]:not([data-blocking="0"])::after{content:attr(data-blocking);position:absolute;right:-7px;bottom:-7px;min-width:19px;height:19px;box-sizing:border-box;padding:0 5px;border-radius:10px;background:#E5484D;color:#fff;font:800 11px/19px var(--font-ui);text-align:center;z-index:2}
 #gateModal .mpanel{width:min(460px,100%)}
 #gmList{display:grid;gap:8px}
 .gm-row{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--c-bg);border:1px solid var(--c-line)}
