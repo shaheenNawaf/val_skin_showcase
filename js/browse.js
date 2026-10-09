@@ -244,7 +244,7 @@ function flagCounts() {
   const base = facetBase('flags');
   const map = {
     noissue: l => l.flags.wtr,
-    issues: l => l.flags.wtrIssues,
+    issues: l => !l.flags.wtr,
     premunl: l => l.flags.premierUnlinked
   };
   document.querySelectorAll('#fFlags input').forEach(cb => {
@@ -565,7 +565,7 @@ function matches(l, skip) {
   }
   if (skip !== 'flags' && state.flags.size) {
     if (state.flags.has('noissue') && !l.flags.wtr) return false;
-    if (state.flags.has('issues') && !l.flags.wtrIssues) return false;
+    if (state.flags.has('issues') && l.flags.wtr) return false;
     if (state.flags.has('premunl') && !l.flags.premierUnlinked) return false;
   }
   return true;
