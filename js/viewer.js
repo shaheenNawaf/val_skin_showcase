@@ -212,7 +212,7 @@ const MOBILE_SKELETON = `
 <section class="mhead2">
   <div class="mhrow mhrow1">
     <span class="mhcode" data-m="code">K486</span>
-    <span class="mhid"><b data-m="cname">CHANGE NAME</b><span data-m="vlogin">RIOT ID</span></span>
+    <span class="mhid"><b data-m="cname">ACCOUNT DESCRIPTION</b><span data-m="vlogin">RIOT ID</span></span>
     <span class="mstatus"></span>
   </div>
   <div class="mhrow mhrow2">
@@ -233,11 +233,10 @@ const MOBILE_SKELETON = `
     <span data-m="wtr">WTR: YES</span>
     <span data-m="receipts">RECEIPTS: YES</span>
     <span data-m="owner">0TH OWNER</span>
-    <span data-m="cname">CHANGE NAME</span>
-    <span class="mwarn" data-m="cstatus">NOT READY</span>
+    <span data-m="cname">ACCOUNT DESCRIPTION</span>
+    <span class="mwarn" data-m="cstatus">CHANGE NAME: NOT READY</span>
     <span data-m="date">2/6/2026</span>
-    <span data-m="premier">PREMIER</span>
-    <span class="mwarn" data-m="vlink">UNLINKED</span>
+    <span class="mwarn" data-m="vlink">PREMIER: UNLINKED</span>
   </div>
 </section>
 <nav class="mcats" aria-label="Categories"></nav>

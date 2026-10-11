@@ -45,7 +45,7 @@ export function rankByFlat(n, RANKS) {
    catches the known variants; a loose regex would risk swallowing a real
    seller name, so the list stays explicit. Shared by browse / dashboard /
    viewer / editor so the guard can't drift again. */
-const PLACEHOLDER_TITLES = ['change name', 'changes name', 'change namse', 'change my name', 'changename'];
+const PLACEHOLDER_TITLES = ['change name', 'changes name', 'change namse', 'change my name', 'changename', 'account description'];
 export function isPlaceholderTitle(s) {
   /* Trailing punctuation is stripped too: a live listing ships
      "CHANGE NAME:" with a colon, which an exact list entry would miss. */

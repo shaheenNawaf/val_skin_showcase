@@ -16,12 +16,12 @@
 #topbar button.swatch:hover{border-color:var(--c-ink)}
 
 /* clickable card uploads get a hover cue (editor only) */
-[data-upload]{cursor:pointer}
-.avatar[data-upload]:hover,.pcard[data-upload]:hover,.charms-box[data-upload]:hover{
+[data-upload],[data-addflex]{cursor:pointer}
+.avatar[data-upload]:hover,.pcard[data-upload]:hover,.charms-box[data-upload]:hover,.flex-add[data-addflex]:hover{
   border-color:var(--accent);
   box-shadow:inset 0 0 0 1px var(--accent);
   filter:brightness(1.06)}
-.pcard[data-upload]:hover .hint,.charms-box[data-upload]:hover .hint{color:var(--accent)}
+.pcard[data-upload]:hover .hint,.charms-box[data-upload]:hover .hint,.flex-add[data-addflex]:hover .hint{color:var(--accent)}
 
 /* rank "set" buttons */
 .pickrank{background:none;border:1px solid var(--line);color:var(--mut);font:700 13px var(--font-ui);letter-spacing:.12em;padding:2px 7px;cursor:pointer;text-transform:uppercase;margin-left:auto}

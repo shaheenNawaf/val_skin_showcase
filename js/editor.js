@@ -34,7 +34,7 @@ state.layout = 'auto';
 state.page = 1;
 
 let DB = {}, TIERS = [], RANKS = [], BUDDIES = {}, CARDS = {}, SKIN_BY_ID = new Map(), LEVEL_MAP = {}, CHROMA_MAP = {}, BUDDIES_LIST = [], BUDDY_BY_ANY = {}, CARDS_LIST = [];
-let FLEX_BY_ID = new Map();
+let FLEX_BY_ID = new Map(), FLEX_LIST = [];
 let catalogSource = 'api';
 let list = [], currentPool = [], currentCat = null, pickerMode = 'skin', rankRow = null, rankKey = null, variantCat = null, variantIdx = -1;
 const TIER_RANK = { select: 1, deluxe: 2, premium: 3, ultra: 4, exclusive: 5 };
@@ -54,6 +54,23 @@ function renderPanel(cat, { animateLast = false } = {}) {
   const el = document.querySelector(`.panel[data-cat="${cat}"]`);
   const picks = state.picks[cat];
   const slots = el.querySelector('.slots');
+  /* Flex cosmetics are agent accessories, not weapon slots: they live in their
+     own .flex-add box beside the buddy box, exactly like gun buddies do, so
+     they never render into .slots. */
+  if (cat === 'Flex') {
+    const fbox = el.querySelector('.flex-add');
+    if (!picks.length) {
+      if (!fbox.querySelector('.hint')) fbox.innerHTML = '<span class="hint">+ add flex</span>';
+    } else if (fbox.querySelector('.hint')) {
+      fbox.querySelector('.hint').remove();
+      picks.forEach(p => {
+        const img = new Image();
+        img.src = p.icon; img.alt = p.name; img.title = p.name;
+        fbox.appendChild(img);
+      });
+    }
+    return;
+  }
   if (!picks.length) {
     slots.innerHTML = '<div class="slotbox empty"><span class="hint">+ add</span></div>';
     slots.className = 'slots';
@@ -64,7 +81,9 @@ function renderPanel(cat, { animateLast = false } = {}) {
     else if (mode === 'm3') renderSlotsClassic(el, picks, opts);
     else renderSlotsM1(el, picks, opts);
   }
-  const add = el.querySelector('.add');
+  /* Scope to the skin counter button: the Flex panel's first .add is the
+   "+ Add Flex" picker trigger and must keep its own label. */
+  const add = el.querySelector('.add[data-add]');
   if (add) add.textContent = `+ Add (${picks.length})`;
   if (animateLast) {
     const skins = slots.querySelectorAll('.skin');
@@ -260,6 +279,18 @@ function renderGrid() {
     ).join('') || '<p class="none">No matches.</p>';
     return;
   }
+  if (pickerMode === 'flex') {
+    const q = mSearch.value.toLowerCase();
+    const onCard = new Set((state.picks.Flex || []).map(p => p.id));
+    list = currentPool.filter(f =>
+      (!filterOwned || onCard.has(f.uuid)) &&
+      (!q || f.name.toLowerCase().includes(q)));
+    CF.$('mCount').textContent = list.length + ' results';
+    mGrid.innerHTML = list.map((f, i) =>
+      `<button class="item" data-i="${i}"${onCard.has(f.uuid) ? ' aria-label="' + CF.esc(f.name) + ', already on card"' : ''}>${onCard.has(f.uuid) ? '<i class="cnt">✓</i>' : ''}<img loading="lazy" src="${CF.esc(f.icon)}" alt=""><b>${CF.esc(f.name)}</b><span>flex</span></button>`
+    ).join('') || '<p class="none">No matches.</p>';
+    return;
+  }
   if (pickerMode === 'card') {
     const ownedSet = new Set(state.ownedCards || []);
     const shown = state.assets.pcard;
@@ -400,6 +431,46 @@ function openVariantModal(cat, idx) {
   CF.$('vDone').focus();
   ensureRichSkin(s);
   paintVariantPreview();
+}
+
+/* Real Valorant Flex cosmetics (agent-worn accessories, Expressions Wheel).
+   They arrive automatically from riot-import's flexOwned, but there was no way
+   to add one by hand: the panel's "+ Add" opens the SKIN picker, and because
+   'Flex' is a FREE_CAT that pool is every weapon skin in the database. This
+   picker lists the actual /v1/flex catalog instead (shared.js:363 loads it). */
+function openFlexPicker() {
+  if (!FLEX_LIST.length) { CF.status('Flex catalog still loading — try again in a moment.', 'err'); return; }
+  pickerMode = 'flex';
+  currentPool = FLEX_LIST.slice();
+  filterOwned = false;
+  CF.$('mTitle').textContent = 'Add Flex';
+  CF.$('mCount').textContent = '';
+  modalVis({ search: true, filters: true, grid: true, upload: true });
+  CF.$('mLadder').style.display = 'none';
+  CF.$('mBody').classList.add('noladder');
+  const onCard = (state.picks.Flex || []).length;
+  CF.$('mWeapons').innerHTML = onCard
+    ? `<button class="chip" data-owned="1">On card (${onCard})</button>`
+    : '';
+  const addOwned = CF.$('mAddOwned');
+  addOwned.hidden = true;
+  CF.$('mTiers').style.display = 'none';
+  mSearch.value = '';
+  renderGrid();
+  openModal();
+}
+
+/* Same slot shape riot-import writes, so imported and hand-picked Flex items
+   are indistinguishable downstream. */
+function addFlex(f) {
+  if (!f) return;
+  const picks = state.picks.Flex || (state.picks.Flex = []);
+  if (picks.some(p => p.id === f.uuid)) {
+    CF.status(`${f.name} is already on the card.`, 'info');
+    return;
+  }
+  picks.push({ id: f.uuid, weapon: 'Flex', name: f.name, tier: '', icon: f.icon });
+  renderFromState();
 }
 
 async function openBuddyPicker() {
@@ -544,6 +615,7 @@ mGrid.addEventListener('click', e => {
   const b = e.target.closest('.item'); if (!b) return;
   if (pickerMode === 'rank') { applyRank(list[+b.dataset.i]); return; }
   if (pickerMode === 'buddy') { addBuddy(list[+b.dataset.i]); renderGrid(); return; }
+  if (pickerMode === 'flex') { addFlex(list[+b.dataset.i]); renderGrid(); return; }
   if (pickerMode === 'card') { applyCard(list[+b.dataset.i]); return; }
   addSkin(currentCat, list[+b.dataset.i]);
   renderGrid();
@@ -553,6 +625,7 @@ mSearch.addEventListener('keydown', e => {
   if (e.key === 'Enter' && list.length) {
     if (pickerMode === 'rank') applyRank(list[0]);
     else if (pickerMode === 'buddy') { addBuddy(list[0]); renderGrid(); }
+    else if (pickerMode === 'flex') { addFlex(list[0]); renderGrid(); }
     else if (pickerMode === 'card') applyCard(list[0]);
     else { addSkin(currentCat, list[0]); renderGrid(); }
   }
@@ -950,6 +1023,18 @@ card.addEventListener('click', e => {
   }
   const cbox = e.target.closest('.charms-box');
   if (cbox) { openBuddyPicker(); return; }
+  /* Flex box: click an icon to drop it, click the empty box to add. Mirrors
+     the buddy box one line up. */
+  const fimg = e.target.closest('.flex-add img');
+  if (fimg) {
+    const picks = state.picks.Flex || (state.picks.Flex = []);
+    const i = picks.findIndex(p => p.icon === fimg.getAttribute('src') || p.id === fimg.dataset.id);
+    if (i > -1) picks.splice(i, 1);
+    fimg.remove();
+    if (!picks.length) renderPanel('Flex');
+    renderFromState();
+    return;
+  }
   const rm = e.target.closest('.rm');
   if (rm) {
     const skinEl = rm.closest('.skin');
@@ -977,6 +1062,8 @@ card.addEventListener('click', e => {
   }
   const rp = e.target.closest('[data-rankpick]');
   if (rp) { openRankPicker(rp); return; }
+  const afx = e.target.closest('[data-addflex]');
+  if (afx) { openFlexPicker(); return; }
   const add = e.target.closest('.add');
   if (add) { openPicker(add.dataset.add); return; }
   const pc = e.target.closest('.pcard');
@@ -1749,11 +1836,11 @@ const BIN_FIELDS = {
     isOn: t => /\byes\b/i.test(t), isSet: t => /\b(yes|no)\b/i.test(t), warn: null,
   },
   cstatus: {
-    on: 'READY', off: 'NOT READY', onLabel: 'Ready', offLabel: 'Not ready',
-    isOn: t => /^\s*ready\b/i.test(t), isSet: t => /\bready\b/i.test(t), warn: 'off',
+    on: 'CHANGE NAME: READY', off: 'CHANGE NAME: NOT READY', onLabel: 'Change name ready', offLabel: 'Not ready',
+    isOn: t => /^\s*(change name:\s*)?ready\b/i.test(t), isSet: t => /\bready\b/i.test(t), warn: 'off',
   },
   vlink: {
-    on: 'UNLINKED', off: 'LINKED', onLabel: 'Unlinked', offLabel: 'Linked',
+    on: 'PREMIER: UNLINKED', off: 'PREMIER: LINKED', onLabel: 'Unlinked', offLabel: 'Linked',
     isOn: t => /\bunlinked\b/i.test(t), isSet: t => /\b(un)?linked\b/i.test(t), warn: 'on',
   },
 };
@@ -1901,7 +1988,7 @@ function publishGate() {
   checks.push({
     key: 'title',
     ok: !!titleSet,
-    label: 'the card title still says “CHANGE NAME”',
+    label: 'the card title still says “ACCOUNT DESCRIPTION”',
     fix: 'click the title on the card and type the listing name',
   });
   /* B: the gate reads the structured price, not the card's printed line. An
@@ -2562,6 +2649,7 @@ initEditMode().finally(async () => {
     BUDDIES = catalog.BUDDIES; CARDS = catalog.CARDS; CARDS_LIST = catalog.CARDS_LIST || [];
     SKIN_BY_ID = catalog.SKIN_BY_ID; LEVEL_MAP = catalog.LEVEL_MAP; CHROMA_MAP = catalog.CHROMA_MAP;
     FLEX_BY_ID = catalog.FLEX_BY_ID || new Map();
+    FLEX_LIST = catalog.FLEX_LIST || [];
     BUDDIES_LIST = catalog.BUDDIES_LIST; BUDDY_BY_ANY = catalog.BUDDY_BY_ANY;
     catalogSource = catalog.source || 'api';
   } catch (e) {

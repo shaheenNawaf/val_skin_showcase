@@ -41,7 +41,7 @@ export default async (request: Request, context: any) => {
         const texts = (l as any).payload && (l as any).payload.texts ? (l as any).payload.texts : {};
         const code = String(texts.code || '').trim();
         const cname = String(texts.cname || '').trim();
-        const base = code || ((cname && cname !== 'CHANGE NAME') ? cname : '') || slug;
+        const base = code || ((cname && !/^(change name|account description)$/i.test(cname)) ? cname : '') || slug;
         title = `${base}${l.price != null ? ` — ${sym}${l.price}` : ''}`;
         if (l.status === 'sold') title = `[SOLD] ${title}`;
         description = l.status === 'sold'

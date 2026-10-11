@@ -52,7 +52,7 @@ const draft = {
   texts: {
     code: 'K486', vlogin: 'Jackson#QwQ', prems: '23', limited: '01', semis: '00', anims: '19',
     wtr: 'WTR: YES', receipts: 'RECEIPTS: YES', owner: '0TH OWNER',
-    cname: 'CHANGE NAME', cstatus: 'NOT READY', date: '2/6/2026',
+    cname: 'ACCOUNT DESCRIPTION', cstatus: 'CHANGE NAME: NOT READY', date: '2/6/2026',
     premier: 'PREMIER', vlink: 'UNLINKED', price: 'PRICE 12',
     crank: 'DIAMOND 2', prank: 'IMMORTAL 3', level: '180', vp: '105', rp: '0', kc: '6422'
   },
