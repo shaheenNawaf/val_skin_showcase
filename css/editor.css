@@ -43,7 +43,16 @@ clip-path:polygon(0 0,calc(100% - var(--notch-lg)) 0,100% var(--notch-lg),100% 1
 .mclose{margin-left:auto;background:none;border:none;color:var(--c-mut);cursor:pointer;padding:6px;display:inline-flex;align-items:center;justify-content:center;line-height:0}
 .mclose:hover{color:var(--c-accent)}
 .mclose svg{width:13px;height:13px;display:block}
+@media (max-width:640px){.mhead{gap:10px;margin-bottom:12px}}
 #reqModal .mpanel{width:min(420px,100%)}
+/* .frow is otherwise only styled inside the phone media query and #priceModal,
+   so the Requirements modal needs its own for its labelled control rows. */
+#reqModal .frow{display:flex;flex-direction:column;gap:6px}
+#reqModal .frow label{font:600 10px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut)}
+#reqModal .fhint{margin:0}
+#reqModal .mbody{gap:16px}
+#reqModal .fseg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#reqModal .fseg button{min-height:36px;text-align:center;white-space:normal}
 /* B: the price modal. .finput/.frow are otherwise only styled inside the phone
    media query and .am-panel, so this surface needs its own. */
 #priceModal .mpanel{width:min(420px,100%)}
@@ -58,8 +67,8 @@ clip-path:polygon(0 0,calc(100% - var(--notch-lg)) 0,100% var(--notch-lg),100% 1
 #priceModal .pm-prev span{font:600 9px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--c-mut)}
 #priceModal .pm-prev b{font:800 17px var(--font-display);letter-spacing:-.01em;color:var(--c-ink);font-variant-numeric:tabular-nums}
 #priceModal .pm-prev i{font:600 9px var(--font-ui);font-style:normal;letter-spacing:.09em;text-transform:uppercase;color:var(--c-mut)}
-.mfilters{display:flex;flex-direction:column;gap:7px;margin-bottom:0}
-.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+.mfilters{display:flex;flex-direction:column;gap:12px;margin-bottom:0}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin;mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent);-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent)}
 .chip{flex:0 0 auto;background:var(--c-surface);border:1px solid var(--c-line-soft);color:var(--c-mut);padding:5px 12px;font:600 11px var(--font-ui);letter-spacing:.08em;cursor:pointer;text-transform:uppercase;
 clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
 .chip:hover{color:var(--c-ink);border-color:var(--c-mut)}
@@ -79,8 +88,8 @@ clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,va
 .none{color:var(--c-mut);grid-column:1/-1;text-align:center;padding:30px}
 
 /* ── tier ladder ──────────────────────────────────────────────── */
-.mbody{display:grid;grid-template-columns:186px 1fr;grid-template-rows:minmax(0,1fr);gap:14px;align-items:start;min-height:0}
-.mright{min-width:0;display:flex;flex-direction:column;gap:10px;min-height:0;align-self:stretch}
+.mbody{display:grid;grid-template-columns:186px 1fr;grid-template-rows:minmax(0,1fr);gap:12px;align-items:start;min-height:0}
+.mright{min-width:0;display:flex;flex-direction:column;gap:12px;min-height:0;align-self:stretch}
 .mbody.noladder{grid-template-columns:1fr}
 #mLadder{background:var(--c-surface);border:1px solid var(--c-line);padding:12px;display:flex;flex-direction:column;gap:6px;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
 .lhead{font:800 10px var(--font-display);letter-spacing:.2em;text-transform:uppercase;color:var(--c-mut)}
@@ -100,7 +109,7 @@ clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,va
 .lclear:hover{color:var(--c-accent)}
 @media (prefers-reduced-motion:no-preference){.rung{transition:background-color .15s,border-color .15s}.rung:hover{background:var(--c-surface2);border-color:var(--c-line)}}
 @media (max-width:899px){
-  .mbody{grid-template-columns:1fr}
+  .mbody{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
   #mLadder{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px;padding:10px}
   .lhead,.lhint,#mLadderClear{display:none}
   .rung{width:auto;padding:7px 10px;border:1px solid var(--c-line)}
@@ -168,7 +177,8 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 .mgrid .cardcell span{font-size:10px;letter-spacing:.14em;text-transform:uppercase}
 .gridcap{margin:8px 0 0;color:var(--c-mut);font:700 10px var(--font-display);letter-spacing:.2em;text-transform:uppercase;text-align:center}
 #chrome{position:fixed;top:0;left:0;right:0;z-index:20;background:var(--c-surface);border-bottom:1px solid var(--c-line)}
-#chrome #topbar{position:static}
+#chrome #topbar{position:static;padding:6px 14px 14px}
+#chrome .tb-right{margin-left:auto}
 #chrome{border:0;border-bottom:1px solid var(--c-line)}
 .layout-badge{font:700 9px var(--font-display);letter-spacing:.14em;text-transform:uppercase;color:var(--c-ink);
   background:var(--c-accent-btn);padding:5px 8px;white-space:nowrap;max-width:210px;overflow:hidden;text-overflow:ellipsis}
@@ -199,6 +209,19 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 #layoutSel{background:var(--c-surface);border:1px solid var(--c-line);color:var(--c-mut);font:600 10px 'Chakra Petch',sans-serif;letter-spacing:.14em;padding:7px 6px;cursor:pointer}
 #layoutSel:focus-visible{box-shadow:inset 0 0 0 2px var(--c-accent)}
 
+/* ── TT-110: tablet band — theme swatches and layout badge live in the More menu ── */
+@media (max-width:1080px){
+  #moreMenu .themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px;padding:4px 8px 10px;width:100%}
+  #moreMenu .themes::before{content:"CARD THEME";grid-column:1/-1;font:600 9px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--c-mut);padding:6px 4px 0}
+  #moreMenu button.swatch{width:auto;min-width:0;height:auto;min-height:44px;padding:7px 7px 6px;display:flex;flex-direction:column;justify-content:center;gap:6px;background:var(--c-surface2);border:1px solid var(--c-line-soft);transform:none;clip-path:none;box-shadow:none}
+  #moreMenu button.swatch::before{content:"";flex:none;height:18px;background:var(--sw);transform:skewX(-18deg);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+  #moreMenu button.swatch::after{content:attr(title);font:600 8.5px/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--c-mut);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #moreMenu button.swatch:hover{border-color:var(--c-mut);background:var(--c-surface2)}
+  #moreMenu button.swatch.active{border-color:var(--c-accent);box-shadow:0 0 0 1px var(--c-accent)}
+  #moreMenu button.swatch.active::after{color:var(--c-ink)}
+  #moreMenu #layoutBadge{display:block;max-width:none;margin:2px 12px 0;padding:8px 10px;background:var(--c-surface2);border:1px solid var(--c-line-soft);color:var(--c-ink);font:700 10px var(--font-display);letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
+
 /* ── TT-44: phone touch targets (≥40–44px) ─────────────────────── */
 @media (max-width:760px){
   #topbar .swatch{min-width:44px;min-height:32px}   /* TT-44: swatch ≥44px tap width; beats #topbar button */
@@ -211,27 +234,20 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
   #topbar .tb-left,#topbar .tb-right{flex-wrap:nowrap}
   /* action row as a 2×2 grid instead of a flushed-left content-sized flex row:
      filled primary + accent secondary on top, ghost utilities below */
-  #topbar .tb-right{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  #topbar .tb-right{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   #topbar .tb-right #exportBtn{grid-area:1/1}
   #topbar .tb-right .pubwrap{grid-area:1/2}
   #topbar .tb-right #saveBtn{grid-area:2/1}
   #topbar .tb-right .more-wrap{grid-area:2/2}
   #topbar .tb-right button{min-height:44px}
   #topbar .tb-right .more-wrap #moreBtn{width:100%}
+  #chrome #topbar{row-gap:12px;padding:6px 12px 14px}
+  #topbar .tb-right .pubwrap::after{right:-2px;bottom:-2px}
+  #topbar .tb-right .pubwrap #publishBtn{width:100%}
   /* the accent tier must read as second-in-command at rest, not as a ghost */
   #topbar #publishBtn{border-color:color-mix(in srgb,var(--c-accent) 45%,var(--c-line-soft));color:var(--c-accent)}
   #layoutSel{font-size:10px;padding:6px 8px;min-height:40px;max-width:90px}
   #layoutBadge{font-size:9px;padding:4px 6px;letter-spacing:.06em;white-space:nowrap}
-  /* TT-110: swatches reparented into the More menu — labeled row, wrap allowed */
-  #moreMenu .themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px;padding:4px 8px 10px;width:100%}
-  #moreMenu .themes::before{content:"CARD THEME";grid-column:1/-1;font:600 9px var(--font-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--c-mut);padding:6px 4px 0}
-  /* labeled tiles — color chip + name, so themes are recognizable, not guessable */
-  #moreMenu button.swatch{width:auto;min-width:0;height:auto;min-height:44px;padding:7px 7px 6px;display:flex;flex-direction:column;justify-content:center;gap:6px;background:var(--c-surface2);border:1px solid var(--c-line-soft);transform:none;clip-path:none;box-shadow:none}
-  #moreMenu button.swatch::before{content:"";flex:none;height:18px;background:var(--sw);transform:skewX(-18deg);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
-  #moreMenu button.swatch::after{content:attr(title);font:600 8.5px/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--c-mut);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #moreMenu button.swatch:hover{border-color:var(--c-mut);background:var(--c-surface2)}
-  #moreMenu button.swatch.active{border-color:var(--c-accent);box-shadow:0 0 0 1px var(--c-accent)}
-  #moreMenu button.swatch.active::after{color:var(--c-ink)}
 }
 
 /* FM: phone form mode — base off everywhere; ≤700 media turns it on */
@@ -265,6 +281,9 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
   .finput:focus{outline:none;border-color:var(--accent)}
   .finput.up{text-transform:uppercase}
   .fgrid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .fgrid2 .wide{grid-column:1/-1}
+  #formMode .fseg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  #formMode .fseg button{min-height:40px;text-align:center;white-space:normal}
   .fgrid4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
   .fhint{font:500 10px var(--font-ui);color:var(--mut);line-height:1.5}
   .fbtnrow{display:flex;gap:8px;align-items:center}
@@ -332,8 +351,27 @@ body.art-mode #stage,body.art-mode #saveBtn,body.art-mode #exportBtn,body.art-mo
 #artMode{position:fixed;inset:var(--tbh) 0 0 0;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px 90px}
 #artMode[hidden]{display:none}
 .am-panel{width:min(560px,100%);background:var(--c-surface2);border:1px solid var(--c-line);padding:28px 26px;display:flex;flex-direction:column;gap:20px;color-scheme:dark;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
+/* AM: artwork mode section nav. #fnav and .fnav-chip are styled only inside the
+   ≤700px media query, and #artMode renders at every width, so this surface needs
+   its own. The negative margin cancels .am-panel's 28px/26px padding so the bar
+   spans the panel edge to edge while it is stuck. */
+#amNav{position:sticky;top:0;z-index:8;display:flex;gap:8px;margin:-28px -26px 0;padding:9px 26px 7px;background:var(--c-surface2);overflow-x:auto;scrollbar-width:none;box-shadow:0 6px 8px -8px rgba(0,0,0,.7)}
+#amNav::-webkit-scrollbar{display:none}
+.amnav-chip{flex:1 0 auto;display:flex;align-items:center;justify-content:center;gap:6px;background:transparent;border:1px solid var(--c-line);color:var(--c-mut);font:700 9.5px 'Chakra Petch';letter-spacing:.12em;text-transform:uppercase;padding:11px 10px;min-height:40px;cursor:pointer;white-space:nowrap;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.amnav-chip[aria-current=step]{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
+.amstep-i{flex:none;width:16px;height:16px;border-radius:50%;border:1px solid currentColor;display:inline-flex;align-items:center;justify-content:center;font:700 9px/1 var(--font-ui)}
+.amnav-chip.done .amstep-i{background:var(--c-accent-btn);border-color:var(--c-accent-btn);color:#fff}
+.amnav-chip.locked{opacity:.45;cursor:not-allowed}
+.amprog{height:2px;background:var(--c-line-soft);margin:-16px -26px 0}
+#amProgFill{display:block;height:100%;width:33.333%;background:var(--c-accent-btn);transition:width .25s ease}
+.amsec[hidden]{display:none}
+.amfoot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:4px}
+.amsec{display:flex;flex-direction:column;gap:20px;scroll-margin-top:64px}
+.amsec + .amsec{margin-top:4px;padding-top:22px;border-top:1px solid var(--c-line-soft)}
+.am-h{margin:0;display:flex;align-items:center;gap:8px;color:var(--c-ink);font:700 12px var(--font-ui);letter-spacing:.24em;text-transform:uppercase}
+.am-h::before{content:"";width:8px;height:12px;background:var(--c-accent-btn);transform:skewX(-20deg);flex:none}
 .am-title{margin:0;font:800 20px/1.2 var(--font-display);letter-spacing:.02em;color:var(--c-ink)}
-.am-sub{margin:0;font:400 12.5px/1.55 var(--font-ui);color:var(--c-mut)}
+.am-sub{margin:0 0 6px;font:400 12.5px/1.55 var(--font-ui);color:var(--c-mut)}
 .am-drop{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
 .am-drop .faceup{gap:10px;align-items:center}
 .am-divider{height:1px;background:var(--c-line-soft);border:0;margin:0}

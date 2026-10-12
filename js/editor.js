@@ -59,13 +59,15 @@ function renderPanel(cat, { animateLast = false } = {}) {
      they never render into .slots. */
   if (cat === 'Flex') {
     const fbox = el.querySelector('.flex-add');
+    /* idempotent rebuild: the box is painted from state every render, so the
+       second and later adds (and any removal) always match state.picks.Flex */
+    fbox.innerHTML = '';
     if (!picks.length) {
-      if (!fbox.querySelector('.hint')) fbox.innerHTML = '<span class="hint">+ add flex</span>';
-    } else if (fbox.querySelector('.hint')) {
-      fbox.querySelector('.hint').remove();
+      fbox.innerHTML = '<span class="hint">+ add flex</span>';
+    } else {
       picks.forEach(p => {
         const img = new Image();
-        img.src = p.icon; img.alt = p.name; img.title = p.name;
+        img.src = p.icon; img.alt = p.name; img.title = p.name; img.dataset.id = p.id;
         fbox.appendChild(img);
       });
     }
@@ -1144,7 +1146,7 @@ CF.$('postBtn').addEventListener('click', () => {
     `PREMIUM ${t.prems || '00'} | LIMITED ${t.limited || '00'} | SEMI PREM ${t.semis || '00'} | BATTLEPASS ${t.bpass || '00'}`,
     `${t.wtr || ''} | ${t.receipts || ''} | ${t.owner || ''}`,
     `${t.cname || ''} | ${t.cstatus || ''} | ${t.date || ''}`,
-    `${t.premier || ''} | ${t.vlink || ''} | ${t.price || ''}`,
+    `${t.vlink || ''} | ${t.price || ''}`,
     counts,
     `Link: ${link}`,
     `Contact: ${t.link || ''}`
@@ -1243,6 +1245,7 @@ function artSync() {
   if (prev) { prev.hidden = !src; if (src) prev.src = src; }
   if (rm) rm.hidden = !src;
   if (pub) pub.disabled = !src;
+  amRender();
 }
 
 function enterArtMode() {
@@ -1451,7 +1454,7 @@ function artPayload() {
        the hidden card canvas) — the panel now carries them explicitly */
     wtr: on('ff-wtr') ? 'WTR: YES' : 'WTR: NO',
     receipts: on('ff-receipts') ? 'RECEIPTS: YES' : 'RECEIPTS: NO',
-    vlink: CF.$('ff-unlinked') && CF.$('ff-unlinked').checked ? 'UNLINKED' : 'LINKED',
+    vlink: CF.$('ff-unlinked') && CF.$('ff-unlinked').checked ? 'PREMIER: UNLINKED' : 'PREMIER: LINKED',
     owner: v('ff-owner') || '0TH OWNER',
     tag: v('ff-tag')
   };
@@ -1504,50 +1507,77 @@ function refreshLayout() {
   menu.querySelectorAll('.mm-item').forEach(i => i.addEventListener('click', () => setOpen(false)));
 })();
 
-/* Requirements picker — overlay modal, no layout impact. No Issue / With Issues
-   write the card's WTR field; Premier Unlinked writes vlink. Marketplace
-   filters read exactly those (browse.js normalize()). */
+/* Requirements picker — the single writer for wtr, receipts and vlink. The card
+   spans and the phone-form segs for those three open this dialog instead of
+   setting a value, so the card text and the marketplace filters can never
+   disagree. Every write goes through binSet(), so the stored string is always
+   the BIN_FIELDS canonical one. Artwork mode keeps its own checkboxes and is
+   deliberately not covered. */
+const REQ_MODAL_KEYS = ['wtr', 'receipts', 'vlink', 'cstatus'];
+
+function syncReqModal() {
+  const wtrSet = BIN_FIELDS.wtr.isSet(binText('wtr'));
+  const wtrOn = binIsOn('wtr');
+  document.querySelectorAll('#reqSeg button').forEach(b => {
+    b.classList.toggle('on', wtrSet && (b.dataset.req === 'noissue') === wtrOn);
+  });
+  const recSet = BIN_FIELDS.receipts.isSet(binText('receipts'));
+  const recOn = binIsOn('receipts');
+  document.querySelectorAll('#reqRecSeg button').forEach(b => {
+    b.classList.toggle('on', recSet && (b.dataset.rec === 'yes') === recOn);
+  });
+  const csSet = BIN_FIELDS.cstatus.isSet(binText('cstatus'));
+  const csOn = binIsOn('cstatus');
+  document.querySelectorAll('#reqCsSeg button').forEach(b => {
+    b.classList.toggle('on', csSet && (b.dataset.cs === 'ready') === csOn);
+  });
+  const vlSet = BIN_FIELDS.vlink.isSet(binText('vlink'));
+  const vlOn = binIsOn('vlink');
+  document.querySelectorAll('#reqVlinkSeg button').forEach(b => {
+    b.classList.toggle('on', vlSet && (b.dataset.vl === 'unlinked') === vlOn);
+  });
+}
+
+function openReqModal() {
+  const m = CF.$('reqModal');
+  if (!m) return;
+  m.hidden = false;
+  syncReqModal();
+}
+
 (function () {
   const modal = CF.$('reqModal');
   const btn = CF.$('reqMenuBtn');
   if (!modal || !btn) return;
 
-  function fieldText(k) {
-    if (state.texts[k] != null && state.texts[k] !== '') return String(state.texts[k]);
-    const el = card.querySelector('[data-key="' + k + '"]');
-    return el ? el.textContent : '';
-  }
-  function setField(k, v) {
-    state.texts[k] = v;
-    const el = card.querySelector('[data-key="' + k + '"]');
-    if (el) el.textContent = v;
-    const input = document.querySelector('#formMode input[data-fkey="' + k + '"]');
-    if (input) input.value = v;
-    if (BIN_FIELDS[k]) syncBinSegs();
-  }
-  function sync() {
-    const wtr = fieldText('wtr');
-    const vlink = fieldText('vlink');
-    const no = /yes/i.test(wtr);
-    const issues = /no/i.test(wtr);
-    document.querySelectorAll('#reqSeg button').forEach(b => {
-      b.classList.toggle('on', b.dataset.req === 'noissue' ? no : issues);
-    });
-    const prem = CF.$('rqPrem');
-    if (prem) prem.checked = /unlinked/i.test(vlink);
-  }
-
-  btn.addEventListener('click', () => { modal.hidden = false; sync(); });
+  btn.addEventListener('click', openReqModal);
   const close = CF.$('reqClose');
   if (close) close.addEventListener('click', () => { modal.hidden = true; });
+
   document.querySelectorAll('#reqSeg button').forEach(b => {
     b.addEventListener('click', () => {
-      setField('wtr', b.dataset.req === 'noissue' ? 'WTR: YES' : 'WTR: NO');
-      sync();
+      binSet('wtr', b.dataset.req === 'noissue');
+      syncReqModal();
     });
   });
-  const prem = CF.$('rqPrem');
-  if (prem) prem.addEventListener('change', () => { setField('vlink', prem.checked ? 'UNLINKED' : 'LINKED'); });
+  document.querySelectorAll('#reqRecSeg button').forEach(b => {
+    b.addEventListener('click', () => {
+      binSet('receipts', b.dataset.rec === 'yes');
+      syncReqModal();
+    });
+  });
+  document.querySelectorAll('#reqCsSeg button').forEach(b => {
+    b.addEventListener('click', () => {
+      binSet('cstatus', b.dataset.cs === 'ready');
+      syncReqModal();
+    });
+  });
+  document.querySelectorAll('#reqVlinkSeg button').forEach(b => {
+    b.addEventListener('click', () => {
+      binSet('vlink', b.dataset.vl === 'unlinked');
+      syncReqModal();
+    });
+  });
 })();
 
 /* ── B: explicit price state ──────────────────────────────────────────
@@ -1661,10 +1691,12 @@ function applyPriceToCard() {
 })();
 
 /* TT-110 / FM: relocate live topbar nodes (never clone) to fit each width band.
-   >760: tb-left original order (logo→themes→layoutSel→layoutBadge) + pubswitch last in More.
-   701-760: themes prepend + pubswitch last in More; layoutSel/badge stay in tb-left.
+   >1080: tb-left original order (logo→themes→layoutSel→layoutBadge) + pubswitch last in More.
+   701-1080: themes prepend + layoutBadge before pubswitch in More; layoutSel stays in
+   tb-left, so the topbar keeps one row on tablets.
    ≤700: themes→#fThemeSlot, layoutSel→#fLayoutSlot, layoutBadge→#fBadgeSlot, pubswitch→#fPubSlot. */
 const phoneMQ = window.matchMedia('(max-width:760px)');
+const tabletMQ = window.matchMedia('(max-width:1080px)');
 const phoneMq700 = window.matchMedia('(max-width:700px)');
 const themesEl = document.querySelector('.themes');
 const tbLeft = document.querySelector('.tb-left');
@@ -1679,11 +1711,13 @@ function placeRelocatables() {
     CF.$('fLayoutSlot').appendChild(layoutSelEl);
     CF.$('fBadgeSlot').appendChild(layoutBadgeEl);
     CF.$('fPubSlot').appendChild(pubswitchEl);
-  } else if (phoneMQ.matches) {
+  } else if (tabletMQ.matches) {
     moreMenu.prepend(themesEl);
     tbLeft.insertBefore(layoutSelEl, formPrevEl);
-    tbLeft.insertBefore(layoutBadgeEl, formPrevEl);
+    /* adopt pubswitch before using it as an insert reference: arriving from
+       phone width it still lives in #fPubSlot, and insertBefore throws otherwise */
     moreMenu.appendChild(pubswitchEl);
+    moreMenu.insertBefore(layoutBadgeEl, pubswitchEl);
   } else {
     tbLeft.insertBefore(themesEl, formPrevEl);
     tbLeft.insertBefore(layoutSelEl, formPrevEl);
@@ -1693,6 +1727,7 @@ function placeRelocatables() {
 }
 placeRelocatables();
 phoneMQ.addEventListener('change', placeRelocatables);
+tabletMQ.addEventListener('change', placeRelocatables);
 phoneMq700.addEventListener('change', e => {
   placeRelocatables();
   if (e.matches) {
@@ -1883,17 +1918,19 @@ function syncBinSegs() {
   });
 }
 document.querySelectorAll('#formMode .fseg[data-fseg]').forEach(seg => {
+  const k = seg.dataset.fseg;
   seg.addEventListener('click', e => {
+    if (REQ_MODAL_KEYS.includes(k)) { openReqModal(); return; }
     const b = e.target.closest('button[data-val]');
-    if (b) binSet(seg.dataset.fseg, b.dataset.val === 'on');
+    if (b) binSet(k, b.dataset.val === 'on');
   });
 });
 card.querySelectorAll('.bintog').forEach(el => {
   const k = el.dataset.key;
-  const flip = () => binSet(k, !binIsOn(k));
-  el.addEventListener('click', flip);
+  const act = REQ_MODAL_KEYS.includes(k) ? openReqModal : () => binSet(k, !binIsOn(k));
+  el.addEventListener('click', act);
   el.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); act(); }
   });
 });
 
@@ -1953,6 +1990,62 @@ document.getElementById('fnav')?.addEventListener('click', e => {
   const sec = document.getElementById('fsec-' + chip.dataset.sec);
   if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
+
+/* Artwork mode is a three-step wizard. Only one section is visible at a time.
+   Movement is linear forward (Next, gated on the step's minimum) and free back
+   (Back button, or clicking any already-reached chip). Chips beyond the highest
+   reached step are locked. A step shows a check once its minimum is met: Details
+   needs an uploaded image; Requirements and Publish count as met once reached,
+   because their fields are optional tags. */
+const AM_STEPS = ['details', 'requirements', 'publish'];
+let amStep = 0;
+let amMax = 0;
+
+function amImageOk() { return !!(face.blob || face.existing); }
+function amStepMet(i) { return i === 0 ? amImageOk() : amMax >= i; }
+
+function amRender() {
+  const chips = document.querySelectorAll('#amNav .amnav-chip');
+  AM_STEPS.forEach((key, i) => {
+    const sec = document.getElementById('amsec-' + key);
+    if (sec) sec.hidden = i !== amStep;
+    const chip = chips[i];
+    if (!chip) return;
+    if (i === amStep) chip.setAttribute('aria-current', 'step');
+    else chip.removeAttribute('aria-current');
+    const done = amStepMet(i) && i !== amStep;
+    chip.classList.toggle('done', done);
+    chip.classList.toggle('locked', i > amMax);
+    const ind = chip.querySelector('.amstep-i');
+    if (ind) ind.textContent = done ? '\u2713' : String(i + 1);
+  });
+  const fill = CF.$('amProgFill');
+  if (fill) fill.style.width = (((amStep + 1) / AM_STEPS.length) * 100) + '%';
+  const back = CF.$('amBack');
+  if (back) back.hidden = amStep === 0;
+  const next = CF.$('amNext');
+  if (next) { next.hidden = amStep === AM_STEPS.length - 1; next.disabled = !amStepMet(amStep); }
+}
+
+function amGo(i) {
+  if (i < 0 || i >= AM_STEPS.length || i > amMax) return;
+  amStep = i;
+  amRender();
+}
+
+document.getElementById('amNav')?.addEventListener('click', e => {
+  const chip = e.target.closest('.amnav-chip');
+  if (!chip) return;
+  const i = AM_STEPS.indexOf(chip.dataset.asec);
+  if (i < 0 || i > amMax) return;
+  amGo(i);
+});
+CF.$('amNext')?.addEventListener('click', () => {
+  if (!amStepMet(amStep)) return;
+  amMax = Math.max(amMax, amStep + 1);
+  amGo(amStep + 1);
+});
+CF.$('amBack')?.addEventListener('click', () => amGo(amStep - 1));
 
 CF.$('layoutSel').addEventListener('change', () => {
   state.layout = CF.$('layoutSel').value;

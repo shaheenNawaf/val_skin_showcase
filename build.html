@@ -164,9 +164,9 @@
         <div class="stat"><label>SEMI PREM</label><b data-key="semis" contenteditable>00</b></div>
         <div class="stat"><label>BATTLEPASS</label><b data-key="bpass" contenteditable>00</b><button class="auto" data-auto="bpass" title="Auto-count battlepass skins">auto</button></div>
       </div>
-      <div class="inforow"><span data-key="wtr" class="bintog" role="button" tabindex="0" title="Click to toggle WTR availability">WTR: YES</span><span data-key="receipts" class="bintog" role="button" tabindex="0" title="Click to toggle receipts availability">RECEIPTS: YES</span><span data-key="owner" contenteditable>0TH OWNER</span></div>
+      <div class="inforow"><span data-key="wtr" class="bintog" role="button" tabindex="0" title="Click to open Requirements">WTR: YES</span><span data-key="receipts" class="bintog" role="button" tabindex="0" title="Click to open Requirements">RECEIPTS: YES</span><span data-key="owner" contenteditable>0TH OWNER</span></div>
       <div class="inforow"><span data-key="cname" contenteditable>ACCOUNT DESCRIPTION</span><span class="warn bintog" data-key="cstatus" role="button" tabindex="0" title="Click to toggle change-name readiness">CHANGE NAME: NOT READY</span><span data-key="date" contenteditable>2/6/2026</span></div>
-      <div class="inforow"><span class="bintog" data-key="vlink" role="button" tabindex="0" title="Click to toggle Premier link">PREMIER: UNLINKED</span><span data-key="price" contenteditable>PRICE OFFER</span><span class="padcell" aria-hidden="true"></span></div>
+      <div class="inforow"><span class="bintog" data-key="vlink" role="button" tabindex="0" title="Click to open Requirements">PREMIER: UNLINKED</span><span data-key="price" contenteditable>PRICE OFFER</span><span class="padcell" aria-hidden="true"></span></div>
     </div>
     <div class="boxf rankbox">
       <div class="rankcols">
@@ -200,7 +200,7 @@
   <nav id="fnav" aria-label="Form sections">
     <button type="button" class="fnav-chip" data-sec="identity" aria-current="true">Identity</button>
     <button type="button" class="fnav-chip" data-sec="ranks">Ranks</button>
-    <button type="button" class="fnav-chip" data-sec="meta">Meta</button>
+    <button type="button" class="fnav-chip" data-sec="meta">Requirements</button>
     <button type="button" class="fnav-chip" data-sec="stats">Stats</button>
     <button type="button" class="fnav-chip" data-sec="skins">Skins</button>
     <button type="button" class="fnav-chip" data-sec="art">Art</button>
@@ -238,31 +238,30 @@
     </div>
   </section>
 
-  <section class="fsec" id="fsec-meta"><h2>Account meta</h2>
+  <section class="fsec" id="fsec-meta"><h2>Account requirements</h2>
     <div class="fgrid2">
       <div class="frow"><label id="f-wtr-label">WTR</label>
-        <div class="fseg" data-fseg="wtr" role="group" aria-labelledby="f-wtr-label">
+        <div class="fseg" data-fseg="wtr" role="group" aria-labelledby="f-wtr-label" title="Click to open Requirements">
           <button type="button" data-val="on">Yes</button>
           <button type="button" data-val="off">No</button>
         </div>
       </div>
       <div class="frow"><label id="f-receipts-label">Receipts</label>
-        <div class="fseg" data-fseg="receipts" role="group" aria-labelledby="f-receipts-label">
+        <div class="fseg" data-fseg="receipts" role="group" aria-labelledby="f-receipts-label" title="Click to open Requirements">
           <button type="button" data-val="on">Yes</button>
           <button type="button" data-val="off">No</button>
         </div>
       </div>
       <div class="frow"><label for="f-owner">Owner</label><input class="finput up" id="f-owner" data-fkey="owner" value="0TH OWNER" type="text" autocomplete="off"></div>
       <div class="frow"><label for="f-date">Name-change date</label><input class="finput up" id="f-date" data-fkey="date" value="2/6/2026" type="text" autocomplete="off"></div>
-      <div class="frow"><label id="f-cstatus-label">Change name</label>
+      <div class="frow wide"><label id="f-cstatus-label">Change name</label>
         <div class="fseg" data-fseg="cstatus" role="group" aria-labelledby="f-cstatus-label">
-          <button type="button" data-val="on">Change name ready</button>
+          <button type="button" data-val="on">Ready</button>
           <button type="button" data-val="off">Not ready</button>
         </div>
       </div>
-      <div class="frow"><label for="f-premier">Premier</label><input class="finput up" id="f-premier" data-fkey="premier" value="PREMIER" type="text" autocomplete="off"></div>
-      <div class="frow"><label id="f-vlink-label">Premier link</label>
-        <div class="fseg" data-fseg="vlink" role="group" aria-labelledby="f-vlink-label">
+      <div class="frow wide"><label id="f-vlink-label">Premier link</label>
+        <div class="fseg" data-fseg="vlink" role="group" aria-labelledby="f-vlink-label" title="Click to open Requirements">
           <button type="button" data-val="on">Unlinked</button>
           <button type="button" data-val="off">Linked</button>
         </div>
@@ -304,42 +303,61 @@
 <!-- v1.5.2: artwork mode is its own surface — no card editor behind it -->
 <div id="artMode" hidden>
   <div class="am-panel">
+    <nav id="amNav" aria-label="Artwork steps">
+      <button type="button" class="amnav-chip" data-asec="details" aria-current="step"><span class="amstep-i">1</span><span class="amstep-t">Details</span></button>
+      <button type="button" class="amnav-chip" data-asec="requirements"><span class="amstep-i">2</span><span class="amstep-t">Requirements</span></button>
+      <button type="button" class="amnav-chip" data-asec="publish"><span class="amstep-i">3</span><span class="amstep-t">Publish</span></button>
+    </nav>
+    <div class="amprog" aria-hidden="true"><i id="amProgFill"></i></div>
     <h2 class="am-title">Artwork listing</h2>
     <p class="am-sub">The uploaded image is the face of this listing on the marketplace and the listing page. There is no card builder in this mode.</p>
-    <div class="am-drop">
-      <img id="amPrev" alt="Artwork preview" hidden>
-      <div class="faceup">
-        <button type="button" class="fbtn" id="amFileBtn">Upload artwork image…</button>
-        <input type="file" id="amFile" accept="image/png,image/jpeg,image/webp" hidden>
-        <button type="button" class="fbtn" id="amRemove" hidden>Remove image</button>
+    <section class="amsec" id="amsec-details">
+      <h3 class="am-h">Details</h3>
+      <div class="am-drop">
+        <img id="amPrev" alt="Artwork preview" hidden>
+        <div class="faceup">
+          <button type="button" class="fbtn" id="amFileBtn">Upload artwork image…</button>
+          <input type="file" id="amFile" accept="image/png,image/jpeg,image/webp" hidden>
+          <button type="button" class="fbtn" id="amRemove" hidden>Remove image</button>
+        </div>
       </div>
-    </div>
-    <div id="faceFields">
+      <div id="faceFields">
+        <div class="ffgrid">
+          <div class="frow"><label for="ff-code">Listing code</label><input class="finput up" id="ff-code" type="text" autocomplete="off" placeholder="K486"></div>
+          <div class="frow"><label for="ff-name">Account description</label><input class="finput" id="ff-name" type="text" autocomplete="off" placeholder="Buyer-facing description"></div>
+          <div class="frow"><label for="ff-price">Price</label><input class="finput up" id="ff-price" type="text" autocomplete="off" placeholder="250 or offers"></div>
+          <div class="frow"><label for="ff-cur">Currency</label><select class="finput" id="ff-cur"><option>PHP</option><option>USD</option><option>EUR</option><option>GBP</option><option>JPY</option></select></div>
+          <div class="frow"><label for="ff-rank">Current rank</label><select class="finput" id="ff-rank"><option value="">— not set —</option></select></div>
+          <div class="frow"><label for="ff-prank">Peak rank</label><select class="finput" id="ff-prank"><option value="">— not set —</option></select></div>
+          <div class="frow"><label for="ff-contact">Contact link</label><input class="finput up" id="ff-contact" inputmode="url" type="text" autocomplete="off" placeholder="https://facebook.com/…"></div>
+        </div>
+      </div>
+      <div class="am-divider" role="separator"></div>
       <div class="ffgrid">
-        <div class="frow"><label for="ff-code">Listing code</label><input class="finput up" id="ff-code" type="text" autocomplete="off" placeholder="K486"></div>
-        <div class="frow"><label for="ff-name">Account description</label><input class="finput" id="ff-name" type="text" autocomplete="off" placeholder="Buyer-facing description"></div>
-        <div class="frow"><label for="ff-price">Price</label><input class="finput up" id="ff-price" type="text" autocomplete="off" placeholder="250 or offers"></div>
-        <div class="frow"><label for="ff-cur">Currency</label><select class="finput" id="ff-cur"><option>PHP</option><option>USD</option><option>EUR</option><option>GBP</option><option>JPY</option></select></div>
-        <div class="frow"><label for="ff-rank">Current rank</label><select class="finput" id="ff-rank"><option value="">— not set —</option></select></div>
-        <div class="frow"><label for="ff-prank">Peak rank</label><select class="finput" id="ff-prank"><option value="">— not set —</option></select></div>
-        <div class="frow"><label for="ff-contact">Contact link</label><input class="finput up" id="ff-contact" inputmode="url" type="text" autocomplete="off" placeholder="https://facebook.com/…"></div>
+        <div class="frow"><label for="ff-owner">Owner count</label><input class="finput up" id="ff-owner" type="text" autocomplete="off" placeholder="0TH OWNER"></div>
+        <div class="frow"><label for="ff-tag">Seller tag</label><input class="finput up" id="ff-tag" type="text" autocomplete="off" placeholder="FS/FT+ADD"></div>
       </div>
-    </div>
-    <div class="am-divider" role="separator"></div>
-    <div class="ffgrid">
-      <div class="frow"><label for="ff-owner">Owner count</label><input class="finput up" id="ff-owner" type="text" autocomplete="off" placeholder="0TH OWNER"></div>
-      <div class="frow"><label for="ff-tag">Seller tag</label><input class="finput up" id="ff-tag" type="text" autocomplete="off" placeholder="FS/FT+ADD"></div>
-    </div>
-    <div class="am-checks">
       <label class="ffobo"><input type="checkbox" id="ff-obo"> Open to offers</label>
-      <label class="ffobo"><input type="checkbox" id="ff-wtr" checked> WTR available</label>
-      <label class="ffobo"><input type="checkbox" id="ff-receipts" checked> Receipts available</label>
-      <label class="ffobo"><input type="checkbox" id="ff-unlinked"> Premier unlinked</label>
+    </section>
+    <section class="amsec" id="amsec-requirements" hidden>
+      <h3 class="am-h">Requirements</h3>
+      <div class="am-checks">
+        <label class="ffobo"><input type="checkbox" id="ff-wtr" checked> WTR available</label>
+        <label class="ffobo"><input type="checkbox" id="ff-receipts" checked> Receipts available</label>
+        <label class="ffobo"><input type="checkbox" id="ff-unlinked"> Premier unlinked</label>
+      </div>
+    </section>
+    <section class="amsec" id="amsec-publish" hidden>
+      <h3 class="am-h">Publish</h3>
       <label class="ffobo"><input type="checkbox" id="ff-feature"> Feature on marketplace (unpins the current featured)</label>
+      <button id="amPublish" type="button" disabled>Publish artwork</button>
+      <button class="am-alt" id="amToNormal" type="button">Switch to normal card mode (discards the artwork)</button>
+      <p id="amMsg" class="ag-msg" role="status"></p>
+    </section>
+    <div class="amfoot">
+      <button type="button" class="fbtn" id="amBack">Back</button>
+      <button type="button" class="fbtn accent" id="amNext">Next</button>
     </div>
-    <button id="amPublish" type="button" disabled>Publish artwork</button>
-    <button class="am-alt" id="amToNormal" type="button">Switch to normal card mode (discards the artwork)</button>
-    <p id="amMsg" class="ag-msg" role="status"></p>
   </div>
 </div>
 
@@ -382,12 +400,31 @@
       <button id="reqClose" class="mclose" aria-label="Close requirements picker"><svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M2 2l10 10M12 2 2 12" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
     </div>
     <div class="mbody noladder">
-      <p class="fhint">Tag this listing for the marketplace filters — buyers shop by these. No Issue / With Issues write the card's WTR field; Premier Unlinked writes the PREMIER | UNLINKED field.</p>
-      <div class="fseg" id="reqSeg">
-        <button type="button" data-req="noissue" class="on">No Issue</button>
-        <button type="button" data-req="issues">With Issues</button>
+      <p class="fhint">Tag this listing's account attributes. Buyers filter by WTR, receipts and Premier; change-name readiness is tracked here too. This dialog is the only place these are set; clicking those fields on the card or in the phone form brings you here.</p>
+      <div class="frow"><label id="rqWtrLabel">WTR</label>
+        <div class="fseg" id="reqSeg" role="group" aria-labelledby="rqWtrLabel">
+          <button type="button" data-req="noissue" class="on">No Issue</button>
+          <button type="button" data-req="issues">With Issues</button>
+        </div>
       </div>
-      <label class="ffobo"><input type="checkbox" id="rqPrem"> Premier Unlinked</label>
+      <div class="frow"><label id="rqRecLabel">Receipts</label>
+        <div class="fseg" id="reqRecSeg" role="group" aria-labelledby="rqRecLabel">
+          <button type="button" data-rec="yes" class="on">Yes</button>
+          <button type="button" data-rec="no">No</button>
+        </div>
+      </div>
+      <div class="frow"><label id="rqCsLabel">Change name</label>
+        <div class="fseg" id="reqCsSeg" role="group" aria-labelledby="rqCsLabel">
+          <button type="button" data-cs="ready">Ready</button>
+          <button type="button" data-cs="notready">Not ready</button>
+        </div>
+      </div>
+      <div class="frow"><label id="rqVlinkLabel">Premier</label>
+        <div class="fseg" id="reqVlinkSeg" role="group" aria-labelledby="rqVlinkLabel">
+          <button type="button" data-vl="unlinked">Unlinked</button>
+          <button type="button" data-vl="linked">Linked</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

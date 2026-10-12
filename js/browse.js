@@ -339,7 +339,7 @@ function trustChips(l) {
     c = (f.wtr ? '<span class="hasdot ok">With WTR</span>' : '<span class="hasdot bad">No WTR</span>')
       + (f.receipts ? '<span class="hasdot ok">With Receipts</span>' : '<span class="hasdot bad">No Receipts</span>');
   }
-  if (f.premierUnlinked) c += '<span class="hasdot warn">Premier unlinked</span>';
+  if (f.premierUnlinked) c += '<span class="hasdot bad">Premier unlinked</span>';
   return '<div class="gc-chips">' + c + '</div>';
 }
 
