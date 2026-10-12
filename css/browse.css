@@ -119,7 +119,9 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 
 .gcard,.arow{font:inherit;color:inherit;text-align:left;width:100%;cursor:pointer;background:none}
 .agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
-.gcard{background:var(--c-surface);border:1px solid var(--c-line);display:flex;flex-direction:column;text-decoration:none;color:inherit;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
+/* min-width:0 drops the grid item's automatic minimum so the 1fr track can
+   shrink below the nowrap ranks row; overflow:hidden clips outlier strings */
+.gcard{background:var(--c-surface);border:1px solid var(--c-line);display:flex;flex-direction:column;min-width:0;overflow:hidden;text-decoration:none;color:inherit;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
 /* The strip is the THEME accent, not a content tier. tierFor() read the
    variant level while the class names meant content tier, and .tt-exclusive
    was unreachable dead CSS. --th-accent is already set per card by

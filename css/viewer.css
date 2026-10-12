@@ -55,6 +55,7 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
      measured-chrome offset #mcard uses) while art mode hides mcard */
   body.art-mode #stage{display:block;margin:calc(var(--tbh) + 12px) 12px 64px}
   #mcard{display:block;margin:calc(var(--tbh) + 12px) 12px 64px;color:var(--ink);font-size:15px}
+  .mload{padding:56px 16px;text-align:center;color:var(--mut);font:600 12px var(--font-ui);letter-spacing:.08em}
   /* Plan 001: condensed head — identity + status + ranks/lvl + stats + meta */
   .mhead2{flex:none;margin:8px 12px 0;background:linear-gradient(180deg,var(--card1),var(--card2));border:1px solid var(--line);padding:8px 10px;display:flex;flex-direction:column;gap:6px;
   clip-path:polygon(0 0,calc(100% - var(--notch-lg)) 0,100% var(--notch-lg),100% 100%,var(--notch-lg) 100%,0 calc(100% - var(--notch-lg)))}

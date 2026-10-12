@@ -1089,6 +1089,7 @@ function initArtMode(src) {
 const slug = new URLSearchParams(location.search).get('slug');
 if (!slug) {
   CF.status('No listing specified — open a published share link.', 'err');
+  if (mcard) mcard.innerHTML = '<div class="mload">No listing specified — open a published share link.</div>';
 } else {
   const wmSlug = card.querySelector('[data-wm="slug"]');
   if (wmSlug) wmSlug.textContent = 'Listing ' + slug;
@@ -1120,6 +1121,7 @@ if (!slug) {
     document.querySelectorAll('#card img').forEach(img => { img.remove(); });
     CF.$('viewBadge').hidden = true;
     CF.$('contactBtn').hidden = true;
+    if (mcard) mcard.innerHTML = '<div class="mload">Listing not found.</div>';
   } else {
     renderListing(listing);
     renderMobile(listing);

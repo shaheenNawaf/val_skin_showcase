@@ -347,7 +347,7 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 #authGate{position:fixed;inset:0;z-index:2000;background:rgba(11,15,20,.97);display:flex;align-items:center;justify-content:center;padding:24px}
 #authGate[hidden]{display:none}
 /* v1.5.2: artwork mode = its own surface; the card editor chrome steps aside */
-body.art-mode #stage,body.art-mode #saveBtn,body.art-mode #exportBtn,body.art-mode #publishWrap,body.art-mode #publishBtn,body.art-mode #formPrevBtn{display:none}
+body.art-mode #stage,body.art-mode #saveBtn,body.art-mode #exportBtn,body.art-mode #publishWrap,body.art-mode #publishBtn,body.art-mode #formPrevBtn,body.art-mode #formMode{display:none}
 #artMode{position:fixed;inset:var(--tbh) 0 0 0;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px 90px}
 #artMode[hidden]{display:none}
 .am-panel{width:min(560px,100%);background:var(--c-surface2);border:1px solid var(--c-line);padding:28px 26px;display:flex;flex-direction:column;gap:20px;color-scheme:dark;clip-path:polygon(var(--notch-lg) 0,100% 0,100% calc(100% - var(--notch-lg)),calc(100% - var(--notch-lg)) 100%,0 100%,0 var(--notch-lg))}
