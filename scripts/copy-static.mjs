@@ -4,7 +4,7 @@ import { execSync } from 'node:child_process';
 const FILES = ['index.html', 'build.html', 'view.html', 'dashboard.html', 'sold.html', 'terms.html', 'privacy.html', '404.html'];
 const DIRS = ['css', 'js', 'fonts'];
 /* non-HTML assets copied verbatim (no buildstamp injection) */
-const RAW = ['_redirects'];
+const RAW = ['_redirects', '_headers'];
 
 // ── build metadata: Netlify env vars first, git fallback for local builds ──
 function git(args) {

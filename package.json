@@ -1,12 +1,13 @@
 {
   "name": "cardforge",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "type": "module",
   "description": "Valorant inventory showcase cards - build, export, publish, sell.",
   "scripts": {
     "dev": "npx http-server -p 3000 -c-1",
-    "build": "node scripts/copy-static.mjs",
+    "build": "node scripts/check-versions.mjs && node scripts/copy-static.mjs",
     "lint": "eslint .",
+    "check:versions": "node scripts/check-versions.mjs",
     "check:export": "node scripts/check-export.mjs"
   },
   "keywords": [

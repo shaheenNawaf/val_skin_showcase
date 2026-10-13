@@ -1,7 +1,7 @@
 // CardForge editor — card builder, PNG export, draft storage, listing publish.
-import * as CF from './shared.js?v=1.6.2';
-import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js';
-import { BP_SKINS } from './vendor/bp-skins.js';
+import * as CF from './shared.js?v=1.6.3';
+import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js?v=1.6.3';
+import { BP_SKINS } from './vendor/bp-skins.js?v=1.6.3';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -794,13 +794,32 @@ CF.$('iRun').addEventListener('click', async () => {
     return;
   }
   const ent = CF.$('iEnt').value.trim() || parsed.entitlements || '';
+  /* riot-import now verifies the caller: Supabase rejects a request with no
+     valid session, then the function checks seller_emails. Read the session
+     first so a signed-out visitor gets the sign-in gate instead of a 401 they
+     cannot act on. The token is attached to one request header and is never
+     stored, logged or shown. */
+  let accessToken = '';
+  if (supabase) {
+    try {
+      const { data } = await supabase.auth.getSession();
+      accessToken = (data && data.session && data.session.access_token) || '';
+    } catch { accessToken = ''; }
+  }
+  if (!accessToken) {
+    iStatus('');
+    importModal.hidden = true;
+    CF.status('Importing needs the signed-in seller. Sign in, then run the import again.', 'err');
+    initAuthGate({ force: true });
+    return;
+  }
   btn.disabled = true;
   btn.textContent = 'Importing…';
   iStatus('Importing account — checking your Riot ID, inventory and rank. This takes a few seconds.', 'busy');
   try {
     const r = await fetch(CONFIG.SUPABASE_URL + '/functions/v1/riot-import', {
       method: 'POST',
-      headers: { apikey: CONFIG.SUPABASE_ANON_KEY, 'content-type': 'application/json' },
+      headers: { apikey: CONFIG.SUPABASE_ANON_KEY, Authorization: 'Bearer ' + accessToken, 'content-type': 'application/json' },
       body: JSON.stringify({
         accessToken: parsed.token,
         entitlements: ent,

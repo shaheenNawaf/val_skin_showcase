@@ -14,7 +14,25 @@ export const $ = (id) => document.getElementById(id);
 // v1.6 dedup: single copies of constants that were duplicated across the page
 // modules. Each was verified byte-identical before merging (see qa note).
 export const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>";
-export const IMGERR = "onerror=\"this.setAttribute('data-imgfail','1');this.closest('[data-imgwrap]')?.setAttribute('data-imgfail','1')\"";
+/* CSP ships `script-src 'self'`, which blocks inline onerror attributes. The
+   broken-image fallback moved to the capture-phase listener below. The constant
+   stays exported (now empty) so browse.js, dashboard.js and sold.js concatenate
+   it unchanged and emit no attribute at all. */
+export const IMGERR = '';
+
+/* Error events do not bubble, so the listener must be installed in the capture
+   phase to see an <img> failure anywhere in the document. Wired once, guarded by
+   a dataset flag the same way initStatusDismiss() guards itself. */
+if (typeof document !== 'undefined' && !document.documentElement.dataset.imgFailWired) {
+  document.documentElement.dataset.imgFailWired = '1';
+  document.addEventListener('error', (e) => {
+    const el = e.target;
+    if (!el || el.tagName !== 'IMG') return;
+    el.setAttribute('data-imgfail', '1');
+    const wrap = el.closest('[data-imgwrap]');
+    if (wrap) wrap.setAttribute('data-imgfail', '1');
+  }, true);
+}
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const CUR_SYMBOL = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', PHP: '₱' };
 export const THEME_LABELS = { protocol: 'High Ranks', holo: 'With Champions', reaver: 'Latest Skins', oni: 'Budget-friendly', arctic: 'High Prem', standard: 'Normal' };
@@ -501,7 +519,7 @@ export function resizeToDataUrl(file, max) {
 /* X2: builds the scan-for-live-listing QR footer appended to full-height PNG exports. */
 async function makeQrFoot(url) {
   try {
-    const mod = await import('./vendor/qrcode-generator.mjs');
+    const mod = await import('./vendor/qrcode-generator.mjs?v=1.6.3');
     const qrcode = mod.default || mod.qrcode || mod;
     const qr = qrcode(0, 'M');
     qr.addData(String(url));

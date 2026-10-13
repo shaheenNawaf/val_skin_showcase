@@ -1,0 +1,23 @@
+# CardForge response headers. Netlify applies this file from the publish
+# directory; scripts/copy-static.mjs copies it into dist/ via the RAW list.
+#
+# HTML keeps Netlify's default (public, max-age=0, must-revalidate) so a deploy is
+# picked up on the next request. css/, js/ and fonts/ are immutable for a year,
+# which is safe only because every reference carries a ?v= query that the release
+# process bumps. scripts/check-versions.mjs asserts that at build time.
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' https: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://valorant-api.com https://media.valorant-api.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+
+/css/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/js/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable

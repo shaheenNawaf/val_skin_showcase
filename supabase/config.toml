@@ -1,0 +1,20 @@
+# Supabase project configuration.
+#
+# Only the edge-function JWT policy is pinned here. The database is managed
+# through supabase/migrations/*.sql, applied by hand with
+# `supabase db query --linked --file <path>` (see HANDOVER.md).
+#
+# verify_jwt = true means the platform rejects any request without a valid
+# Supabase session token before the handler runs. riot-import depends on it:
+# the handler's seller allow-list check reads the caller's identity from that
+# token. Deploying with --no-verify-jwt overrides this file and reopens the
+# endpoint to the public.
+project_id = "psxpxcqrepkcrymwveok"
+
+[functions.riot-import]
+verify_jwt = true
+
+# skin-sync is called by pg_cron with a shared secret header and has no user
+# session to present (SETUP.md:42, supabase/functions/skin-sync/index.ts:47).
+[functions.skin-sync]
+verify_jwt = false

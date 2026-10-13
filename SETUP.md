@@ -68,12 +68,13 @@ supabase db push        # applies supabase/migrations/4_skin_levels.sql + 5_cata
 The editor's **Import account** button pulls level, rank, wallet, equipped player card/buddies, the owned-skin list and owned skin variants straight from a seller's Riot access token (Explorant-style). Riot's private API blocks browser CORS, so the call is proxied by an edge function:
 
 ```bash
-supabase functions deploy riot-import --project-ref <project-ref> --no-verify-jwt
+supabase functions deploy riot-import --project-ref <project-ref>
 ```
 
 How it works / safety notes:
 
 - The seller pastes an access token (plus an optional entitlements token for wallet + owned items) into the import modal; the region defaults to Auto-detect — pasting the full opt_in redirect URL (which carries an `id_token`) resolves the region via Riot's affinity service, with an all-shard progression scan as the fallback. Tokens expire in ~1h.
+- The function is authenticated. It deploys with JWT verification on (`supabase/config.toml` pins `verify_jwt = true` for `riot-import`), so Supabase rejects any request without a valid session token, and the handler then forwards that token to the `am_i_seller()` RPC so only an email in `seller_emails` can run an import. The editor therefore sends the signed-in seller's access token and opens the sign-in gate when nobody is signed in. **Never deploy with `--no-verify-jwt`**: that flag overrides `config.toml` and reopens the endpoint to the public as an unauthenticated proxy to Riot.
 - The token is sent once over HTTPS to `riot-import`, used in memory against `auth.riotgames.com` / `pd.<shard>.a.pvp.net`, and **never logged, stored or published**. Only the derived snapshot (level, rank tier numbers, balances, owned UUIDs) returns to the browser.
 - Without Supabase configured the button explains that the feature is unavailable; everything else keeps working in localStorage mode.
 - Getting tokens: any Riot auth helper that outputs a Bearer token + entitlements JWT works (see the community docs linked from the modal). Treat tokens like passwords — anyone holding one can read the account.
