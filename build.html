@@ -240,6 +240,12 @@
 
   <section class="fsec" id="fsec-meta"><h2>Account requirements</h2>
     <div class="fgrid2">
+      <div class="frow"><label id="f-atype-label">Account type</label>
+        <div class="fseg" data-fseg="atype" role="group" aria-labelledby="f-atype-label" title="Click to open Requirements">
+          <button type="button" data-val="on">With Issue</button>
+          <button type="button" data-val="off">No Issue</button>
+        </div>
+      </div>
       <div class="frow"><label id="f-wtr-label">WTR</label>
         <div class="fseg" data-fseg="wtr" role="group" aria-labelledby="f-wtr-label" title="Click to open Requirements">
           <button type="button" data-val="on">Yes</button>
@@ -400,11 +406,17 @@
       <button id="reqClose" class="mclose" aria-label="Close requirements picker"><svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M2 2l10 10M12 2 2 12" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
     </div>
     <div class="mbody noladder">
-      <p class="fhint">Tag this listing's account attributes. Buyers filter by WTR, receipts and Premier; change-name readiness is tracked here too. This dialog is the only place these are set; clicking those fields on the card or in the phone form brings you here.</p>
+      <p class="fhint">Tag this listing's account attributes. Buyers filter by account type, WTR, receipts and Premier; change-name readiness is tracked here too. This dialog is the only place these are set; clicking those fields on the card or in the phone form brings you here.</p>
+      <div class="frow"><label id="rqTypeLabel">Account Type</label>
+        <div class="fseg" id="reqTypeSeg" role="group" aria-labelledby="rqTypeLabel">
+          <button type="button" data-type="noissue" class="on">No Issue</button>
+          <button type="button" data-type="issue">With Issue</button>
+        </div>
+      </div>
       <div class="frow"><label id="rqWtrLabel">WTR</label>
         <div class="fseg" id="reqSeg" role="group" aria-labelledby="rqWtrLabel">
-          <button type="button" data-req="noissue" class="on">No Issue</button>
-          <button type="button" data-req="issues">With Issues</button>
+          <button type="button" data-req="yes" class="on">Yes</button>
+          <button type="button" data-req="no">No</button>
         </div>
       </div>
       <div class="frow"><label id="rqRecLabel">Receipts</label>

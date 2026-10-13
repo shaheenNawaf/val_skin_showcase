@@ -1511,13 +1511,18 @@ function refreshLayout() {
    disagree. Every write goes through binSet(), so the stored string is always
    the BIN_FIELDS canonical one. Artwork mode keeps its own checkboxes and is
    deliberately not covered. */
-const REQ_MODAL_KEYS = ['wtr', 'receipts', 'vlink', 'cstatus'];
+const REQ_MODAL_KEYS = ['atype', 'wtr', 'receipts', 'vlink', 'cstatus'];
 
 function syncReqModal() {
+  const atSet = BIN_FIELDS.atype.isSet(binText('atype'));
+  const atOn = binIsOn('atype');
+  document.querySelectorAll('#reqTypeSeg button').forEach(b => {
+    b.classList.toggle('on', atSet && (b.dataset.type === 'issue') === atOn);
+  });
   const wtrSet = BIN_FIELDS.wtr.isSet(binText('wtr'));
   const wtrOn = binIsOn('wtr');
   document.querySelectorAll('#reqSeg button').forEach(b => {
-    b.classList.toggle('on', wtrSet && (b.dataset.req === 'noissue') === wtrOn);
+    b.classList.toggle('on', wtrSet && (b.dataset.req === 'yes') === wtrOn);
   });
   const recSet = BIN_FIELDS.receipts.isSet(binText('receipts'));
   const recOn = binIsOn('receipts');
@@ -1552,9 +1557,15 @@ function openReqModal() {
   const close = CF.$('reqClose');
   if (close) close.addEventListener('click', () => { modal.hidden = true; });
 
+  document.querySelectorAll('#reqTypeSeg button').forEach(b => {
+    b.addEventListener('click', () => {
+      binSet('atype', b.dataset.type === 'issue');
+      syncReqModal();
+    });
+  });
   document.querySelectorAll('#reqSeg button').forEach(b => {
     b.addEventListener('click', () => {
-      binSet('wtr', b.dataset.req === 'noissue');
+      binSet('wtr', b.dataset.req === 'yes');
       syncReqModal();
     });
   });
@@ -1859,6 +1870,14 @@ formMode?.addEventListener('input', e => {
    Per field: on/off value strings, seg button labels, value matchers, and
    (for card spans that carry the warn class) which state it belongs to. */
 const BIN_FIELDS = {
+  /* v1.6.3: account health is its own fact, separate from WTR. It has no card
+     span on purpose - it exists to drive the marketplace "No Issue / With
+     Issues" facet, not the exported artwork - so binSet() writes it to
+     state.texts alone and captureTexts() never overwrites it. */
+  atype: {
+    on: 'ACCOUNT: WITH ISSUE', off: 'ACCOUNT: NO ISSUE', onLabel: 'With Issue', offLabel: 'No Issue',
+    isOn: t => /with\s+issue/i.test(t), isSet: t => /(with|no)\s+issue/i.test(t), warn: null,
+  },
   wtr: {
     on: 'WTR: YES', off: 'WTR: NO', onLabel: 'Yes', offLabel: 'No',
     isOn: t => /\byes\b/i.test(t), isSet: t => /\b(yes|no)\b/i.test(t), warn: null,
