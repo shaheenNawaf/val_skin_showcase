@@ -130,6 +130,12 @@ function normalize(r) {
     flags: {
       wtr: /yes/i.test(r.wtr || ''), receipts: /yes/i.test(r.receipts || ''),
       premierUnlinked: /unlinked/i.test(r.vlink || ''),
+      /* v1.6.3: the linked chip needs its own flag. "UNLINKED" contains the
+         substring "linked", so the word-boundary test is what keeps an
+         unlinked row from also claiming to be linked. A vlink value that is
+         neither (sellers have pasted Riot IDs here) matches nothing and
+         renders no Premier chip at all. */
+      premierLinked: /\blinked\b/i.test(r.vlink || '') && !/unlinked/i.test(r.vlink || ''),
       owner: (r.owner || '').replace(/\s*owner\s*$/i, '') || '—'
     },
     seller: { name: r.tag || ((r.vlogin && r.vlogin !== 'RIOT ID') ? r.vlogin : '') || r.slug },
@@ -327,7 +333,11 @@ function trustChips(l) {
     c = (f.wtr ? '<span class="hasdot ok">With WTR</span>' : '<span class="hasdot bad">No WTR</span>')
       + (f.receipts ? '<span class="hasdot ok">With Receipts</span>' : '<span class="hasdot bad">No Receipts</span>');
   }
-  if (f.premierUnlinked) c += '<span class="hasdot bad">Premier unlinked</span>';
+  /* v1.6.3: Premier is now disclosed in both directions. Unlinked reads as a
+     warning (orange) rather than a failure (red); linked is a plain positive.
+     A vlink value that is neither renders no chip. */
+  if (f.premierUnlinked) c += '<span class="hasdot warn">Premier Unlinked</span>';
+  else if (f.premierLinked) c += '<span class="hasdot ok">Premier Linked</span>';
   return '<div class="gc-chips">' + c + '</div>';
 }
 
