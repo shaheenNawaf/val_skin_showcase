@@ -51,7 +51,7 @@ function cardHTML(r) {
     + '<span>' + esc(r.crank_name || 'UNRANKED') + '</span>';
   let price;
   if (r.price == null) {
-    price = '<div class="sc-price nostrike">Price on request</div>';
+    price = '<div class="sc-price nostrike">CONTACT FOR PRICE</div>';
   } else {
     const m = moneyParts(r.price, r.currency);
     price = '<div class="sc-price">' + (m ? esc(m.sym) + m.amt : '—') + '</div>';

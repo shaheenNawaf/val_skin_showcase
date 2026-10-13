@@ -142,9 +142,9 @@ function rowThumb(row) {
 }
 
 function priceText(row) {
-  if (row.price == null) return 'No price set';
+  if (row.price == null) return 'CONTACT FOR PRICE';
   const m = moneyParts(row.price, row.currency);
-  return m ? esc(m.sym) + m.amt + (row.negotiable ? ' · OBO' : '') : 'No price set';
+  return m ? esc(m.sym) + m.amt + (row.negotiable ? ' · OBO' : '') : 'CONTACT FOR PRICE';
 }
 
 function actBtn(act, label, cls, hidden) {

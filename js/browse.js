@@ -364,7 +364,7 @@ function priceText(l) {
    this ship. The grid card no longer emits a price slot. */
 function pslotHTML(l) {
   return '<span class="gc-pslot">'
-    + (l.price == null ? '<span class="gp-offer">Contact for price</span>' : moneyHTML(l, 'gp-val'))
+    + (l.price == null ? '<span class="gp-offer">CONTACT FOR PRICE</span>' : moneyHTML(l, 'gp-val'))
     + (l.negotiable ? '<span class="gp-obo">OBO</span>' : '')
     + '</span>';
 }
@@ -424,7 +424,7 @@ function cardHTML(l, i) {
     ? '<i class="up" aria-hidden="true">&#8593;</i><img class="pk-badge" src="' + esc(rp.icon) + '" alt="Peak rank ' + esc(rp.name) + '">'
     : '<i class="up" aria-hidden="true">&#8593;</i><span class="pk">' + esc(rp.name) + '</span>';
   const amt = l.price == null
-    ? '<span class="big offer">Contact for price</span>'
+    ? '<span class="big offer">CONTACT FOR PRICE</span>'
     : '<span class="big">' + priceText(l) + '</span>';
   return '<button type="button" class="gcard" data-slug="' + esc(l.slug) + '" data-i="' + i + '">'
     + '<div class="gc-head">'
@@ -471,7 +471,7 @@ function featHTML(l) {
   const m = moneyParts(l.price, l.currency);
   const price = m
     ? '<b>' + esc(m.sym) + m.amt + (l.negotiable ? '<i>open to offers</i>' : '') + '</b><span>one-time · full access</span>'
-    : '<b class="offer">Contact for price</b><span>' + (l.negotiable ? 'open to offers' : 'seller accepts trades') + '</span>';
+    : '<b class="offer">CONTACT FOR PRICE</b><span>' + (l.negotiable ? 'open to offers' : 'seller accepts trades') + '</span>';
   const flags = esc(l.flags.owner + ' OWNER · ' + (l.flags.wtr ? 'WTR' : 'NO-WTR') + ' · ' + (l.flags.receipts ? 'RECEIPTS' : 'NO RECEIPTS'));
   /* v1.5.2: artwork listings have no skin mosaic — the featured tile used to
      render an empty preview for them; show the owner's cover instead */
