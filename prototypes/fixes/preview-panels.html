@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en" data-theme="protocol">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1923'/%3E%3Cpath d='M10 24 24 10v6l-8 8z' fill='%23FF4655'/%3E%3Cpath d='M8 20l6-6v4l-4 4z' fill='%23FF4655' opacity='.6'/%3E%3C/svg%3E">
+<title>Preview panels — option comparison</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/shared.css?v=1.6.2">
+<link rel="stylesheet" href="../../css/browse.css?v=1.6.2">
+<style>
+/* Prototype chrome only. The four preview boxes reuse the shipped
+   .gc-preview / .mc / .mc-grid / .rl rules from css/browse.css verbatim, so
+   what you see here is what a buyer would see on the marketplace grid. */
+body{background:#0B0F14;color:#ECE8E1;font:400 14px/1.65 'Inter',system-ui,sans-serif;padding:26px 22px 90px}
+h1{font:800 24px 'Manrope',system-ui,sans-serif;letter-spacing:.01em;margin-bottom:4px}
+h2{font:800 15px 'Manrope',system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px}
+h3{font:700 10px 'Inter',system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#8A99A9;margin-bottom:7px}
+p{max-width:820px;color:#C6CDD5;margin-bottom:10px}
+code{font:600 12px ui-monospace,Consolas,monospace;color:#FF8A94}
+.intro{border:1px solid #232A33;border-left:3px solid #FF4655;padding:14px 16px;margin:16px 0 26px;background:#0F141A}
+.intro ul{margin:8px 0 0 18px;padding:0}
+.intro li{margin-bottom:4px;max-width:820px}
+.lst{border:1px solid #232A33;padding:16px 16px 20px;margin:0 0 26px;background:#0E1319}
+.meta{font:600 11px 'Inter',system-ui,sans-serif;letter-spacing:.06em;color:#8A99A9;text-transform:uppercase;margin-bottom:12px}
+.counts{font:600 11.5px ui-monospace,Consolas,monospace;color:#AEB8C2;margin-bottom:16px;line-height:1.9}
+.counts b{color:#ECE8E1}
+.counts .zero{color:#5C6874}
+.counts .hid{color:#E8A33D}
+.cmp{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.cell{width:264px;flex:0 0 auto}
+.note{font:400 11px/1.5 'Inter',system-ui,sans-serif;color:#8A99A9;margin-top:8px;min-height:48px}
+.note .bad{color:#FF8A94;font-weight:600}
+.note .good{color:#59E3B8;font-weight:600}
+/* Option A needs one extra CSS rule in browse.css:144 — a 4x2 grid. */
+.mc-grid.v8{grid-template-columns:repeat(4,1fr)}
+/* "What changed" highlight. Off in production; this is a comparison aid. */
+body.hl .chg{outline:1px dashed #E8A33D;outline-offset:-1px}
+body.hl .rl-row.chg{outline:1px dashed #E8A33D;outline-offset:-1px}
+.bar{position:sticky;top:0;z-index:9;background:#0B0F14;border-bottom:1px solid #232A33;padding:10px 0;margin-bottom:18px;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.bar label{font:600 11px 'Inter',system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#AEB8C2;display:flex;gap:7px;align-items:center;cursor:pointer}
+.railwrap .gc-preview{height:175px}
+</style>
+</head>
+<body>
+<div class="bar">
+  <label><input type="checkbox" id="hl" checked> Highlight what changed</label>
+  <span class="meta" style="margin:0">Boxes use the shipped <code>.mc-grid</code> and <code>.rl</code> CSS. Only Option A adds one rule.</span>
+</div>
+
+<h1>Marketplace preview: which panels should a card show?</h1>
+<div class="intro">
+  <p style="margin:0"><b>The defect.</b> The grid card preview at <code>js/browse.js:402-405</code> hardcodes six weapon panels. The rail at <code>:391-395</code> hardcodes three composite rows. Neither mentions Shotguns or Flex. The card artwork, the quick view and the viewer all iterate <code>ALL_CATS</code>, which is eight. So the browse preview is the only surface that drops two categories.</p>
+  <ul>
+    <li>34 live listings. <b>24 hold Flex skins</b> and none of them render in the preview.</li>
+    <li>4 hold a Shotgun skin. None render.</li>
+    <li>28 of 34 have at least one of the six fixed panels empty. That dead space is where Option C puts them.</li>
+    <li>No live listing is shotgun-only, so the last case below is synthetic. It shows the failure mode, not a current listing.</li>
+  </ul>
+</div>
+<div id="app"></div>
+
+<script>
+/* ── baked from browse_listings_v3 on 2026-10-13 ─────────────────── */
+const DATA = [{"slug":"kfias7z","code":"K128","theme":"protocol","title":"IGNITE FAN","skins":19,"picks":{"Flex":[{"icon":"https://media.valorant-api.com/flex/38dafc48-4668-6f70-1e8c-bf939841cf7e/displayicon.png","name":"Killbanner Flex","weapon":"Flex"},{"icon":"https://media.valorant-api.com/flex/a348bfba-429d-8cf3-e671-1db93db5f793/displayicon.png","name":"5 Years Flex","weapon":"Flex"}],"SMGs":[],"Melees":[{"icon":"https://media.valorant-api.com/weaponskinchromas/4bba1de9-4586-8694-3d9c-01b4dcb0e390/displayicon.png","name":"Ignite Fan","weapon":"Melee"},{"icon":"https://media.valorant-api.com/weaponskinchromas/e0fd7ff7-4cba-80d9-c079-cbb3aecba624/displayicon.png","name":"Onimaru Kuntsuna","weapon":"Melee"},{"icon":"https://media.valorant-api.com/weaponskinchromas/8a68cd7b-4658-bcad-4789-49bc842ab1ae/displayicon.png","name":"Recon Balisong","weapon":"Melee"},{"icon":"https://media.valorant-api.com/weaponskins/91130713-44e6-8436-d34c-e3badaf241b7/displayicon.png","name":"RGX 11z Pro Karambit","weapon":"Melee"}],"Rifles":[{"icon":"https://media.valorant-api.com/weaponskinchromas/c12e2ea7-49b3-1871-99ac-8f8385d78ed5/displayicon.png","name":"Gaia's Vengeance Vandal","weapon":"Vandal"},{"icon":"https://media.valorant-api.com/weaponskins/f2531d6f-40d8-ad18-4e74-ed812e0a6b1f/displayicon.png","name":"Magepunk Phantom","weapon":"Phantom"},{"icon":"https://media.valorant-api.com/weaponskins/36791b03-452d-8dad-0091-898cc28d2196/displayicon.png","name":"Oni Phantom","weapon":"Phantom"},{"icon":"https://media.valorant-api.com/weaponskins/b8a6d8f5-4171-c0f3-eab4-9bb64af25f4f/displayicon.png","name":"Phaseguard Vandal","weapon":"Vandal"}],"Shotguns":[],"Sidearms":[{"icon":"https://media.valorant-api.com/weaponskinchromas/70c33c1b-4b2e-8033-d330-96b95783fdfd/displayicon.png","name":"Neo Frontier Sheriff","weapon":"Sheriff"}],"Machine Guns":[],"Sniper Rifles":[{"icon":"https://media.valorant-api.com/weaponskins/a491b943-43e3-4e98-64a6-fc87fca43605/displayicon.png","name":"Glitchpop Operator","weapon":"Operator"}]}},{"slug":"u9qvzq4","code":"K130","theme":"holo","title":"2025 CHAMPIONS VANDAL","skins":15,"picks":{"Flex":[{"icon":"https://media.valorant-api.com/flex/e2207345-4fc9-6967-f800-b18e9d87921a/displayicon.png","name":"Champions 2025 Trophy Flex","weapon":"Flex"},{"icon":"https://media.valorant-api.com/flex/a348bfba-429d-8cf3-e671-1db93db5f793/displayicon.png","name":"5 Years Flex","weapon":"Flex"},{"icon":"https://media.valorant-api.com/flex/361edf14-4ae3-3831-eeec-5ea715097341/displayicon.png","name":"Spike Rush Cup Flex","weapon":"Flex"},{"icon":"https://media.valorant-api.com/flex/38dafc48-4668-6f70-1e8c-bf939841cf7e/displayicon.png","name":"Killbanner Flex","weapon":"Flex"}],"SMGs":[{"icon":"https://media.valorant-api.com/weaponskinchromas/48b6e421-4f93-5a00-62b3-20a1d320b040/displayicon.png","name":"Prime Spectre","weapon":"Spectre"}],"Melees":[{"icon":"https://media.valorant-api.com/weaponskins/d901cc46-43c7-ebe8-9c5a-f7963f1a4db3/displayicon.png","name":"Champions 2025 Butterfly Knife","weapon":"Melee"},{"icon":"https://media.valorant-api.com/weaponskins/ccde2f25-4525-ef52-e1f0-bd88184bd4a4/displayicon.png","name":"Velocity Karambit","weapon":"Melee"}],"Rifles":[{"icon":"https://media.valorant-api.com/weaponskinchromas/5d94fbe1-434e-990d-1d51-2ca483c3abe4/displayicon.png","name":"Forsaken Vandal","weapon":"Vandal"},{"icon":"https://media.valorant-api.com/weaponskins/e86bf7e4-4dd3-fbee-533b-fa875344bbaf/displayicon.png","name":"Ion Phantom","weapon":"Phantom"},{"icon":"https://media.valorant-api.com/weaponskins/1df79598-42a0-a433-0aa5-c79047c32779/displayicon.png","name":"Aemondir Vandal","weapon":"Vandal"},{"icon":"https://media.valorant-api.com/weaponskins/15cc1aab-432f-34d8-e0e8-d2925d54324b/displayicon.png","name":"Champions 2025 Vandal","weapon":"Vandal"}],"Shotguns":[],"Sidearms":[{"icon":"https://media.valorant-api.com/weaponskins/a40a6ce2-462c-c864-5d30-7b9408b98d3d/displayicon.png","name":"Reaver Sheriff","weapon":"Sheriff"},{"icon":"https://media.valorant-api.com/weaponskins/2a8a2ff3-44f0-6e8f-8e37-7282113177cf/displayicon.png","name":"Evori Dreamwings Ghost","weapon":"Ghost"}],"Machine Guns":[],"Sniper Rifles":[]}},{"slug":"ehsirjg","code":"K115","theme":"arctic","title":"3 LIMITED 2025 CHAMPIONS & BETA KNIFE","skins":47,"picks":{"Flex":[{"icon":"https://media.valorant-api.com/flex/903aafe1-4f32-d020-6150-51bf2f4888ad/displayicon.png","name":"Tactibear Flex","weapon":"Flex"},{"icon":"https://media.valorant-api.com/flex/38dafc48-4668-6f70-1e8c-bf939841cf7e/displayicon.png","name":"Killbanner Flex","weapon":"Flex"},{"icon":"https://media.valorant-api.com/flex/aa283b9a-44dd-7c05-7017-28889664a848/displayicon.png","name":"PB&J Flex","weapon":"Flex"},{"icon":"https://media.valorant-api.com/flex/d3f8f048-4e9c-939d-7233-67892d8b925f/displayicon.png","name":"Stellar Dendrite Flex","weapon":"Flex"}],"SMGs":[{"icon":"https://media.valorant-api.com/weaponskins/b0d9088d-4a99-3dda-5b43-319e5fa9e66a/displayicon.png","name":"CYRAX Stinger","weapon":"Stinger"},{"icon":"https://media.valorant-api.com/weaponskins/f743fe2f-4cab-71d9-81e2-5b8f2f52923f/displayicon.png","name":"Kuronami Spectre","weapon":"Spectre"}],"Melees":[{"icon":"https://media.valorant-api.com/weaponskins/d901cc46-43c7-ebe8-9c5a-f7963f1a4db3/displayicon.png","name":"Champions 2025 Butterfly Knife","weapon":"Melee"},{"icon":"https://media.valorant-api.com/weaponskins/a8250e8b-4176-e056-af5a-80b47e4b4e31/displayicon.png","name":"5 Years // Beta Remastered Knife","weapon":"Melee"},{"icon":"https://media.valorant-api.com/weaponskins/987e847d-47d2-6ab3-2369-0497b6c39a7e/displayicon.png","name":"Kogitsune","weapon":"Melee"},{"icon":"https://media.valorant-api.com/weaponskins/b20bf3b2-4d71-0a6f-a3b4-a8b699656529/displayicon.png","name":"Nocturnum Scythe","weapon":"Melee"}],"Rifles":[{"icon":"https://media.valorant-api.com/weaponskins/000ad7b1-44b0-9345-ea47-9cbd7dcdbb38/displayicon.png","name":"Gaia's Vengeance Vandal","weapon":"Vandal"},{"icon":"https://media.valorant-api.com/weaponskins/596ce51d-40e3-dc21-b02d-b08d070a7883/displayicon.png","name":"Ion Vandal","weapon":"Vandal"},{"icon":"https://media.valorant-api.com/weaponskins/044b28ba-4c3b-d315-140d-d9a249da5567/displayicon.png","name":"Reaver Phantom","weapon":"Phantom"},{"icon":"https://media.valorant-api.com/weaponskins/30388628-42f0-606c-82c0-73ad43de997f/displayicon.png","name":"Reaver Vandal","weapon":"Vandal"}],"Shotguns":[{"icon":"https://media.valorant-api.com/weaponskins/4fca7cd4-48b6-130f-01fc-fa87974bb622/displayicon.png","name":"Overdrive Bucky","weapon":"Bucky"}],"Sidearms":[{"icon":"https://media.valorant-api.com/weaponskins/a40a6ce2-462c-c864-5d30-7b9408b98d3d/displayicon.png","name":"Reaver Sheriff","weapon":"Sheriff"},{"icon":"https://media.valorant-api.com/weaponskins/2a8a2ff3-44f0-6e8f-8e37-7282113177cf/displayicon.png","name":"Evori Dreamwings Ghost","weapon":"Ghost"},{"icon":"https://media.valorant-api.com/weaponskins/c9c0b280-44ce-f539-02f0-b39884790182/displayicon.png","name":"Phaseguard Ghost","weapon":"Ghost"},{"icon":"https://media.valorant-api.com/weaponskins/b73f455a-4d77-44e7-fd90-1db9db82a8f6/displayicon.png","name":"Neo Frontier Sheriff","weapon":"Sheriff"}],"Machine Guns":[{"icon":"https://media.valorant-api.com/weaponskins/0f4b0478-4759-911d-c44b-2a907534789d/displayicon.png","name":"Ion Ares","weapon":"Ares"}],"Sniper Rifles":[{"icon":"https://media.valorant-api.com/weaponskins/685af060-4934-e262-543d-5d96ed42257d/displayicon.png","name":"Nocturnum Marshal","weapon":"Marshal"}]}},{"slug":"46mq9qs","code":"K833","theme":"oni","title":"MYSTBLOOM KNIFE & YORU KNIFE","skins":5,"picks":{"Flex":[],"SMGs":[],"Melees":[{"icon":"https://media.valorant-api.com/weaponskinchromas/bd54b520-474b-287a-a4b1-2787c648d0a1/displayicon.png","name":"Mystbloom Kunai","weapon":"Melee"},{"icon":"https://media.valorant-api.com/weaponskins/d034911c-45a6-1ce4-e6f5-4cbe57e9d4f1/displayicon.png","name":"Yoru's Stylish Butterfly Comb","weapon":"Melee"}],"Rifles":[{"icon":"https://media.valorant-api.com/weaponskinchromas/b2619c1c-4974-4f06-f37b-c68b1d6d7bd1/displayicon.png","name":"Reaver Vandal","weapon":"Vandal"},{"icon":"https://media.valorant-api.com/weaponskinchromas/97af0e71-4727-e271-50fe-8293d4f61fe1/displayicon.png","name":"Blackspyre Phantom","weapon":"Phantom"},{"icon":"https://media.valorant-api.com/weaponskinchromas/0d2f584c-464e-6f9c-5c2e-c88579e2efe5/displayicon.png","name":"Neo Frontier Vandal","weapon":"Vandal"}],"Shotguns":[],"Sidearms":[],"Machine Guns":[],"Sniper Rifles":[]}}];
+
+/* Synthetic worst case: a Flex-and-shotgun account with no standard picks.
+   No live listing looks like this today. It shows what TODAY does when every
+   fixed panel is empty. */
+const SYNTH = {
+  slug: 'synthetic', code: 'SYNTH', theme: 'reaver', synthetic: true,
+  title: 'SHOTGUN + FLEX ONLY (synthetic)', skins: 5,
+  picks: {
+    Rifles: [], 'Sniper Rifles': [], 'Machine Guns': [], Sidearms: [], SMGs: [], Melees: [],
+    Shotguns: [{ icon: 'https://media.valorant-api.com/weaponskins/4fca7cd4-48b6-130f-01fc-fa87974bb622/displayicon.png', name: 'Overdrive Bucky', weapon: 'Bucky' }],
+    Flex: [
+      { icon: 'https://media.valorant-api.com/flex/903aafe1-4f32-d020-6150-51bf2f4888ad/displayicon.png', name: 'Tactibear Flex', weapon: 'Flex' },
+      { icon: 'https://media.valorant-api.com/flex/38dafc48-4668-6f70-1e8c-bf939841cf7e/displayicon.png', name: 'Killbanner Flex', weapon: 'Flex' },
+      { icon: 'https://media.valorant-api.com/flex/aa283b9a-44dd-7c05-7017-28889664a848/displayicon.png', name: 'PB&J Flex', weapon: 'Flex' },
+      { icon: 'https://media.valorant-api.com/flex/d3f8f048-4e9c-939d-7233-67892d8b925f/displayicon.png', name: 'Stellar Dendrite Flex', weapon: 'Flex' }
+    ]
+  }
+};
+
+const THEME_ACCENTS = {
+  protocol: { bg: '#0F1923', panel: '#1F2731', accent: '#FF4655', ink: '#ECE8E1', mut: '#8A99A9' },
+  holo: { bg: '#04101A', panel: '#0A1E30', accent: '#46F6FF', ink: '#DFF6FF', mut: '#7E9CB2' },
+  reaver: { bg: '#0D0A14', panel: '#180F2A', accent: '#B44BFF', ink: '#EFE9FF', mut: '#9D92BA' },
+  oni: { bg: '#120B0B', panel: '#201114', accent: '#FF5540', ink: '#F5E9DC', mut: '#AF9889' },
+  arctic: { bg: '#171310', panel: '#221B15', accent: '#D8434E', ink: '#F2EEE6', mut: '#A79B8B' },
+  standard: { bg: '#141719', panel: '#1F2427', accent: '#AFC2CE', ink: '#EEF0EF', mut: '#96A0A4' }
+};
+
+/* ── copied from js/browse.js so the comparison is faithful ──────── */
+const FEATURE_ORDER = ['Rifles', 'Melees', 'Sniper Rifles', 'Sidearms', 'SMGs', 'Machine Guns', 'Shotguns', 'Flex'];
+const FIXED6 = [
+  { l: 'RIFLES', k: 'Rifles' }, { l: 'SNIPERS', k: 'Sniper Rifles' }, { l: 'MGS', k: 'Machine Guns' },
+  { l: 'SIDEARMS', k: 'Sidearms' }, { l: 'SMGS', k: 'SMGs' }, { l: 'MELEES', k: 'Melees' }
+];
+const LABEL = {
+  Rifles: 'RIFLES', 'Sniper Rifles': 'SNIPERS', 'Machine Guns': 'MGS', Sidearms: 'SIDEARMS',
+  SMGs: 'SMGS', Melees: 'MELEES', Shotguns: 'SHOTGUNS', Flex: 'FLEX'
+};
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const catPicks = (l, k) => Array.isArray(l.picks[k]) ? l.picks[k] : [];
+
+function pickWrap(p) {
+  return p.icon ? '<span data-imgwrap class="mc-iw"><img src="' + esc(p.icon) + '" alt="' + esc(p.weapon + ' — ' + p.name) + '" loading="lazy"></span>' : '';
+}
+
+/* ── mosaic variants ─────────────────────────────────────────────── */
+function panel(label, keys, changed) {
+  let icons = keys.slice(0, 3).map(pickWrap).join('');
+  if (!icons) icons = '<span class="mc-empty"></span>';
+  return '<section class="mc-panel' + (changed ? ' chg' : '') + '"><label>' + esc(label) + '</label><div class="mc-icons">' + icons + '</div></section>';
+}
+
+function mosaic(l, mode) {
+  if (mode === 'today') {
+    return { html: FIXED6.map(p => panel(p.l, catPicks(l, p.k), false)).join(''), cls: '', shown: FIXED6.map(p => p.k) };
+  }
+  if (mode === 'a') {
+    const eight = FIXED6.concat([{ l: 'SHOTGUNS', k: 'Shotguns' }, { l: 'FLEX', k: 'Flex' }]);
+    return { html: eight.map(p => panel(p.l, catPicks(l, p.k), p.k === 'Shotguns' || p.k === 'Flex')).join(''), cls: ' v8', shown: eight.map(p => p.k) };
+  }
+  const nonEmpty = FEATURE_ORDER.filter(k => catPicks(l, k).length);
+  if (mode === 'b') {
+    const take = nonEmpty.slice(0, 6);
+    const cells = take.map(k => panel(LABEL[k], catPicks(l, k), !FIXED6.some(f => f.k === k)));
+    while (cells.length < 6) cells.push(panel('', [], false));
+    return { html: cells.join(''), cls: '', shown: take };
+  }
+  /* c: fixed six, empties backfilled from anything left over */
+  const used = new Set();
+  const cells = FIXED6.map(p => {
+    const keys = catPicks(l, p.k);
+    if (keys.length) { used.add(p.k); return panel(p.l, keys, false); }
+    const next = nonEmpty.find(k => !used.has(k) && !FIXED6.some(f => f.k === k && catPicks(l, f.k).length));
+    if (next) { used.add(next); return panel(LABEL[next], catPicks(l, next), true); }
+    return panel(p.l, [], false);
+  });
+  return { html: cells.join(''), cls: '', shown: [...used] };
+}
+
+/* ── rail variants ───────────────────────────────────────────────── */
+function railRows(l) {
+  return [
+    { l: 'RIFLES', keys: catPicks(l, 'Rifles').slice(0, 4) },
+    { l: 'SIDE+SMG', keys: catPicks(l, 'Sidearms').slice(0, 2).concat(catPicks(l, 'SMGs').slice(0, 2)) },
+    { l: 'SNIP+MG+MELEE', keys: catPicks(l, 'Sniper Rifles').slice(0, 1).concat(catPicks(l, 'Machine Guns').slice(0, 1), catPicks(l, 'Melees').slice(0, 2)) }
+  ];
+}
+function railRow(r, changed) {
+  let icons = r.keys.map(pickWrap).join('');
+  if (!icons) icons = '<span class="mc-empty"></span>';
+  return '<div class="rl-row' + (changed ? ' chg' : '') + '"><span class="rl-l">' + esc(r.l) + '</span><span class="rl-icons">' + icons + '</span></div>';
+}
+function rail(l, mode) {
+  const base = railRows(l);
+  if (mode === 'today') return { html: base.map(r => railRow(r, false)).join(''), shown: ['Rifles', 'Sidearms', 'SMGs', 'Sniper Rifles', 'Machine Guns', 'Melees'] };
+  if (mode === 'four') {
+    const extra = { l: 'SHOT+FLEX', keys: catPicks(l, 'Shotguns').slice(0, 2).concat(catPicks(l, 'Flex').slice(0, 2)) };
+    return { html: base.map(r => railRow(r, false)).join('') + railRow(extra, true), shown: ['Rifles', 'Sidearms', 'SMGs', 'Sniper Rifles', 'Machine Guns', 'Melees', 'Shotguns', 'Flex'] };
+  }
+  /* backfill: an empty row takes the first unused non-empty category */
+  const nonEmpty = FEATURE_ORDER.filter(k => catPicks(l, k).length);
+  const used = new Set();
+  const rows = base.map(r => {
+    if (r.keys.length) { r.l.split('+').forEach(() => {}); return { r: r, chg: false }; }
+    const next = nonEmpty.find(k => !used.has(k) && !['Rifles', 'Sidearms', 'SMGs', 'Sniper Rifles', 'Machine Guns', 'Melees'].includes(k));
+    if (!next) return { r: r, chg: false };
+    used.add(next);
+    return { r: { l: LABEL[next], keys: catPicks(l, next).slice(0, 4) }, chg: true };
+  });
+  const shown = ['Rifles', 'Sidearms', 'SMGs', 'Sniper Rifles', 'Machine Guns', 'Melees'].concat([...used]);
+  return { html: rows.map(x => railRow(x.r, x.chg)).join(''), shown: shown };
+}
+
+/* ── metrics ─────────────────────────────────────────────────────── */
+function hidden(l, shown) {
+  const s = new Set(shown);
+  return FEATURE_ORDER.filter(k => catPicks(l, k).length && !s.has(k))
+    .map(k => LABEL[k] + ' ' + catPicks(l, k).length);
+}
+function countsLine(l) {
+  return FEATURE_ORDER.map(k => {
+    const n = catPicks(l, k).length;
+    return n ? '<b>' + LABEL[k] + ' ' + n + '</b>' : '<span class="zero">' + LABEL[k] + ' 0</span>';
+  }).join(' &nbsp;·&nbsp; ');
+}
+function note(l, hid) {
+  return hid.length
+    ? '<span class="bad">Hides ' + hid.length + ' categor' + (hid.length === 1 ? 'y' : 'ies') + ': ' + esc(hid.join(', ')) + '</span>'
+    : '<span class="good">Shows every category the account holds</span>';
+}
+function box(l, title, inner, hid) {
+  return '<div class="cell"><h3>' + esc(title) + '</h3>'
+    + '<div class="gc-preview" data-imgwrap>' + inner + '</div>'
+    + '<div class="note">' + note(l, hid) + '</div></div>';
+}
+
+/* ── page ────────────────────────────────────────────────────────── */
+function themeVars(el, key) {
+  const t = THEME_ACCENTS[key] || THEME_ACCENTS.protocol;
+  el.style.setProperty('--th-bg', t.bg);
+  el.style.setProperty('--th-panel', t.panel);
+  el.style.setProperty('--th-accent', t.accent);
+  el.style.setProperty('--th-ink', t.ink);
+  el.style.setProperty('--th-mut', t.mut);
+}
+
+function listing(l) {
+  const sec = document.createElement('section');
+  sec.className = 'lst';
+  const head = '<h2>' + esc(l.code) + (l.synthetic ? ' — synthetic case' : ' — ' + esc(l.title)) + '</h2>'
+    + '<div class="meta">' + esc(l.slug) + ' · ' + esc(l.theme) + ' · ' + l.skins + ' skins'
+    + (l.synthetic ? ' · constructed to show the empty-mosaic failure' : '') + '</div>'
+    + '<div class="counts">' + countsLine(l) + '</div>';
+
+  const mToday = mosaic(l, 'today'), mA = mosaic(l, 'a'), mB = mosaic(l, 'b'), mC = mosaic(l, 'c');
+  const rToday = rail(l, 'today'), rBack = rail(l, 'backfill'), rFour = rail(l, 'four');
+
+  const mosaics = '<h3 style="margin-bottom:10px">Mosaic style (default)</h3><div class="cmp">'
+    + box(l, 'Today · 6 fixed', '<div class="mc"><div class="mc-grid">' + mToday.html + '</div></div>', hidden(l, mToday.shown))
+    + box(l, 'A · 8 fixed panels', '<div class="mc"><div class="mc-grid v8">' + mA.html + '</div></div>', hidden(l, mA.shown))
+    + box(l, 'B · 6 dynamic panels', '<div class="mc"><div class="mc-grid">' + mB.html + '</div></div>', hidden(l, mB.shown))
+    + box(l, 'C · 6 fixed + backfill', '<div class="mc"><div class="mc-grid">' + mC.html + '</div></div>', hidden(l, mC.shown))
+    + '</div>';
+
+  const rails = '<h3 style="margin:22px 0 10px">Rail style (buyer toggle)</h3><div class="cmp railwrap">'
+    + box(l, 'Today · 3 rows', '<div class="rl">' + rToday.html + '</div>', hidden(l, rToday.shown))
+    + box(l, 'Backfill empty rows', '<div class="rl">' + rBack.html + '</div>', hidden(l, rBack.shown))
+    + box(l, '4th row · SHOT+FLEX', '<div class="rl">' + rFour.html + '</div>', hidden(l, rFour.shown))
+    + '</div>';
+
+  sec.innerHTML = head + mosaics + rails;
+  sec.querySelectorAll('.gc-preview').forEach(el => themeVars(el, l.theme));
+  return sec;
+}
+
+const app = document.getElementById('app');
+DATA.concat([SYNTH]).forEach(l => app.appendChild(listing(l)));
+document.body.classList.add('hl');
+document.getElementById('hl').addEventListener('change', e => document.body.classList.toggle('hl', e.target.checked));
+</script>
+</body>
+</html>
