@@ -1,7 +1,7 @@
 // CardForge browse — Direction-D marketplace over live Supabase listings.
 // Summary cards come from browse_listings_v2 (legacy browse_listings as a
 // fallback); the quick-view modal carries the REAL shared.css #card.
-import { esc, $, status, initDisclaimerCollapse, initStatusDismiss, ALL_CATS, DESIGN_W, DESIGN_H, isPlaceholderTitle, tierKey as canonicalTierKey, TIER_ORDER, AVATAR_PLACEHOLDER, IMGERR, EMAIL_RE, CUR_SYMBOL, moneyParts, moneyString  } from './shared.js?v=1.6.2';
+import { esc, $, status, initDisclaimerCollapse, initStatusDismiss, ALL_CATS, DESIGN_W, DESIGN_H, isPlaceholderTitle, tierKey as canonicalTierKey, TIER_ORDER, AVATAR_PLACEHOLDER, IMGERR, EMAIL_RE, CUR_SYMBOL, moneyParts, moneyString, ago, daysAgo  } from './shared.js?v=1.6.2';
 /* A: the quick-view modal renders the shared #card, and until now it always
    showed the raw panel grid — the layout the seller chose in the editor
    (payload.layout) was honoured by view.html but ignored here. */
@@ -59,16 +59,8 @@ function rankTier(name) {
   const d = s.match(/(\d)\s*$/);
   return i * 3 + 1 + (d ? Number(d[1]) - 1 : 0);
 }
-
-function daysAgo(iso) {
-  const t = new Date(iso).getTime();
-  if (!iso || Number.isNaN(t)) return 0;
-  return Math.max(0, Math.floor((Date.now() - t) / 864e5));
-}
-
-function agoText(d) {
-  return d === 0 ? 'today' : (d === 1 ? '1d ago' : d + 'd ago');
-}
+// v1.6: daysAgo and the relative-time string come from shared.js. daysAgo is
+// still used by the NEW badge threshold; ago() is used for every display.
 
 function img(src, alt, cls) {
   return '<img' + (cls ? ' class="' + cls + '"' : '') + ' src="' + esc(src) + '" alt="' + esc(alt) + '" loading="lazy" ' + IMGERR + '>';
@@ -129,6 +121,7 @@ function normalize(r) {
     featured: !!r.featured, /* v1.3: owner-pinned (v3 only; v2 rows default false) */
     views: Number(r.views) || 0,
     daysAgo: daysAgo(r.updated_at),
+    updated: r.updated_at, /* for ago(); daysAgo stays only for the NEW badge */
     rankNow: { name: r.crank_name || 'UNRANKED', icon: r.crank_icon || '', tier: rankTier(r.crank_name) },
     rankPeak: { name: r.prank_name || 'UNRANKED', icon: r.prank_icon || '', tier: rankTier(r.prank_name) },
     stats: {
@@ -464,7 +457,7 @@ function rowHTML(l) {
     + '<div class="lr-main"><div class="lr-title"><h2>' + esc(entryTitle(l)) + '</h2><span class="lr-badges">' + badgesGrid(l) + '</span></div></div>'
     + '<div class="lr-ranks"><div class="r">' + rankImg(rn) + '<span>' + esc(rn.name) + '</span></div><div class="r">' + rankImg(rp) + '<span class="pk">PEAK ' + esc(rp.name) + '</span></div></div>'
     + '<div class="lr-chips">' + chipsList(l) + '</div>'
-    + '<div class="lr-price">' + priceHTML(l) + '<span class="lc-meta">' + viewsText(l) + esc(agoText(l.daysAgo)) + '</span></div>'
+    + '<div class="lr-price">' + priceHTML(l) + '<span class="lc-meta">' + viewsText(l) + esc(ago(l.updated)) + '</span></div>'
     + '<div class="lr-go lc-go">View card →</div>'
     + '</button>';
 }
@@ -499,7 +492,7 @@ function featHTML(l) {
     + '<div class="gf-seller">' + img(AVATAR_PLACEHOLDER, 'Seller avatar') + '<div><b>' + esc(l.seller.name) + '</b><span>' + flags + '</span></div></div>'
     + '<div class="gf-rankrow">' + rankImg(rn) + '<span>' + esc(rn.name) + '</span><i>·</i><span class="m">PEAK ' + esc(rp.name) + '</span></div>'
     + '<div class="gf-price">' + price + '</div>'
-    + '<div class="gf-meta">' + esc(l.views) + (Number(l.views) === 1 ? ' VIEW · UPDATED ' : ' VIEWS · UPDATED ') + esc(agoText(l.daysAgo).toUpperCase()) + '</div>'
+    + '<div class="gf-meta">' + esc(l.views) + (Number(l.views) === 1 ? ' VIEW · UPDATED ' : ' VIEWS · UPDATED ') + esc(ago(l.updated).toUpperCase()) + '</div>'
     + '<button type="button" class="gf-cta" data-slug="' + esc(l.slug) + '">View full card →</button>'
     + '</div></div>';
 }
@@ -932,7 +925,7 @@ function fillBar(l, slug) {
   const bar = qv.querySelector('.qv-bar');
   bar.querySelector('#qvTitle').textContent = entryTitle(l);
   bar.querySelector('.qv-code').textContent = entrySub(l);
-  bar.querySelector('.qv-meta').textContent = l.views + ' VIEWS · UPDATED ' + agoText(l.daysAgo).toUpperCase() + ' · ' + l.seller.name;
+  bar.querySelector('.qv-meta').textContent = l.views + ' VIEWS · UPDATED ' + ago(l.updated).toUpperCase() + ' · ' + l.seller.name;
   const price = bar.querySelector('.qv-price');
   const offer = bar.querySelector('.qv-offer');
   const ms = moneyString(l.price, l.currency);

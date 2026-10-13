@@ -32,9 +32,6 @@ export function moneyParts(price, currency) {
   const amt = n % 1 ? n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : n.toLocaleString('en-US');
   return { sym, amt, code };
 }
-/* v1.6: the one place the edit-token storage key is spelled. */
-export const editKey = (slug) => 'vc-edit-' + slug;
-
 export function moneyString(price, currency) {
   const m = moneyParts(price, currency);
   return m ? m.sym + m.amt : null;
@@ -50,6 +47,29 @@ export function statusView(listing) {
   if (st === 'sold') return { txt: 'SOLD', cls: 'bad' };
   if (st === 'pending') return { txt: 'PENDING', cls: 'warn' };
   return { txt: 'AVAILABLE', cls: 'ok' };
+}
+
+/* v1.6: the one place the edit-token storage key is spelled. */
+export const editKey = (slug) => 'vc-edit-' + slug;
+
+/* v1.6 time: one relative-time string everywhere - hour grain under 24h, then
+   days. browse printed "today" for a listing the dashboard called "3h ago",
+   because the two local helpers took different units. */
+export function ago(iso) {
+  const t = new Date(iso).getTime();
+  if (!iso || Number.isNaN(t)) return '—';
+  const h = (Date.now() - t) / 36e5;
+  if (h < 1) return 'just now';
+  if (h < 24) return Math.floor(h) + 'h ago';
+  return Math.floor(h / 24) + 'd ago';
+}
+
+/* Whole days before `iso`, for age thresholds such as the NEW badge.
+   Not for display - use ago(). */
+export function daysAgo(iso) {
+  const t = new Date(iso).getTime();
+  if (!iso || Number.isNaN(t)) return 0;
+  return Math.max(0, Math.floor((Date.now() - t) / 864e5));
 }
 
 export const tierKey = (t) => String(t || '').toLowerCase().replace(/\s*edition\s*$/, '').trim();

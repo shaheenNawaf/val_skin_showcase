@@ -1,7 +1,7 @@
 // CardForge owner dashboard — Every listing on the marketplace — owner view, on one
 // page. Edit keys live in localStorage as `vc-edit-<slug>`; every mutation is
 // checked server-side against the key's hash.
-import { esc, $, status, initStatusDismiss, initDisclaimerCollapse, readJSON, writeJSON, hashToken, copyText, fbPostText, resizeToDataUrl, isPlaceholderTitle, AVATAR_PLACEHOLDER, IMGERR, EMAIL_RE, moneyParts, moneyString, editKey } from './shared.js?v=1.6.2';
+import { esc, $, status, initStatusDismiss, initDisclaimerCollapse, readJSON, writeJSON, hashToken, copyText, fbPostText, resizeToDataUrl, isPlaceholderTitle, AVATAR_PLACEHOLDER, IMGERR, EMAIL_RE, moneyParts, moneyString, editKey, ago } from './shared.js?v=1.6.2';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -35,12 +35,8 @@ function fmtDate(x) {
   return new Date(x).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function agoText(iso) {
-  const h = (Date.now() - new Date(iso).getTime()) / 3600000;
-  if (h < 1) return 'just now';
-  if (h < 24) return Math.floor(h) + 'h ago';
-  return Math.floor(h / 24) + 'd ago';
-}
+// v1.6: ago() now lives in shared.js - this file's local copy was the same
+// hour-grain algorithm, and browse.js disagreed with it.
 
 const deny = e => /42501|token mismatch/i.test(String((e && e.message) || e))
   ? 'This browser’s edit key was rejected for that action.'
@@ -173,7 +169,7 @@ function rowHTML(row) {
     priceText(row),
     'CODE ' + esc(t.code || ''),
     esc(String(Number(row.views) || 0)) + ' views',
-    'upd ' + esc(agoText(row.updated_at))
+    'upd ' + esc(ago(row.updated_at))
   ];
   const meta = chips.concat(spans).join('<span class="sep">·</span>');
 
