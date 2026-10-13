@@ -6,14 +6,55 @@ if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase) {
   supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 }
 
+/* v1.6: this gallery is the owner's record of completed sales, so it is gated
+   to a signed-in seller. browse_listings_v3 is executable by anon, so hiding
+   the dashboard link was never a gate - typing sold.html listed every sale.
+   The probe also fixes two older gaps: the RPC error is now checked (a
+   PostgREST failure rejects nothing, it arrives in the payload), and the
+   transport call is wrapped, so an offline load reports an error instead of
+   sitting on "Loading past sales" forever. */
+async function probeSeller() {
+  if (!supabase) return false;
+  try {
+    const { data, error } = await supabase.rpc('am_i_seller');
+    if (error) return false;
+    return !!data;
+  } catch {
+    return false;
+  }
+}
+
+function showLocked() {
+  $('slocked').hidden = false;
+  $('sempty').hidden = true;
+  $('serror').hidden = true;
+  $('sgrid').innerHTML = '';
+  $('scount').textContent = '';
+}
+
 async function load() {
   if (!supabase) {
-    showEmpty();
+    showLocked();
     status('Past sales need the live listings service — see SETUP.md.', 'err');
     return;
   }
   status('Loading past sales…');
-  const { data, error } = await supabase.rpc('browse_listings_v3', { p_limit: 200, p_offset: 0, p_status: 'sold' });
+  if (!(await probeSeller())) {
+    showLocked();
+    status('Past sales are visible to the signed-in seller only.', 'err');
+    return;
+  }
+  $('slocked').hidden = true;
+  let res;
+  try {
+    res = await supabase.rpc('browse_listings_v3', { p_limit: 200, p_offset: 0, p_status: 'sold' });
+  } catch (e) {
+    $('serror').hidden = false;
+    $('serrorMsg').textContent = (e && e.message) || String(e);
+    $('sgrid').innerHTML = '';
+    return;
+  }
+  const { data, error } = res;
   if (error) {
     $('serror').hidden = false;
     $('serrorMsg').textContent = error.message || String(error);
