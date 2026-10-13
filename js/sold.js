@@ -1,4 +1,4 @@
-import { esc, $, status, initStatusDismiss, initDisclaimerCollapse, IMGERR, CUR_SYMBOL, THEME_LABELS } from './shared.js?v=1.6.0';
+import { esc, $, status, initStatusDismiss, initDisclaimerCollapse, IMGERR, THEME_LABELS, moneyParts } from './shared.js?v=1.6.0';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -53,10 +53,8 @@ function cardHTML(r) {
   if (r.price == null) {
     price = '<div class="sc-price nostrike">Price on request</div>';
   } else {
-    const sym = CUR_SYMBOL[r.currency] || (r.currency ? esc(r.currency) + ' ' : '$');
-    const n = Number(r.price);
-    const amt = n % 1 ? n.toFixed(2) : n.toLocaleString('en-US');
-    price = '<div class="sc-price">' + sym + esc(amt) + '</div>';
+    const m = moneyParts(r.price, r.currency);
+    price = '<div class="sc-price">' + (m ? esc(m.sym) + m.amt : '—') + '</div>';
   }
   const sold = r.sold_at ? 'Sold ' + fmtDate(r.sold_at) : 'Sold recently';
   const meta = sold + ' · ' + (Number(r.views) || 0) + ' views' + (r.skins ? ' · ' + r.skins + ' skins' : '');

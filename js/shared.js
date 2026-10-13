@@ -6,7 +6,7 @@ export const CATS = ['Sidearms', 'SMGs', 'Shotguns', 'Rifles', 'Sniper Rifles', 
 // free-slot groups: not tied to a weapon category, picker offers the whole catalog
 export const FREE_CATS = ['Flex'];
 export const ALL_CATS = [...CATS, ...FREE_CATS];
-const TIER_ORDER = ['select', 'deluxe', 'premium', 'ultra', 'exclusive'];
+export const TIER_ORDER = ['select', 'deluxe', 'premium', 'ultra', 'exclusive'];
 
 export const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const $ = (id) => document.getElementById(id);
@@ -18,6 +18,39 @@ export const IMGERR = "onerror=\"this.setAttribute('data-imgfail','1');this.clos
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const CUR_SYMBOL = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', PHP: '₱' };
 export const THEME_LABELS = { protocol: 'High Ranks', holo: 'With Champions', reaver: 'Latest Skins', oni: 'Budget-friendly', arctic: 'High Prem', standard: 'Normal' };
+
+/* v1.6 money: one formatter for every surface. Returns null when no price is
+   set, so each surface keeps its own "contact for price" wording. `sym` is the
+   resolved symbol, `amt` the grouped amount with decimals only when present.
+   HTML sinks must esc(m.sym) themselves; text sinks use moneyString(). */
+export function moneyParts(price, currency) {
+  if (price == null || price === '') return null;
+  const n = Number(price);
+  if (!isFinite(n)) return null;
+  const code = String(currency || '').trim().toUpperCase();
+  const sym = CUR_SYMBOL[code] || (code ? code + ' ' : '$');
+  const amt = n % 1 ? n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : n.toLocaleString('en-US');
+  return { sym, amt, code };
+}
+/* v1.6: the one place the edit-token storage key is spelled. */
+export const editKey = (slug) => 'vc-edit-' + slug;
+
+export function moneyString(price, currency) {
+  const m = moneyParts(price, currency);
+  return m ? m.sym + m.amt : null;
+}
+
+/* v1.6 status: one vocabulary for the buyer-facing surfaces. `available` is
+   the only state that reaches the marketplace (browse_listings_v3 filters on
+   it), so PENDING is kept here purely so a direct share link cannot present a
+   held listing as if it were for sale. */
+export function statusView(listing) {
+  const st = String((listing && listing.status) || 'available');
+  if (listing && listing.archived) return { txt: 'ARCHIVED', cls: 'bad' };
+  if (st === 'sold') return { txt: 'SOLD', cls: 'bad' };
+  if (st === 'pending') return { txt: 'PENDING', cls: 'warn' };
+  return { txt: 'AVAILABLE', cls: 'ok' };
+}
 
 export const tierKey = (t) => String(t || '').toLowerCase().replace(/\s*edition\s*$/, '').trim();
 
@@ -632,8 +665,7 @@ export function fbPostText(row, url) {
   if (price == null || !isFinite(price)) {
     lines.push('\u{1F4B0} Price: DM me' + (row && row.negotiable ? ' \u2014 open to offers' : ''));
   } else {
-    const sym = CUR_SYMBOL[row.currency] || (row.currency ? row.currency + ' ' : '$');
-    lines.push('\u{1F4B0} Price: ' + sym + (price % 1 ? price.toFixed(2) : price.toLocaleString('en-US'))
+    lines.push('\u{1F4B0} Price: ' + moneyString(price, row.currency)
       + (row.negotiable ? ' (open to offers)' : ' \u2014 firm'));
   }
   const crank = String(t.crank || '').trim();

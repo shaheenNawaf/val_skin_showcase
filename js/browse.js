@@ -1,7 +1,7 @@
 // CardForge browse — Direction-D marketplace over live Supabase listings.
 // Summary cards come from browse_listings_v2 (legacy browse_listings as a
 // fallback); the quick-view modal carries the REAL shared.css #card.
-import { esc, $, status, initDisclaimerCollapse, initStatusDismiss, ALL_CATS, DESIGN_W, DESIGN_H, isPlaceholderTitle, AVATAR_PLACEHOLDER, IMGERR, EMAIL_RE, CUR_SYMBOL } from './shared.js?v=1.6.0';
+import { esc, $, status, initDisclaimerCollapse, initStatusDismiss, ALL_CATS, DESIGN_W, DESIGN_H, isPlaceholderTitle, tierKey as canonicalTierKey, TIER_ORDER, AVATAR_PLACEHOLDER, IMGERR, EMAIL_RE, CUR_SYMBOL, moneyParts, moneyString  } from './shared.js?v=1.6.0';
 /* A: the quick-view modal renders the shared #card, and until now it always
    showed the raw panel grid — the layout the seller chose in the editor
    (payload.layout) was honoured by view.html but ignored here. */
@@ -32,7 +32,7 @@ const THEME_ACCENTS = {
 };
 
 const RANK_THRESHOLDS = { gold: 10, plat: 13, dia: 16, asc: 19, imm: 22, rad: 27 };
-const FEATURE_ORDER = ['Rifles', 'Melees', 'Sniper Rifles', 'Sidearms', 'SMGs', 'Machine Guns'];
+const FEATURE_ORDER = ['Rifles', 'Melees', 'Sniper Rifles', 'Sidearms', 'SMGs', 'Machine Guns', 'Shotguns', 'Flex'];
 
 const state = { q: '', themes: new Set(), minRank: '', price: '', flags: new Set(), sort: 'new', view: 'grid', style: 'mini' };
 let listings = [];
@@ -296,9 +296,9 @@ function badgesGrid(l) {
 /* CF-16: the symbol comes from the listing's own currency column — it was
    hardcoded '$' while the RPC returned EUR/GBP listings untouched. */
 function moneyHTML(l, cls) {
-  if (l.price == null) return '<span class="' + (cls || 'lc-offer') + '">CONTACT FOR PRICE</span>';
-  const sym = CUR_SYMBOL[l.currency] || (l.currency ? esc(l.currency) + ' ' : '$');
-  return '<span class="' + (cls || 'lc-price') + '">' + sym + esc(l.price) + '</span>';
+  const m = moneyParts(l.price, l.currency);
+  if (!m) return '<span class="' + (cls || 'lc-offer') + '">CONTACT FOR PRICE</span>';
+  return '<span class="' + (cls || 'lc-price') + '">' + esc(m.sym) + m.amt + '</span>';
 }
 
 /* Stats and trust are separate rows: stats are per-offering inventory,
@@ -363,8 +363,8 @@ function priceHTML(l) {
 /* Bare "₱4,500" for the grid foot; moneyHTML() wraps it in a classed span
    for the list/featured views. */
 function priceText(l) {
-  const sym = CUR_SYMBOL[l.currency] || (l.currency ? esc(l.currency) + ' ' : '$');
-  return sym + esc(l.price);
+  const m = moneyParts(l.price, l.currency);
+  return m ? esc(m.sym) + m.amt : '';
 }
 
 /* Still used by the FEATURED tile (.gf-trow), which is out of scope for
@@ -475,9 +475,9 @@ function featHTML(l) {
   const rp = l.rankPeak;
   const s = l.stats;
   const sk = flattenPicks(l, FEATURE_ORDER).slice(0, 5).map(pickSrcImg).join('');
-  const sym = CUR_SYMBOL[l.currency] || (l.currency ? esc(l.currency) + ' ' : '$');
-  const price = l.price != null
-    ? '<b>' + sym + esc(l.price) + (l.negotiable ? '<i>open to offers</i>' : '') + '</b><span>one-time · full access</span>'
+  const m = moneyParts(l.price, l.currency);
+  const price = m
+    ? '<b>' + esc(m.sym) + m.amt + (l.negotiable ? '<i>open to offers</i>' : '') + '</b><span>one-time · full access</span>'
     : '<b class="offer">Contact for price</b><span>' + (l.negotiable ? 'open to offers' : 'seller accepts trades') + '</span>';
   const flags = esc(l.flags.owner + ' OWNER · ' + (l.flags.wtr ? 'WTR' : 'NO-WTR') + ' · ' + (l.flags.receipts ? 'RECEIPTS' : 'NO RECEIPTS'));
   /* v1.5.2: artwork listings have no skin mosaic — the featured tile used to
@@ -770,7 +770,7 @@ function skinCell(s) {
 /* QV-T: phone quick-view swaps the unreadable 0.19× card for a tier-ordered
    hero-skin thumb strip; above 700px nothing changes. */
 const TIER_RANK = { exclusive: 5, ultra: 4, premium: 3, deluxe: 2, select: 1 };
-function tierKey(t) { return (String(t || '').toLowerCase().match(/exclusive|ultra|premium|deluxe|select/) || [''])[0]; }
+const tierKey = (t) => { const k = canonicalTierKey(t); return TIER_ORDER.includes(k) ? k : ''; };
 function heroThumbs(picks) {
   return ALL_CATS.flatMap(cat => (picks && picks[cat]) || [])
     .map((s, i) => ({ s, i, rank: TIER_RANK[tierKey(s.tier)] || 0 }))
@@ -935,8 +935,9 @@ function fillBar(l, slug) {
   bar.querySelector('.qv-meta').textContent = l.views + ' VIEWS · UPDATED ' + agoText(l.daysAgo).toUpperCase() + ' · ' + l.seller.name;
   const price = bar.querySelector('.qv-price');
   const offer = bar.querySelector('.qv-offer');
-  if (l.price != null) {
-    price.textContent = (CUR_SYMBOL[l.currency] || l.currency || '$') + l.price;
+  const ms = moneyString(l.price, l.currency);
+  if (ms != null) {
+    price.textContent = ms;
     price.hidden = false;
     offer.hidden = true;
   } else {

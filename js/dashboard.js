@@ -1,7 +1,7 @@
 // CardForge owner dashboard — Every listing on the marketplace — owner view, on one
 // page. Edit keys live in localStorage as `vc-edit-<slug>`; every mutation is
 // checked server-side against the key's hash.
-import { esc, $, status, initStatusDismiss, initDisclaimerCollapse, readJSON, writeJSON, hashToken, copyText, fbPostText, resizeToDataUrl, isPlaceholderTitle, AVATAR_PLACEHOLDER, IMGERR, EMAIL_RE, CUR_SYMBOL } from './shared.js?v=1.6.0';
+import { esc, $, status, initStatusDismiss, initDisclaimerCollapse, readJSON, writeJSON, hashToken, copyText, fbPostText, resizeToDataUrl, isPlaceholderTitle, AVATAR_PLACEHOLDER, IMGERR, EMAIL_RE, moneyParts, moneyString, editKey } from './shared.js?v=1.6.0';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -103,7 +103,9 @@ function renderStats(rows) {
     if (curs.length === 1) {
       const cur = curs[0];
       const total = priced.reduce((n, r) => n + (Number(r.price) || 0), 0);
-      value = (CUR_SYMBOL[cur] || (cur + ' ')) + total.toLocaleString('en-US');
+      /* moneyString also fixes the empty-currency case: `CUR_SYMBOL[''] || '' + ' '`
+         used to render a bare leading space with no symbol at all. */
+      value = moneyString(total, cur) || String(total.toLocaleString('en-US'));
     } else {
       mixed = true;
     }
@@ -122,7 +124,10 @@ function renderStats(rows) {
 
 // ── rows ──────────────────────────────────────────────────────────
 function statusLabel(s) {
-  return ({ available: 'ON SALE', pending: 'PENDING', sold: 'SOLD' })[s] || String(s || '').toUpperCase();
+  /* v1.6: the buyer-facing word is AVAILABLE (viewer.js). The admin row used to
+     say ON SALE for the same row. `pending` has no writer anywhere, so an
+     unexpected value still falls through to its own uppercase rather than a lie. */
+  return ({ available: 'AVAILABLE', sold: 'SOLD' })[s] || String(s || '').toUpperCase();
 }
 
 function firstPick(row) {
@@ -142,8 +147,8 @@ function rowThumb(row) {
 
 function priceText(row) {
   if (row.price == null) return 'No price set';
-  const sym = CUR_SYMBOL[row.currency] || (row.currency ? row.currency + ' ' : '$');
-  return esc(sym + Number(row.price).toLocaleString('en-US')) + (row.negotiable ? ' · OBO' : '');
+  const m = moneyParts(row.price, row.currency);
+  return m ? esc(m.sym) + m.amt + (row.negotiable ? ' · OBO' : '') : 'No price set';
 }
 
 function actBtn(act, label, cls, hidden) {
@@ -257,7 +262,7 @@ function render() {
 
 // ── owner RPCs ────────────────────────────────────────────────────
 async function own(row, params) {
-  const h = await hashToken(localStorage.getItem('vc-edit-' + row.slug) || '');
+  const h = await hashToken(localStorage.getItem(editKey(row.slug)) || '');
   const { error } = await supabase.rpc('owner_set_listing', Object.assign({ p_slug: row.slug, p_edit_token_hash: h }, params));
   if (error) throw error;
 }
@@ -330,7 +335,7 @@ function togglePriceForm(rowEl, row) {
 async function saveThumb(row, thumb) {
   const payload = Object.assign({}, row.payload || {});
   if (thumb) payload.thumb = thumb; else delete payload.thumb;
-  const h = await hashToken(localStorage.getItem('vc-edit-' + row.slug) || '');
+  const h = await hashToken(localStorage.getItem(editKey(row.slug)) || '');
   const { error } = await supabase.rpc('update_listing', {
     p_slug: row.slug, p_edit_token_hash: h, p_payload: payload, p_theme: row.theme || 'protocol'
   });
@@ -408,7 +413,7 @@ function toggleThumbForm(rowEl, row) {
       runAction(rowEl, 'Mode', async () => {
         const payload = Object.assign({}, row.payload || {});
         if (mode === 'card') payload.thumbMode = 'card'; else delete payload.thumbMode;
-        const h = await hashToken(localStorage.getItem('vc-edit-' + row.slug) || '');
+        const h = await hashToken(localStorage.getItem(editKey(row.slug)) || '');
         const { error } = await supabase.rpc('update_listing', { p_slug: row.slug, p_edit_token_hash: h, p_payload: payload, p_theme: row.theme || 'protocol' });
         if (error) throw error;
         status(mode === 'card' ? 'Listing page now shows the artwork.' : 'Artwork is the marketplace cover only.', 'ok');
@@ -519,7 +524,7 @@ function wireActions() {
         ? 'Archive this listing? It disappears from the marketplace until you unarchive it.'
         : 'Unarchive this listing? It returns to the marketplace.')) return;
       runAction(rowEl, btn.textContent, async () => {
-        const h = await hashToken(localStorage.getItem('vc-edit-' + slug) || '');
+        const h = await hashToken(localStorage.getItem(editKey(slug)) || '');
         const { error } = await supabase.rpc('set_listing_archived', { p_slug: slug, p_edit_token_hash: h, p_archived: next });
         if (error) throw error;
         status(next ? 'Listing archived — hidden from the marketplace.' : 'Listing unarchived — back in the marketplace.', 'ok');
@@ -533,13 +538,13 @@ function wireActions() {
         const all = readJSON('vlistings', {});
         delete all[slug];
         writeJSON('vlistings', all);
-        localStorage.removeItem('vc-edit-' + slug);
+        localStorage.removeItem(editKey(slug));
         status('Listing deleted.', 'ok');
         load(true);
         return;
       }
       runAction(rowEl, btn.textContent, async () => {
-        const h = await hashToken(localStorage.getItem('vc-edit-' + slug) || '');
+        const h = await hashToken(localStorage.getItem(editKey(slug)) || '');
         const { error } = await supabase.rpc('delete_listing', { p_slug: slug, p_edit_token_hash: h });
         if (error) throw error;
         /* v1.5.1: delete_listing cannot touch storage — clean the share image
@@ -548,7 +553,7 @@ function wireActions() {
           await supabase.storage.from('listing-images').remove(
             [slug + '.jpg', slug + '-thumb.jpg', slug + '-thumb.png', slug + '-thumb.webp']);
         } catch { /* best-effort cleanup */ }
-        localStorage.removeItem('vc-edit-' + slug);
+        localStorage.removeItem(editKey(slug));
         status('Listing deleted.', 'ok');
       });
     }

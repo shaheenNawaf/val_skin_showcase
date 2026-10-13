@@ -253,9 +253,9 @@ function mobileCaption(s) {
   return n;
 }
 function mobileTierKey(t) {
-  /* payload carries display names ("Premium Edition") — normalize to the
-     token key used by --tier-* */
-  return (String(t || '').toLowerCase().match(/exclusive|ultra|premium|deluxe|select/) || [''])[0];
+  /* v1.6: same normalization as shared.tierKey, with the known-tier guard */
+  const k = CF.tierKey(t);
+  return CF.TIER_ORDER.includes(k) ? k : '';
 }
 /* Plan 001: chip → panel activation. Resets the frame's internal scroll. */
 function activateCat(cat) {
@@ -361,11 +361,7 @@ function renderMobile(listing, force) {
     else badge.removeAttribute('src');
   });
 
-  const st = listing.status || 'available';
-  const stCfg = listing.archived ? { txt: 'ARCHIVED', cls: 'bad' }
-    : st === 'sold' ? { txt: 'SOLD', cls: 'bad' }
-    : st === 'pending' ? { txt: 'PENDING', cls: 'warn' }
-    : { txt: 'AVAILABLE', cls: 'ok' };
+  const stCfg = CF.statusView(listing);
   const stEl = mcard.querySelector('.mstatus');
   stEl.textContent = stCfg.txt;
   stEl.className = 'mstatus ' + stCfg.cls;
@@ -624,18 +620,15 @@ CF.initDisclaimerCollapse();
 CF.initStatusDismiss();
 
 /* ── CF-11/CF-12: listing hero — structured price, seller, status ── */
-function moneyText(price, currency) {
-  if (price == null || isNaN(Number(price))) return null;
-  const n = Number(price);
-  const sym = CF.CUR_SYMBOL[currency] || (currency ? currency + ' ' : '$');
-  return { sym, amt: n % 1 ? n.toFixed(2) : n.toLocaleString(), code: currency || '' };
-}
+/* v1.6: money formatting moved to shared.moneyParts - the local copy escaped
+   nothing and rendered the amount with the host locale, so this is also where
+   the unescaped currency value reached innerHTML. */
 function applyHero(listing) {
   const t = listing.payload?.texts || {};
   const hero = CF.$('vhero');
   const title = (t.code && t.code.trim()) || (t.cname && !CF.isPlaceholderTitle(t.cname) && t.cname.trim()) || 'Listing ' + (listing.slug || '');
   CF.$('vhTitle').textContent = title;
-  document.title = title + (listing.price != null ? ' · ' + (moneyText(listing.price, listing.currency)?.sym || '') + listing.price : '');
+  document.title = title + (CF.moneyString(listing.price, listing.currency) ? ' · ' + CF.moneyString(listing.price, listing.currency) : '');
   const bits = [];
   const vl = (t.vlogin && t.vlogin !== 'RIOT ID') ? t.vlogin : '';
   const riot = vl ? (vl.includes('#') || !t.tag ? vl : vl + '#' + t.tag) : (t.tag || '');
@@ -646,12 +639,9 @@ function applyHero(listing) {
   if (skins != null) bits.push(skins + ' skins');
   CF.$('vhSub').textContent = bits.join(' · ') || '—';
 
-  const m = moneyText(listing.price, listing.currency);
+  const m = CF.moneyParts(listing.price, listing.currency);
   const st = listing.status || 'available';
-  const stCfg = listing.archived ? { txt: 'ARCHIVED', cls: 'bad' }
-    : st === 'sold' ? { txt: 'SOLD', cls: 'bad' }
-    : st === 'pending' ? { txt: 'PENDING', cls: 'warn' }
-    : { txt: 'AVAILABLE', cls: 'ok' };
+  const stCfg = CF.statusView(listing);
   const vs = CF.$('vhStatus');
   vs.hidden = false;
   vs.textContent = stCfg.txt;
@@ -663,7 +653,7 @@ function applyHero(listing) {
   let priceHTML = '', curText = '';
   const strike = st === 'sold' && m;
   if (m) {
-    priceHTML = (strike ? '<s>' : '') + m.sym + m.amt + (strike ? '</s>' : '');
+    priceHTML = (strike ? '<s>' : '') + CF.esc(m.sym) + m.amt + (strike ? '</s>' : '');
     curText = [m.code, listing.negotiable ? 'open to offers' : '', st === 'sold' ? 'sold' : '']
       .filter(Boolean).join(' · ');
   } else {
@@ -741,7 +731,7 @@ function wireOwnerControls(sb, listing, slug) {
   const sBtn = CF.$('soldBtn'), fBtn = CF.$('featureBtn'), bmBtn = CF.$('bumpBtn'), pBtn = CF.$('priceBtn'), flBtn = CF.$('fbLinkBtn'), fcBtn = CF.$('fbCopyBtn');
   const pBox = CF.$('priceBox');
   const note = CF.$('archNote');
-  const token = localStorage.getItem('vc-edit-' + slug) || '';
+  const token = localStorage.getItem(CF.editKey(slug)) || '';
   const sync = () => {
     aBtn.hidden = false;
     dBtn.hidden = false;

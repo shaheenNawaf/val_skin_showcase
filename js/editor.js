@@ -1601,8 +1601,8 @@ function parseAmount(v) {
 }
 
 function priceMoney(p) {
-  const sym = CF.CUR_SYMBOL[p.currency] || (p.currency ? p.currency + ' ' : '$');
-  return sym + Number(p.amount).toLocaleString('en-US', { maximumFractionDigits: 2 });
+  const m = CF.moneyParts(p.amount, p.currency);
+  return m ? m.sym + m.amt : '';
 }
 
 /* The line printed on the card follows the structured price. "PRICE OFFER" is
@@ -2226,7 +2226,7 @@ async function publishListing() {
   try {
     let slug = editSlug || localStorage.getItem('vc-draft-id') || CF.randomId(7);
     if (supabase) {
-      let existingToken = localStorage.getItem('vc-edit-' + slug);
+      let existingToken = localStorage.getItem(CF.editKey(slug));
       const token = existingToken || CF.randomId(40);
       const hash = await CF.hashToken(token);
       if (existingToken) {
@@ -2240,7 +2240,7 @@ async function publishListing() {
            at thin air — this is what made deleted listings look un-readdable. */
         const { data: chk } = await supabase.from('listing_public').select('slug').eq('slug', slug).maybeSingle();
         if (!chk) {
-          localStorage.removeItem('vc-edit-' + slug);
+          localStorage.removeItem(CF.editKey(slug));
           existingToken = null;
         }
       }
@@ -2261,7 +2261,7 @@ async function publishListing() {
           else throw error;
         }
         if (!created) throw lastErr || new Error('create_listing failed');
-        localStorage.setItem('vc-edit-' + slug, token);
+        localStorage.setItem(CF.editKey(slug), token);
       }
       localStorage.setItem('vc-draft-id', slug);
     } else {
@@ -2275,7 +2275,7 @@ async function publishListing() {
       }
       // token is unused server-side in this mode; it just marks this browser
       // as the owner so the viewer offers the "← Editor" button
-      if (!localStorage.getItem('vc-edit-' + slug)) localStorage.setItem('vc-edit-' + slug, CF.randomId(40));
+      if (!localStorage.getItem(CF.editKey(slug))) localStorage.setItem(CF.editKey(slug), CF.randomId(40));
       localStorage.setItem('vc-draft-id', slug);
     }
     editSlug = slug;
@@ -2333,7 +2333,7 @@ async function publishListing() {
           const changed = JSON.stringify(pl) !== JSON.stringify(curRow.payload || {});
           if (pl.thumb && pl.thumb.src) lastThumbSrc = pl.thumb.src;
           if (changed) {
-            const h = await CF.hashToken(localStorage.getItem('vc-edit-' + slug) || '');
+            const h = await CF.hashToken(localStorage.getItem(CF.editKey(slug)) || '');
             const { error: uErr } = await supabase.rpc('update_listing', { p_slug: slug, p_edit_token_hash: h, p_payload: pl, p_theme: curRow.theme || 'protocol' });
             if (uErr) throw uErr;
           }
@@ -2341,7 +2341,7 @@ async function publishListing() {
             const pv = (CF.$('ff-price') ? CF.$('ff-price').value.trim() : '');
             const num = Number(pv);
             const obo = !!(CF.$('ff-obo') && CF.$('ff-obo').checked);
-            const h2 = await CF.hashToken(localStorage.getItem('vc-edit-' + slug) || '');
+            const h2 = await CF.hashToken(localStorage.getItem(CF.editKey(slug)) || '');
             if (pv && isFinite(num) && num >= 0) {
               const cur = (CF.$('ff-cur') && CF.$('ff-cur').value) || 'PHP';
               const { error: pErr } = await supabase.rpc('owner_set_listing', { p_slug: slug, p_edit_token_hash: h2, p_price: num, p_currency: cur, p_negotiable: obo });
@@ -2361,7 +2361,7 @@ async function publishListing() {
                This is the missing half. p_clear_price is the documented way to
                null a price — sending p_price: null would COALESCE and keep it. */
             const p = priceState();
-            const h2 = await CF.hashToken(localStorage.getItem('vc-edit-' + slug) || '');
+            const h2 = await CF.hashToken(localStorage.getItem(CF.editKey(slug)) || '');
             const params = { p_slug: slug, p_edit_token_hash: h2, p_negotiable: !!p.offers };
             if (p.contact || p.amount == null || !isFinite(p.amount)) params.p_clear_price = true;
             else { params.p_price = p.amount; params.p_currency = p.currency || 'PHP'; }
@@ -2382,7 +2382,7 @@ async function publishListing() {
        recovery key once at first publish so a lost browser doesn't mean a
        listing that can never be edited or marked sold again. */
     const firstPublish = !localStorage.getItem('cf-key-shown-' + slug);
-    const key = localStorage.getItem('vc-edit-' + slug) || '';
+    const key = localStorage.getItem(CF.editKey(slug)) || '';
     const keyMsg = firstPublish && key
       ? ' Recovery key (shown once, save it somewhere safe — it is the only way to edit this listing from another browser): ' + key
       : '';
@@ -2611,13 +2611,13 @@ async function initEditMode() {
   /* CF-23: recovery-key re-entry. Without the local edit token this browser
      could load the listing but never update it (update_listing checks the
      token hash). With a key, the seller regains control from any browser. */
-  if (!localStorage.getItem('vc-edit-' + slug)) {
+  if (!localStorage.getItem(CF.editKey(slug))) {
     const key = (params.get('key') || '').trim() || (window.prompt(
       'This listing was published from another browser.\n\n' +
       'Paste the recovery key you saved when you published it — it is the only way to edit or mark this listing sold from here.'
     ) || '').trim();
     if (key) {
-      localStorage.setItem('vc-edit-' + slug, key);
+      localStorage.setItem(CF.editKey(slug), key);
       CF.status('Recovery key accepted — it will be verified when you publish changes.', 'info');
     } else {
       CF.status('Viewing in read-only mode: this browser has no edit key for that listing. Re-open with ?edit=' + slug + '&key=… to edit.', 'err');
