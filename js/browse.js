@@ -136,6 +136,10 @@ function normalize(r) {
          neither (sellers have pasted Riot IDs here) matches nothing and
          renders no Premier chip at all. */
       premierLinked: /\blinked\b/i.test(r.vlink || '') && !/unlinked/i.test(r.vlink || ''),
+      /* v1.6.3: account health, seller-declared via the Requirements modal.
+         Unset reads as No Issue, which is the agreed policy for the listings
+         published before atype existed. */
+      accountIssue: /with\s+issue/i.test(r.atype || ''),
       owner: (r.owner || '').replace(/\s*owner\s*$/i, '') || '—'
     },
     seller: { name: r.tag || ((r.vlogin && r.vlogin !== 'RIOT ID') ? r.vlogin : '') || r.slug },
@@ -238,8 +242,11 @@ function rankCounts() {
 function flagCounts() {
   const base = facetBase('flags');
   const map = {
-    noissue: l => l.flags.wtr,
-    issues: l => !l.flags.wtr,
+    /* v1.6.3: the issue facet reads the account-type field, not WTR. WTR and
+       account health were the same fact until the Requirements modal split
+       them; reading wtr here made every no-WTR listing claim to have issues. */
+    noissue: l => !l.flags.accountIssue,
+    issues: l => l.flags.accountIssue,
     premunl: l => l.flags.premierUnlinked
   };
   document.querySelectorAll('#fFlags input').forEach(cb => {
@@ -562,8 +569,8 @@ function matches(l, skip) {
     else if (state.price === 'r10000' && !(p >= 7000 && p <= 10000)) return false;
   }
   if (skip !== 'flags' && state.flags.size) {
-    if (state.flags.has('noissue') && !l.flags.wtr) return false;
-    if (state.flags.has('issues') && l.flags.wtr) return false;
+    if (state.flags.has('noissue') && l.flags.accountIssue) return false;
+    if (state.flags.has('issues') && !l.flags.accountIssue) return false;
     if (state.flags.has('premunl') && !l.flags.premierUnlinked) return false;
   }
   return true;
