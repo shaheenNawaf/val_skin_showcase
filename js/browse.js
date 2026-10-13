@@ -1,7 +1,7 @@
 // CardForge browse — Direction-D marketplace over live Supabase listings.
 // Summary cards come from browse_listings_v2 (legacy browse_listings as a
 // fallback); the quick-view modal carries the REAL shared.css #card.
-import { esc, $, status, initDisclaimerCollapse, initStatusDismiss, ALL_CATS, DESIGN_W, DESIGN_H, isPlaceholderTitle } from './shared.js?v=1.6.0';
+import { esc, $, status, initDisclaimerCollapse, initStatusDismiss, ALL_CATS, DESIGN_W, DESIGN_H, isPlaceholderTitle, AVATAR_PLACEHOLDER, IMGERR, EMAIL_RE, CUR_SYMBOL } from './shared.js?v=1.6.0';
 /* A: the quick-view modal renders the shared #card, and until now it always
    showed the raw panel grid — the layout the seller chose in the editor
    (payload.layout) was honoured by view.html but ignored here. */
@@ -17,14 +17,10 @@ let isSeller = false;
    The magic-link button in the login modal is revealed with ?magic=1
    (recovery hatch so OTP-only sellers can never be locked out). */
 const MAGIC = new URLSearchParams(location.search).has('magic');
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>";
 
 /* CF-31: a failed skin icon used to become visibility:hidden behind a
    gradient — a silent gap with no alt and no per-skin signal. Mark the
    wrap so CSS can show an honest placeholder instead. */
-const IMGERR = "onerror=\"this.setAttribute('data-imgfail','1');this.closest('[data-imgwrap]')?.setAttribute('data-imgfail','1')\"";
 
 const THEME_ACCENTS = {
   protocol: { label: 'High Ranks', bg: '#0F1923', panel: '#1F2731', accent: '#FF4655', ink: '#ECE8E1', mut: '#8A99A9' },
@@ -299,7 +295,6 @@ function badgesGrid(l) {
 
 /* CF-16: the symbol comes from the listing's own currency column — it was
    hardcoded '$' while the RPC returned EUR/GBP listings untouched. */
-const CUR_SYMBOL = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', PHP: '₱' };
 function moneyHTML(l, cls) {
   if (l.price == null) return '<span class="' + (cls || 'lc-offer') + '">CONTACT FOR PRICE</span>';
   const sym = CUR_SYMBOL[l.currency] || (l.currency ? esc(l.currency) + ' ' : '$');

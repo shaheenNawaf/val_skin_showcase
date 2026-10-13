@@ -11,6 +11,14 @@ const TIER_ORDER = ['select', 'deluxe', 'premium', 'ultra', 'exclusive'];
 export const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const $ = (id) => document.getElementById(id);
 
+// v1.6 dedup: single copies of constants that were duplicated across the page
+// modules. Each was verified byte-identical before merging (see qa note).
+export const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>";
+export const IMGERR = "onerror=\"this.setAttribute('data-imgfail','1');this.closest('[data-imgwrap]')?.setAttribute('data-imgfail','1')\"";
+export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const CUR_SYMBOL = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', PHP: '₱' };
+export const THEME_LABELS = { protocol: 'High Ranks', holo: 'With Champions', reaver: 'Latest Skins', oni: 'Budget-friendly', arctic: 'High Prem', standard: 'Normal' };
+
 export const tierKey = (t) => String(t || '').toLowerCase().replace(/\s*edition\s*$/, '').trim();
 
 export function tierClass(t) {
@@ -602,7 +610,6 @@ export function startLocalPresence(channelId, onTick) {
    (or any object with { slug, payload, price, currency, negotiable }); `url` =
    absolute listing URL. Pure function — no DOM, no network. Mirrors the card:
    every value it prints is a value the card itself shows. */
-const FB_SYM = { USD: '$', EUR: '\u20ac', GBP: '\u00a3', JPY: '\u00a5', PHP: '\u20b1' };
 const fbNum = s => parseInt(String(s == null ? '' : s).replace(/[^0-9]/g, ''), 10) || 0;
 
 export function fbPostText(row, url) {
@@ -625,7 +632,7 @@ export function fbPostText(row, url) {
   if (price == null || !isFinite(price)) {
     lines.push('\u{1F4B0} Price: DM me' + (row && row.negotiable ? ' \u2014 open to offers' : ''));
   } else {
-    const sym = FB_SYM[row.currency] || (row.currency ? row.currency + ' ' : '$');
+    const sym = CUR_SYMBOL[row.currency] || (row.currency ? row.currency + ' ' : '$');
     lines.push('\u{1F4B0} Price: ' + sym + (price % 1 ? price.toFixed(2) : price.toLocaleString('en-US'))
       + (row.negotiable ? ' (open to offers)' : ' \u2014 firm'));
   }

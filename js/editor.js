@@ -9,8 +9,6 @@ if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase) {
   supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 }
 
-const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>";
-
 const DRAFT_KEY = 'vcard-draft-v2';   // structured payload (current)
 const LEGACY_DRAFT_KEY = 'vcard-builder-v1'; // old innerHTML-based drafts
 
@@ -121,7 +119,7 @@ function hydrateRanks() {
 
 function hydrateAssets() {
   const avatar = card.querySelector('.avatar');
-  avatar.src = state.assets.avatar || AVATAR_PLACEHOLDER;
+  avatar.src = state.assets.avatar || CF.AVATAR_PLACEHOLDER;
   const pcard = card.querySelector('.pcard');
   if (state.assets.pcard) {
     pcard.style.backgroundImage = `url("${state.assets.pcard}")`;
@@ -1587,7 +1585,6 @@ function openReqModal() {
    and negotiable true no matter what the seller typed into the card's price
    line — the marketplace foot just said "Contact for price". One state object
    now feeds the modal, the phone summary, the card text and the publish RPC. */
-const CUR_SYM = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', PHP: '₱' };
 
 function priceState() {
   if (!state.price) state.price = { amount: null, currency: 'PHP', contact: true, offers: true };
@@ -1604,7 +1601,7 @@ function parseAmount(v) {
 }
 
 function priceMoney(p) {
-  const sym = CUR_SYM[p.currency] || (p.currency ? p.currency + ' ' : '$');
+  const sym = CF.CUR_SYMBOL[p.currency] || (p.currency ? p.currency + ' ' : '$');
   return sym + Number(p.amount).toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
 
@@ -1741,7 +1738,7 @@ phoneMq700.addEventListener('change', e => {
 /* FM: phone form mode — sync + renders + delegated wiring */
 function syncFormArt() {
   const av = document.getElementById('fAvatar');
-  if (av) av.src = state.assets.avatar || AVATAR_PLACEHOLDER;
+  if (av) av.src = state.assets.avatar || CF.AVATAR_PLACEHOLDER;
   const pc = document.getElementById('fPcard');
   if (pc) {
     if (state.assets.pcard) { pc.src = state.assets.pcard; pc.hidden = false; }

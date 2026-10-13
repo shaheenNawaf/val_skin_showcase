@@ -1,7 +1,7 @@
 // CardForge owner dashboard — Every listing on the marketplace — owner view, on one
 // page. Edit keys live in localStorage as `vc-edit-<slug>`; every mutation is
 // checked server-side against the key's hash.
-import { esc, $, status, initStatusDismiss, initDisclaimerCollapse, readJSON, writeJSON, hashToken, copyText, fbPostText, resizeToDataUrl, isPlaceholderTitle } from './shared.js?v=1.6.0';
+import { esc, $, status, initStatusDismiss, initDisclaimerCollapse, readJSON, writeJSON, hashToken, copyText, fbPostText, resizeToDataUrl, isPlaceholderTitle, AVATAR_PLACEHOLDER, IMGERR, EMAIL_RE, CUR_SYMBOL } from './shared.js?v=1.6.0';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -9,11 +9,8 @@ if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase) {
   supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 }
 
-const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>";
-
-const IMGERR = "onerror=\"this.setAttribute('data-imgfail','1');this.closest('[data-imgwrap]')?.setAttribute('data-imgfail','1')\"";
-
-const SYM = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', PHP: '₱' };
+// v1.6: AVATAR_PLACEHOLDER, IMGERR, EMAIL_RE and the currency table now come
+// from shared.js (they were byte-identical duplicates here).
 
 const state = { tab: 'active', rows: [], tokens: {}, local: false };
 
@@ -106,7 +103,7 @@ function renderStats(rows) {
     if (curs.length === 1) {
       const cur = curs[0];
       const total = priced.reduce((n, r) => n + (Number(r.price) || 0), 0);
-      value = (SYM[cur] || (cur + ' ')) + total.toLocaleString('en-US');
+      value = (CUR_SYMBOL[cur] || (cur + ' ')) + total.toLocaleString('en-US');
     } else {
       mixed = true;
     }
@@ -145,7 +142,7 @@ function rowThumb(row) {
 
 function priceText(row) {
   if (row.price == null) return 'No price set';
-  const sym = SYM[row.currency] || (row.currency ? row.currency + ' ' : '$');
+  const sym = CUR_SYMBOL[row.currency] || (row.currency ? row.currency + ' ' : '$');
   return esc(sym + Number(row.price).toLocaleString('en-US')) + (row.negotiable ? ' · OBO' : '');
 }
 
@@ -624,8 +621,6 @@ async function probeSeller() {
     return false;
   }
 }
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function setDgMsg(text, isErr) {
   const m = $('dgMsg');

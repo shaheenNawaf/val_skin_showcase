@@ -53,7 +53,7 @@ function loadSupabase() {
   return sbLoading;
 }
 
-const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%25' height='100%25' fill='%232A3540'/><circle cx='32' cy='25' r='11' fill='%23768390'/><rect x='14' y='40' width='36' height='19' rx='6' fill='%23768390'/></svg>";
+// v1.6: AVATAR_PLACEHOLDER moved to shared.js.
 
 const card = CF.$('card');
 const mcard = CF.$('mcard');
@@ -132,7 +132,7 @@ function renderListing(listing) {
   const assets = payload.assets || {};
   const avatar = card.querySelector('.avatar');
   if (assets.avatar) avatar.src = assets.avatar;
-  else avatar.src = AVATAR_PLACEHOLDER;
+  else avatar.src = CF.AVATAR_PLACEHOLDER;
 
   if (assets.pcard) {
     const pcard = card.querySelector('.pcard');
@@ -370,7 +370,7 @@ function renderMobile(listing, force) {
   stEl.textContent = stCfg.txt;
   stEl.className = 'mstatus ' + stCfg.cls;
 
-  mcard.querySelector('.mavatar').src = assets.avatar || AVATAR_PLACEHOLDER;
+  mcard.querySelector('.mavatar').src = assets.avatar || CF.AVATAR_PLACEHOLDER;
   if (assets.pcard) {
     const pc = mcard.querySelector('.mpcard');
     pc.src = assets.pcard;
@@ -624,11 +624,10 @@ CF.initDisclaimerCollapse();
 CF.initStatusDismiss();
 
 /* ── CF-11/CF-12: listing hero — structured price, seller, status ── */
-const CUR_SYMBOL = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', PHP: '₱' };
 function moneyText(price, currency) {
   if (price == null || isNaN(Number(price))) return null;
   const n = Number(price);
-  const sym = CUR_SYMBOL[currency] || (currency ? currency + ' ' : '$');
+  const sym = CF.CUR_SYMBOL[currency] || (currency ? currency + ' ' : '$');
   return { sym, amt: n % 1 ? n.toFixed(2) : n.toLocaleString(), code: currency || '' };
 }
 function applyHero(listing) {
