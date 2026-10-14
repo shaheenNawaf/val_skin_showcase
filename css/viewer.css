@@ -367,19 +367,22 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
   color: var(--c-mut);
   margin-bottom: 22px;
 }
-#vgone a.primary {
+#vgone a.primary,
+#vgone button.primary {
   display: inline-block;
   padding: 11px 22px;
-  border: 1px solid var(--c-accent);
-  color: var(--c-accent);
+  background: var(--c-accent-btn);
+  border: 1px solid var(--c-accent-btn);
+  color: #fff;
   font: 700 12px var(--font-ui);
   letter-spacing: .1em;
   text-transform: uppercase;
   text-decoration: none;
+  cursor: pointer;
 }
-#vgone a.primary:hover {
-  background: var(--c-accent);
-  color: #fff;
+#vgone a.primary:hover,
+#vgone button.primary:hover {
+  filter: brightness(1.12);
 }
 @media (max-width: 700px) {
   #vgone { margin: 56px auto; }

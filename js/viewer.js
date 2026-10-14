@@ -1,7 +1,7 @@
 // CardForge viewer — renders a published listing from Supabase (public share
 // links) or, as a fallback, from this browser's localStorage.
-import * as CF from './shared.js?v=2.0.1';
-import { applyLayout, resolveLayout } from './layouts.js?v=2.0.1';
+import * as CF from './shared.js?v=2.0.2';
+import { applyLayout, resolveLayout } from './layouts.js?v=2.0.2';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -40,7 +40,7 @@ function loadSupabase() {
   if (!sbLoading) {
     sbLoading = new Promise(res => {
       const s = document.createElement('script');
-      s.src = 'js/vendor/supabase.js?v=2.0.1';
+      s.src = 'js/vendor/supabase.js?v=2.0.2';
       s.onload = () => {
         try { supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY); }
         catch { supabase = null; }
@@ -1075,6 +1075,43 @@ function initArtMode(src) {
   setArt(true);
 }
 
+/* One panel for a listing that did not render. The kind is chosen by whether the
+   database answered at all: 'gone' may say the listing was sold or removed,
+   'unreachable' may not. Every string below is a static literal; nothing here
+   interpolates a slug or a listing field. */
+function showGonePanel(kind) {
+  /* the card markup ships with placeholder values (K486, ranks, price).
+     Clear them so a dead link never shows a fake card. */
+  document.querySelectorAll('[data-key]').forEach(el => { el.textContent = '—'; });
+  document.querySelectorAll('[data-m]').forEach(el => { el.textContent = '—'; });
+  document.querySelectorAll('#card img').forEach(img => { img.remove(); });
+  CF.$('viewBadge').hidden = true;
+  CF.$('contactBtn').hidden = true;
+
+  // hide every surface that would otherwise show an empty frame
+  ['stage', 'vhero', 'mactbar', 'zoomDock'].forEach(id => {
+    const n = CF.$(id);
+    if (n) n.style.display = 'none';
+  });
+  if (mcard) mcard.style.display = 'none';
+
+  const copy = kind === 'gone'
+    ? { h: 'Listing no longer available', p: 'This link points to a listing that was sold, removed, or never published.', retry: false }
+    : { h: 'Listing could not be loaded', p: 'The database did not answer. That is usually a connection problem, not a deleted listing.', retry: true };
+
+  const panel = document.createElement('div');
+  panel.id = 'vgone';
+  panel.innerHTML = '<h1>' + copy.h + '</h1>'
+    + '<p>' + copy.p + '</p>'
+    + (copy.retry
+      ? '<button type="button" class="primary">Try again</button>'
+      : '<a class="primary" href="/">Browse all listings</a>');
+  document.body.appendChild(panel);
+  if (copy.retry) {
+    panel.querySelector('button').addEventListener('click', () => { location.reload(); });
+  }
+}
+
 const slug = new URLSearchParams(location.search).get('slug');
 if (!slug) {
   CF.status('No listing specified — open a published share link.', 'err');
@@ -1086,10 +1123,15 @@ if (!slug) {
   if (wmStamp) wmStamp.textContent = new Date().toISOString().slice(0, 10);
   CF.status('Loading listing…');
   let listing = null;
+  /* true only when the database answered successfully, whether or not a row came
+     back. A throw means nothing is known about the listing, so the page must not
+     claim it was sold or removed. */
+  let remoteOk = false;
 
   if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY) {
     try {
       listing = await restFetchListing(slug);
+      remoteOk = true;
     } catch {
       CF.status('Supabase unavailable — trying local copy…');
     }
@@ -1102,29 +1144,12 @@ if (!slug) {
   }
 
   if (!listing) {
-    CF.status('Listing not found.', 'err');
-    /* the card markup ships with placeholder values (K486, ranks, price).
-       Clear them so a dead link never shows a fake card. */
-    document.querySelectorAll('[data-key]').forEach(el => { el.textContent = '—'; });
-    document.querySelectorAll('[data-m]').forEach(el => { el.textContent = '—'; });
-    document.querySelectorAll('#card img').forEach(img => { img.remove(); });
-    CF.$('viewBadge').hidden = true;
-    CF.$('contactBtn').hidden = true;
-
-    // hide every surface that would otherwise show an empty frame
-    ['stage', 'vhero', 'mactbar'].forEach(id => {
-      const n = CF.$(id);
-      if (n) n.style.display = 'none';
-    });
-    if (mcard) mcard.style.display = 'none';
-
-    // one honest panel replaces all of it
-    const gone = document.createElement('div');
-    gone.id = 'vgone';
-    gone.innerHTML = '<h1>Listing no longer available</h1>'
-      + '<p>This link points to a listing that was sold, removed, or never published.</p>'
-      + '<a class="primary" href="/">Browse all listings</a>';
-    document.body.appendChild(gone);
+    if (remoteOk) {
+      CF.status('Listing not found.', 'err');
+      showGonePanel('gone');
+    } else {
+      showGonePanel('unreachable');
+    }
   } else {
     renderListing(listing);
     renderMobile(listing);
