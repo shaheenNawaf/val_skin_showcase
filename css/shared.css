@@ -167,7 +167,7 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
    panels use, and the now-empty .slots is dropped so the boxes fill the column
    to the same bottom line as the + ADD (0) buttons beside them. */
 .panel[data-cat="Flex"]{gap:6px}
-.panel[data-cat="Flex"] .slots{display:none}
+.panel[data-cat="Flex"]:has(.flex-add) .slots{display:none}
 .flexcol .add{padding:4px;font-size:12px;letter-spacing:.1em}
 
 /* ── footer boxes (grid row 6, template-style) ──────────────────── */
