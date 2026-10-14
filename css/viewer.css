@@ -348,3 +348,39 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 .art-img{display:block;width:100%;height:auto;margin:12px 0 24px}
 .art-img[hidden]{display:none}
 .art-img{display:block;width:auto;height:auto;max-width:100%;max-height:calc(100vh - 220px);align-self:center;margin:12px auto 24px;object-fit:contain}
+
+/* ---------- dead listing (404) ---------- */
+#vgone {
+  max-width: 520px;
+  margin: 96px auto;
+  padding: 0 20px;
+  text-align: center;
+}
+#vgone h1 {
+  font: 800 26px var(--font-display);
+  color: var(--c-ink);
+  margin-bottom: 10px;
+}
+#vgone p {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--c-mut);
+  margin-bottom: 22px;
+}
+#vgone a.primary {
+  display: inline-block;
+  padding: 11px 22px;
+  border: 1px solid var(--c-accent);
+  color: var(--c-accent);
+  font: 700 12px var(--font-ui);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+#vgone a.primary:hover {
+  background: var(--c-accent);
+  color: #fff;
+}
+@media (max-width: 700px) {
+  #vgone { margin: 56px auto; }
+}

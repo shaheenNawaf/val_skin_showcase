@@ -2,9 +2,9 @@
 //
 // Crawlers do not run JavaScript, so og: tags cannot be written client-side
 // from the fetched listing. This edge function rewrites them into the
-// served HTML for both share URL shapes:
-//   /l/<slug>            (clean share URL, browsers and bots)
-//   /view.html?slug=<s>  (the link the publish button copies)
+// served HTML for the share URL shape the publish button copies:
+//   /view.html?slug=<s>
+// The legacy /l/<slug> shape is a 301 rule in _redirects, not handled here.
 //
 // Requires two environment variables on Netlify:
 //   SUPABASE_URL          e.g. https://xxxx.supabase.co
@@ -15,14 +15,17 @@
 
 export default async (request: Request, context: any) => {
   const url = new URL(request.url);
-  const m = url.pathname.match(/^\/l\/([a-z0-9]+)$/i);
-  const slug = m ? m[1] : url.searchParams.get('slug');
+  const slug = url.searchParams.get('slug');
   if (!slug) return context.next();
 
   const SB_URL = Deno.env.get('SUPABASE_URL') || '';
   const SB_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
   if (!SB_URL || !SB_KEY) return context.next();
 
+  /* 'missing' is set only when Supabase answered successfully with zero rows. A
+     network or auth failure stays 'unknown', so a transient outage must never
+     report a live listing as gone. */
+  let lookup: 'found' | 'missing' | 'unknown' = 'unknown';
   let title = 'CardForge — Listing';
   let description = 'Valorant inventory showcase listing published with CardForge.';
   let image = '';
@@ -36,7 +39,9 @@ export default async (request: Request, context: any) => {
     if (r.ok) {
       const rows = await r.json();
       const l = Array.isArray(rows) ? rows[0] : null;
+      if (Array.isArray(rows) && rows.length === 0) lookup = 'missing';
       if (l) {
+        lookup = 'found';
         const sym = l.currency === 'EUR' ? '€' : l.currency === 'GBP' ? '£' : l.currency === 'JPY' ? '¥' : '$';
         const texts = (l as any).payload && (l as any).payload.texts ? (l as any).payload.texts : {};
         const code = String(texts.code || '').trim();
@@ -84,16 +89,8 @@ export default async (request: Request, context: any) => {
         `</head>`,
     );
 
-  // /l/<slug> keeps the app's own URL shape for history/links
-  if (m) {
-    html = html.replace(
-      '<script type="module" src="js/viewer.js"></script>',
-      `<script>window.history.replaceState(null, '', '/view.html?slug=${encodeURIComponent(slug)}');</script><script type="module" src="js/viewer.js"></script>`,
-    );
-  }
-
   return new Response(html, {
-    status: 200,
+    status: lookup === 'missing' ? 404 : 200,
     headers: {
       'content-type': 'text/html; charset=utf-8',
       'cache-control': 'public, max-age=0, must-revalidate',
@@ -101,4 +98,4 @@ export default async (request: Request, context: any) => {
   });
 };
 
-export const config = { path: ['/l/*', '/view.html'] };
+export const config = { path: ['/view.html'] };

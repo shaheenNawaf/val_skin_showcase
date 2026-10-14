@@ -1,7 +1,7 @@
 // CardForge viewer — renders a published listing from Supabase (public share
 // links) or, as a fallback, from this browser's localStorage.
-import * as CF from './shared.js?v=2.0.0';
-import { applyLayout, resolveLayout } from './layouts.js?v=2.0.0';
+import * as CF from './shared.js?v=2.0.1';
+import { applyLayout, resolveLayout } from './layouts.js?v=2.0.1';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -40,7 +40,7 @@ function loadSupabase() {
   if (!sbLoading) {
     sbLoading = new Promise(res => {
       const s = document.createElement('script');
-      s.src = 'js/vendor/supabase.js?v=2.0.0';
+      s.src = 'js/vendor/supabase.js?v=2.0.1';
       s.onload = () => {
         try { supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY); }
         catch { supabase = null; }
@@ -1110,7 +1110,21 @@ if (!slug) {
     document.querySelectorAll('#card img').forEach(img => { img.remove(); });
     CF.$('viewBadge').hidden = true;
     CF.$('contactBtn').hidden = true;
-    if (mcard) mcard.innerHTML = '<div class="mload">Listing not found.</div>';
+
+    // hide every surface that would otherwise show an empty frame
+    ['stage', 'vhero', 'mactbar'].forEach(id => {
+      const n = CF.$(id);
+      if (n) n.style.display = 'none';
+    });
+    if (mcard) mcard.style.display = 'none';
+
+    // one honest panel replaces all of it
+    const gone = document.createElement('div');
+    gone.id = 'vgone';
+    gone.innerHTML = '<h1>Listing no longer available</h1>'
+      + '<p>This link points to a listing that was sold, removed, or never published.</p>'
+      + '<a class="primary" href="/">Browse all listings</a>';
+    document.body.appendChild(gone);
   } else {
     renderListing(listing);
     renderMobile(listing);

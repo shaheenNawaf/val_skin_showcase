@@ -11,3 +11,9 @@
 # the same way (covers local hosts too).
 /            edit=:edit   /build.html   301!
 /index.html  edit=:edit   /build.html   301!
+
+# Legacy clean share URL shape (/l/<slug>) → the viewer's real query shape.
+# The edge function used to rewrite /l/ in place, but its needle never matched the
+# cache-busted script tag, so that URL rendered an empty viewer. A 301 is honest,
+# works on every host, and lands on /view.html?slug= where the og tags are injected.
+/l/:slug    /view.html?slug=:slug    301
