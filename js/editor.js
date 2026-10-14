@@ -1979,7 +1979,13 @@ card.querySelectorAll('.bintog').forEach(el => {
 const fskinCatsEl = document.getElementById('fskinCats');
 fskinCatsEl?.addEventListener('click', e => {
   const add = e.target.closest('[data-fadd]');
-  if (add) { openPicker(add.dataset.fadd); return; }
+  if (add) {
+    /* Mirror the desktop card handler: a FREE_CAT (Flex) must open the real Flex
+       catalog, not the every-weapon-skin pool openPicker builds for it. */
+    if (CF.FREE_CATS.includes(add.dataset.fadd)) { openFlexPicker(); return; }
+    openPicker(add.dataset.fadd);
+    return;
+  }
   const tile = e.target.closest('.fskin');
   if (tile) openVariantModal(tile.dataset.fcat, +tile.dataset.fidx);
 });
