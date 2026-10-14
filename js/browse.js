@@ -340,11 +340,12 @@ function trustChips(l) {
     c = (f.wtr ? '<span class="hasdot ok">With WTR</span>' : '<span class="hasdot bad">No WTR</span>')
       + (f.receipts ? '<span class="hasdot ok">With Receipts</span>' : '<span class="hasdot bad">No Receipts</span>');
   }
-  /* v1.6.3: Premier is now disclosed in both directions. Unlinked reads as a
-     warning (orange) rather than a failure (red); linked is a plain positive.
-     A vlink value that is neither renders no chip. */
+  /* v1.6.3: Premier is now disclosed in both directions. A vlink value that is
+     neither renders no chip. v1.6.6: Linked moves to its own .prem class and
+     renders red, because .ok is shared with the WTR and receipts chips and
+     must stay green. Unlinked keeps .warn and stays amber. */
   if (f.premierUnlinked) c += '<span class="hasdot warn">Premier Unlinked</span>';
-  else if (f.premierLinked) c += '<span class="hasdot ok">Premier Linked</span>';
+  else if (f.premierLinked) c += '<span class="hasdot prem">Premier Linked</span>';
   return '<div class="gc-chips">' + c + '</div>';
 }
 
