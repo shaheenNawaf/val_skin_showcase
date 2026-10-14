@@ -401,7 +401,8 @@ function previewInner(l, style) {
   }
   const panels = [
     { l: 'RIFLES', k: 'Rifles' }, { l: 'SNIPERS', k: 'Sniper Rifles' }, { l: 'MGS', k: 'Machine Guns' },
-    { l: 'SIDEARMS', k: 'Sidearms' }, { l: 'SMGS', k: 'SMGs' }, { l: 'MELEES', k: 'Melees' }
+    { l: 'SIDEARMS', k: 'Sidearms' }, { l: 'SMGS', k: 'SMGs' }, { l: 'MELEES', k: 'Melees' },
+    { l: 'SHOTGUNS', k: 'Shotguns' }, { l: 'FLEX', k: 'Flex' }
   ];
   const g = panels.map(p => {
     let icons = catPicks(l, p.k).slice(0, 3).map(x => pickWrap(x, 'mc-iw')).join('');

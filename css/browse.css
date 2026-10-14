@@ -141,7 +141,7 @@ clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100%
 /* Mosaic drops its head rank and foot stat strip — both repeated rows
    already rendered below the preview. Panels only. */
 .mc{position:absolute;inset:0;display:grid;grid-template-rows:1fr;padding:11px 9px;gap:3px}
-.mc-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr;grid-template-rows:1fr 1fr;gap:3px;min-height:0}
+.mc-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:1fr 1fr;gap:3px;min-height:0}
 .mc-panel{border:1px solid var(--mc-line);background:rgba(0,0,0,.16);padding:2px 3px 3px;display:flex;flex-direction:column;gap:1px;min-width:0;min-height:0;overflow:hidden;--mc-line:rgba(255,255,255,.13)}
 .mc-panel label{font:700 7.5px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--th-mut);line-height:1.2;white-space:nowrap;overflow:hidden}
 .mc-icons{flex:1;display:flex;align-items:center;justify-content:center;gap:2px;min-height:0}
