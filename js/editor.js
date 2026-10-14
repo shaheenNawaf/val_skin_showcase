@@ -63,10 +63,19 @@ function renderPanel(cat, { animateLast = false } = {}) {
     if (!picks.length) {
       fbox.innerHTML = '<span class="hint">+ add flex</span>';
     } else {
-      picks.forEach(p => {
+      picks.forEach((p, i) => {
+        const w = document.createElement('span');
+        w.className = 'cicon';
         const img = new Image();
         img.src = p.icon; img.alt = p.name; img.title = p.name; img.dataset.id = p.id;
-        fbox.appendChild(img);
+        const x = document.createElement('button');
+        x.type = 'button';
+        x.className = 'rm';
+        x.textContent = '×';
+        x.dataset.flexRm = String(i);
+        x.setAttribute('aria-label', 'Remove ' + p.name);
+        w.append(img, x);
+        fbox.appendChild(w);
       });
     }
     return;
@@ -126,15 +135,25 @@ function hydrateAssets() {
     pcard.querySelector('.hint')?.remove();
   }
   const box = card.querySelector('.charms-box');
+  box.innerHTML = '';
   if (state.assets.buddies.length) {
-    box.querySelector('.hint')?.remove();
-    box.querySelectorAll('img').forEach(i => i.remove());
-    state.assets.buddies.forEach(url => {
+    state.assets.buddies.forEach((url, i) => {
+      const w = document.createElement('span');
+      w.className = 'cicon';
       const img = new Image();
       img.src = url;
       img.alt = 'Gun buddy';
-      box.appendChild(img);
+      const x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'rm';
+      x.textContent = '×';
+      x.dataset.buddyRm = String(i);
+      x.setAttribute('aria-label', 'Remove gun buddy ' + (i + 1));
+      w.append(img, x);
+      box.appendChild(w);
     });
+  } else {
+    box.innerHTML = '<span class="hint">+ add buddies</span>';
   }
 }
 
@@ -507,12 +526,7 @@ function addBuddy(b) {
     return;
   }
   state.assets.buddies.push(b.icon);
-  const box = card.querySelector('.charms-box');
-  box.querySelector('.hint')?.remove();
-  const img = new Image();
-  img.src = b.icon;
-  img.alt = 'Gun buddy';
-  box.appendChild(img);
+  hydrateAssets();
   refreshLayout();
   renderFormBuddies(); /* FM: keep phone form buddy grid in sync */
 }
@@ -1032,28 +1046,25 @@ card.addEventListener('click', e => {
     auto.closest('.stat').querySelector('b').textContent = String(n).padStart(2, '0');
     return;
   }
-  const buddy = e.target.closest('.charms-box img');
-  if (buddy) {
-    const i = state.assets.buddies.indexOf(buddy.src);
-    if (i > -1) state.assets.buddies.splice(i, 1);
-    buddy.remove();
+  const brm = e.target.closest('[data-buddy-rm]');
+  if (brm) {
+    const i = +brm.dataset.buddyRm;
+    if (state.assets.buddies[i] !== undefined) state.assets.buddies.splice(i, 1);
+    renderFromState();
     renderFormBuddies(); /* FM: keep phone form buddy grid in sync */
+    return;
+  }
+  const frm = e.target.closest('[data-flex-rm]');
+  if (frm) {
+    const picks = state.picks.Flex || (state.picks.Flex = []);
+    const i = +frm.dataset.flexRm;
+    if (picks[i]) picks.splice(i, 1);
+    renderFromState();
+    afterPicksChange();
     return;
   }
   const cbox = e.target.closest('.charms-box');
   if (cbox) { openBuddyPicker(); return; }
-  /* Flex box: click an icon to drop it, click the empty box to add. Mirrors
-     the buddy box one line up. */
-  const fimg = e.target.closest('.flex-add img');
-  if (fimg) {
-    const picks = state.picks.Flex || (state.picks.Flex = []);
-    const i = picks.findIndex(p => p.icon === fimg.getAttribute('src') || p.id === fimg.dataset.id);
-    if (i > -1) picks.splice(i, 1);
-    fimg.remove();
-    if (!picks.length) renderPanel('Flex');
-    renderFromState();
-    return;
-  }
   const rm = e.target.closest('.rm');
   if (rm) {
     const skinEl = rm.closest('.skin');
@@ -1109,12 +1120,8 @@ fileInput.addEventListener('change', async e => {
       closeModal();
       syncFormArt(); /* FM: phone form player-card preview */
     } else {
-      t.querySelector('.hint')?.remove();
-      const img = new Image();
-      img.src = url;
-      img.alt = 'Gun buddy';
-      t.appendChild(img);
       state.assets.buddies.push(url);
+      hydrateAssets();
       syncFormArt(); renderFormBuddies(); /* FM: art previews + buddy grid stay current */
     }
   } catch {

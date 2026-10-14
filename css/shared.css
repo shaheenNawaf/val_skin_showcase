@@ -99,6 +99,7 @@ body.exporting #card{position:relative;transform:none!important}
 body.exporting .auto,body.exporting .pickrank,body.exporting .add{visibility:hidden}
 body.exporting .hint{visibility:hidden}
 body.exporting .more-note{display:none}
+body.exporting .rm{display:none}
 
 /* WYSIWYG capture: the exported PNG is the live 1920×1080 card, never a re-layout.
    The QR band (captureCardBlob) grows the card box below the crop; the grid is
@@ -146,6 +147,8 @@ clip-path:polygon(0 0,calc(100% - var(--notch)) 0,100% var(--notch),100% 100%,va
 .rm{position:absolute;top:3px;right:3px;width:18px;height:18px;background:var(--red);color:#fff;border:none;font:700 11px/1 'Chakra Petch',sans-serif;cursor:pointer;display:none;z-index:2}
 .skin:hover .rm{display:block}
 @media (hover:none){.skin .rm{display:block}}
+.cicon{position:relative;display:block}
+.cicon .rm{display:block}
 .slotbox{position:relative;border:1px solid var(--line);overflow:hidden;
 background:radial-gradient(120% 100% at 50% 0%,var(--sheen-soft),transparent 60%),var(--box)}
 .slotbox.empty{flex:1 1 0;min-height:64px;border-style:dashed;background:var(--tint);display:flex;align-items:center;justify-content:center}
