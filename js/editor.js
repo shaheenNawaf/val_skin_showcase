@@ -1,7 +1,7 @@
 // CardForge editor — card builder, PNG export, draft storage, listing publish.
-import * as CF from './shared.js?v=1.6.4';
-import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js?v=1.6.4';
-import { BP_SKINS } from './vendor/bp-skins.js?v=1.6.4';
+import * as CF from './shared.js?v=1.6.5';
+import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js?v=1.6.5';
+import { BP_SKINS } from './vendor/bp-skins.js?v=1.6.5';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;

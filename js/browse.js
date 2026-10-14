@@ -1,11 +1,11 @@
 // CardForge browse — Direction-D marketplace over live Supabase listings.
 // Summary cards come from browse_listings_v2 (legacy browse_listings as a
 // fallback); the quick-view modal carries the REAL shared.css #card.
-import { esc, $, status, initDisclaimerCollapse, initStatusDismiss, ALL_CATS, DESIGN_W, DESIGN_H, isPlaceholderTitle, tierKey as canonicalTierKey, TIER_ORDER, AVATAR_PLACEHOLDER, IMGERR, EMAIL_RE, CUR_SYMBOL, moneyParts, moneyString, ago, daysAgo  } from './shared.js?v=1.6.4';
+import { esc, $, status, initDisclaimerCollapse, initStatusDismiss, ALL_CATS, DESIGN_W, DESIGN_H, isPlaceholderTitle, tierKey as canonicalTierKey, TIER_ORDER, AVATAR_PLACEHOLDER, IMGERR, EMAIL_RE, CUR_SYMBOL, moneyParts, moneyString, ago, daysAgo  } from './shared.js?v=1.6.5';
 /* A: the quick-view modal renders the shared #card, and until now it always
    showed the raw panel grid — the layout the seller chose in the editor
    (payload.layout) was honoured by view.html but ignored here. */
-import { applyLayout, resolveLayout } from './layouts.js?v=1.6.4';
+import { applyLayout, resolveLayout } from './layouts.js?v=1.6.5';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
