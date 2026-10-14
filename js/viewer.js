@@ -1,7 +1,7 @@
 // CardForge viewer — renders a published listing from Supabase (public share
 // links) or, as a fallback, from this browser's localStorage.
-import * as CF from './shared.js?v=2.0.2';
-import { applyLayout, resolveLayout } from './layouts.js?v=2.0.2';
+import * as CF from './shared.js?v=2.0.3';
+import { applyLayout, resolveLayout } from './layouts.js?v=2.0.3';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -40,7 +40,7 @@ function loadSupabase() {
   if (!sbLoading) {
     sbLoading = new Promise(res => {
       const s = document.createElement('script');
-      s.src = 'js/vendor/supabase.js?v=2.0.2';
+      s.src = 'js/vendor/supabase.js?v=2.0.3';
       s.onload = () => {
         try { supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY); }
         catch { supabase = null; }
@@ -1075,6 +1075,15 @@ function initArtMode(src) {
   setArt(true);
 }
 
+/* The three ways a viewer can end up with nothing to show. Only 'gone' is
+   allowed to say the listing was sold or removed, because only 'gone' means the
+   database answered and had no row. */
+const GONE_COPY = {
+  gone: { h: 'Listing no longer available', p: 'This link points to a listing that was sold, removed, or never published.', retry: false },
+  unreachable: { h: 'Listing could not be loaded', p: 'The database did not answer. That is usually a connection problem, not a deleted listing.', retry: true },
+  noslug: { h: 'No listing specified', p: 'Open a CardForge share link. It ends in ?slug= followed by the listing code.', retry: false }
+};
+
 /* One panel for a listing that did not render. The kind is chosen by whether the
    database answered at all: 'gone' may say the listing was sold or removed,
    'unreachable' may not. Every string below is a static literal; nothing here
@@ -1095,9 +1104,7 @@ function showGonePanel(kind) {
   });
   if (mcard) mcard.style.display = 'none';
 
-  const copy = kind === 'gone'
-    ? { h: 'Listing no longer available', p: 'This link points to a listing that was sold, removed, or never published.', retry: false }
-    : { h: 'Listing could not be loaded', p: 'The database did not answer. That is usually a connection problem, not a deleted listing.', retry: true };
+  const copy = GONE_COPY[kind];
 
   const panel = document.createElement('div');
   panel.id = 'vgone';
@@ -1115,7 +1122,7 @@ function showGonePanel(kind) {
 const slug = new URLSearchParams(location.search).get('slug');
 if (!slug) {
   CF.status('No listing specified — open a published share link.', 'err');
-  if (mcard) mcard.innerHTML = '<div class="mload">No listing specified — open a published share link.</div>';
+  showGonePanel('noslug');
 } else {
   const wmSlug = card.querySelector('[data-wm="slug"]');
   if (wmSlug) wmSlug.textContent = 'Listing ' + slug;
