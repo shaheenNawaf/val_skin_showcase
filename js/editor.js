@@ -404,7 +404,7 @@ function paintVariantPreview() {
 }
 
 function ensureRichSkin(s) {
-  if (!s || s._rich) return;
+  if (!s || !s.id || s._rich) return;
   s._rich = true;
   const needs = !(s.levels || []).some(l => l.video) || (s.chromas || []).some(c => !c.full);
   if (!needs) return;
