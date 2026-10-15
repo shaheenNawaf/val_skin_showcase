@@ -1,7 +1,7 @@
 // CardForge editor — card builder, PNG export, draft storage, listing publish.
-import * as CF from './shared.js?v=2.0.5';
-import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js?v=2.0.5';
-import { BP_SKINS } from './vendor/bp-skins.js?v=2.0.5';
+import * as CF from './shared.js?v=2.0.6';
+import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js?v=2.0.6';
+import { BP_SKINS } from './vendor/bp-skins.js?v=2.0.6';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -2049,23 +2049,16 @@ document.getElementById('fnav')?.addEventListener('click', e => {
    Movement is linear forward (Next, gated on the step's minimum) and free back
    (Back button, or clicking any already-reached chip). Chips beyond the highest
    reached step are locked. A step shows a check once its minimum is met: Details
-   needs an uploaded image, Requirements needs all five binary facts answered in
-   this session, and Publish counts as met once reached. */
+   needs an uploaded image, and Requirements and Publish count as met once
+   reached. Requirements is deliberately not gated: its pairs already display a
+   value, because the card spans ship defaults, so demanding a re-click to prove
+   an answer the screen already shows reads as a broken control. */
 const AM_STEPS = ['details', 'requirements', 'publish'];
 let amStep = 0;
 let amMax = 0;
 
 function amImageOk() { return !!(face.blob || face.existing); }
-/* Facts the seller chose in this session. Deliberately not BIN_FIELDS.isSet: a
-   fresh draft already reads WTR: YES off the card span, so an isSet test would
-   credit three facts the seller never touched. */
-const amAnswered = new Set();
-function amReqDone() { return REQ_MODAL_KEYS.every(k => amAnswered.has(k)); }
-function amStepMet(i) {
-  if (i === 0) return amImageOk();
-  if (i === 1) return amReqDone();
-  return amMax >= i;
-}
+function amStepMet(i) { return i === 0 ? amImageOk() : amMax >= i; }
 
 function amRender() {
   const chips = document.querySelectorAll('#amNav .amnav-chip');
@@ -2088,15 +2081,6 @@ function amRender() {
   if (back) back.hidden = amStep === 0;
   const next = CF.$('amNext');
   if (next) { next.hidden = amStep === AM_STEPS.length - 1; next.disabled = !amStepMet(amStep); }
-  /* The hint must not contradict the seller. It counts what is left and goes
-     away once all five are answered, which is the state that previously read
-     as "stuck" with every pair already chosen. */
-  const hint = CF.$('amReqHint');
-  if (hint) {
-    const left = REQ_MODAL_KEYS.filter(k => !amAnswered.has(k)).length;
-    hint.hidden = left === 0;
-    if (left) hint.textContent = 'Answer all five to continue — ' + left + ' left.';
-  }
 }
 
 function amGo(i) {
@@ -2125,7 +2109,6 @@ document.querySelectorAll('#amsec-requirements .fseg[data-fseg]').forEach(seg =>
     const b = e.target.closest('button[data-val]');
     if (!b) return;
     binSet(k, b.dataset.val === 'on');
-    amAnswered.add(k);
     amRender();
   });
 });
@@ -2748,10 +2731,6 @@ async function initEditMode() {
     ffSet('ff-contact', texts.link || '');
     ffSet('ff-cur', listing.currency || 'PHP');
     const cbSet = (id, onv) => { const el = CF.$(id); if (el) el.checked = !!onv; };
-    /* The retired checkboxes are no longer seeded: nothing reads them. A fact the
-       stored payload already states counts as answered, so editing an existing
-       artwork listing does not demand the same answer twice. */
-    REQ_MODAL_KEYS.forEach(k => { if (BIN_FIELDS[k].isSet(texts[k] || '')) amAnswered.add(k); });
     ffSet('ff-owner', texts.owner || '');
     ffSet('ff-tag', texts.tag || '');
     cbSet('ff-feature', !!listing.featured_at);
