@@ -1,7 +1,7 @@
 // CardForge editor — card builder, PNG export, draft storage, listing publish.
-import * as CF from './shared.js?v=2.0.4';
-import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js?v=2.0.4';
-import { BP_SKINS } from './vendor/bp-skins.js?v=2.0.4';
+import * as CF from './shared.js?v=2.0.5';
+import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js?v=2.0.5';
+import { BP_SKINS } from './vendor/bp-skins.js?v=2.0.5';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -2088,6 +2088,15 @@ function amRender() {
   if (back) back.hidden = amStep === 0;
   const next = CF.$('amNext');
   if (next) { next.hidden = amStep === AM_STEPS.length - 1; next.disabled = !amStepMet(amStep); }
+  /* The hint must not contradict the seller. It counts what is left and goes
+     away once all five are answered, which is the state that previously read
+     as "stuck" with every pair already chosen. */
+  const hint = CF.$('amReqHint');
+  if (hint) {
+    const left = REQ_MODAL_KEYS.filter(k => !amAnswered.has(k)).length;
+    hint.hidden = left === 0;
+    if (left) hint.textContent = 'Answer all five to continue — ' + left + ' left.';
+  }
 }
 
 function amGo(i) {
