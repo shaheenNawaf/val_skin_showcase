@@ -1,6 +1,6 @@
 {
   "name": "cardforge",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "type": "module",
   "description": "Valorant inventory showcase cards - build, export, publish, sell.",
   "scripts": {

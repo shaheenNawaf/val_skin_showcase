@@ -1,7 +1,7 @@
 // CardForge editor — card builder, PNG export, draft storage, listing publish.
-import * as CF from './shared.js?v=2.0.6';
-import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js?v=2.0.6';
-import { BP_SKINS } from './vendor/bp-skins.js?v=2.0.6';
+import * as CF from './shared.js?v=2.0.7';
+import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js?v=2.0.7';
+import { BP_SKINS } from './vendor/bp-skins.js?v=2.0.7';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -1272,10 +1272,29 @@ function artSync() {
   amRender();
 }
 
-function enterArtMode() {
+/* Artwork mode must start with no trust claims. The card spans ship defaults
+   (WTR: YES, RECEIPTS: YES, CHANGE NAME: NOT READY, PREMIER: UNLINKED) and
+   captureTexts() re-copies them into state.texts every 900ms, so clearing one
+   side alone just restores the other. Blank both, and a fact nobody chose is
+   absent from the payload instead of asserted. atype has no card span, so it is
+   already blank. keepFacts carries over answers a stored payload already
+   states, so editing an existing listing does not ask for them twice. */
+function amBlankDefaults(keepFacts) {
+  const keep = keepFacts || new Set();
+  ['wtr', 'receipts', 'cstatus', 'vlink'].forEach(k => {
+    if (keep.has(k)) return;
+    state.texts[k] = '';
+    const el = card.querySelector('[data-key="' + k + '"]');
+    if (el) { el.textContent = ''; el.classList.remove('warn'); }
+  });
+  syncBinSegs();
+}
+
+function enterArtMode(keepFacts) {
   document.body.classList.add('art-mode');
   const am = CF.$('artMode');
   if (am) am.hidden = false;
+  amBlankDefaults(keepFacts);
   artSync();
 }
 
@@ -2738,7 +2757,9 @@ async function initEditMode() {
        answer, so a WTR: NO listing silently published as fixed-price and a
        WTR: YES one as negotiable. It reads the negotiable column now. */
     const obo = CF.$('ff-obo'); if (obo) obo.checked = priceState().offers !== false;
-    enterArtMode();
+    /* Facts this payload already states survive the blanking, so a seller who
+       answered them once is not asked again. */
+    enterArtMode(new Set(REQ_MODAL_KEYS.filter(k => BIN_FIELDS[k].isSet(texts[k] || ''))));
   }
   faceSync();
   if (CF.$('showAllCards')) CF.$('showAllCards').checked = !!state.showAllCards;
