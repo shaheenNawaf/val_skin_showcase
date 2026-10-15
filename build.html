@@ -15,14 +15,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
 <!-- card fonts are vendored same-origin: the PNG export inlines @font-face by
      reading cssRules, which is blocked for cross-origin sheets (plan 006) -->
-<link rel="stylesheet" href="css/fonts.css?v=2.0.3">
-<link rel="stylesheet" href="css/shared.css?v=2.0.3">
-<link rel="stylesheet" href="css/editor.css?v=2.0.3">
-<script src="js/vendor/html-to-image.js?v=2.0.3" defer></script>
-<script src="js/vendor/supabase.js?v=2.0.3" defer></script>
-<script src="js/vendor/fflate.min.js?v=2.0.3"></script>
-<script src="js/config.js?v=2.0.3"></script>
-<script type="module" src="js/editor.js?v=2.0.3"></script>
+<link rel="stylesheet" href="css/fonts.css?v=2.0.4">
+<link rel="stylesheet" href="css/shared.css?v=2.0.4">
+<link rel="stylesheet" href="css/editor.css?v=2.0.4">
+<script src="js/vendor/html-to-image.js?v=2.0.4" defer></script>
+<script src="js/vendor/supabase.js?v=2.0.4" defer></script>
+<script src="js/vendor/fflate.min.js?v=2.0.4"></script>
+<script src="js/config.js?v=2.0.4"></script>
+<script type="module" src="js/editor.js?v=2.0.4"></script>
 </head>
 <body>
 <div id="authGate" hidden role="dialog" aria-modal="true" aria-labelledby="agTitle">
@@ -347,11 +347,44 @@
     </section>
     <section class="amsec" id="amsec-requirements" hidden>
       <h3 class="am-h">Requirements</h3>
-      <div class="am-checks">
-        <label class="ffobo"><input type="checkbox" id="ff-wtr" checked> WTR available</label>
-        <label class="ffobo"><input type="checkbox" id="ff-receipts" checked> Receipts available</label>
-        <label class="ffobo"><input type="checkbox" id="ff-unlinked"> Premier unlinked</label>
+      <div class="am-checks" hidden>
+        <label class="ffobo" hidden><input type="checkbox" id="ff-wtr" checked> WTR available</label>
+        <label class="ffobo" hidden><input type="checkbox" id="ff-receipts" checked> Receipts available</label>
+        <label class="ffobo" hidden><input type="checkbox" id="ff-unlinked"> Premier unlinked</label>
       </div>
+      <div class="fgrid2">
+        <div class="frow"><label id="am-atype-label">Account type</label>
+          <div class="fseg" data-fseg="atype" role="group" aria-labelledby="am-atype-label">
+            <button type="button" data-val="on">With Issue</button>
+            <button type="button" data-val="off">No Issue</button>
+          </div>
+        </div>
+        <div class="frow"><label id="am-wtr-label">WTR</label>
+          <div class="fseg" data-fseg="wtr" role="group" aria-labelledby="am-wtr-label">
+            <button type="button" data-val="on">Yes</button>
+            <button type="button" data-val="off">No</button>
+          </div>
+        </div>
+        <div class="frow"><label id="am-receipts-label">Receipts</label>
+          <div class="fseg" data-fseg="receipts" role="group" aria-labelledby="am-receipts-label">
+            <button type="button" data-val="on">Yes</button>
+            <button type="button" data-val="off">No</button>
+          </div>
+        </div>
+        <div class="frow"><label id="am-cstatus-label">Change name</label>
+          <div class="fseg" data-fseg="cstatus" role="group" aria-labelledby="am-cstatus-label">
+            <button type="button" data-val="on">Ready</button>
+            <button type="button" data-val="off">Not ready</button>
+          </div>
+        </div>
+        <div class="frow"><label id="am-vlink-label">Premier link</label>
+          <div class="fseg" data-fseg="vlink" role="group" aria-labelledby="am-vlink-label">
+            <button type="button" data-val="on">Unlinked</button>
+            <button type="button" data-val="off">Linked</button>
+          </div>
+        </div>
+      </div>
+      <p class="am-gatehint" id="amReqHint">Answer all five to continue.</p>
     </section>
     <section class="amsec" id="amsec-publish" hidden>
       <h3 class="am-h">Publish</h3>
@@ -406,7 +439,7 @@
       <button id="reqClose" class="mclose" aria-label="Close requirements picker"><svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M2 2l10 10M12 2 2 12" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
     </div>
     <div class="mbody noladder">
-      <p class="fhint">Tag this listing's account attributes. Buyers filter by account type, WTR, receipts and Premier; change-name readiness is tracked here too. This dialog is the only place these are set; clicking those fields on the card or in the phone form brings you here.</p>
+      <p class="fhint">Tag this listing's account attributes. Buyers filter by account type, WTR, receipts and Premier; change-name readiness is tracked here too. This dialog is the only place these are set; clicking those fields on the card or in the phone form brings you here. In artwork mode the wizard step sets them directly.</p>
       <div class="frow"><label id="rqTypeLabel">Account Type</label>
         <div class="fseg" id="reqTypeSeg" role="group" aria-labelledby="rqTypeLabel">
           <button type="button" data-type="noissue" class="on">No Issue</button>

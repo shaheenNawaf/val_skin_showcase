@@ -481,3 +481,11 @@ body.art-mode #stage,body.art-mode #saveBtn,body.art-mode #exportBtn,body.art-mo
 #gmRetry:hover:not(:disabled){filter:brightness(1.12)}
 #gmRetry:disabled{opacity:.5;cursor:default}
 .gate-flag{outline:2px dashed #E5484D;outline-offset:3px}
+
+/* ── artwork wizard: Requirements step parity (225) ─────────────────── */
+#amsec-requirements .fseg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#amsec-requirements .fseg button{min-height:40px;text-align:center;white-space:normal}
+#amsec-requirements .am-gatehint{font:600 10px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--c-mut);margin-top:10px}
+/* .ffobo sets display:flex at line 450, which beats the browser's [hidden]
+   rule. Re-assert it, or the three retired checkboxes stay visible. */
+#amsec-requirements .ffobo[hidden],#amsec-requirements .am-checks[hidden]{display:none}

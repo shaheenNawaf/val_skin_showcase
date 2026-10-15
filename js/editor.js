@@ -1,7 +1,7 @@
 // CardForge editor — card builder, PNG export, draft storage, listing publish.
-import * as CF from './shared.js?v=2.0.3';
-import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js?v=2.0.3';
-import { BP_SKINS } from './vendor/bp-skins.js?v=2.0.3';
+import * as CF from './shared.js?v=2.0.4';
+import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js?v=2.0.4';
+import { BP_SKINS } from './vendor/bp-skins.js?v=2.0.4';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -1467,7 +1467,6 @@ function buildPayload() {
 
 function artPayload() {
   const v = id => { const el = CF.$(id); return el ? el.value.trim() : ''; };
-  const on = id => { const el = CF.$(id); return !el || el.checked; };
   const texts = {
     code: v('ff-code') || 'ART',
     cname: v('ff-name'),
@@ -1476,12 +1475,19 @@ function artPayload() {
     link: v('ff-contact'),
     /* v1.5.2: marketplace tags were unreachable in art mode (they lived on
        the hidden card canvas) — the panel now carries them explicitly */
-    wtr: on('ff-wtr') ? 'WTR: YES' : 'WTR: NO',
-    receipts: on('ff-receipts') ? 'RECEIPTS: YES' : 'RECEIPTS: NO',
-    vlink: CF.$('ff-unlinked') && CF.$('ff-unlinked').checked ? 'PREMIER: UNLINKED' : 'PREMIER: LINKED',
     owner: v('ff-owner') || '0TH OWNER',
     tag: v('ff-tag')
   };
+  /* v1.6.7: the five binary facts come from the same store the Requirements
+     modal writes. This literal used to rebuild wtr, receipts and vlink from
+     three checkboxes and omit atype and cstatus altogether, and because
+     update_listing replaces the whole payload, an artwork publish erased both.
+     A fact the seller never answered is left out rather than defaulted, so the
+     payload can not claim something the artwork mode never asked about. */
+  REQ_MODAL_KEYS.forEach(k => {
+    const t = binText(k);
+    if (BIN_FIELDS[k].isSet(t)) texts[k] = t;
+  });
   return {
     theme: document.documentElement.dataset.theme || 'protocol',
     layout: 'auto',
@@ -1531,12 +1537,12 @@ function refreshLayout() {
   menu.querySelectorAll('.mm-item').forEach(i => i.addEventListener('click', () => setOpen(false)));
 })();
 
-/* Requirements picker — the single writer for wtr, receipts and vlink. The card
-   spans and the phone-form segs for those three open this dialog instead of
-   setting a value, so the card text and the marketplace filters can never
-   disagree. Every write goes through binSet(), so the stored string is always
-   the BIN_FIELDS canonical one. Artwork mode keeps its own checkboxes and is
-   deliberately not covered. */
+/* Requirements picker — the authoritative list of the five binary facts. The
+   card spans and the phone-form segs open this dialog instead of setting a
+   value, so the card text and the marketplace filters can never disagree.
+   Artwork mode's wizard step exposes the same five as interactive segs. Both
+   surfaces write through binSet(), so the stored string is always the
+   BIN_FIELDS canonical one and this list is the only definition of the set. */
 const REQ_MODAL_KEYS = ['atype', 'wtr', 'receipts', 'vlink', 'cstatus'];
 
 function syncReqModal() {
@@ -1940,7 +1946,7 @@ function binSet(k, on) {
   syncBinSegs();
 }
 function syncBinSegs() {
-  document.querySelectorAll('#formMode .fseg[data-fseg]').forEach(seg => {
+  document.querySelectorAll('.fseg[data-fseg]').forEach(seg => {
     const k = seg.dataset.fseg;
     const cfg = BIN_FIELDS[k];
     if (!cfg) return;
@@ -2043,14 +2049,23 @@ document.getElementById('fnav')?.addEventListener('click', e => {
    Movement is linear forward (Next, gated on the step's minimum) and free back
    (Back button, or clicking any already-reached chip). Chips beyond the highest
    reached step are locked. A step shows a check once its minimum is met: Details
-   needs an uploaded image; Requirements and Publish count as met once reached,
-   because their fields are optional tags. */
+   needs an uploaded image, Requirements needs all five binary facts answered in
+   this session, and Publish counts as met once reached. */
 const AM_STEPS = ['details', 'requirements', 'publish'];
 let amStep = 0;
 let amMax = 0;
 
 function amImageOk() { return !!(face.blob || face.existing); }
-function amStepMet(i) { return i === 0 ? amImageOk() : amMax >= i; }
+/* Facts the seller chose in this session. Deliberately not BIN_FIELDS.isSet: a
+   fresh draft already reads WTR: YES off the card span, so an isSet test would
+   credit three facts the seller never touched. */
+const amAnswered = new Set();
+function amReqDone() { return REQ_MODAL_KEYS.every(k => amAnswered.has(k)); }
+function amStepMet(i) {
+  if (i === 0) return amImageOk();
+  if (i === 1) return amReqDone();
+  return amMax >= i;
+}
 
 function amRender() {
   const chips = document.querySelectorAll('#amNav .amnav-chip');
@@ -2094,6 +2109,17 @@ CF.$('amNext')?.addEventListener('click', () => {
   amGo(amStep + 1);
 });
 CF.$('amBack')?.addEventListener('click', () => amGo(amStep - 1));
+
+document.querySelectorAll('#amsec-requirements .fseg[data-fseg]').forEach(seg => {
+  const k = seg.dataset.fseg;
+  seg.addEventListener('click', e => {
+    const b = e.target.closest('button[data-val]');
+    if (!b) return;
+    binSet(k, b.dataset.val === 'on');
+    amAnswered.add(k);
+    amRender();
+  });
+});
 
 CF.$('layoutSel').addEventListener('change', () => {
   state.layout = CF.$('layoutSel').value;
@@ -2713,9 +2739,10 @@ async function initEditMode() {
     ffSet('ff-contact', texts.link || '');
     ffSet('ff-cur', listing.currency || 'PHP');
     const cbSet = (id, onv) => { const el = CF.$(id); if (el) el.checked = !!onv; };
-    cbSet('ff-wtr', /yes/i.test(texts.wtr || ''));
-    cbSet('ff-receipts', /yes/i.test(texts.receipts || ''));
-    cbSet('ff-unlinked', /unlinked/i.test(texts.vlink || ''));
+    /* The retired checkboxes are no longer seeded: nothing reads them. A fact the
+       stored payload already states counts as answered, so editing an existing
+       artwork listing does not demand the same answer twice. */
+    REQ_MODAL_KEYS.forEach(k => { if (BIN_FIELDS[k].isSet(texts[k] || '')) amAnswered.add(k); });
     ffSet('ff-owner', texts.owner || '');
     ffSet('ff-tag', texts.tag || '');
     cbSet('ff-feature', !!listing.featured_at);
