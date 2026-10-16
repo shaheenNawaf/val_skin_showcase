@@ -1,7 +1,7 @@
 // CardForge editor — card builder, PNG export, draft storage, listing publish.
-import * as CF from './shared.js?v=2.0.8';
-import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js?v=2.0.8';
-import { BP_SKINS } from './vendor/bp-skins.js?v=2.0.8';
+import * as CF from './shared.js?v=2.0.9';
+import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js?v=2.0.9';
+import { BP_SKINS } from './vendor/bp-skins.js?v=2.0.9';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -1858,9 +1858,14 @@ function syncFormFromState() {
   document.querySelectorAll('#formMode input[data-fkey]').forEach(el => {
     const k = el.dataset.fkey;
     const t = card.querySelector('[data-key="' + k + '"]');
-    el.value = (state.texts[k] != null && state.texts[k] !== '')
+    let v = (state.texts[k] != null && state.texts[k] !== '')
       ? state.texts[k]
       : (t ? t.textContent : '').trim();
+    /* The card ships K486 as a sample code. Seeding the field with it would hand
+       the seller a value that the publish gate then rejects, so the field stays
+       empty here and the placeholder shows the sample instead. */
+    if (k === 'code' && CF.isPlaceholderCode(v)) v = '';
+    el.value = v;
   });
   ['crank', 'prank'].forEach(k => {
     const t = card.querySelector('[data-key="' + k + '"]');
@@ -2169,6 +2174,16 @@ function publishGate() {
     label: 'the card title still says “ACCOUNT DESCRIPTION”',
     fix: 'click the title on the card and type the listing name',
   });
+  /* The code is the account a buyer is purchasing, so a sample value is never a
+     publishable answer. build.html ships K486 on the card, and captureTexts()
+     copies it into state.texts, so this is what stops it reaching the payload. */
+  const codeSet = (t.code || '').trim() && !CF.isPlaceholderCode(t.code);
+  checks.push({
+    key: 'code',
+    ok: !!codeSet,
+    label: 'the listing code still shows the sample “K486”',
+    fix: 'click the code on the card and type this account’s real code',
+  });
   /* B: the gate reads the structured price, not the card's printed line. An
      explicit "contact for price" is a deliberate choice, not a placeholder —
      the old check could only tell them apart by string-matching PRICE OFFER. */
@@ -2203,6 +2218,7 @@ const gateModal = CF.$('gateModal'), gmList = CF.$('gmList'),
 const GATE_DONE = {
   skins: 'At least one skin on the card',
   title: 'Listing title set',
+  code: 'Listing code set',
   price: 'Price or “contact for price” set',
   link: 'Buyer contact set',
 };
@@ -2219,7 +2235,7 @@ function gateEls(key) {
     return [...document.querySelectorAll(q)].filter(gateVisible);
   }
   const spanKey = key === 'title' ? 'cname' : key;
-  const map = { title: 'ff-name', price: 'ff-price', link: 'ff-contact' };
+  const map = { title: 'ff-name', price: 'ff-price', link: 'ff-contact', code: 'f-code' };
   const span = card.querySelector(`[data-key="${spanKey}"]`);
   return [gateVisible(span) ? span : document.getElementById(map[key])].filter(Boolean);
 }
@@ -2313,6 +2329,20 @@ async function publishListing() {
   CF.status(supabase ? 'Publishing listing…' : 'Publishing (this browser)…');
   try {
     let slug = editSlug || localStorage.getItem('vc-draft-id') || CF.randomId(7);
+    /* One account, one code. This runs after the slug is known so re-publishing
+       this listing is never blocked by its own saved value. It runs in both
+       routes, because artwork listings carry a code too and reach buyers the same
+       way. */
+    if (supabase) {
+      const typed = String((payload.texts && payload.texts.code) || '').trim();
+      if (typed && !CF.isPlaceholderCode(typed)) {
+        const clash = await CF.dupeCode(supabase, typed, slug);
+        if (clash) {
+          CF.status('Listing code ' + typed + ' is already used by ' + clash + '. Give this account its own code.', 'err');
+          return;
+        }
+      }
+    }
     if (supabase) {
       let existingToken = localStorage.getItem(CF.editKey(slug));
       const token = existingToken || CF.randomId(40);

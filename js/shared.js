@@ -519,7 +519,7 @@ export function resizeToDataUrl(file, max) {
 /* X2: builds the scan-for-live-listing QR footer appended to full-height PNG exports. */
 async function makeQrFoot(url) {
   try {
-    const mod = await import('./vendor/qrcode-generator.mjs?v=2.0.8');
+    const mod = await import('./vendor/qrcode-generator.mjs?v=2.0.9');
     const qrcode = mod.default || mod.qrcode || mod;
     const qr = qrcode(0, 'M');
     qr.addData(String(url));
@@ -747,4 +747,31 @@ export async function thumbOwners(sb, paths, notSlug) {
     if (m && wanted.has(m[1])) keep.add(m[1]);
   });
   return [...keep];
+}
+
+/* The card ships K486 as a sample code. It is a placeholder, the same way
+   ACCOUNT DESCRIPTION is a placeholder title, so it must never reach a payload. */
+export function isPlaceholderCode(s) {
+  return String(s || '').trim().toUpperCase() === 'K486';
+}
+
+/* Return the slug of another live listing that already claims this code, or null
+   when nobody does. Only listings a buyer can actually see are compared: sold and
+   archived rows are excluded, so a seller can re-list an account he took down.
+   The select projects the one field it needs, which costs 9 KB against 5 MB for
+   the whole payload across the current rows. A read failure returns null and lets
+   the publish proceed, because losing a listing to a network glitch is worse than
+   a possible duplicate. */
+export async function dupeCode(sb, code, notSlug) {
+  const want = String(code || '').trim().toUpperCase();
+  if (!want || isPlaceholderCode(want)) return null;
+  const { data, error } = await sb.from('listing_public')
+    .select('slug,code:payload->texts->>code')
+    .eq('status', 'available')
+    .eq('archived', false)
+    .neq('slug', notSlug)
+    .limit(1000);
+  if (error || !Array.isArray(data)) return null;
+  const hit = data.find(r => typeof r.code === 'string' && r.code.trim().toUpperCase() === want);
+  return hit ? hit.slug : null;
 }
