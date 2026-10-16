@@ -722,26 +722,33 @@ function resetAll() {
 
 // ── pulse ─────────────────────────────────────────────────────────
 function buildPulse() {
+  /* The pulse describes the live marketplace. load() now pages through EVERY
+     active result before calling this, so `listings` is the complete set, not
+     the first page. Active = status 'available' and not archived (what
+     browse_listings_v3 returns and what the grid shows). */
   let views = 0;
   let skinsTotal = 0;
-  listings.forEach(l => { views += l.views; skinsTotal += l.stats.skins; });
-  const prices = listings.filter(l => l.price != null).map(l => l.price);
+  listings.forEach(l => { views += Number(l.views) || 0; skinsTotal += Number(l.stats.skins) || 0; });
+  const priced = listings.filter(l => l.price != null);
+  const prices = priced.map(l => Number(l.price));
   const avg = prices.length ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0;
-  /* CF-16: the pulse row's average uses the listings' dominant currency
-     instead of a hardcoded $ over mixed-currency data */
+  /* CF-16: the average uses the listings' dominant currency, not a hardcoded $
+     over mixed-currency data */
   const curTally = {};
-  listings.filter(l => l.price != null).forEach(l => { curTally[l.currency || 'USD'] = (curTally[l.currency || 'USD'] || 0) + 1; });
+  priced.forEach(l => { const c = l.currency || 'USD'; curTally[c] = (curTally[c] || 0) + 1; });
   const domCur = Object.entries(curTally).sort((a, b) => b[1] - a[1])[0]?.[0] || 'USD';
   const domSym = CUR_SYMBOL[domCur] || domCur + ' ';
-  const sellers = {};
-  listings.forEach(l => { sellers[l.seller.name] = 1; });
   const cells = [
-    { v: listings.length, label: 'LISTINGS', prefix: '' },
+    { v: listings.length, label: 'ACTIVE LISTINGS', prefix: '' },
     { v: views, label: 'TOTAL VIEWS', prefix: '' },
     { v: skinsTotal, label: 'SKINS TRACKED', prefix: '' },
     prices.length ? { v: avg, label: 'AVG PRICE' + (domCur !== 'USD' ? ' (' + domCur + ')' : ''), prefix: domSym } : { text: '—', label: 'AVG PRICE' },
-    { v: Object.keys(sellers).length, label: 'SELLERS', prefix: '' }
+    /* SELLERS = accounts allowed to use the site (the private seller_emails
+       allow-list). That table is not readable from the browser, so this is a
+       manual figure kept in step with the allow-list. */
+    { v: 3, label: 'SELLERS', prefix: '' }
   ];
+
   $('pulse').innerHTML = cells.map(c => {
     if (c.text != null) return '<div class="pcell"><b>' + esc(c.text) + '</b><label>' + esc(c.label) + '</label></div>';
     return '<div class="pcell"><b data-count="' + esc(c.v) + '" data-prefix="' + esc(c.prefix) + '">' + esc(c.prefix + '0') + '</b><label>' + esc(c.label) + '</label></div>';
@@ -1136,10 +1143,11 @@ async function loadMore() {
 }
 
 // ── data load ─────────────────────────────────────────────────────
-/* CF-18: the RPC caps at p_limit 60 by default and the caller used to pass
-   no arguments — listings past 60 were never fetched, with no indication.
-   Now we page through with p_offset and disclose exactly what is shown. */
-const PAGE_SIZE = 60;
+/* CF-18: the RPC caps at p_limit 200. load() pages through every result so the
+   full active set is in memory; client-side facets and the pulse then reflect
+   all listings, not a hidden first page. 199 keeps the +1 "is there more" probe
+   within the 200 cap. */
+const PAGE_SIZE = 199;
 let shownCount = 0;
 let hasMore = false;
 
@@ -1350,6 +1358,14 @@ async function load(silent) {
   let limited = false;
   try {
     data = await fetchPage(0);
+    /* Load the ENTIRE active set, not just page 1. Filters and the pulse run
+       client-side over `listings`, so every active listing must be present for
+       "any" price (and every facet) to reflect the full catalog. */
+    while (hasMore) {
+      const more = await fetchPage(data.length);
+      if (!more || !more.length) break;
+      data = data.concat(more);
+    }
   } catch {
     try {
       const res = await supabase.rpc('browse_listings');
