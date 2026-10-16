@@ -31,7 +31,14 @@ const THEME_ACCENTS = {
   , standard: { label: 'Normal', bg: '#141719', panel: '#1F2427', accent: '#AFC2CE', ink: '#EEF0EF', mut: '#96A0A4' }
 };
 
-const RANK_THRESHOLDS = { gold: 10, plat: 13, dia: 16, asc: 19, imm: 22, rad: 27 };
+const RANK_ORDER = ['iron', 'bronze', 'silver', 'gold', 'plat', 'dia', 'asc', 'imm', 'rad'];
+// Exact current-rank group for a rankTier value. Unranked (0) maps to '' so it
+// matches no facet. Radiant (25+) is its own group; the rest span 3 divisions.
+function rankGroup(tier) {
+  if (!tier || tier <= 0) return '';
+  if (tier >= 25) return 'rad';
+  return RANK_ORDER[Math.floor((tier - 1) / 3)];
+}
 const FEATURE_ORDER = ['Rifles', 'Melees', 'Sniper Rifles', 'Sidearms', 'SMGs', 'Machine Guns', 'Shotguns', 'Flex'];
 
 const state = { q: '', themes: new Set(), minRank: '', price: '', flags: new Set(), sort: 'new', view: 'grid', style: 'mini' };
@@ -161,14 +168,15 @@ function buildFacets() {
   $('fTheme').innerHTML = '<legend>THEME</legend>' + themeRows;
 
   const rankRows = [
-    { v: '', l: 'Any' }, { v: 'gold', l: 'GOLD+' }, { v: 'plat', l: 'PLATINUM+' },
-    { v: 'dia', l: 'DIAMOND+' }, { v: 'asc', l: 'ASCENDANT+' }, { v: 'imm', l: 'IMMORTAL+' }, { v: 'rad', l: 'RADIANT' }
+    { v: '', l: 'Any' }, { v: 'iron', l: 'IRON' }, { v: 'bronze', l: 'BRONZE' }, { v: 'silver', l: 'SILVER' },
+    { v: 'gold', l: 'GOLD' }, { v: 'plat', l: 'PLATINUM' },
+    { v: 'dia', l: 'DIAMOND' }, { v: 'asc', l: 'ASCENDANT' }, { v: 'imm', l: 'IMMORTAL' }, { v: 'rad', l: 'RADIANT' }
   ].map((r, i) => '<label class="frow"><input type="radio" name="minrank" value="' + r.v + '"' + (i === 0 ? ' checked' : '') + '><span class="fl">' + esc(r.l) + '</span><span class="fbar"><i></i></span><span class="fn">0</span></label>').join('');
-  $('fRank').innerHTML = '<legend>MIN RANK</legend>' + rankRows;
+  $('fRank').innerHTML = '<legend>CURRENT RANK</legend>' + rankRows;
 
   const priceRows = [
     { v: '', l: 'Any' }, { v: 'u1000', l: 'Under ₱1,000' }, { v: 'r3000', l: '₱1,000–₱3,000' },
-    { v: 'r6000', l: '₱4,000–₱6,000' }, { v: 'r10000', l: '₱7,000–₱10,000' }, { v: 'off', l: 'For Offers' }
+    { v: 'r6000', l: '₱4,000–₱6,000' }, { v: 'r10000', l: '₱7,000–₱9,999' }, { v: 'p10k', l: '₱10,000+' }, { v: 'off', l: 'For Offers' }
   ].map((r, i) => '<label><input type="radio" name="price" value="' + r.v + '"' + (i === 0 ? ' checked' : '') + '><span class="ftxt">' + esc(r.l) + '</span><span class="fn">0</span></label>').join('');
   $('fPrice').innerHTML = '<legend>PRICE</legend>' + priceRows;
 
@@ -208,7 +216,8 @@ function priceCounts() {
       if (v === 'u1000') return p < 1000;
       if (v === 'r3000') return p >= 1000 && p < 3000;
       if (v === 'r6000') return p >= 4000 && p < 6000;
-      if (v === 'r10000') return p >= 7000 && p <= 10000;
+      if (v === 'r10000') return p >= 7000 && p < 10000;
+      if (v === 'p10k') return p >= 10000;
       return false;
     }).length;
     const row = r.closest('label');
@@ -226,8 +235,7 @@ function rankCounts() {
     let count;
     if (!v) count = base.length;
     else {
-      const need = RANK_THRESHOLDS[v];
-      count = base.filter(l => need && l.rankNow.tier >= need).length;
+      count = base.filter(l => rankGroup(l.rankNow.tier) === v).length;
     }
     const row = r.closest('.frow');
     if (!row) return;
@@ -558,8 +566,7 @@ function matches(l, skip) {
   }
   if (skip !== 'themes' && state.themes.size && !state.themes.has(l.theme)) return false;
   if (skip !== 'rank' && state.minRank) {
-    const need = RANK_THRESHOLDS[state.minRank];
-    if (!need || l.rankNow.tier < need) return false;
+    if (rankGroup(l.rankNow.tier) !== state.minRank) return false;
   }
   if (skip !== 'price' && state.price) {
     const p = l.price;
@@ -568,7 +575,8 @@ function matches(l, skip) {
     else if (state.price === 'u1000' && !(p < 1000)) return false;
     else if (state.price === 'r3000' && !(p >= 1000 && p < 3000)) return false;
     else if (state.price === 'r6000' && !(p >= 4000 && p < 6000)) return false;
-    else if (state.price === 'r10000' && !(p >= 7000 && p <= 10000)) return false;
+    else if (state.price === 'r10000' && !(p >= 7000 && p < 10000)) return false;
+    else if (state.price === 'p10k' && !(p >= 10000)) return false;
   }
   if (skip !== 'flags' && state.flags.size) {
     if (state.flags.has('noissue') && l.flags.accountIssue) return false;
