@@ -519,7 +519,7 @@ export function resizeToDataUrl(file, max) {
 /* X2: builds the scan-for-live-listing QR footer appended to full-height PNG exports. */
 async function makeQrFoot(url) {
   try {
-    const mod = await import('./vendor/qrcode-generator.mjs?v=2.0.7');
+    const mod = await import('./vendor/qrcode-generator.mjs?v=2.0.8');
     const qrcode = mod.default || mod.qrcode || mod;
     const qr = qrcode(0, 'M');
     qr.addData(String(url));
@@ -724,4 +724,27 @@ export function fbPostText(row, url) {
   if (trust.length) lines.push('\u{1F6E1}\uFE0F ' + trust.join(' \u00b7 '));
   lines.push('\u{1F4E9} DM me here or via the listing link.');
   return lines.join('\n');
+}
+
+/* Return the storage paths that another listing still points at. A delete or a
+   thumbnail reset must not remove a file a live listing is showing, because
+   artwork mode can attach one object to more than one listing. Returns an empty
+   list when the query fails, so a read error degrades to the old behaviour of
+   attempting the cleanup rather than silently keeping orphans forever.
+   The select projects the one field it needs. Asking for the whole payload costs
+   5 MB for the current 93 listings, against 9 KB projected, measured live. */
+export async function thumbOwners(sb, paths, notSlug) {
+  const { data, error } = await sb.from('listing_public')
+    .select('slug,src:payload->thumb->>src')
+    .neq('slug', notSlug)
+    .limit(1000);
+  if (error || !Array.isArray(data)) return [];
+  const wanted = new Set(paths);
+  const keep = new Set();
+  data.forEach(r => {
+    if (typeof r.src !== 'string') return;
+    const m = r.src.split('?')[0].match(/listing-images\/(.+)$/);
+    if (m && wanted.has(m[1])) keep.add(m[1]);
+  });
+  return [...keep];
 }

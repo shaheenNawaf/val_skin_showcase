@@ -1,7 +1,7 @@
 // CardForge editor — card builder, PNG export, draft storage, listing publish.
-import * as CF from './shared.js?v=2.0.7';
-import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js?v=2.0.7';
-import { BP_SKINS } from './vendor/bp-skins.js?v=2.0.7';
+import * as CF from './shared.js?v=2.0.8';
+import { applyLayout, resolveLayout, renderSlotsM1, renderSlotsM2, renderSlotsClassic } from './layouts.js?v=2.0.8';
+import { BP_SKINS } from './vendor/bp-skins.js?v=2.0.8';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -2411,6 +2411,21 @@ async function publishListing() {
               const { error: aErr } = await supabase.storage.from('listing-images').upload(path, face.blob, { upsert: true, contentType: face.blob.type });
               if (aErr) throw aErr;
               src = supabase.storage.from('listing-images').getPublicUrl(path).data.publicUrl + '?v=' + Date.now();
+            } else {
+              /* Artwork mode leaves the previous listing's file attached, so this
+                 URL can name another listing's object. Every listing must own its
+                 own file, because one delete would otherwise break the other. Copy
+                 it into this listing's path. If the copy fails, keep the URL we
+                 have: it is no worse than today, and it never shares a new way. */
+              const own = /\/listing-images\/([a-z0-9]{5,16}-thumb\.(?:jpg|png|webp))$/i
+                .exec(String(src).split('?')[0]);
+              if (own && own[1].indexOf(slug + '-') !== 0) {
+                const dest = slug + '-thumb.' + own[1].slice(own[1].lastIndexOf('.') + 1);
+                const { error: cErr } = await supabase.storage.from('listing-images').copy(own[1], dest);
+                if (!cErr) {
+                  src = supabase.storage.from('listing-images').getPublicUrl(dest).data.publicUrl + '?v=' + Date.now();
+                }
+              }
             }
             pl.thumb = { src: src, label: '' };
             if (face.mode === 'card') pl.thumbMode = 'card'; else delete pl.thumbMode;

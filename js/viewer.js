@@ -1,7 +1,7 @@
 // CardForge viewer — renders a published listing from Supabase (public share
 // links) or, as a fallback, from this browser's localStorage.
-import * as CF from './shared.js?v=2.0.7';
-import { applyLayout, resolveLayout } from './layouts.js?v=2.0.7';
+import * as CF from './shared.js?v=2.0.8';
+import { applyLayout, resolveLayout } from './layouts.js?v=2.0.8';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -40,7 +40,7 @@ function loadSupabase() {
   if (!sbLoading) {
     sbLoading = new Promise(res => {
       const s = document.createElement('script');
-      s.src = 'js/vendor/supabase.js?v=2.0.7';
+      s.src = 'js/vendor/supabase.js?v=2.0.8';
       s.onload = () => {
         try { supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY); }
         catch { supabase = null; }
@@ -781,11 +781,16 @@ function wireOwnerControls(sb, listing, slug) {
       const h = await CF.hashToken(token);
       const { error } = await sb.rpc('delete_listing', { p_slug: slug, p_edit_token_hash: h });
       if (error) throw error;
-      /* v1.5.1: best-effort storage cleanup — delete_listing cannot touch it */
+      /* v1.5.1: best-effort storage cleanup — delete_listing cannot touch it.
+         Files another live listing points at are kept. */
+      const files = [slug + '.jpg', slug + '-thumb.jpg', slug + '-thumb.png', slug + '-thumb.webp'];
+      const used = await CF.thumbOwners(sb, files, slug);
+      const free = files.filter(f => !used.includes(f));
       try {
-        await sb.storage.from('listing-images').remove(
-          [slug + '.jpg', slug + '-thumb.jpg', slug + '-thumb.png', slug + '-thumb.webp']);
+        if (free.length) await sb.storage.from('listing-images').remove(free);
       } catch { /* best-effort cleanup */ }
+      const keptNote = used.length
+        ? ' Kept ' + used.join(', ') + ' for another listing that still uses it.' : '';
       aBtn.hidden = true;
       dBtn.hidden = true;
       const eb = CF.$('editBtn'); if (eb) eb.hidden = true;
@@ -793,7 +798,7 @@ function wireOwnerControls(sb, listing, slug) {
       const hero = CF.$('vhero'); if (hero) hero.hidden = true;
       note.hidden = false;
       note.textContent = 'This listing has been deleted by its owner.';
-      CF.status('Listing deleted.', 'ok');
+      CF.status('Listing deleted.' + keptNote, 'ok');
     } catch (e) {
       CF.status(deny(e) || ('Delete failed: ' + ((e && e.message) || e)), 'err');
     } finally { dBtn.disabled = false; }

@@ -1,7 +1,7 @@
 // CardForge owner dashboard — Every listing on the marketplace — owner view, on one
 // page. Edit keys live in localStorage as `vc-edit-<slug>`; every mutation is
 // checked server-side against the key's hash.
-import { esc, $, status, initStatusDismiss, initDisclaimerCollapse, readJSON, writeJSON, hashToken, copyText, fbPostText, resizeToDataUrl, isPlaceholderTitle, AVATAR_PLACEHOLDER, IMGERR, EMAIL_RE, moneyParts, moneyString, editKey, ago } from './shared.js?v=2.0.7';
+import { esc, $, status, initStatusDismiss, initDisclaimerCollapse, readJSON, writeJSON, hashToken, copyText, fbPostText, resizeToDataUrl, isPlaceholderTitle, AVATAR_PLACEHOLDER, IMGERR, EMAIL_RE, moneyParts, moneyString, editKey, ago, thumbOwners } from './shared.js?v=2.0.8';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -433,11 +433,18 @@ function toggleThumbForm(rowEl, row) {
       runAction(rowEl, 'Auto', async () => {
         const cur = rowThumb(row);
         await saveThumb(row, null);
+        let keptNote = '';
         if (cur && cur.src.indexOf('-thumb.') !== -1) {
           const m = cur.src.split('?')[0].match(/listing-images\/(.+)$/);
-          if (m) { try { await supabase.storage.from('listing-images').remove([m[1]]); } catch { /* best-effort cleanup */ } }
+          /* another listing may still point at this exact file, so the removal is
+             skipped and the seller is told why in the final status */
+          if (m && (await thumbOwners(supabase, [m[1]], row.slug)).includes(m[1])) {
+            keptNote = ' Kept ' + m[1] + ' because another listing still uses it.';
+          } else if (m) {
+            try { await supabase.storage.from('listing-images').remove([m[1]]); } catch { /* best-effort cleanup */ }
+          }
         }
-        status('Thumbnail reset to automatic.', 'ok');
+        status('Thumbnail reset to automatic.' + keptNote, 'ok');
       });
     }
   });
@@ -545,12 +552,15 @@ function wireActions() {
         if (error) throw error;
         /* v1.5.1: delete_listing cannot touch storage — clean the share image
            and artwork thumb best-effort so deletes stop leaving orphans */
+        const files = [slug + '.jpg', slug + '-thumb.jpg', slug + '-thumb.png', slug + '-thumb.webp'];
+        const used = await thumbOwners(supabase, files, slug);
+        const free = files.filter(f => !used.includes(f));
         try {
-          await supabase.storage.from('listing-images').remove(
-            [slug + '.jpg', slug + '-thumb.jpg', slug + '-thumb.png', slug + '-thumb.webp']);
+          if (free.length) await supabase.storage.from('listing-images').remove(free);
         } catch { /* best-effort cleanup */ }
         localStorage.removeItem(editKey(slug));
-        status('Listing deleted.', 'ok');
+        status('Listing deleted.' + (used.length
+          ? ' Kept ' + used.join(', ') + ' for another listing that still uses it.' : ''), 'ok');
       });
     }
   });
