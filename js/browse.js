@@ -39,15 +39,29 @@ function rankGroup(tier) {
   if (tier >= 25) return 'rad';
   return RANK_ORDER[Math.floor((tier - 1) / 3)];
 }
-// Contiguous price bands (PHP). Half-open [min, max) so every price lands in
-// exactly one band — no gaps, no overlaps. 'For Offers' (null price) is separate.
-const PRICE_BANDS = [
-  { v: 'u1000',  l: 'Under ₱1,000',  test: p => p < 1000 },
-  { v: 'r3000',  l: '₱1,000–₱3,999', test: p => p >= 1000 && p < 4000 },
-  { v: 'r6000',  l: '₱4,000–₱6,999', test: p => p >= 4000 && p < 7000 },
-  { v: 'r10000', l: '₱7,000–₱9,999', test: p => p >= 7000 && p < 10000 },
-  { v: 'p10k',   l: '₱10,000+',      test: p => p >= 10000 }
-];
+/* Hybrid price bands (PHP): a fixed base the buyer learns, plus an adaptive
+   top. The top is one "₱15,000+" bucket until the priciest active listing
+   reaches PRICE_SPLIT_AT, then it splits into "₱15,000–₱19,999" and
+   "₱20,000+" so high-end accounts are not stranded in a catch-all. All bands
+   are half-open [min, max): contiguous, no gaps, no overlaps. 'For Offers'
+   (null price) is rendered separately. */
+function priceBands(split) {
+  const base = [
+    { v: 'u1000', l: '₱0 – 999',         test: p => p < 1000 },
+    { v: 'p1k',   l: '₱1,000 – ₱2,999',   test: p => p >= 1000 && p < 3000 },
+    { v: 'p3k',   l: '₱3,000 – ₱5,999',   test: p => p >= 3000 && p < 6000 },
+    { v: 'p6k',   l: '₱6,000 – ₱9,999',   test: p => p >= 6000 && p < 10000 },
+    { v: 'p10k',  l: '₱10,000 – ₱14,999', test: p => p >= 10000 && p < 15000 }
+  ];
+  const top = split
+    ? [ { v: 'p15k', l: '₱15,000 – ₱19,999', test: p => p >= 15000 && p < 20000 },
+        { v: 'p20k', l: '₱20,000+',          test: p => p >= 20000 } ]
+    : [ { v: 'p15k', l: '₱15,000+',          test: p => p >= 15000 } ];
+  return base.concat(top);
+}
+const PRICE_SPLIT_AT = 20000;
+let PRICE_SPLIT = false;
+let PRICE_BANDS = priceBands(false);
 const FEATURE_ORDER = ['Rifles', 'Melees', 'Sniper Rifles', 'Sidearms', 'SMGs', 'Machine Guns', 'Shotguns', 'Flex'];
 
 const state = { q: '', themes: new Set(), minRank: '', price: '', flags: new Set(), sort: 'new', view: 'grid', style: 'mini' };
@@ -177,20 +191,32 @@ function buildFacets() {
   $('fTheme').innerHTML = '<legend>THEME</legend>' + themeRows;
 
   const rankRows = [
-    { v: '', l: 'Any' }, { v: 'iron', l: 'IRON' }, { v: 'bronze', l: 'BRONZE' }, { v: 'silver', l: 'SILVER' },
-    { v: 'gold', l: 'GOLD' }, { v: 'plat', l: 'PLATINUM' },
-    { v: 'dia', l: 'DIAMOND' }, { v: 'asc', l: 'ASCENDANT' }, { v: 'imm', l: 'IMMORTAL' }, { v: 'rad', l: 'RADIANT' }
+    { v: '', l: 'Any' }, { v: 'iron', l: 'Iron' }, { v: 'bronze', l: 'Bronze' }, { v: 'silver', l: 'Silver' },
+    { v: 'gold', l: 'Gold' }, { v: 'plat', l: 'Platinum' },
+    { v: 'dia', l: 'Diamond' }, { v: 'asc', l: 'Ascendant' }, { v: 'imm', l: 'Immortal' }, { v: 'rad', l: 'Radiant' }
   ].map((r, i) => '<label class="frow"><input type="radio" name="minrank" value="' + r.v + '"' + (i === 0 ? ' checked' : '') + '><span class="fl">' + esc(r.l) + '</span><span class="fbar"><i></i></span><span class="fn">0</span></label>').join('');
   $('fRank').innerHTML = '<legend>CURRENT RANK</legend>' + rankRows;
 
-  const priceRows = [{ v: '', l: 'Any' }].concat(PRICE_BANDS, [{ v: 'off', l: 'For Offers' }])
-    .map((r, i) => '<label><input type="radio" name="price" value="' + r.v + '"' + (i === 0 ? ' checked' : '') + '><span class="ftxt">' + esc(r.l) + '</span><span class="fn">0</span></label>').join('');
-  $('fPrice').innerHTML = '<legend>PRICE</legend>' + priceRows;
+  buildPriceFacet();
 
   const flagRows = [
     { v: 'noissue', l: 'No Issue' }, { v: 'issues', l: 'With Issues' }, { v: 'premunl', l: 'Premier Unlinked' }
   ].map(r => '<label><input type="checkbox" value="' + r.v + '"><span class="ftxt">' + esc(r.l) + '</span><span class="fn">0</span></label>').join('');
   $('fFlags').innerHTML = '<legend>REQUIREMENTS</legend>' + flagRows;
+}
+
+/* The price facet is rebuilt when the adaptive top flips, so it lives in its
+   own function. Binding is separate so a rebuild can re-attach listeners to the
+   fresh radios (innerHTML replacement drops the old ones). */
+function buildPriceFacet() {
+  const priceRows = [{ v: '', l: 'Any' }].concat(PRICE_BANDS, [{ v: 'off', l: 'For Offers' }])
+    .map((r, i) => '<label><input type="radio" name="price" value="' + r.v + '"' + (i === 0 ? ' checked' : '') + '><span class="ftxt">' + esc(r.l) + '</span><span class="fn">0</span></label>').join('');
+  $('fPrice').innerHTML = '<legend>PRICE</legend>' + priceRows;
+}
+function bindPriceRadios() {
+  document.querySelectorAll('#fPrice input[name="price"]').forEach(r => {
+    r.addEventListener('change', () => { if (r.checked) { state.price = r.value; render(); } });
+  });
 }
 
 /* CF-30: facet counts come from the set filtered by every OTHER dimension,
@@ -1073,9 +1099,7 @@ function wire() {
   document.querySelectorAll('#fRank input[name="minrank"]').forEach(r => {
     r.addEventListener('change', () => { if (r.checked) { state.minRank = r.value; render(); } });
   });
-  document.querySelectorAll('#fPrice input[name="price"]').forEach(r => {
-    r.addEventListener('change', () => { if (r.checked) { state.price = r.value; render(); } });
-  });
+  bindPriceRadios();
   $('sort').addEventListener('change', e => { state.sort = e.target.value; render(); });
   $('vGrid').addEventListener('click', () => { state.view = 'grid'; applyView(); });
   $('vList').addEventListener('click', () => { state.view = 'list'; applyView(); });
@@ -1401,6 +1425,20 @@ async function load(silent) {
   listings = data.map(normalize);
   listings.forEach(l => { bySlug[l.slug] = l; });
   shownCount = listings.length;
+  /* Adaptive price top: split the ₱15,000+ bucket once any active listing
+     reaches PRICE_SPLIT_AT. Rebuild the facet only when the split flips, so a
+     silent reload never disturbs the buyer's current selection. */
+  const maxP = listings.reduce((m, l) => (l.price != null && l.price > m ? l.price : m), 0);
+  const split = maxP >= PRICE_SPLIT_AT;
+  if (split !== PRICE_SPLIT) {
+    PRICE_SPLIT = split;
+    PRICE_BANDS = priceBands(split);
+    buildPriceFacet();
+    bindPriceRadios();
+    const el = document.querySelector('#fPrice input[value="' + (state.price || '') + '"]');
+    if (el) el.checked = true;
+    else { state.price = ''; const any = document.querySelector('#fPrice input[value=""]'); if (any) any.checked = true; }
+  }
   buildPulse();
   countUp();
   if (!listings.length) {
