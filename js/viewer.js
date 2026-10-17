@@ -1,7 +1,7 @@
 // CardForge viewer — renders a published listing from Supabase (public share
 // links) or, as a fallback, from this browser's localStorage.
-import * as CF from './shared.js?v=2.0.9';
-import { applyLayout, resolveLayout } from './layouts.js?v=2.0.9';
+import * as CF from './shared.js?v=2.0.10';
+import { applyLayout, resolveLayout } from './layouts.js?v=2.0.10';
 
 const CONFIG = window.CARDFORGE_CONFIG || {};
 let supabase = null;
@@ -40,7 +40,7 @@ function loadSupabase() {
   if (!sbLoading) {
     sbLoading = new Promise(res => {
       const s = document.createElement('script');
-      s.src = 'js/vendor/supabase.js?v=2.0.9';
+      s.src = 'js/vendor/supabase.js?v=2.0.10';
       s.onload = () => {
         try { supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY); }
         catch { supabase = null; }

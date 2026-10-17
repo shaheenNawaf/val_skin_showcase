@@ -519,7 +519,7 @@ export function resizeToDataUrl(file, max) {
 /* X2: builds the scan-for-live-listing QR footer appended to full-height PNG exports. */
 async function makeQrFoot(url) {
   try {
-    const mod = await import('./vendor/qrcode-generator.mjs?v=2.0.9');
+    const mod = await import('./vendor/qrcode-generator.mjs?v=2.0.10');
     const qrcode = mod.default || mod.qrcode || mod;
     const qr = qrcode(0, 'M');
     qr.addData(String(url));
